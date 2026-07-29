@@ -1,0 +1,8 @@
+# IDE en Editor configuraties
+.idea/
+.vscode/
+
+# Omgevingsvariabelen en geheime sleutels
+.env
+.env.local
+.env.*.local
