@@ -5,7 +5,7 @@
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Thu 2026-07-30 17:44:45
+ * @dateLastMod Thu 2026-07-30 17:45:44
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -48,4 +48,6 @@
 		print "\n<!-- b 642108  -->\n<pre>\n<div class='container'>\n$txt</div>\n</pre>\n<!-- b 642108  -->";
 
 	}
-	register_shutdown_function('shutdown');	
+	register_shutdown_function('shutdown');
+	
+	exit(0);
