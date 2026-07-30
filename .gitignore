@@ -6,3 +6,6 @@
 .env
 .env.local
 .env.*.local
+
+# Composer dependencies (de externe pakketten)
+/vendor/
