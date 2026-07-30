@@ -5,7 +5,7 @@
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Thu 2026-07-30 19:35:33
+ * @dateLastMod Thu 2026-07-30 21:03:25
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -62,6 +62,7 @@ define('DIR_ADMIN', 'src/admin');
 
 /* #endregion bootstrap */
 
+print DFLT::ICON_WIP->value;
 
 /*
  * end of script

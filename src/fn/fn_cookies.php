@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Thu 2026-07-30 19:40:59
+ * @dateLastMod Thu 2026-07-30 21:25:45
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -22,97 +22,55 @@ if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_al
 # If you don't want this, you can use setrawcookie() instead.
 
 function fn_cookies(
-	$strategy,
-	$name,
+    string $strategy,
+    string $name,
+    string $value   = '',
+    int $expires    = 0,
+    string $path    = '/' . DIR_BASE . '/',
+    string $domain  = '',
+    bool $secure    = true,   # Standaard true voor moderne HTTPS-omgevingen
+    bool $httpOnly  = true,   # Standaard true tegen XSS
+    string $trace   = '212124: no trace',
+    string $sameSite = 'Lax'  # Lax is de veilige browserstandaard
+): bool|string {
 
-	$value   = '',
-	$expires = '',
-	$path    = '/' . DIR_BASE .'/',
-	$domain  = '',
-		# Because setting a cookie with a value of false will try to delete the cookie,
-		# you should not use boolean values. Instead, use 0 for false and 1 for true.
-	$secure   = 0,
-	$httpOnly = 1,
-	$trace    = '212124: no trace',
-	$sameSite = 'Lax',      # None, Lax or Strict
-	)
-{
+    $name = PREFIX_COOKIES . $name;
+    
+    # Als verloopdatum 0 is, zet een standaard van 1000 dagen (of laat 0 voor sessiecookie)
+    if ($expires === 0 && $strategy === 'set') {
+        $expires = time() + (60 * 60 * 24 * 1000);
+    }
 
-$name   = PREFIX_COOKIES.$name;
-$expires = $expires == '' ? time()+(60*60*24*1000) : $expires;
-$value  = $value  == '' ? 'empty 882247' : $value;
+    $arrOptions = [
+        'expires'  => $expires,
+        'path'     => $path,
+        'domain'   => $domain,
+        'secure'   => $secure,
+        'httponly' => $httpOnly,
+        'samesite' => $sameSite # Geactiveerd voor CSRF-bescherming
+    ];
 
-$arrOptions = [
-	'expires'  => $expires,
-	'path'     => $path,
-	'domain'   => $domain,		# leading dot for compatibility or use subdomain
-	'secure'   => $secure,
-	'httponly' => $httpOnly,
-	# 'samesite' => $sameSite		#  None || Lax  || Strict
-];
+    switch ($strategy) {
+        case 'get':
+            return $_COOKIE[$name] ?? ''; # Geeft lege string i.p.v. FALSE (voorkomt type-mismatches)
 
+        case 'set':
+            return setcookie($name, $value, $arrOptions);
 
-	# print '<pre>#324719:';print "$name trace:$trace, strategy:$strategy" ;print '</pre>';
+        case 'delete':
+            # Hardcode de leegmaak-parameters voor betrouwbare verwijdering
+            $arrOptions['expires'] = time() - 3600;
+            return setcookie($name, '', $arrOptions);
 
-	switch ($strategy) {
-		case 'get':
-
-			# print '<pre>#095817 var_dump: name:$name'; var_dump($_COOKIE); print '</pre>';
-
-		if( isset($_COOKIE[$name] )) {
-
-				# print '<pre>#744727:'; print "get:" . $_COOKIE[$name]; print '</pre>';
-
-			return $_COOKIE[$name];
-		} else {
-
-				# print '<pre>#383181:'; print "get: false: $name trace:$trace"; print '</pre>';
-
-			return FALSE;
-		}
-		break;
-
-	case 'set':
-
-		if( $bool = setcookie($name, $value, $arrOptions) ) {
-
-				$secureShow   = $arrOptions['secure']   === 0 ? '0→false' : '1→true';
-				$httpOnlyShow = $arrOptions['httponly'] === 0 ? '0→false' : '1→true';
-				$boolShow     = var_export($bool, TRUE);
-
-				$show = "set: bool returned '$boolShow': cookie with name <b>'$name'</b> was set. trace:$trace." . NL . "value:$value,  secure:$secureShow, httponly:$httpOnlyShow";
-
-				# $id='049966'; $msg=$show . NL;
-				# print fn_debug(id:$id, msg:$msg, class:'debug', ln:__LINE__, fi:__FILE__, array:$arrOptions);
-
-			return $bool;
-		}
-		break;
-
-	case 'delete':
-
-		# cookie you want to delete must have exact the same parameters as when it was set. Except expiration time.
-
-
-			# print '<pre>#456577:'; print "cookie $name deleted. trace:$trace"; print '</pre>';
-
-		$arrOptions['expires'] = time()-(60*60*24);
-		$bool = setcookie($name, $value, $arrOptions);
-		# print "<pre>#219345 delete: \$bool for $name:"; var_dump($bool); print '</pre>';
-		# do not use unset()!
-		return $bool;
-		break;
-
-	default:
-
-		$id='670935'; $msg="strategy '$strategy' is not available. Use get, set or delete. $trace" . NL;
-		print fn_debug(id:$id, msg:$msg, class:'fatal', ln:__LINE__, fi:__FILE__);
-
-		return FALSE;
-		break;
+        default:
+            $id = '670935'; 
+            $msg = "Strategy '$strategy' is niet beschikbaar. Gebruik get, set of delete. $trace" . NL;
+            if (function_exists('fn_debug')) {
+                print fn_debug(id: $id, msg: $msg, class: 'fatal', ln: __LINE__, fi: __FILE__);
+            }
+            return false;
+    }
 }
 
-return FALSE;
-}
 
 /* #endregion fn_cookies */
