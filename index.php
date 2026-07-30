@@ -5,7 +5,7 @@
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Thu 2026-07-30 17:45:44
+ * @dateLastMod Thu 2026-07-30 19:35:33
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,8 +13,7 @@
  *
 **/
 
-
-/* #region basics */
+/* #region cd basics */
 
 # check if we are on the server or on localhost
 	$serverRA = $_SERVER['REMOTE_ADDR'];
@@ -44,10 +43,28 @@
 	function shutdown()
 	{
 		$txt = "#213376 - program end.\n";
-		$txt = '';
+		# $txt = '';
 		print "\n<!-- b 642108  -->\n<pre>\n<div class='container'>\n$txt</div>\n</pre>\n<!-- b 642108  -->";
 
 	}
 	register_shutdown_function('shutdown');
+	
+/* #endregion basics */
+
+
+/* #region cd bootstrap */
+
+define('DIR_ADMIN', 'src/admin');
+
+	require DIR_ADMIN . '/admin_config.php';
+	require DIR_ADMIN . '/admin_defines_0.php';
+	require DIR_ADMIN . '/admin_load_functions_0.php';
+
+/* #endregion bootstrap */
+
+
+/*
+ * end of script
+ */
 	
 	exit(0);
