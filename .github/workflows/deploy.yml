@@ -10,6 +10,10 @@ jobs:
     name: Upload bestanden naar shared hosting
     runs-on: ubuntu-latest
     
+    # Dit onderdrukt de Node.js waarschuwing op de GitHub servers
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+      
     steps:
     - name: Haal de nieuwste code op
       uses: actions/checkout@v4
