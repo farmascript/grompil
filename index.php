@@ -5,7 +5,7 @@
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Thu 2026-07-30 17:39:17
+ * @dateLastMod Thu 2026-07-30 17:44:45
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -25,8 +25,6 @@
 	};
 	define("DIR_ROOT", LOCAL_HOST ? '' : "/public_html");
 
-	print "DIR_ROOT: " . DIR_ROOT . "<br>";
-	
 # use in other modules to prevent direct execution of a module that has to be included
 	define('BASIC_INDEX_SEEN', TRUE);
 
@@ -37,9 +35,17 @@
 		# debug function not available
 		print "<pre>Fatal error #715994: your PHP installation is not compatible. You need at least PHP $versionNeeded. Found: " . PHP_VERSION . "</pre>";
 		exit -1;
-	} else {
-		print "PHP version is compatible.<br>";
-	}
+	} 
 
 # set this or php gives a warning
 	$voidBool = date_default_timezone_set('Europe/Brussels');
+
+# gracefully exit
+	function shutdown()
+	{
+		$txt = "#213376 - program end.\n";
+		$txt = '';
+		print "\n<!-- b 642108  -->\n<pre>\n<div class='container'>\n$txt</div>\n</pre>\n<!-- b 642108  -->";
+
+	}
+	register_shutdown_function('shutdown');	
