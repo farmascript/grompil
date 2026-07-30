@@ -1,0 +1,33 @@
+name: Snel PHP uploaden naar public_html
+
+on:
+  push:
+    branches:
+      - main  # De pipeline start zodra je code pusht of opslaat in de 'main' branch
+
+jobs:
+  deploy:
+    name: Upload bestanden naar shared hosting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Haal de nieuwste code op
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Dit zorgt ervoor dat alleen gewijzigde bestanden worden overgedragen
+
+    - name: FTP Sync naar public_html
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: 21
+        protocol: ftps # Forceert een beveiligde verbinding over TLS
+        local-dir: ./
+        server-dir: ./ # Dit is goed als je FTP-account direct ín public_html start. 
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/.github*/**
+
