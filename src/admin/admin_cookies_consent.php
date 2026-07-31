@@ -5,7 +5,7 @@
  * @file        admin_cookies_consetn.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 21:29:52
- * @dateLastMod Fri 2026-07-31 16:30:52
+ * @dateLastMod Fri 2026-07-31 16:40:39
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -58,7 +58,11 @@ if (isset($_GET['ck'])) {
 
     # URL opschonen na mutatie (Voorkomt oneindige loops)
     if ($shouldRedirect) {
-        $cleanUrl = strtok($_SERVER['REQUEST_URI'], '?');
+
+        # $cleanUrl = strtok($_SERVER['REQUEST_URI'], '?');
+		# NIEUWE METHODE (Werkt gegarandeerd op Windows én Linux productieomgevingen)
+		$cleanUrl = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
         header("Location: " . $cleanUrl, true, 303);
         exit;
     }
