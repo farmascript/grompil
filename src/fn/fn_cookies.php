@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Fri 2026-07-31 17:03:43
+ * @dateLastMod Fri 2026-07-31 17:24:07
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -58,7 +58,7 @@ function fn_cookies(
         'expires'  => $expires,
         'path'     => $path,
         'domain'   => $domain,
-        'secure'   => $secure,
+        'secure'   => true,
         'httponly' => $httpOnly,
         'samesite' => $sameSite # Geactiveerd voor CSRF-bescherming
     ];
