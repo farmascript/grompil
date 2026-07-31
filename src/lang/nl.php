@@ -5,7 +5,7 @@
  * @file        nl.php
  * @author      lm
  * @dateCreated Fri 2026-07-31 10: 17: 23
- * @dateLastMod Fri 2026-07-31 16:17:24
+ * @dateLastMod Fri 2026-07-31 20:28:09
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -15,7 +15,7 @@
 
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
-return [
+$arrLang = [
   
   # header
 		"title"       => "Welkom op ons platform",
@@ -38,7 +38,7 @@ return [
 		"cookie_title"      => "Cookies",
 
   # body
-		"bootstrap"              => "Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap 5.3.8 en PHP backend-architectuur.",
+		"bootstrap"              => "Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap en PHP backend-architectuur.",
 		"feature_cookie_text"    => "Eenvoudig instemmen of weigeren via onze geïntegreerde consent-functionaliteit.",
 		"feature_cookie_title"   => "Cookie Beheer",
 		"feature_security_text"  => "Optimale databeveiliging dankzij ingebouwde CSRF-bescherming en HttpOnly cookies.",
@@ -71,6 +71,10 @@ return [
 
 		"missing_translation"  => "Ontbrekende vertalingen",
 		"img_work_in_progress" => DFLT::ICON_WIP->value,
+		"gromPilSaas_alt"      => "GrompilSaaS beeld",
+		"gromPilSaas_img"      => DFLT::IMG_gromPilSaas->value,
+		"gromPil_logo"         => DFLT::IMG_gromPilLogo->value,
+		"gromPil_logo_alt"     => "Grompil logo",
 
 		
 ];

@@ -5,7 +5,7 @@
  * @file        admin_defines_0.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:22:05
- * @dateLastMod Fri 2026-07-31 12:49:47
+ * @dateLastMod Fri 2026-07-31 20:21:40
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -25,7 +25,7 @@ define('PREFIX_TABLE',   $config['prefixTable']);
 define('DB_NAME',        $config['dbname']);
 
 define('DIR_BASE',       $config['baseDir']);
-define('DIR_ICONS',     'media');
+define('DIR_IMAGES',     'media');
 
 define('URL_BASE',       htmlspecialchars($_SERVER["PHP_SELF"]));
 define('HOME_LINK',     "<a href='" . URL_BASE . "'><i class='bi bi-house-door'></i></a>");
@@ -49,9 +49,13 @@ enum DFLT: string {
 	case COMPANY_DEFAULT = 'basic';
 	case COMPANY_START   = 'start';
 
-	case ICON_VSC    = "<img src='" . DIR_ICONS . "/vscode.svg'  width='15' height='15'>";
-	case ICON_MANUAL = "<img src='" . DIR_ICONS . "/info.svg'  width='20' height='20'>";
-	case ICON_WIP    = "<img src='" . DIR_ICONS . "/work_in_progress.png'  width='120'>";
+	case ICON_VSC         = "<img src='" . DIR_IMAGES . "/vscode.svg'  width='15' height='15'>";
+	case ICON_MANUAL      = "<img src='" . DIR_IMAGES . "/info.svg'  width='20' height='20'>";
+	case ICON_WIP         = "<img src='" . DIR_IMAGES . "/work_in_progress.png'  width='120'>";
+
+	case IMG_gromPilSaas = DIR_IMAGES . "/gromPilSaas.png"; 
+	case IMG_gromPilLogo = DIR_IMAGES . "/gromPilLogo.png";
+	
 	case ARROW_RIGHT = '→';
 	case HTML_TARGET = '_blank';
 

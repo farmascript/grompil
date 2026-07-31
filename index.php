@@ -5,7 +5,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Fri 2026-07-31 16:52:34
+ * @dateLastMod Fri 2026-07-31 18:32:45
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -43,7 +43,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 	function shutdown()
 	{
 		$txt = "#213376 - program end.\n";
-		# $txt = '';
+		$txt = ''; 	# leaves a trace in the source that the script ended gracefully, but does not show it to the user
 		print "\n<!-- b 642108  -->\n<pre>\n<div class='container'>\n$txt</div>\n</pre>\n<!-- b 642108  -->";
 
 	}
@@ -60,13 +60,14 @@ define('DIR_ADMIN', 'src/admin');
 	require DIR_ADMIN . '/admin_defines_0.php';
 	require DIR_ADMIN . '/admin_load_functions_classes_0.php';
 
-	# require DIR::LANG->value . '/nl.php';
-	Lang::load(require DIR::LANG->value . '/nl.php');
+	require DIR::LANG->value . '/nl.php';
+	Lang::load($arrLang);
 
 /* #endregion startSomeThings */
 
 # check cookies. Now yot yave the value of $cookiesConsentFooter, which is either empty or contains the HTML of the banner
 	require DIR_ADMIN . '/admin_cookies_consent.php';
+	
 
 $arrRender = [
 	'header'          => DIR::TMPL_BASIC->value . '/header.html',
@@ -89,7 +90,6 @@ if (!empty($missing)) {
 	}
 	
 	print $html;
-	print 'cleanurl: ' . strtok($_SERVER['REQUEST_URI'], '?');	
 	print $cookiesConsentFooter;
 	
 /*
