@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Fri 2026-07-31 16:49:28
+ * @dateLastMod Fri 2026-07-31 17:03:43
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -68,6 +68,10 @@ function fn_cookies(
             return $_COOKIE[$name] ?? ''; # Geeft lege string i.p.v. FALSE (voorkomt type-mismatches)
 
         case 'set':
+			if (headers_sent($file, $line)) {
+    		exit("Fout: Headers zijn al verzonden in bestand $file op regel $line. Cookies kunnen niet worden gezet!");
+}
+
             return setcookie($name, $value, $arrOptions);
 
         case 'delete':
