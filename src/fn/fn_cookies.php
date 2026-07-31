@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Thu 2026-07-30 21:25:45
+ * @dateLastMod Fri 2026-07-31 16:49:28
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -33,6 +33,19 @@ function fn_cookies(
     string $trace   = '212124: no trace',
     string $sameSite = 'Lax'  # Lax is de veilige browserstandaard
 ): bool|string {
+
+	# Binnen fn_cookies():
+	$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
+	
+	$arrOptions = [
+	    'expires'  => $expires,
+	    'path'     => '/',               # ALTIJD '/' tenzij u bewust in een submap isoleert
+	    'domain'   => '',                # Leeg laten, de browser pakt automatisch het huidige domein
+	    'secure'   => $isSecure,         # Schakelt automatisch mee met HTTP of HTTPS
+	    'httponly' => true,
+	    'samesite' => 'Lax'
+	];
+	
 
     $name = PREFIX_COOKIES . $name;
     
