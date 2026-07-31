@@ -1,11 +1,11 @@
 <?
-
+ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 /**
  *
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Fri 2026-07-31 16:35:54
+ * @dateLastMod Fri 2026-07-31 16:52:34
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
