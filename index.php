@@ -5,7 +5,7 @@
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Fri 2026-07-31 12:55:30
+ * @dateLastMod Fri 2026-07-31 16:27:14
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -63,16 +63,36 @@ define('DIR_ADMIN', 'src/admin');
 	# require DIR::LANG->value . '/nl.php';
 	Lang::load(require DIR::LANG->value . '/nl.php');
 
-	# test
-	print Lang::get('cookie_settings') . BRNL;
-	print Lang::render(DIR::TMPL_BASIC->value . '/cookies_consent.html') . BRNL;
-
 /* #endregion startSomeThings */
 
-print DFLT::ICON_WIP->value;
+# check cookies. Now yot yave the value of $cookiesConsentFooter, which is either empty or contains the HTML of the banner
+	require DIR_ADMIN . '/admin_cookies_consent.php';
 
+$arrRender = [
+	'header'          => DIR::TMPL_BASIC->value . '/header.html',
+	'body'            => DIR::TMPL_BASIC->value . '/body.html',
+	'footer'          => DIR::TMPL_BASIC->value . '/footer.html',
+];
+
+$missing = [];
+$html    = '';
+
+foreach ($arrRender as $key => $file) {
+	$html .= Lang::render($file);
+	$missing = array_merge($missing, Lang::check($file));
+}
+
+
+if (!empty($missing)) {
+	print BRNL . Lang::get('missing_translation') . BRNL;
+    print implode(BRNL, $missing);
+	}
+	
+	print $html;
+	print $cookiesConsentFooter;
+	
 /*
  * end of script
  */
 	
-	exit(0);
+exit(0);

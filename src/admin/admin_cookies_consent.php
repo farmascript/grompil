@@ -5,7 +5,7 @@
  * @file        admin_cookies_consetn.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 21:29:52
- * @dateLastMod Thu 2026-07-30 21:31:20
+ * @dateLastMod Fri 2026-07-31 16:30:52
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -15,7 +15,9 @@
 
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
-# 1. Definieer de consent-profielen
+# -------------------------------------------------------------------------
+# FASE 1: LOGICA & MUTATIES (De PHP Controller)
+# -------------------------------------------------------------------------
 $arrCookieConsentAll = [
     'cookiesAll'        => true,
     'cookiesAnalytic'   => true,
@@ -34,30 +36,27 @@ $arrCookieConsentEss = [
     'cookiesAds'        => false,
 ];
 
-# 2. Verwerk URL parameters (Mutaties)
+# Verwerk URL parameters (Indien op een cookieknop is geklikt)
 if (isset($_GET['ck'])) {
     $action = $_GET['ck'];
     $shouldRedirect = false;
 
     if ($action === 'a') {
-        # Alle cookies accepteren
-        fn_cookies(strategy: 'delete', name: 'cookieConsent', trace: '627283');
-        fn_cookies(strategy: 'set', name: 'cookieConsent', value: json_encode($arrCookieConsentAll), trace: '800327');
+        fn_cookies(strategy: 'delete', name: 'cookieConsent');
+        fn_cookies(strategy: 'set', name: 'cookieConsent', value: json_encode($arrCookieConsentAll));
         $shouldRedirect = true;
     } 
     elseif ($action === 'e') {
-        # Alleen essentiële cookies accepteren (OPGELOST: miste in oude script)
-        fn_cookies(strategy: 'delete', name: 'cookieConsent', trace: '627283');
-        fn_cookies(strategy: 'set', name: 'cookieConsent', value: json_encode($arrCookieConsentEss), trace: '800328');
+        fn_cookies(strategy: 'delete', name: 'cookieConsent');
+        fn_cookies(strategy: 'set', name: 'cookieConsent', value: json_encode($arrCookieConsentEss));
         $shouldRedirect = true;
     } 
     elseif ($action === 'n') {
-        # Reset / Weigeren
-        fn_cookies(strategy: 'delete', name: 'cookieConsent', trace: '857296');
+        fn_cookies(strategy: 'delete', name: 'cookieConsent');
         $shouldRedirect = true;
     }
 
-    # Schoon de URL op om herhalingen/loops te voorkomen
+    # URL opschonen na mutatie (Voorkomt oneindige loops)
     if ($shouldRedirect) {
         $cleanUrl = strtok($_SERVER['REQUEST_URI'], '?');
         header("Location: " . $cleanUrl, true, 303);
@@ -65,15 +64,23 @@ if (isset($_GET['ck'])) {
     }
 }
 
-# 3. Controleer huidige status en toon banner indien nodig
-$__cookieConsentFooter = '';
-$cookieConsentRaw = fn_cookies(strategy: 'get', name: 'cookieConsent', trace: '931432');
+# -------------------------------------------------------------------------
+# FASE 2: STATUS CONTROLEREN & BANNER BUFFEREN
+# -------------------------------------------------------------------------
+$cookiesConsentFooter = '';
+$cookieConsentRaw = fn_cookies(strategy: 'get', name: 'cookieConsent');
 
-# Controleer of de cookie leeg is (beide checks vangen zowel '' als false op)
+# Als er geen cookie is ingesteld, laden we de banner in het geheugen
 if (empty($cookieConsentRaw)) {
-    require DIR::TEMPLATES_STD->value . '/357270_cookies_consent.php';
-    $__cookieConsentFooter = $arrBlock['content'];
+
+    # Start output buffering om de HTML van de banner op te vangen in een variabele
+    # ob_start();
+    # require_once DIR::TMPL_BASIC->value . '/cookies_consent.html';
+    # $cookiesConsentFooter = ob_get_clean(); 
+
+	$cookiesConsentFooter = Lang::render(DIR::TMPL_BASIC->value . '/cookies_consent.html');
+
 } else {
-    # Optioneel: Maak de actieve cookie-instellingen direct beschikbaar als array in uw app
+    # Optioneel: De actieve instellingen zijn nu direct bruikbaar in de rest van uw app
     $arrActiveConsent = json_decode($cookieConsentRaw, true);
 }

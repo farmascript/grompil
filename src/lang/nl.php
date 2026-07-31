@@ -5,7 +5,7 @@
  * @file        nl.php
  * @author      lm
  * @dateCreated Fri 2026-07-31 10: 17: 23
- * @dateLastMod Fri 2026-07-31 12:54:43
+ * @dateLastMod Fri 2026-07-31 16:17:24
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -18,8 +18,13 @@ if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_al
 return [
   
   # header
-        "title"       => "Welkom op ons platform",
-        "description" => "Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap 5.3.8 en PHP backend-architectuur.",
+		"title"       => "Welkom op ons platform",
+		"description" => "Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap 5.3.8 en PHP backend-architectuur.",
+		"home"        => "Home",
+		"services"    => "Diensten",
+		"about_us"    => "Over Ons",
+		"contact"     => "Contact",
+		
 
   # cookies_consent
 		"cookie_accept"     => "Accepteren",
@@ -45,22 +50,28 @@ return [
 		"welcome"                => "Welkom op ons platform",
 
   # footer
-		"contact_email" => "info@grompil.com",
-		"cookie_banner" => "Cookie Banner",
-		"cookie_reset"  => "Reset Cookie Keuzes",
-		"copyright"     => "Copyright 1981-present - lm <info@grompil.com>",
-		"date"          => date('Y'),
+		"contact_email"        => "info@grompil.com",
+		"cookie_banner"        => Lang::render(DIR::TMPL_BASIC->value . '/cookies_consent.html'),
+		"cookie_reset"         => "Reset Cookie Keuzes",
+		"copyright"            => "&copy; 1981-" . date('Y') . " - lm ",
 
   # bootstrap
 		
 			  # placed in the header
 			  # do not touch unless you know what you are doing
-		"link_stylesheet"     => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
-		"styleSheetIntegrity" => 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
+		"bt_link_stylesheet"     => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
+		"bt_styleSheetIntegrity" => 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
 
 			  # it is important to place the script at the end of the body for optimal page load performance.
 			  # do not touch unless you know what you are doing"
-		"link_script"     => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js',
-		"scriptIntegrity" => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',
+		"bt_link_script"     => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js',
+		"bt_scriptIntegrity" => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',
+
+   # varia
+
+		"missing_translation"  => "Ontbrekende vertalingen",
+		"img_work_in_progress" => DFLT::ICON_WIP->value,
+
+		
 ];
 
