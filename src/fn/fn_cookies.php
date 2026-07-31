@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Fri 2026-07-31 18:02:56
+ * @dateLastMod Fri 2026-07-31 18:04:43
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -44,14 +44,14 @@ function fn_cookies(
         $expires = time() + (60 * 60 * 24 * 1000);
     }
 
-    $arrOptions = [
-        'expires'  => 0,
-        'path'     => '/',
-        'domain'   => '',
-        'secure'   => true,
-        'httponly' => true,
-        'samesite' => 'Lax' # Geactiveerd voor CSRF-bescherming
-    ];
+    # $arrOptions = [
+    #     'expires'  => 0,
+    #     'path'     => '/',
+    #     'domain'   => '',
+    #     'secure'   => true,
+    #     'httponly' => true,
+    #     'samesite' => 'Lax' # Geactiveerd voor CSRF-bescherming
+    # ];
 
     switch ($strategy) {
         case 'get':
