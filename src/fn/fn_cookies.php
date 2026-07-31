@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Fri 2026-07-31 18:00:12
+ * @dateLastMod Fri 2026-07-31 18:02:56
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -26,7 +26,7 @@ function fn_cookies(
     string $name,
     string $value   = '',
     int $expires    = 0,
-    string $path    = '/' . DIR_BASE . '/',
+    string $path    = '/',
     string $domain  = '',
     bool $secure    = true,   # Standaard true voor moderne HTTPS-omgevingen
     bool $httpOnly  = true,   # Standaard true tegen XSS
@@ -35,19 +35,9 @@ function fn_cookies(
 ): bool|string {
 
 	# Binnen fn_cookies():
-	$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
+	# $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
 	
-	$arrOptions = [
-	    'expires'  => $expires,
-	    'path'     => '/',               # ALTIJD '/' tenzij u bewust in een submap isoleert
-	    'domain'   => '',                # Leeg laten, de browser pakt automatisch het huidige domein
-	    'secure'   => $isSecure,         # Schakelt automatisch mee met HTTP of HTTPS
-	    'httponly' => true,
-	    'samesite' => 'Lax'
-	];
-	
-
-    $name = PREFIX_COOKIES . $name;
+	$name = PREFIX_COOKIES . $name;
     
     # Als verloopdatum 0 is, zet een standaard van 1000 dagen (of laat 0 voor sessiecookie)
     if ($expires === 0 && $strategy === 'set') {
