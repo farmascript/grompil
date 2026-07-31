@@ -5,7 +5,7 @@
  * @file        admin_defines_0.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:22:05
- * @dateLastMod Fri 2026-07-31 20:21:40
+ * @dateLastMod Fri 2026-07-31 21:42:34
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -19,12 +19,13 @@ define('DATE_TIME',        date("Y-m-d H:i:s"));
 
 # $config is set in admin_config.php
 
-define('PREFIX_SESSION', $config['prefixSession']);
-define('PREFIX_COOKIES', $config['prefixCookies']);
-define('PREFIX_TABLE',   $config['prefixTable']);
-define('DB_NAME',        $config['dbname']);
+	define('PREFIX_SESSION', $config['prefixSession']);
+	define('PREFIX_COOKIES', $config['prefixCookies']);
+	define('PREFIX_TABLE',   $config['prefixTable']);
+	define('DB_NAME',        $config['dbname']);
 
-define('DIR_BASE',       $config['baseDir']);
+	define('DIR_BASE',       $config['baseDir']);
+
 define('DIR_IMAGES',     'media');
 
 define('URL_BASE',       htmlspecialchars($_SERVER["PHP_SELF"]));
@@ -49,11 +50,11 @@ enum DFLT: string {
 	case COMPANY_DEFAULT = 'basic';
 	case COMPANY_START   = 'start';
 
-	case ICON_VSC         = "<img src='" . DIR_IMAGES . "/vscode.svg'  width='15' height='15'>";
-	case ICON_MANUAL      = "<img src='" . DIR_IMAGES . "/info.svg'  width='20' height='20'>";
-	case ICON_WIP         = "<img src='" . DIR_IMAGES . "/work_in_progress.png'  width='120'>";
+	case ICON_VSC    = "<img src='" . DIR_IMAGES . "/vscode.svg'  width='15' height='15'>";
+	case ICON_MANUAL = "<img src='" . DIR_IMAGES . "/info.svg'  width='20' height='20'>";
+	case ICON_WIP    = "<img src='" . DIR_IMAGES . "/work_in_progress.png'  width='120'>";
 
-	case IMG_gromPilSaas = DIR_IMAGES . "/gromPilSaas.png"; 
+	case IMG_gromPilSaas = DIR_IMAGES . "/gromPilSaas.png";
 	case IMG_gromPilLogo = DIR_IMAGES . "/gromPilLogo.png";
 	
 	case ARROW_RIGHT = '→';
@@ -62,11 +63,12 @@ enum DFLT: string {
 }
 
 enum DIR: string {
-	
 
-	case FN               = 'src/fn';
-	case CLASSES		  = 'src/classes';
-	case LANG			  = 'src/lang';
-	case TMPL_BASIC		  = 'tmpl/basic';
+	case CLASSES    = 'src/classes';
+	case FAVICONS   = 'media/favicons';
+	case FN         = 'src/fn';
+	case LANG       = 'src/lang';
+	case TMPL_BASIC = 'tmpl/basic';
+	case TEMP       = 'tmp';
 
 }

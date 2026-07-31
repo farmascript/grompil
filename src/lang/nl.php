@@ -5,7 +5,7 @@
  * @file        nl.php
  * @author      lm
  * @dateCreated Fri 2026-07-31 10: 17: 23
- * @dateLastMod Fri 2026-07-31 20:28:09
+ * @dateLastMod Fri 2026-07-31 22:09:42
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -16,15 +16,15 @@
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
 $arrLang = [
-  
+
   # header
 		"title"       => "Welkom op ons platform",
+		"title_url"   => "gromPil saas",
 		"description" => "Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap 5.3.8 en PHP backend-architectuur.",
 		"home"        => "Home",
 		"services"    => "Diensten",
 		"about_us"    => "Over Ons",
 		"contact"     => "Contact",
-		
 
   # cookies_consent
 		"cookie_accept"     => "Accepteren",
@@ -56,7 +56,7 @@ $arrLang = [
 		"copyright"            => "&copy; 1981-" . date('Y') . " - lm ",
 
   # bootstrap
-		
+
 			  # placed in the header
 			  # do not touch unless you know what you are doing
 		"bt_link_stylesheet"     => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
@@ -76,6 +76,5 @@ $arrLang = [
 		"gromPil_logo"         => DFLT::IMG_gromPilLogo->value,
 		"gromPil_logo_alt"     => "Grompil logo",
 
-		
 ];
 

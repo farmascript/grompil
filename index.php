@@ -5,7 +5,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Fri 2026-07-31 18:32:45
+ * @dateLastMod Fri 2026-07-31 22:08:06
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -60,14 +60,19 @@ define('DIR_ADMIN', 'src/admin');
 	require DIR_ADMIN . '/admin_defines_0.php';
 	require DIR_ADMIN . '/admin_load_functions_classes_0.php';
 
-	require DIR::LANG->value . '/nl.php';
+	require DIR::LANG->value . '/nl.php';	# gives you $arrLang
+
+	# fully qualified, trying to prevent cache problems
+	$arrLang['favicon_saas_ico'] = '/' . DFLT::BASE_NAME->value . '/' . DIR::FAVICONS->value . '/saas.ico';
+	$arrLang['favicon_saas_png'] = '/' . DFLT::BASE_NAME->value . '/' . DIR::FAVICONS->value . '/saas.png';
 	Lang::load($arrLang);
 
 /* #endregion startSomeThings */
 
 # check cookies. Now yot yave the value of $cookiesConsentFooter, which is either empty or contains the HTML of the banner
 	require DIR_ADMIN . '/admin_cookies_consent.php';
-	
+
+
 
 $arrRender = [
 	'header'          => DIR::TMPL_BASIC->value . '/header.html',
