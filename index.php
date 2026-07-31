@@ -5,7 +5,7 @@
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Fri 2026-07-31 16:27:14
+ * @dateLastMod Fri 2026-07-31 16:35:54
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -89,6 +89,7 @@ if (!empty($missing)) {
 	}
 	
 	print $html;
+	print 'cleanurl: ' . strtok($_SERVER['REQUEST_URI'], '?');	
 	print $cookiesConsentFooter;
 	
 /*
