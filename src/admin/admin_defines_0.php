@@ -5,7 +5,7 @@
  * @file        admin_defines_0.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:22:05
- * @dateLastMod Thu 2026-07-30 19:33:47
+ * @dateLastMod Fri 2026-07-31 12:49:47
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -61,5 +61,8 @@ enum DIR: string {
 	
 
 	case FN               = 'src/fn';
+	case CLASSES		  = 'src/classes';
+	case LANG			  = 'src/lang';
+	case TMPL_BASIC		  = 'tmpl/basic';
 
 }

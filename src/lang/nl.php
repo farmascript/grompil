@@ -1,0 +1,66 @@
+<?
+
+  /**
+ *
+ * @file        nl.php
+ * @author      lm
+ * @dateCreated Fri 2026-07-31 10: 17: 23
+ * @dateLastMod Fri 2026-07-31 12:54:43
+ *
+ * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
+ *
+ * @wiki
+ *
+**/
+
+if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
+
+return [
+  
+  # header
+        "title"       => "Welkom op ons platform",
+        "description" => "Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap 5.3.8 en PHP backend-architectuur.",
+
+  # cookies_consent
+		"cookie_accept"     => "Accepteren",
+		"cookie_all"        => "Alles Accepteren",
+		"cookie_decline"    => "Weigeren",
+		"cookie_essential"  => "Alleen Essentieel",
+		"cookie_functional" => "Functioneel",
+		"cookie_more_info"  => "Meer informatie",
+		"cookie_settings"   => "Cookie-instellingen",
+		"cookie_text"       => "We gebruiken cookies om uw ervaring te verbeteren. Door verder te gaan, gaat u akkoord met ons gebruik van cookies.",
+		"cookie_title"      => "Cookies",
+
+  # body
+		"bootstrap"              => "Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap 5.3.8 en PHP backend-architectuur.",
+		"feature_cookie_text"    => "Eenvoudig instemmen of weigeren via onze geïntegreerde consent-functionaliteit.",
+		"feature_cookie_title"   => "Cookie Beheer",
+		"feature_security_text"  => "Optimale databeveiliging dankzij ingebouwde CSRF-bescherming en HttpOnly cookies.",
+		"feature_security_title" => "Beveiliging",
+		"feature_speed_text"     => "Geoptimaliseerde code zorgt voor bliksemsnelle laadtijden op elk mobiel apparaat.",
+		"feature_speed_title"    => "Snelheid",
+		"more_info"              => "Meer informatie",
+		"start"                  => "Aan de slag",
+		"welcome"                => "Welkom op ons platform",
+
+  # footer
+		"contact_email" => "info@grompil.com",
+		"cookie_banner" => "Cookie Banner",
+		"cookie_reset"  => "Reset Cookie Keuzes",
+		"copyright"     => "Copyright 1981-present - lm <info@grompil.com>",
+		"date"          => date('Y'),
+
+  # bootstrap
+		
+			  # placed in the header
+			  # do not touch unless you know what you are doing
+		"link_stylesheet"     => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
+		"styleSheetIntegrity" => 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
+
+			  # it is important to place the script at the end of the body for optimal page load performance.
+			  # do not touch unless you know what you are doing"
+		"link_script"     => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js',
+		"scriptIntegrity" => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',
+];
+

@@ -5,7 +5,7 @@
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Thu 2026-07-30 21:03:25
+ * @dateLastMod Fri 2026-07-31 12:55:30
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -52,15 +52,22 @@
 /* #endregion basics */
 
 
-/* #region cd bootstrap */
+/* #region cd startSomeThings */
 
 define('DIR_ADMIN', 'src/admin');
 
 	require DIR_ADMIN . '/admin_config.php';
 	require DIR_ADMIN . '/admin_defines_0.php';
-	require DIR_ADMIN . '/admin_load_functions_0.php';
+	require DIR_ADMIN . '/admin_load_functions_classes_0.php';
 
-/* #endregion bootstrap */
+	# require DIR::LANG->value . '/nl.php';
+	Lang::load(require DIR::LANG->value . '/nl.php');
+
+	# test
+	print Lang::get('cookie_settings') . BRNL;
+	print Lang::render(DIR::TMPL_BASIC->value . '/cookies_consent.html') . BRNL;
+
+/* #endregion startSomeThings */
 
 print DFLT::ICON_WIP->value;
 
