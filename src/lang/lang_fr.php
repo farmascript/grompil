@@ -1,13 +1,9 @@
 <?php
-// Automatisch gegenereerd op: 2026-08-01 12:43:29
+// Automatisch gegenereerd op: 2026-08-01 14:28:34
 $arrLang = [
     'title' => 'Bienvenue sur notre plateforme',
     'title_url' => 'gromPil saas',
     'description' => 'Rapide, sécurisé et entièrement conçu avec de la technologie moderne de Bootstrap et de l\'architecture backend PHP.',
-    'home' => 'Accueil',
-    'services' => 'Services',
-    'about_us' => 'À propos de nous',
-    'contact' => 'Contact',
     'cookie_accept' => 'Accepter',
     'cookie_all' => 'Tout accepter',
     'cookie_decline' => 'Refuser',
@@ -27,14 +23,20 @@ $arrLang = [
     'more_info' => 'Plus d\'informations',
     'start' => 'Commencer',
     'welcome' => 'Bienvenue sur notre plateforme',
-    'contact_email' => 'info@grompil.com',
     'missing_translation' => 'Traductions manquantes',
     'gromPilSaas_alt' => 'Image de GrompilSaaS',
     'img_work_in_progress_alt' => 'image Work In Progress!',
+    'home' => 'accueil',
+    'services' => 'services',
+    'contact_email' => 'info@grompil.com',
+    'about_us' => 'à propos de nous',
+    'contact' => 'contact',
+    'cookie_reset' => 'Réinitialiser les choix relatifs aux cookies',
     'bt_link_stylesheet' => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
     'bt_styleSheetIntegrity' => 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB',
     'bt_link_script' => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js',
     'bt_scriptIntegrity' => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',
     'copyright' => '&copy; 1981-2026 - lm ',
     'gromPil_logo_alt' => 'Grompil logo',
+    'langChoice' => 'langue',
 ];

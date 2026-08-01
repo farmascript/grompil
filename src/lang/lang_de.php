@@ -1,5 +1,5 @@
 <?php
-// Automatisch gegenereerd op: 2026-08-01 12:43:29
+// Automatisch gegenereerd op: 2026-08-01 14:28:34
 $arrLang = [
     'title' => 'Willkommen auf unserer Plattform',
     'title_url' => 'gromPil saas',
@@ -27,8 +27,8 @@ $arrLang = [
     'more_info' => 'Mehr Informationen',
     'start' => 'Loslegen',
     'welcome' => 'Willkommen auf unserer Plattform',
-    'contact_email' => 'info@grompil.com',
     'img_work_in_progress_alt' => 'image Work In Progress!',
+    'contact_email' => 'info@grompil.com',
     'cookie_reset' => 'Cookie-Auswahl zurücksetzen',
     'missing_translation' => 'Fehlende Übersetzungen',
     'gromPilSaas_alt' => 'GrompilSaaS-Bild',
@@ -38,4 +38,5 @@ $arrLang = [
     'bt_scriptIntegrity' => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',
     'copyright' => '&copy; 1981-2026 - lm ',
     'gromPil_logo_alt' => 'Grompil logo',
+    'langChoice' => 'Sprache',
 ];

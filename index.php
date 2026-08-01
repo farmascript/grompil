@@ -5,7 +5,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Sat 2026-08-01 15:27:56
+ * @dateLastMod Sat 2026-08-01 16:20:43
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -54,28 +54,32 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 
 /* #region cd startSomeThings */
 
-define('DIR_ADMIN', 'src/admin');
+	define('DIR_ADMIN', 'src/admin');
 
 	require DIR_ADMIN . '/admin_config.php';
 	require DIR_ADMIN . '/admin_defines_0.php';
 	require DIR_ADMIN . '/admin_load_functions_classes_0.php';
 
-	$langCode = 'de';
+/* #endregion startSomeThings */
 
+/* #region cd doSomeLangBusiness */
+
+	require DIR::INCL->value . '/incl_language_catch.php';
 	$langFile = DIR::LANG->value . '/lang_' . $langCode . '.php';
-
+	
 	require $langFile;
-
+	
 	# fully qualified, trying to prevent cache problems
 	$arrLang['favicon_saas_ico']     = '/' . BASE_NAME . DIR::FAVICONS->value . '/saas.ico';
 	$arrLang['favicon_saas_png']     = '/' . BASE_NAME . DIR::FAVICONS->value . '/saas.png';
 	$arrLang['gromPil_logo']         = '/' . BASE_NAME . DIR::IMAGES->value . '/gromPilLogo.png';
 	$arrLang['gromPilSaas_img']      = '/' . BASE_NAME . DIR::IMAGES->value . '/gromPilSaas.png';
+	
 	$arrLang['img_work_in_progress'] = '/' . BASE_NAME . DIR::IMAGES->value . '/work_in_progress.jpg';
 	
 	Lang::load($arrLang);
-
-/* #endregion startSomeThings */
+	
+/* #endregion doSomeLangBusiness */
 
 # check cookies. Now you have the value of $cookiesConsentFooter, which is either empty or contains the HTML of the banner
 	require DIR_ADMIN . '/admin_cookies_consent.php';

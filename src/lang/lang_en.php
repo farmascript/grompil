@@ -1,14 +1,12 @@
 <?php
-// Automatisch gegenereerd op: 2026-08-01 12:43:29
+// Automatisch gegenereerd op: 2026-08-01 14:28:34
 $arrLang = [
     'img_work_in_progress_alt' => 'image Work In Progress!',
+    'contact_email' => 'info@grompil.com',
+    'langChoice' => 'language',
     'title' => 'Welcome to our platform',
     'title_url' => 'gromPil saas',
     'description' => 'Fast, secure, and fully built using modern Bootstrap techniques and a PHP backend architecture.',
-    'home' => 'Home',
-    'services' => 'Services',
-    'about_us' => 'About Us',
-    'contact' => 'Contact',
     'cookie_accept' => 'Accept',
     'cookie_all' => 'Accept All',
     'cookie_decline' => 'Decline',
@@ -28,7 +26,6 @@ $arrLang = [
     'more_info' => 'More information',
     'start' => 'Get started',
     'welcome' => 'Welcome to our platform',
-    'contact_email' => 'info@grompil.com',
     'cookie_reset' => 'Reset Cookie Choices',
     'missing_translation' => 'Missing translations',
     'gromPilSaas_alt' => 'GrompilSaaS image',
@@ -38,4 +35,8 @@ $arrLang = [
     'bt_scriptIntegrity' => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',
     'copyright' => '&copy; 1981-2026 - lm ',
     'gromPil_logo_alt' => 'Grompil logo',
+    'home' => 'home',
+    'services' => 'services',
+    'about_us' => 'about us',
+    'contact' => 'contact',
 ];
