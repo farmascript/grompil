@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sat 2026-08-01 22:10:10
+ * @dateLastMod Sat 2026-08-01 22:36:36
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -35,5 +35,5 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
-    die("PostgreSQL verbinding mislukt: " . $e->getMessage());
+    die("PostgreSQL verbinding mislukt op '$omgeving': " . $e->getMessage());
 }
