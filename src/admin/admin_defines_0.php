@@ -5,7 +5,7 @@
  * @file        admin_defines_0.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:22:05
- * @dateLastMod Sat 2026-08-01 15:24:18
+ * @dateLastMod Sat 2026-08-01 15:27:53
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -36,7 +36,7 @@ define('BR',   "<br />");
 define('NL',   "\n");
 
 # on the production server or not?
-LOCAL_HOST ? $baseName = 'grompil' : $baseName = '';
+LOCAL_HOST ? $baseName = 'grompil/' : $baseName = '';
 define ('BASE_NAME', $baseName);
 
 # Enum case value must be compile-time evaluable, so 'grm_' is hardcoded
