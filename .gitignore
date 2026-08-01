@@ -9,3 +9,7 @@
 
 # Composer dependencies (de externe pakketten)
 /vendor/
+/tmp/
+
+# files
+src/admin/admin_config.php

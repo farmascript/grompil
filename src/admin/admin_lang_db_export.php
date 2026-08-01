@@ -5,7 +5,7 @@
  * @file        admin_lang_db_export.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 12:43:16
- * @dateLastMod Sat 2026-08-01 13:45:30
+ * @dateLastMod Sat 2026-08-01 19:57:03
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -39,7 +39,7 @@ try {
  */
 function exportLanguageFiles($pdo, $langCode) {
     // Haal alle vertalingen op voor de gekozen taal
-    $stmt = $pdo->prepare("SELECT translation_key, translation_value FROM translations WHERE language_code = :lang OR language_code = 'all'");
+    $stmt = $pdo->prepare("SELECT translation_key, translation_value FROM translations WHERE language_code = :lang OR language_code = 'all' ORDER BY translation_key");
     $stmt->execute(['lang' => $langCode]);
     $translations = $stmt->fetchAll();
 
