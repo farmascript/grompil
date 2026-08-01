@@ -5,7 +5,7 @@
  * @file        admin_defines_0.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:22:05
- * @dateLastMod Fri 2026-07-31 21:42:34
+ * @dateLastMod Sat 2026-08-01 14:28:37
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -70,5 +70,6 @@ enum DIR: string {
 	case LANG       = 'src/lang';
 	case TMPL_BASIC = 'tmpl/basic';
 	case TEMP       = 'tmp';
+	case IMAGES     = 'media';
 
 }
