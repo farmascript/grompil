@@ -5,7 +5,7 @@
  * @file        admin_cookies_consetn.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 21:29:52
- * @dateLastMod Fri 2026-07-31 16:40:39
+ * @dateLastMod Sat 2026-08-01 21:05:43
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -76,11 +76,6 @@ $cookieConsentRaw = fn_cookies(strategy: 'get', name: 'cookieConsent');
 
 # Als er geen cookie is ingesteld, laden we de banner in het geheugen
 if (empty($cookieConsentRaw)) {
-
-    # Start output buffering om de HTML van de banner op te vangen in een variabele
-    # ob_start();
-    # require_once DIR::TMPL_BASIC->value . '/cookies_consent.html';
-    # $cookiesConsentFooter = ob_get_clean(); 
 
 	$cookiesConsentFooter = Lang::render(DIR::TMPL_BASIC->value . '/cookies_consent.html');
 

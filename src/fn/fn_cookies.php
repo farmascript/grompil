@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Fri 2026-07-31 18:04:43
+ * @dateLastMod Sat 2026-08-01 21:05:42
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -34,9 +34,6 @@ function fn_cookies(
     string $sameSite = 'Lax'  # Lax is de veilige browserstandaard
 ): bool|string {
 
-	# Binnen fn_cookies():
-	# $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
-	
 	$name = PREFIX_COOKIES . $name;
     
     # Als verloopdatum 0 is, zet een standaard van 1000 dagen (of laat 0 voor sessiecookie)
@@ -44,24 +41,14 @@ function fn_cookies(
         $expires = time() + (60 * 60 * 24 * 1000);
     }
 
-    # $arrOptions = [
-    #     'expires'  => 0,
-    #     'path'     => '/',
-    #     'domain'   => '',
-    #     'secure'   => true,
-    #     'httponly' => true,
-    #     'samesite' => 'Lax' # Geactiveerd voor CSRF-bescherming
-    # ];
-
     switch ($strategy) {
         case 'get':
             return $_COOKIE[$name] ?? ''; # Geeft lege string i.p.v. FALSE (voorkomt type-mismatches)
 
         case 'set':
 			if (headers_sent($file, $line)) {
-    		exit("Fout: Headers zijn al verzonden in bestand $file op regel $line. Cookies kunnen niet worden gezet!");
-}
-
+    			exit("Fout: Headers zijn al verzonden in bestand $file op regel $line. Cookies kunnen niet worden gezet!");
+			}
             return setcookie($name, $value, $arrOptions);
 
         case 'delete':
