@@ -5,7 +5,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Sat 2026-08-01 14:34:08
+ * @dateLastMod Sat 2026-08-01 15:22:44
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -67,11 +67,11 @@ define('DIR_ADMIN', 'src/admin');
 	require $langFile;
 
 	# fully qualified, trying to prevent cache problems
-	$arrLang['favicon_saas_ico'] = '/' . DFLT::BASE_NAME->value . '/' . DIR::FAVICONS->value . '/saas.ico';
-	$arrLang['favicon_saas_png'] = '/' . DFLT::BASE_NAME->value . '/' . DIR::FAVICONS->value . '/saas.png';
-	$arrLang['gromPil_logo'] = '/' . DFLT::BASE_NAME->value . '/' . DIR::IMAGES->value . '/gromPilLogo.png';
-	$arrLang['gromPilSaas_img'] = '/' . DFLT::BASE_NAME->value . '/' . DIR::IMAGES->value . '/gromPilSaas.png';
-	$arrLang['img_work_in_progress'] = '/' . DFLT::BASE_NAME->value . '/' . DIR::IMAGES->value . '/work_in_progress.jpg';
+	$arrLang['favicon_saas_ico'] = '/' . BASE_NAME . '/' . DIR::FAVICONS->value . '/saas.ico';
+	$arrLang['favicon_saas_png'] = '/' . BASE_NAME . '/' . DIR::FAVICONS->value . '/saas.png';
+	$arrLang['gromPil_logo'] = '/' . BASE_NAME . '/' . DIR::IMAGES->value . '/gromPilLogo.png';
+	$arrLang['gromPilSaas_img'] = '/' . BASE_NAME . '/' . DIR::IMAGES->value . '/gromPilSaas.png';
+	$arrLang['img_work_in_progress'] = '/' . BASE_NAME . '/' . DIR::IMAGES->value . '/work_in_progress.jpg';
 	
 	Lang::load($arrLang);
 

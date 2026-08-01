@@ -5,7 +5,7 @@
  * @file        admin_defines_0.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:22:05
- * @dateLastMod Sat 2026-08-01 14:28:37
+ * @dateLastMod Sat 2026-08-01 15:24:18
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -35,6 +35,10 @@ define('BRNL', "<br />\n");
 define('BR',   "<br />");
 define('NL',   "\n");
 
+# on the production server or not?
+LOCAL_HOST ? $baseName = 'grompil' : $baseName = '';
+define ('BASE_NAME', $baseName);
+
 # Enum case value must be compile-time evaluable, so 'grm_' is hardcoded
 enum TABLE_NAME: string {
 
@@ -46,7 +50,6 @@ enum TABLE_NAME: string {
 # DEFAULT is keyword, so DFLT
 enum DFLT: string {
 
-	case BASE_NAME       = 'grompil';
 	case COMPANY_DEFAULT = 'basic';
 	case COMPANY_START   = 'start';
 
