@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 12:10:57
+ * @dateLastMod Sun 2026-08-02 12:11:52
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -54,6 +54,8 @@ $query = "SELECT table_name
           WHERE table_schema = 'public' 
             AND table_type = 'BASE TABLE'
           ORDER BY table_name;";
+
+print "now on 735663";
 
 // 2. Execute the query using your $link connection
 $result = pg_query($link, $query);
