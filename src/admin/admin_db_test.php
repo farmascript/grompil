@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 12:16:06
+ * @dateLastMod Sun 2026-08-02 13:02:49
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,79 +13,36 @@
  *
 **/
 
-$host     = "localhost";
-$port     = "5432";
-$username = "grompil_1_lm";
-$password = "Retie?110!274";
-$db       = "grompil_1_grompil";
+if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
-
-// 1. Build the connection string from form inputs
-$string = "host='$host'" . "port='$port'" . " user='" . $username . "' password='" . $password . "'";
-# $string = "host=$host" .  " port=$port"  . " user=" . $username . " password=" . $password;
-
-if (isset($ssl["mode"])) {
-    $string .= " sslmode='" . $ssl["mode"] . "'";
-}
-
-// 2. Open the connection using the PGSQL_CONNECT_FORCE_NEW flag
-$link = @pg_connect("$string dbname='" . $db . "'", PGSQL_CONNECT_FORCE_NEW);
-
-print "$string dbname=$db" . "<br>";
-
-// 3. Fallback to default 'postgres' database if the target database fails performance checks
-if (!$link && $db != "") {
-    $link = @pg_connect("$string dbname='postgres'", PGSQL_CONNECT_FORCE_NEW);
-}
-
-// 4. Set the client encoding
-if ($link) {
-    pg_set_client_encoding($link, "UTF8");
-}
-
-# print "end1";
-# exit;
-
-var_dump($link);
-
-// 1. Define the SQL query to get public tables
-$query = "SELECT table_name 
-          FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-            AND table_type = 'BASE TABLE'
-          ORDER BY table_name;";
-
-print "now on 735663";
+var_dump($myPDO);
 
 try {
-	$result = pg_query($link, $query);
-} catch (\Throwable $th) {
-	throw $th;
-}	
 
-print "now on 845888";
+// 2. Define the SQL query
+    $query = "SELECT table_name 
+              FROM information_schema.tables 
+              WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
+              ORDER BY table_name;";
 
-// 2. Execute the query using your $link connection
-$result = pg_query($link, $query);
-
-exit;
-
-// 3. Check for errors and loop through the results
-if ($result) {
+    // 3. Execute the query using PDO
+    $stmt = $myPDO->query($query);
+    
+    // 4. Fetch and display the results
     echo "<h3>Tables in Database:</h3>";
     echo "<ul>";
-    
-    while ($row = pg_fetch_assoc($result)) {
+    while ($row = $stmt->fetch()) {
         echo "<li>" . htmlspecialchars($row['table_name']) . "</li>";
     }
-    
     echo "</ul>";
-    
-    // 4. Free the result memory
-    pg_free_result($result);
-} else {
-    echo "Error executing query: " . pg_last_error($link);
-}
 
+} catch (\PDOException $e) {
+    // This will now capture connection errors and query errors
+    echo "Database Error: " . $e->getMessage();
+} catch (\Throwable $th) {
+    // This captures any other unexpected PHP errors
+    echo "General Error: " . $th->getMessage();
+}
 
 print "end3";

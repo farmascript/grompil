@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sun 2026-08-02 11:23:33
+ * @dateLastMod Sun 2026-08-02 12:55:19
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -41,3 +41,5 @@ try {
 } catch (\PDOException $e) {
     die("PostgreSQL verbinding mislukt op '$omgeving', using host: '$hostName', db: '$dbName', user: '$userName' " . $e->getMessage());
 }
+
+require DIR_ADMIN . '/admin_db_test.php';
