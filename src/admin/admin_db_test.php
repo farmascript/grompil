@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 11:46:01
+ * @dateLastMod Sun 2026-08-02 11:46:55
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -41,8 +41,6 @@ if ($link) {
 }
 
 print "end";
-
-
 exit;
 
 // 1. Define the SQL query to get public tables
