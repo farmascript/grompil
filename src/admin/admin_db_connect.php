@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sat 2026-08-01 22:36:36
+ * @dateLastMod Sun 2026-08-02 10:22:59
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -18,14 +18,17 @@ if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_al
 # require_once  DIR_ADMIN . 'admin_config.php';
 
 // Verbinding maken met de PostgreSQL database
-$host    = $config['hostname'];
-$port    = $config['port'];
-$db      = $config['dbname'];
-$user    = $config['username'];
-$pass    = $config['password'];
+$host     = $config['hostname'];
+$port     = $config['port'];
+$dbName   = $config['dbname'];
+$userName = $config['username'];
+$pass     = $config['password'];
 
 // Aangepaste DSN string voor PostgreSQL
-$dsn = "pgsql:host=$host;port=$port;dbname=$db";
+# $dsn = "pgsql:host=$host;port=$port;dbname=$dbName";
+# $db_connection = pg_connect("host=localhost dbname=$dbName user=$userName password=$pass");
+
+
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -33,7 +36,9 @@ $options = [
 ];
 
 try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
+    # $pdo = new PDO($db_connection, $userName, $pass, $options);
+	$myPDO = new PDO('pgsql:host=localhost;dbname=' . $dbName, $userName, $pass);
+
 } catch (\PDOException $e) {
     die("PostgreSQL verbinding mislukt op '$omgeving': " . $e->getMessage());
 }
