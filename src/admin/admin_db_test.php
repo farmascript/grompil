@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 11:47:58
+ * @dateLastMod Sun 2026-08-02 11:51:09
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -40,7 +40,7 @@ if ($link) {
     pg_set_client_encoding($link, "UTF8");
 }
 
-# print "end";
+# print "end1";
 # exit;
 
 // 1. Define the SQL query to get public tables
@@ -52,6 +52,9 @@ $query = "SELECT table_name
 
 // 2. Execute the query using your $link connection
 $result = pg_query($link, $query);
+
+exit;
+print "end2";
 
 // 3. Check for errors and loop through the results
 if ($result) {
@@ -70,4 +73,4 @@ if ($result) {
     echo "Error executing query: " . pg_last_error($link);
 }
 
-print "end";
+print "end3";
