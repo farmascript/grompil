@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 11:42:06
+ * @dateLastMod Sun 2026-08-02 11:44:10
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -17,6 +17,7 @@ $host = "localhost";
 $port = "5432";
 $username = "grompil_1_lm";
 $password = "Retie?110!274";
+$db = "grompil_1_grompil";
 
 
 // 1. Build the connection string from form inputs
