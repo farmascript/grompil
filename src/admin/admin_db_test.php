@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 12:13:19
+ * @dateLastMod Sun 2026-08-02 12:14:13
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -64,6 +64,8 @@ if( $result = pg_query($link, $query) ) {
 	echo "Error executing query: " . pg_last_error($link);
 	exit;
 }
+
+exit;
 
 // 3. Check for errors and loop through the results
 if ($result) {
