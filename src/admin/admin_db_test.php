@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 11:44:10
+ * @dateLastMod Sun 2026-08-02 11:46:01
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -39,6 +39,11 @@ if (!$link && $db != "") {
 if ($link) {
     pg_set_client_encoding($link, "UTF8");
 }
+
+print "end";
+
+
+exit;
 
 // 1. Define the SQL query to get public tables
 $query = "SELECT table_name 
