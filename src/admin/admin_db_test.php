@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 11:52:02
+ * @dateLastMod Sun 2026-08-02 11:55:01
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,11 +13,11 @@
  *
 **/
 
-$host = "localhost";
-$port = "5432";
+$host     = "localhost";
+$port     = "5432";
 $username = "grompil_1_lm";
 $password = "Retie?110!274";
-$db = "grompil_1_grompil";
+$db       = "grompil_1_grompil";
 
 
 // 1. Build the connection string from form inputs
@@ -29,6 +29,8 @@ if (isset($ssl["mode"])) {
 
 // 2. Open the connection using the PGSQL_CONNECT_FORCE_NEW flag
 $link = @pg_connect("$string dbname='" . ($db != "" ? addcslashes($db, "'\\") : "postgres") . "'", PGSQL_CONNECT_FORCE_NEW);
+
+print "$string dbname='" . ($db != "" ? addcslashes($db, "'\\") : "postgres") . "'<br>";
 
 // 3. Fallback to default 'postgres' database if the target database fails performance checks
 if (!$link && $db != "") {
