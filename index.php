@@ -5,7 +5,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Sun 2026-08-02 12:49:29
+ * @dateLastMod Sun 2026-08-02 12:51:01
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -59,7 +59,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 	require DIR_ADMIN . '/admin_config.php';
 	require DIR_ADMIN . '/admin_defines_0.php';
 	require DIR_ADMIN . '/admin_load_functions_classes_0.php';
-	# require DIR_ADMIN . '/admin_db_connect.php';
+	require DIR_ADMIN . '/admin_db_connect.php';
 	
 /* #endregion startSomeThings */
 
