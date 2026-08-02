@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 14:46:31
+ * @dateLastMod Sun 2026-08-02 15:07:07
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -23,8 +23,8 @@ try {
 // 2. Define the SQL query
     $query = "SELECT table_name 
               FROM information_schema.tables 
-              WHERE table_schema = 'public' 
-                AND table_type = 'BASE TABLE'
+              WHERE table_schema = 'public'
+              AND   table_type   = 'BASE TABLE'
               ORDER BY table_name;";
 
     // 3. Execute the query using PDO

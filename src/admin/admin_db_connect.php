@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sun 2026-08-02 15:04:49
+ * @dateLastMod Sun 2026-08-02 15:07:20
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -42,4 +42,4 @@ try {
     die("<pre>596881 - PostgreSQL verbinding mislukt op '$omgeving', using host: '$hostName', db: '$dbName', user: '$userName' " . NLBR . $e->getMessage() . "</pre>");
 }
 
-require DIR_ADMIN . '/admin_db_test.php';
+# require DIR_ADMIN . '/admin_db_test.php';
