@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 12:00:22
+ * @dateLastMod Sun 2026-08-02 12:05:53
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -21,8 +21,8 @@ $db       = "grompil_1_grompil";
 
 
 // 1. Build the connection string from form inputs
-$string = "host='$host'" . ($port ? " port='$port'" : "") . " user='" . addcslashes($username, "'\\") . "' password='" . addcslashes($password, "'\\") . "'";
-$string = "host=$host" . ($port ? " port=$port" : "") . " user=" . $username . " password=" . $password;
+$string = "host='$host'" . "port='$port'" . " user='" . $username . "' password='" . $password . "'";
+$string = "host=$host" .  " port=$port"  . " user=" . $username . " password=" . $password;
 
 if (isset($ssl["mode"])) {
     $string .= " sslmode='" . $ssl["mode"] . "'";
@@ -31,7 +31,7 @@ if (isset($ssl["mode"])) {
 // 2. Open the connection using the PGSQL_CONNECT_FORCE_NEW flag
 $link = @pg_connect("$string dbname='" . $db . "'", PGSQL_CONNECT_FORCE_NEW);
 
-print "$string dbname='" . ($db != "" ? addcslashes($db, "'\\") : "postgres") . "'<br>";
+print "$string dbname=$db" . "<br>";
 
 // 3. Fallback to default 'postgres' database if the target database fails performance checks
 if (!$link && $db != "") {
@@ -58,9 +58,6 @@ $query = "SELECT table_name
 // 2. Execute the query using your $link connection
 $result = pg_query($link, $query);
 
-exit;
-print "end2";
-
 // 3. Check for errors and loop through the results
 if ($result) {
     echo "<h3>Tables in Database:</h3>";
@@ -77,5 +74,6 @@ if ($result) {
 } else {
     echo "Error executing query: " . pg_last_error($link);
 }
+
 
 print "end3";
