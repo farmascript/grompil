@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 12:10:24
+ * @dateLastMod Sun 2026-08-02 12:10:57
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -58,7 +58,7 @@ $query = "SELECT table_name
 // 2. Execute the query using your $link connection
 $result = pg_query($link, $query);
 
-print "now on 216473"
+print "now on 216473";
 
 // 3. Check for errors and loop through the results
 if ($result) {
