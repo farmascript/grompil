@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 11:37:12
+ * @dateLastMod Sun 2026-08-02 11:42:06
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -37,4 +37,31 @@ if (!$link && $db != "") {
 // 4. Set the client encoding
 if ($link) {
     pg_set_client_encoding($link, "UTF8");
+}
+
+// 1. Define the SQL query to get public tables
+$query = "SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+          ORDER BY table_name;";
+
+// 2. Execute the query using your $link connection
+$result = pg_query($link, $query);
+
+// 3. Check for errors and loop through the results
+if ($result) {
+    echo "<h3>Tables in Database:</h3>";
+    echo "<ul>";
+    
+    while ($row = pg_fetch_assoc($result)) {
+        echo "<li>" . htmlspecialchars($row['table_name']) . "</li>";
+    }
+    
+    echo "</ul>";
+    
+    // 4. Free the result memory
+    pg_free_result($result);
+} else {
+    echo "Error executing query: " . pg_last_error($link);
 }
