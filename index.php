@@ -5,7 +5,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Sun 2026-08-02 12:51:01
+ * @dateLastMod Sun 2026-08-02 14:40:24
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -23,6 +23,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 		default     => define("LOCAL_HOST", FALSE),
 	};
 	define("DIR_ROOT", LOCAL_HOST ? '' : "/public_html");
+	
 
 # use in other modules to prevent direct execution of a module that has to be included
 	define('BASIC_INDEX_SEEN', TRUE);
@@ -55,7 +56,10 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 /* #region cd startSomeThings */
 
 	define('DIR_ADMIN', 'src/admin');
-
+	
+	# sorry, hardcoded
+	require 'src/incl/incl_establish_environment.php';
+	
 	require DIR_ADMIN . '/admin_config.php';
 	require DIR_ADMIN . '/admin_defines_0.php';
 	require DIR_ADMIN . '/admin_load_functions_classes_0.php';

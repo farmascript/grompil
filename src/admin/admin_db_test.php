@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 13:07:56
+ * @dateLastMod Sun 2026-08-02 14:46:31
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -15,7 +15,8 @@
 
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
-print "<pre>659007"; var_dump($myPDO); print "</pre>";
+print "\n<pre>659007\n"; 
+print "var_dump myPDO :"; var_dump($myPDO); print "\n</pre>\n";
 
 try {
 
