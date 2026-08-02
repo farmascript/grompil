@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sun 2026-08-02 10:22:59
+ * @dateLastMod Sun 2026-08-02 10:26:04
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -37,7 +37,7 @@ $options = [
 
 try {
     # $pdo = new PDO($db_connection, $userName, $pass, $options);
-	$myPDO = new PDO('pgsql:host=localhost;dbname=' . $dbName, $userName, $pass);
+	$myPDO = new PDO('pgsql:host=localhost;dbname=' . $dbName, $userName, $pass, $options);
 
 } catch (\PDOException $e) {
     die("PostgreSQL verbinding mislukt op '$omgeving': " . $e->getMessage());
