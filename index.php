@@ -5,7 +5,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Sun 2026-08-02 12:43:35
+ * @dateLastMod Sun 2026-08-02 12:49:29
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -76,7 +76,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 	$arrLang['gromPil_logo']         = '/' . BASE_NAME . DIR::IMAGES->value . '/gromPilLogo.png';
 	$arrLang['gromPilSaas_img']      = '/' . BASE_NAME . DIR::IMAGES->value . '/gromPilSaas.png';
 	
-	$arrLang['img_work_in_progress'] = '/' . BASE_NAME . DIR::IMAGES->value . '/work_in_progress.jpg';
+	$arrLang['img_work_in_progress'] = '/' . BASE_NAME . DIR::IMAGES->value . '/work_in_progress1.jpg';
 	$arrLang['version'] = '0.1';
 	$arrLang['phpVersion'] = PHP_VERSION;
 	
