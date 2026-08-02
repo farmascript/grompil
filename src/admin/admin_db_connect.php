@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sun 2026-08-02 13:09:45
+ * @dateLastMod Sun 2026-08-02 15:04:49
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -18,7 +18,7 @@ if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_al
 # require_once  DIR_ADMIN . 'admin_config.php';
 
 // Verbinding maken met de PostgreSQL database
-$hostName     = $config['hostname'];
+$hostName = $config['hostname'];
 $port     = $config['port'];
 $dbName   = $config['dbname'];
 $userName = $config['username'];

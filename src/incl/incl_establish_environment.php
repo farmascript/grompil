@@ -5,7 +5,7 @@
  * @file        incl_establish_environment.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 14:19:21
- * @dateLastMod Sun 2026-08-02 14:42:49
+ * @dateLastMod Sun 2026-08-02 14:49:19
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -39,7 +39,7 @@ if( !defined('LOCAL_HOST') ) {
     };
 }
 
-	print '<pre><b>#868138</b>\n';
+	print "<pre><b>#868138</b>\n";
 	print "remote_adress: " . $_SERVER['REMOTE_ADDR'] . "\n";
 	print "local_host: " . (LOCAL_HOST ? 'TRUE' : 'FALSE') . "\n";
-	print '</pre>';
+	print "</pre>";
