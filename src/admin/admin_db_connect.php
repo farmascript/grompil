@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sun 2026-08-02 11:13:18
+ * @dateLastMod Sun 2026-08-02 11:20:02
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -18,7 +18,7 @@ if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_al
 # require_once  DIR_ADMIN . 'admin_config.php';
 
 // Verbinding maken met de PostgreSQL database
-$host     = $config['hostname'];
+$hostName     = $config['hostname'];
 $port     = $config['port'];
 $dbName   = $config['dbname'];
 $userName = $config['username'];
@@ -36,8 +36,8 @@ $options = [
 ];
 
 try {
-	$myPDO = new PDO('pgsql:host=localhost;dbname=' . $dbName, $userName, $pass, $options);
+	$myPDO = new PDO('pgsql:host=' . $hostName . ';dbname=' . $dbName, $userName, $pass, $options);
 
 } catch (\PDOException $e) {
-    die("PostgreSQL verbinding mislukt op '$omgeving': " . $e->getMessage());
+    die("PostgreSQL verbinding mislukt op '$omgeving', using host: '$hostName' " . $e->getMessage());
 }
