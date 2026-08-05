@@ -2,10 +2,10 @@
 
 /**
  *
- * @file        index.php
+ * @file        admin_load_stuff.php
  * @author      lm
- * @dateCreated Sat 2026-08-01 16:05:35
- * @dateLastMod Wed 2026-08-05 15:42:51
+ * @dateCreated Thu 2026-07-30 19:35:04
+ * @dateLastMod Wed 2026-08-05 12:54:49
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,6 +13,6 @@
  *
 **/
 
-
-declare(strict_types=1);
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
+
+

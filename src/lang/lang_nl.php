@@ -1,5 +1,5 @@
 <?php
-// Automatisch gegenereerd op: 2026-08-01 19:41:03
+// Automatisch gegenereerd op: 2026-08-05 13:59:34
 $arrLang = [
     'about_us' => 'over ons',
     'bootstrap' => 'Snel, veilig en volledig gebouwd met de modernste technieken van Bootstrap en PHP backend-architectuur.',

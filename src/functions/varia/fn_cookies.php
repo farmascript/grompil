@@ -5,7 +5,7 @@
  * @file        fn_cookies.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 19:40:31
- * @dateLastMod Sat 2026-08-01 21:05:42
+ * @dateLastMod Wed 2026-08-05 17:09:28
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,6 +13,8 @@
  *
 **/
 
+
+declare(strict_types=1);
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
 /* #region fn_cookies */
@@ -20,6 +22,8 @@ if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_al
 # Note that the value portion of the cookie will automatically be urlencoded when you send the cookie,
 # and when it is received, it is automatically decoded and assigned to a variable by the same name as the cookie name.
 # If you don't want this, you can use setrawcookie() instead.
+
+# $_COOKIE is a superglobal associative array in PHP that contains all the cookies sent by the client (browser) to the server. Each cookie is represented as a key-value pair, where the key is the name of the cookie and the value is its corresponding value.
 
 function fn_cookies(
     string $strategy,
@@ -36,29 +40,29 @@ function fn_cookies(
 
 	$name = PREFIX_COOKIES . $name;
     
-    # Als verloopdatum 0 is, zet een standaard van 1000 dagen (of laat 0 voor sessiecookie)
+    # if expires is 0 and strategy is 'set', set expires to 1000 days from now
     if ($expires === 0 && $strategy === 'set') {
         $expires = time() + (60 * 60 * 24 * 1000);
     }
 
     switch ($strategy) {
         case 'get':
-            return $_COOKIE[$name] ?? ''; # Geeft lege string i.p.v. FALSE (voorkomt type-mismatches)
+            return $_COOKIE[$name] ?? ''; # gives empty string instead of FALSE (prevents type mismatches)
 
         case 'set':
 			if (headers_sent($file, $line)) {
-    			exit("Fout: Headers zijn al verzonden in bestand $file op regel $line. Cookies kunnen niet worden gezet!");
+    			exit("Error: headers already sent in file $file on line $line. Cookies cannot be set!");
 			}
-            return setcookie($name, $value, $arrOptions);
+            return setcookie($name, $value);
 
         case 'delete':
-            # Hardcode de leegmaak-parameters voor betrouwbare verwijdering
+            # Hardcode the expiration time to a past time to delete the cookie
             $arrOptions['expires'] = time() - 3600;
-            return setcookie($name, '', $arrOptions);
+            return setcookie($name, '');
 
         default:
             $id = '670935'; 
-            $msg = "Strategy '$strategy' is niet beschikbaar. Gebruik get, set of delete. $trace" . NL;
+            $msg = "Strategy '$strategy' is not available. Use get, set or delete. $trace" . NL;
             if (function_exists('fn_debug')) {
                 print fn_debug(id: $id, msg: $msg, class: 'fatal', ln: __LINE__, fi: __FILE__);
             }

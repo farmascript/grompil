@@ -5,7 +5,7 @@
  * @file        admin_db_test.php
  * @author      lm
  * @dateCreated Sun 2026-08-02 11:35:36
- * @dateLastMod Sun 2026-08-02 15:07:07
+ * @dateLastMod Wed 2026-08-05 15:42:51
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,6 +13,8 @@
  *
 **/
 
+
+declare(strict_types=1);
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
 print "\n<pre>659007\n"; 

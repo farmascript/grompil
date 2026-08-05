@@ -5,7 +5,7 @@
  * @file        admin_db_connect.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 21:19:58
- * @dateLastMod Sun 2026-08-02 15:07:20
+ * @dateLastMod Wed 2026-08-05 15:42:51
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,6 +13,8 @@
  *
 **/
 
+
+declare(strict_types=1);
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 
 # require_once  DIR_ADMIN . 'admin_config.php';
@@ -39,7 +41,7 @@ try {
 	$myPDO = new PDO('pgsql:host=' . $hostName . ';dbname=' . $dbName, $userName, $pass, $options);
 
 } catch (\PDOException $e) {
-    die("<pre>596881 - PostgreSQL verbinding mislukt op '$omgeving', using host: '$hostName', db: '$dbName', user: '$userName' " . NLBR . $e->getMessage() . "</pre>");
+    die("<pre>596881 - PostgreSQL connection failed for '$omgeving', using host: '$hostName', db: '$dbName', user: '$userName' " . NLBR . $e->getMessage() . "</pre>");
 }
 
 # require DIR_ADMIN . '/admin_db_test.php';

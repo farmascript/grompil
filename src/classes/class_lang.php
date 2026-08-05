@@ -5,7 +5,7 @@
  * @file        class_lang.php
  * @author      lm
  * @dateCreated Fri 2026-07-31 12:10:57
- * @dateLastMod Fri 2026-07-31 16:09:17
+ * @dateLastMod Wed 2026-08-05 15:42:51
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,6 +13,8 @@
  *
 **/
 
+
+declare(strict_types=1);
 if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_allowed.php'; }
 class Lang
 {
@@ -39,7 +41,7 @@ class Lang
     {
         $html = file_get_contents($file);
 
-        // Zoek alle @woorden@
+        // search for all @words@
         preg_match_all('/@([a-zA-Z0-9_]+)@/', $html, $matches);
 
         $missing = [];

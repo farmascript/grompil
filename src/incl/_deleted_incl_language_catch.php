@@ -5,7 +5,7 @@
  * @file        incl_language_catch.php
  * @author      lm
  * @dateCreated Sat 2026-08-01 16:06:03
- * @dateLastMod Sat 2026-08-01 21:17:30
+ * @dateLastMod Wed 2026-08-05 11:51:03
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -19,7 +19,7 @@ $allowed_languages = ['nl', 'fr', 'en', 'de'];
 $default_language = 'nl';
 $cookieSiteLang = $config['prefixCookies'] . 'site_lang';
 
-// 1. Bepaal de taal (URL heeft voorrang, daarna cookie, anders standaard)
+// 1. establish the language (URL has priority, then cookie, otherwise default)
 if (isset($_GET['lang']) && in_array(strtolower($_GET['lang']), $allowed_languages, true)) {
 
     $langCode = strtolower($_GET['lang']);
@@ -34,7 +34,7 @@ if (isset($_GET['lang']) && in_array(strtolower($_GET['lang']), $allowed_languag
 	
 }
 
-// 2. Sla de taal op in een cookie voor 30 dagen als deze gewijzigd of nieuw is
+// 2. Store the language in a cookie for 30 days if it has been changed or is new
 if (!isset($_COOKIE[$cookieSiteLang]) || $_COOKIE[$cookieSiteLang] !== $langCode) {
     setcookie($cookieSiteLang, $langCode, [
         'expires' => time() + (86400 * 30), // 30 dagen geldig
@@ -45,4 +45,4 @@ if (!isset($_COOKIE[$cookieSiteLang]) || $_COOKIE[$cookieSiteLang] !== $langCode
     ]);
 }
 
-// $langCode is nu overal veilig te gebruiken
+// $langCode is now safe to use everywhere

@@ -1,11 +1,14 @@
 <?
-ob_start(); # Buffert eventuele perongelukke spaties of vroege output
+declare(strict_types=1);
+
+# ob_start(); # Buffert eventuele perongelukke spaties of vroege output
+
 /**
  *
  * @file        index.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 17:37:35
- * @dateLastMod Sun 2026-08-02 14:40:24
+ * @dateLastMod Wed 2026-08-05 14:51:28
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -13,7 +16,7 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
  *
 **/
 
-/* #region cd basics */
+/* #region basics */
 
 # check if we are on the server or on localhost
 	$serverRA = $_SERVER['REMOTE_ADDR'];
@@ -23,6 +26,11 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 		default     => define("LOCAL_HOST", FALSE),
 	};
 	define("DIR_ROOT", LOCAL_HOST ? '' : "/public_html");
+	
+	# on the production server or not?
+	LOCAL_HOST ? $baseName = 'grompil' : $baseName = '';
+	define('BASENAME', $baseName);
+
 	
 
 # use in other modules to prevent direct execution of a module that has to be included
@@ -53,56 +61,74 @@ ob_start(); # Buffert eventuele perongelukke spaties of vroege output
 /* #endregion basics */
 
 
-/* #region cd startSomeThings */
+/* #region startSomeThings */
 
-	define('DIR_ADMIN', 'src/admin');
+require 'config/config.php';
+
+# read all of the function_exists functions from the src/functions directory
+	$iterator = new RecursiveIteratorIterator(
+	    new RecursiveDirectoryIterator('src/functions')
+	);
 	
-	# sorry, hardcoded
-	require 'src/incl/incl_establish_environment.php';
+	foreach ($iterator as $file) {
 	
-	require DIR_ADMIN . '/admin_config.php';
-	require DIR_ADMIN . '/admin_defines_0.php';
-	require DIR_ADMIN . '/admin_load_functions_classes_0.php';
-	require DIR_ADMIN . '/admin_db_connect.php';
+	    if (!$file->isFile()) {
+	        continue;
+	    }
 	
+	    $filename = strtolower($file->getFilename());
+	
+	    if (
+	        str_starts_with($filename, 'fn_') &&
+	        str_ends_with($filename, '.php')
+	    ) {
+	        require_once $file->getPathname();
+	    }
+	}
+
+	$pdo = fn_connect_db($config);
+
+# read all of the define functions from the src/defines directory
+	foreach (glob(__DIR__ . '/config/define_*.php') as $file) {
+	    require_once $file;
+	}
+
 /* #endregion startSomeThings */
 
-/* #region cd doSomeLangBusiness */
+/* #region doSomeLangBusiness */
 
-	require DIR::INCL->value . '/incl_language_catch.php';
-	$langFile = DIR::LANG->value . '/lang_' . $langCode . '.php';
-	
+	$langCode = fn_establish_language($config);
+	$langFile = DIR_LANG . '/lang_' . $langCode . '.php';
 	require $langFile;
 	
 	# fully qualified, trying to prevent cache problems
-	$arrLang['favicon_saas_ico']     = '/' . BASE_NAME . DIR::FAVICONS->value . '/saas.ico';
-	$arrLang['favicon_saas_png']     = '/' . BASE_NAME . DIR::FAVICONS->value . '/saas.png';
-	$arrLang['gromPil_logo']         = '/' . BASE_NAME . DIR::IMAGES->value . '/gromPilLogo.png';
-	$arrLang['gromPilSaas_img']      = '/' . BASE_NAME . DIR::IMAGES->value . '/gromPilSaas.png';
+	$arrLang['favicon_saas_ico']     = DIR_FAVICONS . '/saas.ico';
+	$arrLang['favicon_saas_png']     = DIR_FAVICONS . '/saas.png';
+	$arrLang['gromPil_logo']         = DIR_IMAGES . '/gromPilLogo.png';
+	$arrLang['gromPilSaas_img']      = DIR_IMAGES . '/gromPilSaas.png';
 	
-	$arrLang['img_work_in_progress'] = '/' . BASE_NAME . DIR::IMAGES->value . '/work_in_progress1.jpg';
+	$arrLang['img_work_in_progress'] = DIR_IMAGES . '/work_in_progress1.png';
 	$arrLang['version'] = '0.1';
 	$arrLang['phpVersion'] = PHP_VERSION;
 	
-	Lang::load($arrLang);
-	
 /* #endregion doSomeLangBusiness */
 
+
 # check cookies. Now you have the value of $cookiesConsentFooter, which is either empty or contains the HTML of the banner
-	require DIR_ADMIN . '/admin_cookies_consent.php';
+require DIR_ADMIN . '/admin_cookies_consent.php';
 
 $arrRender = [
-	'header' => DIR::TMPL_BASIC->value . '/header.html',
-	'body'   => DIR::TMPL_BASIC->value . '/body.html',
-	'footer' => DIR::TMPL_BASIC->value . '/footer.html',
+	'header' => DIR_TMPL_DEFAULT . '/header.html',
+	'body'   => DIR_TMPL_DEFAULT . '/body.html',
+	'footer' => DIR_TMPL_DEFAULT . '/footer.html',
 ];
 
 $missing = [];
 $html    = '';
 
 foreach ($arrRender as $key => $file) {
-	$html .= Lang::render($file);
-	$missing = array_merge($missing, Lang::check($file));
+	$html .= fn_renderTemplate($file, $arrLang);
+	$missing = array_merge($missing, fn_checkTemplate($file, $arrLang));
 }
 
 
