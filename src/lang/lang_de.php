@@ -1,8 +1,9 @@
 <?php
-// Automatisch gegenereerd op: 2026-08-05 13:59:34
-$arrLang = [
+// Automatisch gegenereerd op: 2026-08-05 19:14:50
+$arrSubst = [
     'about_us' => 'Über uns',
     'bootstrap' => 'Schnell, sicher und vollständig aufgebaut mit modernsten Bootstrap-Techniken und einer PHP-Backend-Architektur.',
+    'bt_link_javascript_toast' => '<script src="js/toast.js"></script>',
     'bt_link_script' => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js',
     'bt_link_stylesheet' => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
     'bt_scriptIntegrity' => 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI',

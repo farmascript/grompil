@@ -5,7 +5,7 @@
  * @file        admin_cookies_consent.php
  * @author      lm
  * @dateCreated Thu 2026-07-30 21:29:52
- * @dateLastMod Wed 2026-08-05 16:56:48
+ * @dateLastMod Wed 2026-08-05 20:12:40
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -79,7 +79,7 @@ $cookieConsentRaw = fn_cookies(strategy: 'get', name: 'cookieConsent');
 # Als er geen cookie is ingesteld, laden we de banner in het geheugen
 if (empty($cookieConsentRaw)) {
 
-	$cookiesConsentFooter = fn_renderTemplate(DIR_TMPL_DEFAULT . '/cookies_consent.html', $arrLang);
+	$cookiesConsentFooter = fn_renderTemplate(DIR_TMPL_DEFAULT . '/cookies_consent.html', $arrSubst);
 
 } else {
     # Optioneel: De actieve instellingen zijn nu direct bruikbaar in de rest van uw app

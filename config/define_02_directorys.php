@@ -5,7 +5,7 @@
  * @file        define_directorys.php
  * @author      lm
  * @dateCreated Wed 2026-08-05 12:17:41
- * @dateLastMod Wed 2026-08-05 16:46:55
+ * @dateLastMod Wed 2026-08-05 21:00:45
  *
  * @copyright   Copyright 1981-present - Lieven Maus <info@grompil.com>
  *
@@ -25,5 +25,6 @@ if (!defined('BASIC_INDEX_SEEN')) {	require $_SERVER['DOCUMENT_ROOT'] . '/not_al
 	define('DIR_INCL',        'src/incl');
 	define('DIR_LANG',        'src/lang');
 	define('DIR_TEMP',        'tmp');
-	define('DIR_TMPL_DEFAULT',  'tmpl/default');
+	define('DIR_TMPL_DEFAULT','tmpl/default');
+	define('DIR_JS',          'js');
 

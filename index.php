@@ -102,14 +102,14 @@ require 'config/config.php';
 	require $langFile;
 	
 	# fully qualified, trying to prevent cache problems
-	$arrLang['favicon_saas_ico']     = DIR_FAVICONS . '/saas.ico';
-	$arrLang['favicon_saas_png']     = DIR_FAVICONS . '/saas.png';
-	$arrLang['gromPil_logo']         = DIR_IMAGES . '/gromPilLogo.png';
-	$arrLang['gromPilSaas_img']      = DIR_IMAGES . '/gromPilSaas.png';
+	$arrSubst['favicon_saas_ico']     = DIR_FAVICONS . '/saas.ico';
+	$arrSubst['favicon_saas_png']     = DIR_FAVICONS . '/saas.png';
+	$arrSubst['gromPil_logo']         = DIR_IMAGES . '/gromPilLogo.png';
+	$arrSubst['gromPilSaas_img']      = DIR_IMAGES . '/gromPilSaas.png';
 	
-	$arrLang['img_work_in_progress'] = DIR_IMAGES . '/work_in_progress1.png';
-	$arrLang['version'] = '0.1';
-	$arrLang['phpVersion'] = PHP_VERSION;
+	$arrSubst['img_work_in_progress'] = DIR_IMAGES . '/work_in_progress1.png';
+	$arrSubst['version'] = '0.1';
+	$arrSubst['phpVersion'] = PHP_VERSION;
 	
 /* #endregion doSomeLangBusiness */
 
@@ -126,15 +126,22 @@ $arrRender = [
 $missing = [];
 $html    = '';
 
+$popUp = fn_createPopupInfo("hallo", $arrSubst);
+$arrSubst['popupInfo'] = $popUp;
+
 foreach ($arrRender as $key => $file) {
-	$html .= fn_renderTemplate($file, $arrLang);
-	$missing = array_merge($missing, fn_checkTemplate($file, $arrLang));
+	$html .= fn_renderTemplate($file, $arrSubst);
+	$missing = array_merge($missing, fn_checkTemplate($file, $arrSubst));
 }
 
 
+$infoHtml = '';
+
 if (!empty($missing)) {
-	print BRNL . Lang::get('missing_translation') . BRNL;
-    print implode(BRNL, $missing);
+    print fn_arrayDump($missing);
+	} else {
+
+		# $infoHtml = fn_createAlert('succes', 'alles ok!');
 	}
 	
 	print $html;
