@@ -1,0 +1,65 @@
+<!-- 945922 b-->
+
+<!doctype html>
+<html lang="@html_language@">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>
+            @login_title@ · Grompil
+        </title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <link rel="stylesheet" href="@_asset_base_href@assets/app.css">
+    </head>
+    <body class="login-page">
+        <main class="container-fluid min-vh-100 p-0">
+            <div class="row g-0 min-vh-100">
+                <section class="col-lg-6 login-intro d-flex flex-column justify-content-between p-4 p-md-5">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a class="brand" href="index.php"><span class="brandmark">✳</span> grompil</a>@_language_selector_html@
+                    </div>
+                    <div class="intro-copy">
+                        @_login_intro_html@
+                    </div>
+                    <small>Grompil · @workspace_label@</small>
+                </section>
+                <section class="col-lg-6 d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="login-card w-100">
+                        <span class="eyebrow">@login_welcome@</span>
+                        <h2>
+                            @login_title@
+                        </h2>
+                        <p class="text-secondary mb-4">
+                            @login_instructions@
+                        </p>
+                        @_error_html@
+                        <form method="post" action="@login_form_action@" autocomplete="on">
+                            @_csrf_field_html@
+                            <div class="mb-3">
+                                <label class="form-label" for="email">
+                                    @login_identifier@
+                                </label>
+                                <input class="form-control form-control-lg" id="email" name="email" type="text" autocomplete="username" maxlength="254" required autofocus value="@email_value@">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label" for="password">
+                                    @password@
+                                </label>
+                                <input class="form-control form-control-lg" id="password" name="password" type="password" autocomplete="current-password" required>
+                            </div>
+                            <button class="btn btn-grompil btn-lg w-100" type="submit">@login_submit@ <span class="ms-2">→</span></button>
+                        </form>
+                        <a class="d-inline-block mt-3" href="@forgot_password_link@">@forgot_password_link_text@</a>
+                        <div class="security-note mt-4">
+                            ▣ &nbsp; @login_security@
+                        </div>
+                        <a class="d-inline-block mt-3" href="@register_link@">@registration_link@</a>
+                    </div>
+                </section>
+            </div>
+        </main>
+        @_cookie_footer_html@ <script src="@_asset_base_href@assets/language-selector.js"></script><script src="@_asset_base_href@assets/cookie-footer.js?v=3"></script>
+    </body>
+</html>
+
+<!-- 945922 e-->

@@ -1,0 +1,192 @@
+<!-- 118474 b-->
+
+<!doctype html>
+<html lang="@html_language@">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="@store_intro@">
+        <title>
+            @store_title@ · @company_name@
+        </title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <link rel="stylesheet" href="@_asset_base_href@assets/app.css">
+        <link rel="stylesheet" href="@_asset_base_href@assets/store-theme-serene.css">
+    </head>
+    <body class="storefront storefront-serene">
+        <nav class="navbar navbar-expand-lg storefront-nav">
+            <div class="container">
+                <a class="navbar-brand storefront-brand" href="store.php">
+                    @_company_logo_html@
+                    <span>
+                        @company_name@
+                        <small>@store_brand_caption@</small>
+                    </span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#storeNav" aria-controls="storeNav" aria-expanded="false" aria-label="@store_menu@">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="storeNav">
+                    <div class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
+                        <a class="nav-link" href="#aanbod">@store_nav_offer@</a>
+                        <a class="nav-link" href="#service">@store_nav_service@</a>
+                        @_account_nav_html@
+                        <span class="ms-lg-3">@_language_selector_html@</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <main>
+            <section class="store-hero">
+                <div class="container store-hero-inner">
+                    <div class="row align-items-center gy-5">
+                        <div class="col-lg-6 store-hero-copy">
+                            <span class="store-kicker"><span class="store-kicker-dot"></span>@store_eyebrow@</span>
+                            <h1>
+                                @store_heading@
+                            </h1>
+                            <p class="store-lead">
+                                @store_intro@
+                            </p>
+                            <div class="d-flex flex-wrap gap-3 mt-4">
+                                <a class="btn btn-store-primary btn-lg" href="#aanbod">@store_browse@ <span aria-hidden="true">→</span></a><a class="btn btn-store-outline btn-lg" href="register.php?c=@company_slug@">@store_create_account@</a>
+                            </div>
+                            <p class="store-trustline">
+                                <span aria-hidden="true">✳</span> @store_trustline@
+                            </p>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="store-hero-art" aria-label="@store_visual_alt@" role="img">
+                                <div class="art-orbit art-orbit-one">
+                                </div>
+                                <div class="art-orbit art-orbit-two">
+                                </div>
+                                <div class="art-sun">
+                                </div>
+                                <div class="art-leaf art-leaf-one">
+                                </div>
+                                <div class="art-leaf art-leaf-two">
+                                </div>
+                                <div class="art-card-main">
+                                    <div class="art-card-top">
+                                        <span class="art-mark">✳</span><span>@store_visual_label@</span><span class="art-menu-dots">•••</span>
+                                    </div>
+                                    <div class="art-card-illustration">
+                                        @_company_hero_image_html@
+                                        <span class="art-capsule"></span>
+                                        <span class="art-sparkle sparkle-one">✦</span>
+                                        <span class="art-sparkle sparkle-two">✳</span>
+                                        <span class="art-sparkle sparkle-three">✦</span>
+                                    </div>
+                                    <span class="art-card-caption">@store_visual_caption@</span><strong>@company_name@</strong>
+                                    <div class="art-progress">
+                                        <span></span>
+                                    </div>
+                                    <div class="art-card-foot">
+                                        <span>@store_visual_footer@</span><span class="art-arrow">↗</span>
+                                    </div>
+                                </div>
+                                <div class="art-float-note">
+                                    <span class="art-note-icon">✳</span><span><strong>@store_note_title@</strong><small>@store_note_text@</small></span>
+                                </div>
+                                <div class="art-sticker">
+                                    @store_sticker@
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="store-hero-bottom">
+                </div>
+            </section>
+            <section class="store-benefits" id="service">
+                <div class="container py-5 py-lg-6">
+                    <div class="row align-items-end mb-4">
+                        <div class="col-lg-7">
+                            <span class="eyebrow">@store_section_kicker@</span>
+                            <h2>
+                                @store_section_title@
+                            </h2>
+                        </div>
+                        <div class="col-lg-5">
+                            <p class="store-section-copy">
+                                @store_section_intro@
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row g-3 g-lg-4">
+                        <div class="col-md-4">
+                            <article class="store-benefit-card">
+                                <span class="benefit-icon benefit-icon-green">✳</span>
+                                <h3>
+                                    @store_benefit_one_title@
+                                </h3>
+                                <p>
+                                    @store_benefit_one_text@
+                                </p>
+                            </article>
+                        </div>
+                        <div class="col-md-4">
+                            <article class="store-benefit-card">
+                                <span class="benefit-icon benefit-icon-yellow">↗</span>
+                                <h3>
+                                    @store_benefit_two_title@
+                                </h3>
+                                <p>
+                                    @store_benefit_two_text@
+                                </p>
+                            </article>
+                        </div>
+                        <div class="col-md-4">
+                            <article class="store-benefit-card">
+                                <span class="benefit-icon benefit-icon-lilac">⌂</span>
+                                <h3>
+                                    @store_benefit_three_title@
+                                </h3>
+                                <p>
+                                    @store_benefit_three_text@
+                                </p>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="store-catalog" id="aanbod">
+                <div class="container py-5 py-lg-6">
+                    <div class="store-catalog-panel">
+                        <div>
+                            <span class="eyebrow">@store_catalog_kicker@</span>
+                            <h2>
+                                @store_catalog_title@
+                            </h2>
+                            <p>
+                                @store_catalog_empty@
+                            </p>
+                        </div>
+                            <a class="btn btn-store-primary" href="register.php?c=@company_slug@">@store_catalog_cta@ <span aria-hidden="true">→</span></a>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <footer class="store-footer">
+            <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
+                <span>@company_name@ · @store_footer_text@</span><span class="store-powered">@store_powered_by@ <strong>Grompil</strong></span>
+            </div>
+        </footer>
+        @_cookie_footer_html@
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"
+        ></script>
+        <script src="@_asset_base_href@assets/language-selector.js"></script>
+        <script src="@_asset_base_href@assets/cookie-footer.js?v=3"></script>
+        <script>
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
+                bootstrap.Tooltip.getOrCreateInstance(element);
+            });
+        </script>
+    </body>
+</html>
+
+<!-- 118474 e-->

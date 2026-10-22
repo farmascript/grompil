@@ -1,0 +1,43 @@
+<!-- 344678 b-->
+
+<nav class="navbar navbar-expand-lg bg-white border-bottom">
+    <div class="container">
+        <div class="d-flex align-items-center gap-2">
+            <a class="navbar-brand brand" href="@_asset_base_href@dashboard.php"><span class="brandmark">✳</span> grompil</a>
+            <span class="small text-secondary" aria-label="Softwareversie">vers. @_app_version@</span>
+            @_company_badge_html@
+            @_user_context_html@
+        </div>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            @_public_site_button_html@
+            <button class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2" type="button"
+               data-bs-toggle="modal" data-bs-target="#navigation-manager-modal"
+               data-bs-title="@manager_home_label@" aria-label="@manager_home_label@">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="m8 3.293 6 6V14a1 1 0 0 1-1 1h-3v-4H6v4H3a1 1 0 0 1-1-1V9.293l6-6zm5.5 5.5V2h-2v4.793L8 3.293 1 10.293V14a2 2 0 0 0 2 2h4v-4h2v4h4a2 2 0 0 0 2-2V9.293l-1.5-1.5z"/>
+                </svg>
+                <span>@manager_home_label@</span>
+            </button>
+            <form method="post" action="@_asset_base_href@logout.php" class="m-0">
+                @_csrf_field_html@@_logout_company_field_html@<button class="btn btn-sm btn-outline-secondary" type="submit" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="@_logout_tooltip@">@nav_logout@</button>
+            </form>
+            @_language_selector_html@
+        </div>
+    </div>
+</nav>
+<div class="modal" id="navigation-manager-modal" tabindex="-1" aria-labelledby="navigation-manager-title" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h2 class="modal-title fs-6" id="navigation-manager-title">@manager_home_label@</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-0 overflow-hidden">
+                <iframe class="w-100 h-100 border-0" title="@manager_home_label@" tabindex="0" data-manager-src="@_manager_href@"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+<main class="container py-4">
+
+<!-- 344678 e-->

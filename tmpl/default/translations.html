@@ -1,0 +1,89 @@
+<!-- 234254 b-->
+
+@_message_html@
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div>
+        <h1 class="h2 mb-1">
+            @translations_heading@
+        </h1>
+        <p class="text-secondary mb-0">
+            @translations_intro@
+        </p>
+    </div>
+    <div>
+        @_language_links_html@
+    </div>
+</div>
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <form method="post" action="translations.php?language=@language@">
+        @_csrf_field_html@
+        <input type="hidden" name="language" value="@language@">
+        <button class="btn btn-outline-primary" name="action" value="import">@translations_import_button@</button>
+    </form>
+    <form method="post" action="translations.php?language=@language@">
+        @_csrf_field_html@
+        <input type="hidden" name="language" value="@language@">
+        <button class="btn btn-outline-secondary" name="action" value="export">@translations_export_button@</button>
+    </form>
+</div>
+<form method="post" action="translations.php?language=@language@">
+    @_csrf_field_html@
+    <input type="hidden" name="language" value="@language@">
+    <input type="hidden" name="action" value="save">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            @translations_language_label@ @language_name@
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            @translations_key_label@
+                        </th>
+                        <th scope="col">
+                            @translations_text_label@
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>
+                            <input type="search" class="form-control form-control-sm" data-translation-filter="key" aria-label="@translations_key_label@" placeholder="@translations_key_label@" autocomplete="off">
+                        </th>
+                        <th>
+                            <input type="search" class="form-control form-control-sm" data-translation-filter="text" aria-label="@translations_text_label@" placeholder="@translations_text_label@" autocomplete="off">
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @_translation_rows_html@
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-end">
+            <button class="btn btn-primary" type="submit">@translations_save_button@</button>
+        </div>
+    </div>
+</form>
+<script>
+    (() => {
+        const filters = [...document.querySelectorAll('[data-translation-filter]')];
+        const rows = [...document.querySelectorAll('table tbody tr')];
+
+        const updateRows = () => {
+            const keyFilter = document.querySelector('[data-translation-filter="key"]')
+                .value.trim().toLocaleLowerCase();
+            const textFilter = document.querySelector('[data-translation-filter="text"]')
+                .value.trim().toLocaleLowerCase();
+
+            rows.forEach((row) => {
+                const key = row.cells[0].textContent.toLocaleLowerCase();
+                const value = row.cells[1].querySelector('textarea').value.toLocaleLowerCase();
+                row.hidden = !key.includes(keyFilter) || !value.includes(textFilter);
+            });
+        };
+
+        filters.forEach((filter) => filter.addEventListener('input', updateRows));
+    })();
+</script>
+
+<!-- 234254 e-->

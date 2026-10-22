@@ -1,0 +1,97 @@
+<!-- 744746 b-->
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h5">
+            @company_members_existing_heading@ · @company_name@
+        </h2>
+        <p class="text-secondary">
+            @company_members_add_help@
+        </p>
+        <form method="post" action="company_members.php?company_id=@company_id@" class="row g-3 align-items-end" id="company-member-add-form" data-company-name="@company_name@">
+            @_csrf_field_html@
+            <input type="hidden" name="company_id" value="@company_id@">
+            <input type="hidden" name="action" value="add">
+            <div class="col-md-5">
+                <label class="form-label" for="member-user">
+                    @company_members_user@
+                </label>
+                <select class="form-select" name="user_id" id="member-user" required>
+                    @_user_options_html@
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label" for="member-role">
+                    @company_members_role@
+                </label>
+                <select class="form-select" name="company_role_id" id="member-role" required>
+                    @_role_options_html@
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" type="submit">@company_members_add@</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade" id="company-member-confirm-modal" tabindex="-1" aria-labelledby="company-member-confirm-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="company-member-confirm-title">@company_members_confirm_title@</h2>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="@company_members_confirm_cancel@"></button>
+            </div>
+            <div class="modal-body">
+                <p>@company_members_confirm_intro@</p>
+                <dl class="row mb-0">
+                    <dt class="col-4">@company_members_confirm_user@</dt>
+                    <dd class="col-8" id="company-member-confirm-user"></dd>
+                    <dt class="col-4">@company_members_confirm_company@</dt>
+                    <dd class="col-8" id="company-member-confirm-company"></dd>
+                    <dt class="col-4">@company_members_confirm_role@</dt>
+                    <dd class="col-8" id="company-member-confirm-role"></dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">@company_members_confirm_cancel@</button>
+                <button class="btn btn-primary" type="button" id="company-member-confirm-ok">@company_members_confirm_ok@</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('company-member-add-form');
+        const modalElement = document.getElementById('company-member-confirm-modal');
+        if (!form || !modalElement || typeof bootstrap === 'undefined') {
+            return;
+        }
+
+        const userSelect = form.querySelector('[name="user_id"]');
+        const roleSelect = form.querySelector('[name="company_role_id"]');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        form.addEventListener('submit', (event) => {
+            if (form.dataset.confirmed === 'true') {
+                form.dataset.confirmed = 'false';
+                return;
+            }
+            event.preventDefault();
+            if (!userSelect.value || !roleSelect.value) {
+                form.reportValidity();
+                return;
+            }
+            document.getElementById('company-member-confirm-user').textContent = userSelect.selectedOptions[0].textContent;
+            document.getElementById('company-member-confirm-company').textContent = form.dataset.companyName;
+            document.getElementById('company-member-confirm-role').textContent = roleSelect.selectedOptions[0].textContent;
+            modal.show();
+        });
+
+        document.getElementById('company-member-confirm-ok').addEventListener('click', () => {
+            form.dataset.confirmed = 'true';
+            modal.hide();
+            form.requestSubmit();
+        });
+    });
+</script>
+
+<!-- 744746 e-->

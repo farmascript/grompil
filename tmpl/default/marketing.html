@@ -1,0 +1,38 @@
+<!-- 385766 b-->
+
+<!doctype html>
+<html lang="@html_language@">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>@marketing_title@ · Grompil</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="@_asset_base_href@assets/app.css">
+        <link rel="stylesheet" href="@_asset_base_href@assets/marketing.css">
+    </head>
+    <body class="bg-light">
+        <nav class="navbar bg-white border-bottom">
+            <div class="container">
+                <a class="navbar-brand" href="index.php">
+                    <img class="brand-logo" src="media/gromPilLogo.png" alt="Grompil">
+                </a>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="navbar-nav flex-row gap-3">
+                        @_navigation_html@
+                    </div>
+                    <div class="ms-3">
+                        @_language_selector_html@
+                    </div>
+                    <a class="btn btn-outline-primary btn-sm" href="login.php">@login_title@</a>
+                </div>
+            </div>
+        </nav>
+        @_page_body_html@
+        <footer class="container py-4 border-top text-secondary small">
+            © Grompil
+        </footer>
+        <script src="@_asset_base_href@assets/language-selector.js"></script>
+    </body>
+</html>
+
+<!-- 385766 e-->

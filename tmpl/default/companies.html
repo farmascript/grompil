@@ -1,0 +1,174 @@
+<!-- 426742 b-->
+
+@_message_html@
+<div class="mb-4">
+    <span class="eyebrow">@nav_admin@</span>
+    <h1 class="h2 mt-2">
+        @companies_heading@
+    </h1>
+    <p class="text-secondary">
+        @companies_intro@
+    </p>
+</div>
+<div class="row g-4">
+    <section class="col-xl-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">
+                    @form_title@
+                </h2>
+                <form method="post" action="companies.php">
+                    @_csrf_field_html@
+                    <input type="hidden" name="id" value="@company_id@">
+                    <div class="mb-3">
+                        <label class="form-label" for="company-name">
+                            @company_name_label@
+                        </label>
+                        <input class="form-control" id="company-name" name="name" maxlength="160" required value="@name_value@">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="company-slug">
+                            @company_slug_label@
+                        </label>
+                        <input class="form-control" id="company-slug" name="slug" maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" required value="@slug_value@">
+                        <div class="form-text">
+                            @company_slug_help@
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="company-enterprise">
+                                @company_enterprise_number@
+                            </label>
+                            <input class="form-control" id="company-enterprise" name="enterprise_number" maxlength="32" value="@enterprise_number_value@">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="company-vat">
+                                @company_vat_number@
+                            </label>
+                            <input class="form-control" id="company-vat" name="vat_number" maxlength="32" value="@vat_number_value@">
+                            <div class="form-text">
+                                @no_vat_number@
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-8">
+                            <label class="form-label" for="company-billing-email">
+                                @company_billing_email@
+                            </label>
+                            <input class="form-control" id="company-billing-email" name="billing_email" type="email" maxlength="254" value="@billing_email_value@">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="company-phone">
+                                @company_phone@
+                            </label>
+                            <input class="form-control" id="company-phone" name="phone" maxlength="40" value="@phone_value@">
+                        </div>
+                    </div>
+                    @_initial_admin_field_html@
+                    @_address_fields_html@
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label" for="company-country">
+                                @company_country@
+                            </label>
+                            <input class="form-control" id="company-country" name="country_code" maxlength="2" pattern="[A-Za-z]{2}" required value="@country_code_value@">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="company-language">
+                                @company_default_language@
+                            </label>
+                            <select class="form-select" id="company-language" name="default_language">
+                                @_language_options_html@
+                            </select>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <h3 class="h6">@company_store_appearance@</h3>
+                    <div class="mb-3">
+                        <label class="form-label" for="company-store-theme">@company_store_theme@</label>
+                        <select class="form-select" id="company-store-theme" name="store_theme">
+                            @_store_theme_options_html@
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="company-store-logo">@company_store_logo@</label>
+                        <input class="form-control" id="company-store-logo" name="store_logo_file" maxlength="128" value="@store_logo_file_value@">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="company-store-hero">@company_store_hero@</label>
+                        <input class="form-control" id="company-store-hero" name="store_hero_image_file" maxlength="128" value="@store_hero_image_file_value@">
+                    </div>
+                    <p class="form-text">@company_store_media_help@</p>
+                    <div class="form-check my-3">
+                        <input class="form-check-input" id="company-active" type="checkbox" name="is_active" value="1" @_active_checked@>
+                        <label class="form-check-label" for="company-active">
+                            @active@
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" id="company-public" type="checkbox" name="is_public" value="1" @_public_checked@>
+                        <label class="form-check-label" for="company-public">
+                            @company_public_label@
+                        </label>
+                    </div>
+                    <button class="btn btn-grompil" type="submit">@save@</button>
+                </form>
+            </div>
+        </div>
+    </section>
+    <section class="col-xl-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">
+                    @companies_heading@
+                </h2>
+                <div class="mb-3 position-relative" data-company-picker>
+                    <label class="form-label" for="company-search">
+                        @company_name_label@
+                    </label>
+                    <input class="form-control" id="company-search" type="search" autocomplete="off"
+                        aria-autocomplete="list" aria-controls="company-search-results" aria-expanded="false"
+                        placeholder="@company_name_label@">
+                    <div class="list-group position-absolute w-100 shadow mt-1" id="company-search-results"
+                        role="listbox" hidden></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle" id="companies-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @company_name_label@
+                                </th>
+                                <th>
+                                    @company_city_label@
+                                </th>
+                                <th>
+                                    @company_default_language@
+                                </th>
+                                <th>
+                                    @col_users@
+                                </th>
+                                <th>
+                                    @col_status@
+                                </th>
+                                <th>
+                                    @company_public_label@
+                                </th>
+                                <th>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @_company_rows_html@
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+<script src="@_asset_base_href@assets/company-picker.js"></script>
+
+<!-- 426742 e-->

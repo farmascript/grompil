@@ -1,0 +1,1 @@
+window.GROMPIL_URL_MANAGER_VERSION = "0.4.1";

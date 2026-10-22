@@ -1,0 +1,12 @@
+{
+    "name": "grompil/grompil",
+    "description": "Grompil SaaS application",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

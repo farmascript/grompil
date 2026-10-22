@@ -1,0 +1,63 @@
+<!-- 471849 b-->
+
+<div id="add-user-form" class="collapse@_form_open_class@ mb-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h2 class="h5">
+                @user_add_heading@
+            </h2>
+            <p class="text-secondary">
+                @user_add_help@
+            </p>
+            <form method="post" action="users.php" class="row g-3">
+                @_csrf_field_html@
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="country_code" value="@country_code_value@">
+                <div class="col-md-6">
+                    <label class="form-label" for="new-user-first">
+                        @name_first@
+                    </label>
+                    <input class="form-control" id="new-user-first" name="name_first" maxlength="120" required value="@name_first_value@">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="new-user-last">
+                        @name_last@
+                    </label>
+                    <input class="form-control" id="new-user-last" name="name_last" maxlength="120" required value="@name_last_value@">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="new-user-email">
+                        @email@
+                    </label>
+                    <input class="form-control" id="new-user-email" name="email" type="email" maxlength="254" required value="@email_value@">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="new-user-password">
+                        @password@
+                    </label>
+                    <input class="form-control" id="new-user-password" name="password" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="new-user-password-confirm">
+                        @password_confirm@
+                    </label>
+                    <input class="form-control" id="new-user-password-confirm" name="password_confirm" type="password" minlength="12" maxlength="4096" autocomplete="new-password" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="new-user-role">
+                        @col_role@
+                    </label>
+                    <select class="form-select" id="new-user-role" name="new_role_id" required>
+                        @_role_options_html@
+                    </select>
+                </div>
+                @_address_fields_html@
+                <div class="col-12">
+                    <button class="btn btn-grompil" type="submit">@user_add_submit@</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 471849 e-->

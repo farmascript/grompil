@@ -1,0 +1,54 @@
+<!-- 609346 b-->
+
+<section class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3">@account_title@</h1>
+                <p class="text-secondary">@account_intro@</p>
+                @_account_message_html@
+                <form method="post" action="account.php" @_profile_form_hidden@>
+                    @_csrf_field_html@
+                    <input type="hidden" name="action" value="profile">
+                    <input type="hidden" name="country_code" value="@country_code_value@">
+                    <div class="mb-3">
+                        <label class="form-label" for="acronym">@acronym@</label>
+                        <input class="form-control" id="acronym" name="acronym" maxlength="80" autocomplete="username" value="@acronym_value@">
+                        <div class="form-text">@acronym_help@</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="display-name">@display_name@</label>
+                        <input class="form-control" id="display-name" name="display_name" maxlength="255" required value="@display_name_value@">
+                    </div>
+                    @_address_fields_html@
+                    <button class="btn btn-grompil" type="submit">@acronym_save@</button>
+                </form>
+                <hr class="my-4">
+                <section id="change-password">
+                    <h2 class="h5">@password_section_title@</h2>
+                    <p class="text-secondary">@password_section_help@</p>
+                    <form method="post" action="account.php#change-password">
+                        @_password_csrf_field_html@
+                        <input type="hidden" name="action" value="password_change">
+                        @_forced_profile_fields_html@
+                        <div class="mb-3">
+                            <label class="form-label" for="current-password">@password_current_label@</label>
+                            <input class="form-control" id="current-password" type="password" name="current_password" autocomplete="current-password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="new-password">@password_new_label@</label>
+                            <input class="form-control" id="new-password" type="password" name="new_password" autocomplete="new-password" minlength="12" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="confirm-password">@password_confirm_label@</label>
+                            <input class="form-control" id="confirm-password" type="password" name="confirm_password" autocomplete="new-password" minlength="12" required>
+                        </div>
+                        <button class="btn btn-grompil" type="submit">@password_save@</button>
+                    </form>
+                </section>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 609346 e-->

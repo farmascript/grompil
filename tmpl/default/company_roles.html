@@ -1,0 +1,87 @@
+<!-- 240400 b-->
+
+@_message_html@
+<div class="mb-4">
+    <h1 class="h2">
+        @company_roles_heading@ · @company_name@
+    </h1>
+    <p class="text-secondary">
+        @company_roles_intro@
+    </p>
+</div>
+<div class="row g-4">
+    <section class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">
+                    @form_title@
+                </h2>
+                <form method="post" action="company_roles.php">
+                    @_csrf_field_html@
+                    <input type="hidden" name="id" value="@role_id@">
+                    <div class="mb-3">
+                        <label class="form-label" for="role-name">
+                            @role_name@
+                        </label>
+                        <input class="form-control" id="role-name" name="name" maxlength="80" required value="@role_value@">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="role-description">
+                            @description@
+                        </label>
+                        <input class="form-control" id="role-description" name="description" maxlength="240" value="@description_value@">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="role-level">
+                            @role_level_label@
+                        </label>
+                        <input class="form-control" id="role-level" name="level" type="number" min="1" max="199" required value="@level_value@">
+                        <div class="form-text">
+                            @company_role_level_help@
+                        </div>
+                    </div>
+                    <fieldset class="mb-3">
+                        <legend class="fs-6">
+                            @permissions@
+                        </legend>
+                        @_permission_checks_html@
+                    </fieldset>
+                    <button class="btn btn-grompil" type="submit">@role_save@</button> @_cancel_link_html@
+                </form>
+            </div>
+        </div>
+    </section>
+    <section class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">
+                    @roles_heading@
+                </h2>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @col_role@
+                                </th>
+                                <th>
+                                    @col_users@
+                                </th>
+                                <th>
+                                    @col_permissions@
+                                </th>
+                                <th>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @_role_rows_html@
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- 240400 e-->

@@ -1,0 +1,20 @@
+/**
+ *
+ * @date_cre: Sun 2026-10-18 20:35:50
+ * @date_mut: Tue 2026-10-20 21:21:08
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: chatGPT, codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Defines the visual styles for the public Grompil marketing site.
+ *
+ */
+
+.brand-logo{height:2.25rem;width:auto}
+.company-page-copy{max-width:52rem;font-size:1.1rem;line-height:1.8;white-space:pre-line}
+.marketing-hero{background:#f4f7f5;border:1px solid #e7ede8;border-radius:1rem}
+.company-access-message{max-width:22rem;white-space:normal}
+

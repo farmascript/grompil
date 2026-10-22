@@ -1,0 +1,9 @@
+<!-- 999476 b-->
+
+<form method="post" action="select-company.php" class="m-0" data-company-choice data-company-search="@company_search@" data-company-name="@company_name@" data-company-id="@company_id@" data-active-company-id="@active_company_id@" data-target-company-id="@company_id@" data-warning="@company_switch_warning@">
+    @_csrf_field_html@
+    <input type="hidden" name="company_id" value="@company_id@">
+    <button type="submit" class="card card-body text-start w-100 border-0 shadow-sm"><strong>@company_name@</strong><span class="text-secondary small">@company_slug@</span></button>
+</form>
+
+<!-- 999476 e-->

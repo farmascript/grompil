@@ -1,0 +1,17 @@
+# /**
+#  *
+#  * @date_cre: Tue 2026-10-20 21:10:46
+#  * @date_mut: Tue 2026-10-20 21:21:08
+#  *
+#  * @credit_software: Lieven Maus
+#  * @credit_code: chatGPT, codex
+#  *
+#  * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+#  * @info_email: info@grompil.com
+#  *
+#  * @description: Blocks direct HTTP access to internal PHP modules and language files.
+#  *
+#  */
+Require all denied
+
+

@@ -1,0 +1,35 @@
+<!-- 514034 b-->
+
+@_add_form_html@
+<div class="card shadow-sm">
+    <div class="card-header">
+        @company_members_heading@ · @company_name@
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>
+                        @company_members_user@
+                    </th>
+                    <th>
+                        @company_members_role@
+                    </th>
+                    <th>
+                        @col_status@
+                    </th>
+                    <th>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @_member_rows_html@
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body">
+        @_empty_members_html@
+    </div>
+</div>
+
+<!-- 514034 e-->

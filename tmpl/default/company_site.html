@@ -1,0 +1,41 @@
+<!-- 115699 b-->
+
+<!doctype html>
+<html lang="@html_language@">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>@page_title@ · @company_name@</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="@_asset_base_href@assets/app.css">
+        <link rel="stylesheet" href="@_asset_base_href@assets/marketing.css">
+    </head>
+    <body class="bg-light">
+        <nav class="navbar navbar-expand-lg bg-white border-bottom">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" href="index.php?c=@company_slug@">
+                    <img class="brand-logo" src="media/gromPilLogo.png" alt="Grompil">
+                    <span class="ms-2">@company_name@</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#companyNavigation" aria-controls="companyNavigation" aria-expanded="false" aria-label="Menu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="companyNavigation">
+                    <div class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
+                        @_navigation_html@
+                        @_account_links_html@
+                        <span class="ms-lg-3">@_language_selector_html@</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        @_page_content_html@
+        <footer class="container py-4 border-top small text-secondary">
+            @company_name@ · <a href="index.php">Grompil</a>
+        </footer>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="@_asset_base_href@assets/language-selector.js"></script>
+    </body>
+</html>
+
+<!-- 115699 e-->

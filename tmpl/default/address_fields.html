@@ -1,0 +1,32 @@
+<!-- 863544 b-->
+
+<div class="col-12" data-address-fields data-address-country="@address_country_code_value@">
+    <p class="form-label mb-1">@address_title@</p>
+    <div class="form-text mb-2">@address_lookup_help@</div>
+    <input type="hidden" name="address_reference_id" data-address-reference-id value="@address_reference_id_value@">
+    <input type="hidden" data-address-street-id value="@street_reference_id_value@">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label" for="@address_prefix@-postal">@company_postal_code@</label>
+            <input class="form-control" id="@address_prefix@-postal" name="postal_code" maxlength="20" autocomplete="postal-code" data-address-role="postal" value="@postal_code_value@">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label" for="@address_prefix@-city">@company_city_label@</label>
+            <input class="form-control" id="@address_prefix@-city" name="city" maxlength="100" autocomplete="address-level2" data-address-role="city" value="@city_value@">
+        </div>
+        <div class="col-md-7">
+            <label class="form-label" for="@address_prefix@-street">@company_street@</label>
+            <input class="form-control" id="@address_prefix@-street" name="street" maxlength="160" autocomplete="address-line1" data-address-role="street" value="@street_value@">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="@address_prefix@-house">@address_house_number@</label>
+            <input class="form-control" id="@address_prefix@-house" name="house_number" maxlength="32" data-address-role="house" value="@house_number_value@">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="@address_prefix@-box">@address_box_number@</label>
+            <input class="form-control" id="@address_prefix@-box" name="box_number" maxlength="32" data-address-role="box" value="@box_number_value@">
+        </div>
+    </div>
+</div>
+
+<!-- 863544 e-->

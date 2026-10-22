@@ -1,0 +1,136 @@
+/**
+ *
+ * @date_cre: Sun 2026-10-18 20:35:46
+ * @date_mut: Tue 2026-10-20 21:21:08
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: chatGPT, codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Defines the visual styles for the Serene storefront theme.
+ *
+ */
+
+.storefront-serene {
+    background: #fff;
+    color: #233b34;
+}
+
+.storefront-serene .storefront-nav {
+    background: #fff;
+    border-bottom-color: #e5ebe7;
+}
+
+.storefront-serene .store-hero {
+    background: linear-gradient(135deg, #f4f7f1 0%, #e8f0e9 100%);
+    color: #203d34;
+}
+
+.storefront-serene .store-hero::before,
+.storefront-serene .store-hero::after,
+.storefront-serene .art-orbit,
+.storefront-serene .art-sun,
+.storefront-serene .art-leaf,
+.storefront-serene .art-sticker {
+    display: none;
+}
+
+.storefront-serene .store-hero-inner {
+    padding-top: clamp(3.5rem, 7vw, 6rem);
+    padding-bottom: clamp(3.5rem, 7vw, 6rem);
+}
+
+.storefront-serene .store-kicker,
+.storefront-serene .store-kicker-dot {
+    color: #39715c;
+}
+
+.storefront-serene .store-kicker-dot {
+    background: #78a984;
+    box-shadow: 0 0 0 .28rem #78a98422;
+}
+
+.storefront-serene .store-hero h1 {
+    max-width: 600px;
+    color: #173f35;
+    font-size: clamp(2.7rem, 5vw, 4.6rem);
+    letter-spacing: -.065em;
+}
+
+.storefront-serene .store-lead {
+    color: #60756b;
+}
+
+.storefront-serene .btn-store-primary {
+    --bs-btn-bg: #27684f;
+    --bs-btn-border-color: #27684f;
+    --bs-btn-hover-bg: #1c523d;
+    --bs-btn-hover-border-color: #1c523d;
+}
+
+.storefront-serene .btn-store-outline {
+    --bs-btn-color: #27684f;
+    --bs-btn-border-color: #9ab4a2;
+    --bs-btn-hover-bg: #27684f;
+    --bs-btn-hover-border-color: #27684f;
+    --bs-btn-hover-color: #fff;
+}
+
+.storefront-serene .store-trustline,
+.storefront-serene .store-trustline span {
+    color: #60756b;
+}
+
+.storefront-serene .store-hero-art {
+    min-height: 430px;
+    border: 1px solid #dce8dd;
+    border-radius: 2rem;
+    background: radial-gradient(circle at 50% 35%, #fff 0, #e1ecdf 70%, #d7e6d9 100%);
+}
+
+.storefront-serene .art-card-main {
+    width: min(370px, 78vw);
+    border-color: #e2e9e2;
+    box-shadow: 0 22px 60px #193e3518;
+    transform: none;
+}
+
+.storefront-serene .art-float-note {
+    right: -1rem;
+    transform: none;
+}
+
+.storefront-serene .store-benefits {
+    background: #fff;
+}
+
+.storefront-serene .store-benefit-card {
+    border-color: #e6ece7;
+    box-shadow: 0 8px 24px #193e3508;
+}
+
+.storefront-serene .store-catalog {
+    background: #f4f7f2;
+}
+
+.storefront-serene .store-catalog-panel {
+    border-color: #e2e9e2;
+    background: #fff;
+}
+
+.storefront-serene .store-footer {
+    background: #fff;
+}
+
+@media (max-width: 767.98px) {
+    .storefront-serene .store-hero-art {
+        min-height: 370px;
+    }
+
+    .storefront-serene .art-float-note {
+        right: 0;
+    }
+}
+

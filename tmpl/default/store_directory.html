@@ -1,0 +1,41 @@
+<!-- 855531 b-->
+
+<!doctype html>
+<html lang="@html_language@">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>
+            Grompil
+        </title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <link rel="stylesheet" href="@_asset_base_href@assets/app.css">
+    </head>
+    <body class="storefront">
+        <nav class="navbar bg-white border-bottom">
+            <div class="container d-flex justify-content-between">
+                <a class="navbar-brand" href="index.php">Grompil</a>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="login.php">@login_title@</a>@_language_selector_html@
+                </div>
+            </div>
+        </nav>
+        <main class="container py-5">
+            <h1 class="h2 mb-2">
+                @store_directory_heading@
+            </h1>
+            <p class="text-secondary mb-4">
+                @store_directory_intro@
+            </p>
+            <div class="row g-3">
+                @_company_cards_html@
+            </div>
+            <p class="text-secondary mt-3">
+                @directory_empty_message@
+            </p>
+        </main>
+        @_cookie_footer_html@ <script src="@_asset_base_href@assets/language-selector.js"></script><script src="@_asset_base_href@assets/cookie-footer.js?v=3"></script>
+    </body>
+</html>
+
+<!-- 855531 e-->

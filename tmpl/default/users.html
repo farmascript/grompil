@@ -1,0 +1,44 @@
+<!-- 801121 b-->
+
+@_message_html@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">
+        @users_heading@
+    </h1>
+    <button class="btn btn-grompil" type="button" data-bs-toggle="collapse" data-bs-target="#add-user-form" aria-expanded="false" aria-controls="add-user-form">@user_add_button@</button>
+</div>
+@_add_user_form_html@
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            @col_user@
+                        </th>
+                        <th scope="col">
+                            @col_role@
+                        </th>
+                        <th scope="col">
+                            @col_status@
+                        </th>
+                        <th scope="col">
+                            @col_approval@
+                        </th>
+                        <th scope="col">
+                            @col_last_login@
+                        </th>
+                        <th scope="col">
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @_user_rows_html@
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 801121 e-->

@@ -1,0 +1,116 @@
+<!-- 151858 b-->
+
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f7f5">
+    <title>Grompil URL-manager</title>
+    <link rel="stylesheet" href="styles.css?v=22">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand-area">
+            <a class="brand" href="#" aria-label="Grompil URL-manager startpagina"><span class="brand-mark">g</span><span>grompil<span class="brand-light"> navigator</span></span></a>
+            <div class="manager-meta" aria-label="Managerinformatie">
+                <span>vers. <span id="manager-version">0.4.1</span></span>
+                <span id="php-version" hidden></span>
+                <span id="user-context" hidden></span>
+                <span id="work-context" hidden></span>
+            </div>
+        </div>
+        <div class="top-actions">
+            <span id="storage-status" class="storage-status is-local" role="status" aria-live="polite">Lokaal</span>
+            <label class="visually-hidden" for="language-select" data-i18n="language">Taal</label>
+            <select id="language-select" class="language-select" aria-label="Taal" disabled data-i18n-aria-label="language"></select>
+            <label class="visually-hidden" for="column-layout" data-i18n="columns">Kolommen</label>
+            <select id="column-layout" class="toolbar-select" aria-label="Kolomindeling" data-i18n-aria-label="columns">
+                <option value="1" data-i18n="column_one">1 kolom</option>
+                <option value="2" selected data-i18n="column_two">2 kolommen</option>
+                <option value="3" data-i18n="column_three">3 kolommen</option>
+            </select>
+            <div class="text-size-controls" role="group" aria-label="Tekstgrootte" data-i18n-aria-label="text_size">
+                <button class="button button-light" id="text-smaller" type="button" aria-label="Tekst kleiner" title="Tekst kleiner" data-i18n-title="text_smaller" data-i18n-aria-label="text_smaller">A−</button>
+                <button class="button button-light text-size-reset" id="text-size-reset" type="button" aria-label="Normale tekstgrootte" title="Normale tekstgrootte" data-i18n-title="text_normal" data-i18n-aria-label="text_normal">A</button>
+                <button class="button button-light" id="text-larger" type="button" aria-label="Tekst groter" title="Tekst groter" data-i18n-title="text_larger" data-i18n-aria-label="text_larger">A+</button>
+            </div>
+            <button class="button button-light" id="add-group">＋ Blok</button>
+            <button class="button button-light" id="add-platform-group" hidden data-i18n="add_platform_group">＋ Grompil-blok</button>
+            <button class="button button-light" id="add-link" data-i18n="add_link">＋ Link</button>
+            <button class="icon-button" id="settings-toggle" title="Instellingen" aria-label="Instellingen" data-i18n-title="settings" data-i18n-aria-label="settings">⚙</button>
+        </div>
+    </header>
+
+    <main class="shell">
+        <nav id="page-navigation" class="page-navigation" aria-label="Bladen" data-i18n-aria-label="pages"></nav>
+        <section class="welcome">
+            <div class="eyebrow">JOUW WERKPLEK</div>
+            <h1>Waar wil je naartoe?</h1>
+            <p>Zoek een functie of open een van je vaste plekken.</p>
+            <label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Zoek functies, omschrijvingen of trefwoorden…" autocomplete="off" data-i18n-placeholder="search" data-i18n-aria-label="search"><kbd> / </kbd></label>
+            <div class="quick-actions"><button class="text-button" id="favorites-filter">☆ Favorieten</button><button class="text-button" id="show-all" data-i18n="show_all">Alle functies</button><span class="catalog-status" id="catalog-status"></span></div>
+        </section>
+
+        <section id="favorites-section" class="content-section" hidden><div class="section-heading"><div><div class="eyebrow">SNEL NAAR</div><h2>Favorieten</h2></div></div><div class="tile-grid" id="favorites-grid"></div></section>
+        <section id="catalog"></section>
+        <section class="content-section empty-state" id="catalog-empty" hidden><h2>Je werkblokken verschijnen hier</h2><p>Laad een functielijst of maak een eigen blok aan.</p></section>
+        <aside class="settings-panel" id="settings-panel" hidden>
+            <div class="section-heading"><div><div class="eyebrow">INSTELLINGEN</div><h2 data-i18n="settings_title">Verbinding</h2></div><button class="icon-button" id="settings-close" aria-label="Sluiten" data-i18n-aria-label="close">×</button></div>
+            <label class="field-label" for="base-url" data-i18n="base_url">Basisadres van Grompil</label>
+            <div class="input-row"><input id="base-url" type="url" placeholder="https://voorbeeld.be/" spellcheck="false"><button class="button button-primary" id="save-settings" data-i18n="save">Opslaan</button></div>
+            <p class="help-text">Dit adres is de webroot van Grompil. De manager voegt daar de modulepaden uit de catalogus aan toe.</p>
+            <div class="input-row catalog-row"><div><strong>Functielijst</strong><p class="help-text">De Grompil-functielijst wordt normaal automatisch geladen. Een gekozen navigation.json vervangt de functielijst in deze browser en wordt hier bewaard. Je eigen blokken en links blijven behouden. Kies dit alleen als je bewust een andere functielijst wilt gebruiken.</p></div><button class="button button-light" id="load-catalog" data-i18n="choose_file">Bestand kiezen</button></div>
+            <input type="file" id="catalog-file" accept="application/json,.json" hidden>
+            <div class="input-row catalog-row manager-data-actions"><div><strong>Persoonlijke indeling</strong><p class="help-text">Importeer of exporteer je eigen blokken, links en voorkeuren.</p></div><div class="manager-data-buttons"><button class="button button-light" id="import-button" data-i18n="import_json">JSON importeren</button><button class="button button-primary" id="export-button" data-i18n="export_json">Exporteren</button></div></div>
+            <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </aside>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog id="link-dialog">
+        <form method="dialog" id="link-form">
+            <div class="dialog-head"><div><div class="eyebrow">PERSOONLIJKE LINK</div><h2 id="dialog-title">Link toevoegen</h2></div><button class="icon-button" value="cancel" formnovalidate aria-label="Sluiten" data-i18n-aria-label="close">×</button></div>
+            <label class="field-label" for="link-title" data-i18n="link_name">Naam</label><input id="link-title" required maxlength="100" placeholder="Bijvoorbeeld Adminer">
+            <label class="field-label" for="link-url" data-i18n="link_url">Webadres of pad</label><input id="link-url" type="text" required maxlength="2048" placeholder="/grompil/translations.php">
+            <p class="help-text">Voor een interne link volstaat het pad vanaf de domeinnaam, bijvoorbeeld /grompil/translations.php. Externe websites gebruiken een volledig http(s)-adres.</p>
+            <label class="field-label" for="link-group" data-i18n="group">Blok</label><select id="link-group" required></select>
+            <div class="delete-confirmation" id="link-delete-confirmation" hidden>
+                <label><input id="confirm-link-delete" type="checkbox"> <span>Ik bevestig dat deze link wordt verwijderd.</span></label>
+            </div>
+            <div class="dialog-actions"><button class="button button-danger" id="link-delete" type="button" hidden disabled data-i18n="delete_link">Link verwijderen</button><button class="button button-light" value="cancel" formnovalidate data-i18n="cancel">Annuleren</button><button class="button button-primary" id="link-save" value="default" data-i18n="save">Bewaren</button></div>
+        </form>
+    </dialog>
+    <dialog id="group-dialog">
+        <form method="dialog" id="group-form">
+            <div class="dialog-head"><div><div class="eyebrow">JOUW INDELING</div><h2 id="group-dialog-title">Blok toevoegen</h2></div><button class="icon-button" value="cancel" aria-label="Sluiten" data-i18n-aria-label="close">×</button></div>
+            <label class="field-label" for="group-title" data-i18n="group_name">Naam van het blok</label><input id="group-title" required maxlength="60" placeholder="Bijvoorbeeld Taalfuncties">
+            <div id="group-page-field">
+                <label class="field-label" for="group-page" data-i18n="page">Blad</label>
+                <select id="group-page"></select>
+            </div>
+            <div class="dialog-actions"><button class="button button-light" value="cancel" data-i18n="cancel">Annuleren</button><button class="button button-primary" id="group-save" value="default">Blok maken</button></div>
+        </form>
+    </dialog>
+    <dialog id="group-actions-dialog">
+        <div class="dialog-head"><div><div class="eyebrow">BLOKOPTIES</div><h2 id="group-actions-name">Blok</h2></div><button class="icon-button" id="group-actions-close" aria-label="Sluiten" data-i18n-aria-label="close">×</button></div>
+        <label class="field-label color-field" for="group-color"><span data-i18n="background_color">Achtergrondkleur</span> <input id="group-color" type="color" value="#ffffff"></label>
+        <div class="group-color-actions"><button class="button button-light" id="save-group-color" data-i18n="save_color">Kleur bewaren</button><button class="text-button" id="reset-group-color" data-i18n="reset_color">Standaardkleur herstellen</button></div>
+        <div class="group-action-list"><button class="button button-light" id="rename-group">Naam wijzigen</button><button class="button button-danger" id="delete-group" data-i18n="delete_group">Blok verwijderen</button></div>
+    </dialog>
+    <script src="catalog.js?v=b969c31c4b402494" defer></script>
+    <dialog id="page-dialog">
+        <form method="dialog" id="page-form">
+            <div class="dialog-head"><h2 data-i18n="rename_page">Bladnaam wijzigen</h2><button class="icon-button" value="cancel" formnovalidate aria-label="Sluiten" data-i18n-aria-label="close">×</button></div>
+            <input id="page-id" type="hidden">
+            <label class="field-label" for="page-title" data-i18n="page_name">Naam van het blad</label>
+            <input id="page-title" required maxlength="60">
+            <div class="dialog-actions"><button class="button button-light" value="cancel" formnovalidate data-i18n="cancel">Annuleren</button><button class="button button-primary" value="default" data-i18n="save">Bewaren</button></div>
+        </form>
+    </dialog>
+    <script src="version.js?v=0.4.1" defer></script>
+    <script src="app.js?v=34" defer></script>
+</body>
+</html>
+
+<!-- 151858 e-->
