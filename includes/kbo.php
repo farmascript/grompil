@@ -16,16 +16,13 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/credentials_config.php';
+
 /** Read KBO webservice credentials from the private credentials.php file. */
 function grompil_kbo_config(): array
 {
-    $path = getenv('GROMPIL_CREDENTIALS_FILE')
-        ?: dirname(__DIR__, 4) . DIRECTORY_SEPARATOR . 'credentials.php';
-    if (!is_file($path)) {
-        return [];
-    }
-    $credentials = require $path;
-    return is_array($credentials) && is_array($credentials['kbo'] ?? null)
+    $credentials = grompil_credentials_config();
+    return is_array($credentials['kbo'] ?? null)
         ? $credentials['kbo']
         : [];
 }

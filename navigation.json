@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.4.1",
+    "applicationVersion": "0.4.6",
     "defaultLanguage": "nl",
     "languages": [
         "nl",
@@ -491,7 +491,8 @@
             "manager_text_normal": "Normale tekstgrootte",
             "manager_text_size": "Tekstgrootte",
             "manager_text_smaller": "Tekst kleiner",
-            "manager_unavailable": "SaaS niet bereikbaar"
+            "manager_unavailable": "SaaS niet bereikbaar",
+            "nav_logout": "Uitloggen"
         },
         "fr": {
             "manager_add_company_group": "＋ Bloc entreprise",
@@ -559,7 +560,8 @@
             "manager_text_normal": "Taille normale",
             "manager_text_size": "Taille du texte",
             "manager_text_smaller": "Réduire le texte",
-            "manager_unavailable": "SaaS indisponible"
+            "manager_unavailable": "SaaS indisponible",
+            "nav_logout": "Déconnexion"
         },
         "en": {
             "manager_add_company_group": "＋ Company block",
@@ -627,7 +629,8 @@
             "manager_text_normal": "Normal text size",
             "manager_text_size": "Text size",
             "manager_text_smaller": "Smaller text",
-            "manager_unavailable": "SaaS unavailable"
+            "manager_unavailable": "SaaS unavailable",
+            "nav_logout": "Sign out"
         },
         "de": {
             "manager_add_company_group": "＋ Unternehmensblock",
@@ -695,7 +698,8 @@
             "manager_text_normal": "Normale Textgröße",
             "manager_text_size": "Textgröße",
             "manager_text_smaller": "Text verkleinern",
-            "manager_unavailable": "SaaS nicht erreichbar"
+            "manager_unavailable": "SaaS nicht erreichbar",
+            "nav_logout": "Abmelden"
         }
     }
 }

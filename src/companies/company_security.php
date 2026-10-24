@@ -22,8 +22,7 @@ require GROMPIL_ROOT . '/includes/bootstrap.php';
 
 $user = require_login();
 $company = require_company_context($user);
-$canManage = is_platform_operator($user)
-    || has_company_permission('company.settings.manage', $company, $user);
+$canManage = grompil_can_access_module('company_security.php', $user, $company);
 if (!$canManage) {
     grompil_show_error(403, 40152, fn_t('access_denied'), 'Access denied');
 }

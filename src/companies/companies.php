@@ -20,8 +20,7 @@ declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 require_once GROMPIL_ROOT . '/includes/company_admin.php';
-$currentUser = require_permission('companies.manage');
-$currentUser = require_level_range(1, 100, $currentUser);
+$currentUser = grompil_require_module_access('companies.php');
 $messageKey = '';
 $languages = ['NL', 'FR', 'EN', 'DE'];
 $publicEnabled = false;

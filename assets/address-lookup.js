@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Fri 2026-10-23
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -26,6 +26,10 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     Object.values(fields).forEach((input) => input.addEventListener('input', clearReference));
 
     const getValue = (role) => fields[role]?.value.trim() ?? '';
+    const cancelSearch = (input) => {
+        clearTimeout(timers.get(input));
+        requestSequence.set(input, (requestSequence.get(input) ?? 0) + 1);
+    };
     const ensureList = (input) => {
         let list = lists.get(input);
         if (!list) {
@@ -34,6 +38,9 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             list.setAttribute('role', 'listbox');
             input.parentElement.classList.add('position-relative');
             input.parentElement.append(list);
+            list.addEventListener('focusout', (event) => {
+                if (event.relatedTarget !== input && !list.contains(event.relatedTarget)) list.replaceChildren();
+            });
             lists.set(input, list);
         }
         return list;
@@ -56,7 +63,15 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             button.className = 'list-group-item list-group-item-action';
             button.textContent = item.label;
             button.setAttribute('role', 'option');
-            button.addEventListener('click', () => { onSelect(item); list.replaceChildren(); });
+            // Keep the input focused until the click selects the suggestion.
+            button.addEventListener('mousedown', (event) => {
+                if (event.button === 0) event.preventDefault();
+            });
+            button.addEventListener('click', () => {
+                cancelSearch(input);
+                onSelect(item);
+                list.replaceChildren();
+            });
             list.append(button);
         });
         if (!items.length) list.replaceChildren();
@@ -65,12 +80,11 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         const input = fields[role];
         if (!input) return;
         input.addEventListener('input', () => {
-            clearTimeout(timers.get(input));
+            cancelSearch(input);
+            const sequence = requestSequence.get(input);
             const query = input.value.trim();
             if (query.length < minimum) { ensureList(input).replaceChildren(); return; }
             timers.set(input, setTimeout(async () => {
-                const sequence = (requestSequence.get(input) ?? 0) + 1;
-                requestSequence.set(input, sequence);
                 try {
                     const items = await search(type, { ...params(), q: query });
                     if (sequence === requestSequence.get(input)) show(input, items, onSelect);
@@ -79,7 +93,11 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
                 }
             }, 350));
         });
-        input.addEventListener('blur', () => setTimeout(() => lists.get(input)?.replaceChildren(), 180));
+        input.addEventListener('blur', (event) => {
+            cancelSearch(input);
+            const list = lists.get(input);
+            if (!list?.contains(event.relatedTarget)) list?.replaceChildren();
+        });
     };
 
     schedule('postal', 'postal', 2, () => ({}), (item) => {

@@ -21,7 +21,7 @@ declare(strict_types=1);
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 $user = require_login();
 $company = require_company_context($user);
-if (!has_company_permission('company.translations.manage', $company, $user)) {
+if (!grompil_can_access_module('company_translations.php', $user, $company)) {
     grompil_show_error(403, 40152, fn_t('access_denied'), 'Geen toegang');
 }
 

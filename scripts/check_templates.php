@@ -33,8 +33,7 @@ $isCli = PHP_SAPI === 'cli';
 $currentUser = null;
 if (!$isCli) {
     require dirname(__DIR__) . '/includes/bootstrap.php';
-    $currentUser = require_permission('companies.manage');
-    $currentUser = require_level_range(1, 100, $currentUser);
+    $currentUser = grompil_require_module_access('scripts/check_templates.php');
 }
 
 $projectRoot = dirname(__DIR__);

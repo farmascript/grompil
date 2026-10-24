@@ -19,8 +19,7 @@ declare(strict_types=1);
 
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
-$currentUser = require_permission('companies.manage');
-$currentUser = require_level_range(1, 100, $currentUser);
+$currentUser = grompil_require_module_access('navigation_keywords.php');
 
 $languages = ['NL', 'FR', 'EN', 'DE'];
 $message = '';

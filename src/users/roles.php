@@ -17,8 +17,7 @@
 declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
-$currentUser = require_permission('roles.manage');
-$currentUser = require_level_range(1, 100, $currentUser);
+$currentUser = grompil_require_module_access('roles.php');
 $permissionCatalog = [
     'users.manage' => 'perm_users_manage',
     'roles.manage' => 'perm_roles_manage',

@@ -49,7 +49,7 @@ sequence_number: 1
 */
 ```
 
-`id`, `group`, `group_title` and `title` are required. IDs are positive integers no greater than JavaScript's safe integer limit and must be unique across all discovered NAV blocks. The technical group ID is lowercase and language-neutral. `action`, `description` and `keywords` are optional. `public_visibility` defaults to `true`; set it to `false` for platform-only functions. The manager hides those entries from non-platform accounts in the SaaS context; the PHP module must still enforce its own authorization. `sequence_number` is an optional fixed number from 1 to 99. Fixed numbers must be unique. Modules without one receive a deterministic number starting at 100 when the catalog is generated. The manager displays two-digit padding for numbers below 100. Translatable values must each be one existing `@keyword@` token. A keyword translation is split on `|` and emitted as a JSON array; omit `keywords` when there are no search terms. One NAV block per PHP file is supported in this first version.
+`id`, `group`, `group_title` and `title` are required. IDs are positive integers no greater than JavaScript's safe integer limit and must be unique across all discovered NAV blocks. The technical group ID is lowercase and language-neutral. `action`, `description` and `keywords` are optional. `public_visibility` defaults to `true` and remains in the catalog for compatibility; online visibility is determined by the actual module access rules described below. `sequence_number` is an optional fixed number from 1 to 99. Fixed numbers must be unique. Modules without one receive a deterministic number starting at 100 when the catalog is generated. The manager displays two-digit padding for numbers below 100. Translatable values must each be one existing `@keyword@` token. A keyword translation is split on `|` and emitted as a JSON array; omit `keywords` when there are no search terms. One NAV block per PHP file is supported in this first version.
 
 Group titles used by modules sharing a group must resolve to the same text in every language. Missing or blank translations fall back in this order: requested language, English, Dutch. If a token has no nonempty value in any language array, the generator uses `!keyword!` for that language and reports a warning. Add the actual values to the general translations and export the language files to replace these placeholders. Existing `!keyword!` values are treated as intentional translations and remain visible for that language.
 
@@ -74,6 +74,22 @@ The generator currently includes these first modules:
 These IDs are reserved permanently. Add further modules by assigning a new ID in that module's comment, then run the generator again. No application routing, authorization, or translation function is changed by the URL-manager generator.
 
 ## Browsermanager gebruiken
+
+### Toegangsrechten
+
+De online manager vraagt bij openen en opnieuw focussen aan `navigation_access.php` welke modules de huidige sessie mag openen. De regels in `includes/module_access.php` gebruiken dezelfde gebruikersniveaus en globale of bedrijfsrechten als de betrokken modulecontroles. Een platformstatus geeft bijvoorbeeld niet automatisch het recht `users.manage`, en bedrijfsvertalingen zijn zichtbaar voor een bedrijfsgebruiker met `company.translations.manage`, ook wanneer het oudere catalogusveld `public_visibility` op `false` staat.
+
+Niet-toegankelijke modules verdwijnen uit de tegels, zoekresultaten en favorieten. Opgeslagen persoonlijke links naar dezelfde bekende modules worden eveneens gefilterd; externe links blijven zichtbaar. Lege vaste blokken worden voor gewone gebruikers verborgen. De opgeslagen indeling en favorieten worden niet verwijderd, zodat ze na een rechtenwijziging weer beschikbaar kunnen worden. Bij een mislukte toegangscontrole blijven beschermde functies verborgen. De toegangslijst wordt niet lokaal bewaard.
+
+Registreer nieuwe modules in `grompil_module_access_rules()` en hergebruik die regel in hun PHP-toegangscontrole. Onbekende catalogusmodules blijven online verborgen. `grompil_require_module_access()` is de gedeelde guard voor globaal beheer; bedrijfsmodules bepalen eerst hun actieve bedrijf en controleren daarna `grompil_can_access_module()`. De modules blijven bij rechtstreeks openen altijd hun eigen toegang controleren.
+
+Een manager die als lokaal `file://`-bestand wordt geopend heeft geen verifieerbare ingelogde servercontext en behoudt de volledige catalogus. Open de manager via de Grompil-webserver om de tegels aan de huidige gebruikersrechten aan te passen.
+
+Controleer de toegangsregels met `php scripts/test_navigation_access.php` en het tonen, zoeken en verversen met `node scripts/test_navigation_visibility.js` (een actuele Node.js-versie vereist).
+
+### Openen en indeling bewaren
+
+Bij een ingelogde online manager staat bovenaan **Uitloggen**. Deze knop gebruikt de bestaande `logout.php`-route met POST, het CSRF-token van de sessie en de slug van het actieve bedrijf. Na afmelden verschijnt het inlogscherm van dat bedrijf. Zonder actieve bedrijfscontext verschijnt het algemene inlogscherm. Het formulier navigeert de volledige pagina, ook wanneer de manager in het navigatievenster van een module is geopend. De knop blijft verborgen bij een lokale `file://`-manager of zonder gecontroleerde ingelogde sessie. Het CSRF-token wordt niet in de browserindeling of JSON-export opgeslagen.
 
 Open `url-manager/index.html` als apart browsertabblad. De manager laadt de meegeleverde `catalog.js` automatisch, zowel via de webserver als wanneer je `index.html` als lokaal bestand opent. Na het opnieuw genereren van de catalogus wordt ook deze lokale kopie bijgewerkt en via Dropbox gesynchroniseerd. Handmatig `navigation.json` kiezen blijft als terugvaloptie beschikbaar.
 

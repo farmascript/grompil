@@ -158,6 +158,12 @@ De applicatie leest databasegegevens uit `C:\usr\credentials.php`, buiten de pro
 
 De hoster kan een ander pad gebruiken via `GROMPIL_CREDENTIALS_FILE`; deze omgevingsvariabele bevat alleen het pad naar het bestand. Als het wachtwoord in het PHP-bestand is ingevuld, zijn de afzonderlijke `GROMPIL_DB_*`-wachtwoordvariabelen niet nodig.
 
+Database, KBO en SMTP gebruiken samen `includes/credentials_config.php` om dit privébestand te laden. Dezelfde array met de secties `database`, `kbo` en `mail` werkt op localhost en op de server. Het bestand begint met `<?php` en geeft de array terug met `return`. Bij een installatie in `public_html/grompil` wordt automatisch `credentials.php` uit de map boven `public_html` geladen, bijvoorbeeld `/home/account/credentials.php`. Dit werkt ook voor CLI-opdrachten en geplande taken; een omgevingsvariabele is voor deze mappenstructuur niet nodig. Een expliciet ingestelde `GROMPIL_CREDENTIALS_FILE` blijft voorrang krijgen.
+
+Er is geen IP-test nodig wanneer beide installaties dezelfde instellingen gebruiken: databasehost `127.0.0.1` verwijst telkens naar de machine waarop PHP draait. Het IP-adres van de bezoeker, de Host-header en proxyheaders bepalen nooit welke credentials worden geladen. Als de databasewachtwoorden lokaal en op hosting verschillen, behoud je dezelfde arraystructuur en vul je per machine het eigen wachtwoord in; KBO- en mailgegevens kunnen gelijk blijven.
+
+Controleer de configuratielader zonder databaseverbinding of mailverzending met `php scripts/test_credentials_config.php`.
+
 ## Belgische adresopzoeking
 
 De adresvelden van bedrijven en gebruikers kunnen officiële Belgische suggesties gebruiken via BeSt Address. De browser praat alleen met `address_api.php`, dat de gratis openbare BOSA-endpoint server-side aanroept; voor deze endpoint is geen OAuth-configuratie nodig. `BEST_ADDRESS_API_URL` is optioneel en heeft als standaard de openbare dienst; die heeft geen beschikbaarheidsgarantie. Als de API tijdelijk onbeschikbaar is, blijven handmatige adresinvoer en opslaan mogelijk.

@@ -343,7 +343,7 @@ $catalog = [
     'managerI18n' => array_map(
         static fn (array $translations): array => array_filter(
             $translations,
-            static fn (string $key): bool => str_starts_with($key, 'manager_'),
+            static fn (string $key): bool => str_starts_with($key, 'manager_') || $key === 'nav_logout',
             ARRAY_FILTER_USE_KEY
         ),
         $languageArrays

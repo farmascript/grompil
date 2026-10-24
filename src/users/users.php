@@ -19,7 +19,7 @@ declare(strict_types=1);
 
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
-$currentUser = require_level_range(1, 100, require_permission('users.manage'));
+$currentUser = grompil_require_module_access('users.php');
 $messageKey = '';
 $newUserFirstName = trim((string) ($_POST['name_first'] ?? ''));
 $newUserLastName = trim((string) ($_POST['name_last'] ?? ''));

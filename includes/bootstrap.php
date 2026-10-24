@@ -590,6 +590,7 @@ function verify_csrf(): void
     }
 }
 
+require_once __DIR__ . '/module_access.php';
 require_once __DIR__ . '/templates.php';
 
 $GLOBALS['grompilTranslations'] = fn_loadLanguage();

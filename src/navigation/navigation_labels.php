@@ -25,7 +25,7 @@ $labels = [];
 foreach (['NL', 'FR', 'EN', 'DE'] as $language) {
     $labels[strtolower($language)] = array_filter(
         array_replace(fn_readSourceLanguage($language), fn_readLanguageFile($language)),
-        static fn (string $key): bool => str_starts_with($key, 'manager_'),
+        static fn (string $key): bool => str_starts_with($key, 'manager_') || $key === 'nav_logout',
         ARRAY_FILTER_USE_KEY
     );
 }

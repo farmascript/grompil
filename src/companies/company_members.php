@@ -31,7 +31,7 @@ if ($isPlatformOperator) {
     }
 } else {
     $tenant = require_company_context($actor);
-    if (!has_company_permission('company.users.manage', $tenant, $actor)) {
+    if (!grompil_can_access_module('company_members.php', $actor, $tenant)) {
         grompil_show_error(403, 40152, fn_t('access_denied'), 'Geen toegang');
     }
     $companies = [['id' => $tenant['id'], 'name' => $tenant['name']]];

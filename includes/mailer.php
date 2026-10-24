@@ -31,14 +31,12 @@ function grompil_send_mail(string $recipient, string $subject, string $htmlBody,
     }
     require_once $autoloadPath;
 
-    $credentialsPath = getenv('GROMPIL_CREDENTIALS_FILE')
-        ?: dirname(__DIR__, 4) . DIRECTORY_SEPARATOR . 'credentials.php';
-    if (!is_file($credentialsPath)) {
+    if (!is_file(grompil_credentials_path())) {
         throw new RuntimeException('The private credentials file is missing.');
     }
 
-    $credentials = require $credentialsPath;
-    $config = is_array($credentials) && is_array($credentials['mail'] ?? null)
+    $credentials = grompil_credentials_config();
+    $config = is_array($credentials['mail'] ?? null)
         ? $credentials['mail']
         : [];
     foreach (['host', 'port', 'username', 'password', 'from_email', 'from_name'] as $key) {

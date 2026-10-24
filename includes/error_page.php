@@ -19,6 +19,8 @@ declare(strict_types=1);
 /** Render a stable, user-facing error page without requiring the database. */
 function grompil_show_error(int $status, int $code, string $message, string $title = 'An error occurred'): never
 {
+    require_once __DIR__ . '/templates.php';
+
     http_response_code($status);
     $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
     if (!in_array($language, ['NL', 'FR', 'EN', 'DE'], true)) {
@@ -88,27 +90,33 @@ function grompil_show_error(int $status, int $code, string $message, string $tit
     ];
     [$title, $message] = $catalog[$code][$language] ?? [$title, $message];
     $labels = [
-        'NL' => ['Meldingsnummer', 'Terug', 'Startpagina'],
-        'FR' => ['Numéro de référence', 'Retour', 'Accueil'],
-        'EN' => ['Reference number', 'Back', 'Home'],
-        'DE' => ['Meldungsnummer', 'Zurück', 'Startseite'],
+        'NL' => ['Meldingsnummer', 'Naar manager', 'Startpagina'],
+        'FR' => ['Numéro de référence', 'Accéder au gestionnaire', 'Accueil'],
+        'EN' => ['Reference number', 'Go to manager', 'Home'],
+        'DE' => ['Meldungsnummer', 'Zum Manager', 'Startseite'],
     ][$language];
     $templatePath = dirname(__DIR__) . '/tmpl/default/error.html';
     $template = is_file($templatePath) ? file_get_contents($templatePath) : false;
     $values = [
-        '@error_title@' => htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-        '@error_message@' => htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-        '@error_code@' => (string) $code,
-        '@error_reference_label@' => $labels[0],
-        '@error_back_label@' => $labels[1],
-        '@error_home_label@' => $labels[2],
+        'error_title' => htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+        'error_message' => htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+        'error_code' => (string) $code,
+        'error_reference_label' => $labels[0],
+        '_error_manager_label' => $labels[1],
+        '_error_manager_href' => htmlspecialchars(fn_appBaseHref() . 'url-manager/index.html', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+        '_error_home_href' => htmlspecialchars(fn_appBaseHref() . 'index.php', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+        'error_home_label' => $labels[2],
     ];
     if ($template === false) {
-        echo '<!doctype html><html lang="en"><meta charset="utf-8"><title>' . $values['@error_title@']
-            . '</title><main><h1>' . $values['@error_title@'] . '</h1><p>' . $values['@error_message@']
+        echo '<!doctype html><html lang="en"><meta charset="utf-8"><title>' . $values['error_title']
+            . '</title><main><h1>' . $values['error_title'] . '</h1><p>' . $values['error_message']
             . '</p><p>Reference number ' . $code . '</p></main></html>';
     } else {
-        echo strtr($template, $values);
+        $replacements = array_combine(
+            array_map(static fn (string $key): string => '@' . $key . '@', array_keys($values)),
+            array_values($values)
+        );
+        echo strtr($template, $replacements);
     }
     exit;
 }

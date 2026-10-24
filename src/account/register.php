@@ -150,6 +150,9 @@ echo fn_templateRender('registration.html', [
     '_registration_content_hidden' => $messageType === 'success' ? 'hidden' : '',
     '_customer_checked' => $accountType === 'customer' ? 'checked' : '',
     '_staff_checked' => $accountType === 'staff' ? 'checked' : '',
+    '_customer_login_cta_html' => $messageType === 'success' && $accountType === 'customer'
+        ? '<a class="btn btn-grompil btn-lg w-100 mt-3" href="' . e('login.php?c=' . rawurlencode((string) $registrationCompany['slug'])) . '">' . e(fn_t('login_title')) . '</a>'
+        : '',
     'display_name_value' => $name,
     'name_first_value' => $firstName,
     'name_last_value' => $lastName,

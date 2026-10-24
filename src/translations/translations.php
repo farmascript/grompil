@@ -18,8 +18,7 @@ declare(strict_types=1);
 
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
-$currentUser = require_permission('translations.manage');
-$currentUser = require_level_range(1, 100, $currentUser);
+$currentUser = grompil_require_module_access('translations.php');
 $languages = ['NL', 'FR', 'EN', 'DE'];
 $language = strtoupper((string) ($_GET['language'] ?? $_POST['language'] ?? 'NL'));
 if (!in_array($language, $languages, true)) {

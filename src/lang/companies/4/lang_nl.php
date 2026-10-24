@@ -15,6 +15,6 @@
  */
 
 $arrSubst = array (
-  'tenant_select_title' => 'kies een bedrijf',
+  'tenant_select_title' => 'kies een bedrijf', (p)
 );
 

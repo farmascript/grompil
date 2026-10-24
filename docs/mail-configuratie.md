@@ -19,6 +19,8 @@
 
 Grompil kan e-mail versturen via een SMTP-server met PHPMailer. De SMTP-gegevens horen in hetzelfde privébestand buiten de webroot als de databasegegevens, standaard `C:\usr\credentials.php`.
 
+Op hosting met de applicatie in `public_html/grompil` wordt automatisch `credentials.php` uit de map boven `public_html` gebruikt. Met `GROMPIL_CREDENTIALS_FILE` kun je een ander absoluut pad instellen. Database, KBO en mail gebruiken dezelfde centrale configuratielader. De inhoud en arraystructuur zijn op localhost en op hosting gelijk; een IP-test is niet nodig. Verschillende wachtwoorden kun je per machine in het eigen privébestand invullen.
+
 Voeg daar naast de bestaande `database`-sectie een `mail`-sectie aan toe. Behoud de bestaande database-inhoud:
 
 ```php

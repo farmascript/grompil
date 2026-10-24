@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Wed 2026-10-21 18:08:02
+ * @date_mut: Sat 2026-10-24
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -35,9 +35,56 @@
     let activePageId = 'page:1';
     let activePageContext = null;
     let managerLabels = bundledCatalog?.managerI18n || {};
+    let allowedModules = null;
+    let knownModules = new Set();
+    let logoutContext = null;
+    let accessRequestSequence = 0;
+
+    function canAccessCatalogItem(item) {
+        // Standalone local files have no authenticated server context.
+        if (!['http:', 'https:'].includes(location.protocol)) return true;
+        return allowedModules ? allowedModules.has(item.module) : item.module === 'index.php';
+    }
+
+    function canAccessPersonalLink(link) {
+        if (!['http:', 'https:'].includes(location.protocol)) return true;
+        try {
+            const base = new URL('../', location.href);
+            const target = new URL(personalLinkUrl(link.url));
+            if (target.origin !== base.origin || !target.pathname.startsWith(base.pathname)) return true;
+            const module = decodeURIComponent(target.pathname.slice(base.pathname.length));
+            const known = knownModules.has(module) || (state.catalog?.items || []).some((item) => item.module === module);
+            return !known || canAccessCatalogItem({ module });
+        } catch { return false; }
+    }
+
+    async function syncModuleAccess() {
+        if (!['http:', 'https:'].includes(location.protocol)) return;
+        const sequence = ++accessRequestSequence;
+        allowedModules = null;
+        logoutContext = null;
+        render();
+        try {
+            const response = await fetch('../navigation_access.php', {
+                headers: { Accept: 'application/json' }, cache: 'no-store', credentials: 'same-origin',
+            });
+            if (!response.ok) return;
+            const result = await response.json();
+            if (sequence !== accessRequestSequence || !Array.isArray(result.allowedModules)
+                || !Array.isArray(result.knownModules)
+                || ![...result.allowedModules, ...result.knownModules].every((module) => typeof module === 'string')) return;
+            allowedModules = new Set(result.allowedModules);
+            knownModules = new Set(result.knownModules);
+            if (typeof result.logout?.csrfToken === 'string' && result.logout.csrfToken
+                && typeof result.logout.companySlug === 'string') {
+                logoutContext = result.logout;
+            }
+            render();
+        } catch { /* Keep protected tiles hidden when session access cannot be checked. */ }
+    }
 
     function t(key, values = {}) {
-        const token = `manager_${key}`;
+        const token = key === 'nav_logout' ? key : `manager_${key}`;
         const candidates = [managerLabels[language()]?.[token], managerLabels.en?.[token], managerLabels.nl?.[token]];
         const text = candidates.find((value) => typeof value === 'string' && value.trim()) || `!${token}!`;
         return text.replace(/\{(\w+)\}/g, (match, name) => String(values[name] ?? match));
@@ -552,6 +599,12 @@
     }
 
     function render() {
+        const logoutForm = $('#manager-logout-form');
+        logoutForm.hidden = !logoutContext;
+        $('#manager-logout-button').disabled = !logoutContext;
+        $('#manager-logout-csrf').value = logoutContext?.csrfToken || '';
+        $('#manager-logout-company').value = logoutContext?.companySlug || '';
+        if (logoutContext) logoutForm.action = new URL('../logout.php', location.href).href;
         $('#manager-version').textContent = window.GROMPIL_URL_MANAGER_VERSION || '0.2.1';
         const phpVersion = $('#php-version');
         phpVersion.hidden = !remoteSync.phpVersion;
@@ -640,11 +693,11 @@
             const firstPage = state.personal.pages[0].id;
             const groups = everyGroup.filter((group) => group.kind === 'custom' ? group.pageId === activePageId : activePageId === firstPage);
             const items = (state.catalog?.items || []).filter((item) =>
-                (!remoteSync.enabled || remoteSync.isPlatformOperator || item.public_visibility !== false)
+                canAccessCatalogItem(item)
                 && !state.personal.hidden.includes(itemKey(item))
                 && matches(item)
             );
-            const links = (state.personal.links || []).filter((link) => !state.favoritesOnly && (!state.query || `${link.referenceNumber} ${link.title} ${link.url}`.toLocaleLowerCase().includes(state.query.trim().toLocaleLowerCase())));
+            const links = (state.personal.links || []).filter((link) => canAccessPersonalLink(link) && !state.favoritesOnly && (!state.query || `${link.referenceNumber} ${link.title} ${link.url}`.toLocaleLowerCase().includes(state.query.trim().toLocaleLowerCase())));
             const contents = new Map(groups.map((group) => [group.key, []]));
             for (const item of items) {
                 const key = itemKey(item);
@@ -661,6 +714,7 @@
                 const filteredView = state.favoritesOnly || Boolean(state.query.trim());
                 if (group.kind === 'gap') return filteredView ? '' : `<div class="group-placeholder" data-drop-group="${escapeHtml(group.key)}" data-group-kind="gap" data-drop-family="${group.family}" data-slot-index="${group.slotIndex}" aria-label="Lege plek in de indeling"></div>`;
                 const cards = contents.get(group.key) || [];
+                if (cards.length === 0 && group.kind !== 'custom' && !canEditPlatformLayout()) return '';
                 if (filteredView && cards.length === 0) return '';
                 const kind = group.kind === 'custom' ? 'BEDRIJF' : 'GROMPIL';
                 const hint = group.kind === 'custom' ? t('drop_company') : (canEditPlatformLayout() ? t('drop_platform') : '');
@@ -674,7 +728,7 @@
             const visibleCount = [...contents.values()].reduce((total, cards) => total + cards.length, 0);
             $('#catalog-status').textContent = t(visibleCount === 1 ? 'count_one' : 'count_many', { count: visibleCount });
         }
-        const favorites = (state.catalog?.items || []).filter((item) => state.personal.favorites.includes(itemKey(item)) && !state.personal.hidden.includes(itemKey(item)) && matchesWithoutFavoriteFilter(item));
+        const favorites = (state.catalog?.items || []).filter((item) => canAccessCatalogItem(item) && state.personal.favorites.includes(itemKey(item)) && !state.personal.hidden.includes(itemKey(item)) && matchesWithoutFavoriteFilter(item));
         $('#favorites-section').hidden = true;
         $('#favorites-grid').innerHTML = favorites.map((item) => tile(item)).join('');
         document.documentElement.lang = language();
@@ -1183,6 +1237,7 @@
         await loadManagerLabels();
         if (validCatalog(bundledCatalog)) state.catalog = bundledCatalog;
         remoteSync.application = state.catalog?.application || 'grompil';
+        await syncModuleAccess();
         await syncPlatformLayout();
         await syncRemotePreferences();
         await saveState();
@@ -1191,7 +1246,7 @@
             fetch('../navigation.json', { cache: 'no-store' }).then((response) => { if (!response.ok) throw new Error(); return response.json(); }).then((data) => { if (!state.catalog) loadCatalog(data); }).catch(() => {});
         }
     }
-    window.addEventListener('focus', () => { syncPlatformLayout().then(syncRemotePreferences); });
+    window.addEventListener('focus', () => { syncModuleAccess().then(syncPlatformLayout).then(syncRemotePreferences); });
     init();
 })();
 

@@ -16,6 +16,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/credentials_config.php';
+
 /** Returns database settings from the private file, with environment fallback. */
 function grompil_database_config(): array
 {
@@ -26,13 +28,11 @@ function grompil_database_config(): array
         'user' => getenv('GROMPIL_DB_USER') ?: 'grompil_app',
         'password' => getenv('GROMPIL_DB_PASSWORD') ?: '',
     ];
-    $path = getenv('GROMPIL_CREDENTIALS_FILE')
-        ?: dirname(__DIR__, 4) . DIRECTORY_SEPARATOR . 'credentials.php';
-    if (!is_file($path)) {
+    if (!is_file(grompil_credentials_path())) {
         return $config;
     }
-    $credentials = require $path;
-    if (!is_array($credentials) || !is_array($credentials['database'] ?? null)) {
+    $credentials = grompil_credentials_config();
+    if (!is_array($credentials['database'] ?? null)) {
         throw new RuntimeException('The credentials file has an invalid format.');
     }
     foreach ($credentials['database'] as $key => $value) {
