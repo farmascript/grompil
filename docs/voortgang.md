@@ -17,6 +17,15 @@
 
 # Voortgang Grompil
 
+## 24 oktober 2026
+
+### Resetlink opnieuw versturen en platformparameters
+
+- Na het eerste resetverzoek toont de pagina geen e-mailveld meer, maar een knop **Link opnieuw versturen**. De knop gebruikt hetzelfde adres en dezelfde CSRF-bescherming.
+- Het maximum en de schuivende wachttijd zijn instelbaar in **Beheeromgeving → Systeemparameters**. De standaard blijft drie aanvragen per e-mailadres per 15 minuten, inclusief de eerste. Na het maximum wordt de knop tijdelijk uitgeschakeld en automatisch weer actief na de wachttijd. De aanvullende grens van twintig verzoeken per IP per uur blijft gelden.
+- De instellingen staan in `platform_system_settings`; `migrations/20261024_platform_system_settings.sql` maakt de tabel aan en stelt de beginwaarden in. De tabel bevat uitsluitend niet-geheime runtimeparameters: de applicatie kan ze lezen en alleen de platformbeheerder kan ze wijzigen. Bewaar hier geen wachtwoorden of sleutels.
+- Uitrol: maak een databaseback-up en voer de migratie uit op elke database. De bijgewerkte `schema.sql` bevat dezelfde tabel en beleidsregels.
+
 ## 21 oktober 2026
 
 ### Wachtwoordherstel

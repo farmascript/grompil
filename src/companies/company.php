@@ -85,6 +85,19 @@ foreach ($validPages as $key) {
 }
 $user = current_user();
 $companyContext = $user === null ? null : current_company_context($user);
+$identityHtml = '';
+if ($user !== null) {
+    $identityRole = (string) ($companyContext['company_role_name'] ?? $user['role_name'] ?? '');
+    $identityHtml = '<span class="small text-secondary company-login-status">'
+        . e(fn_t('dashboard_logged_in_as')) . ' <strong>' . e((string) $user['display_name'])
+        . ($identityRole !== '' ? ' · ' . e($identityRole) : '') . '</strong></span>';
+}
+$logoutForm = '';
+if ($user !== null) {
+    $logoutForm = '<form method="post" action="logout.php" class="m-0">' . csrf_field()
+        . '<input type="hidden" name="c" value="' . e($slug) . '">'
+        . '<button class="btn btn-sm btn-outline-secondary" type="submit">' . e(fn_t('nav_logout')) . '</button></form>';
+}
 if ($user === null) {
     $accountLinks = '<a class="btn btn-outline-primary" href="login.php?c=' . rawurlencode($slug) . '">'
         . e(fn_t('login_title')) . '</a> <a class="btn btn-primary" href="register.php?c=' . rawurlencode($slug) . '">'
@@ -93,14 +106,15 @@ if ($user === null) {
     $accountLinks = '<a class="btn btn-outline-primary" href="admin.php">' . e(fn_t('nav_admin')) . '</a>';
 } elseif ($user['company_id'] !== null && $user['company_id'] !== (int) $company['id']) {
     $accountLinks = '<span class="company-access-message small text-secondary">' . e(fn_t('company_other_session')) . '</span>'
-        . '<form method="post" action="logout.php" class="m-0">' . csrf_field()
-        . '<input type="hidden" name="c" value="' . e($slug) . '">'
-        . '<button class="btn btn-sm btn-outline-secondary" type="submit">' . e(fn_t('nav_logout')) . '</button></form>';
+        . $logoutForm;
 } elseif ($companyContext === null) {
     $accountLinks = '<span class="company-access-message small text-secondary">' . e(fn_t('company_access_pending')) . '</span>';
+} elseif ((int) ($companyContext['company_role_level'] ?? 0) >= 200) {
+    $accountLinks = $logoutForm;
 } else {
     $accountLinks = '<a class="btn btn-outline-primary" href="dashboard.php">' . e(fn_t('workspace_label')) . '</a>';
 }
+$accountLinks = $identityHtml . $accountLinks;
 $pageContent = fn_templateRender('company_page_content.html', [
     'company_name' => (string) $company['name'],
     'page_title' => $title,

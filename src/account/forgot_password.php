@@ -33,11 +33,19 @@ set_database_tenant_context($companyId ?? 0, 0, false);
 $query = $company ? '?c=' . rawurlencode($slug) : '';
 $email = trim((string) ($_POST['email'] ?? ''));
 $message = '';
+$formHtml = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     try {
         $baseUrl = password_reset_base_url();
-        $delivery = password_reset_issue(db(), $companyId, $email, grompil_client_ip_address() ?: 'unknown');
+        $requestStatus = [];
+        $delivery = password_reset_issue(
+            db(),
+            $companyId,
+            $email,
+            grompil_client_ip_address() ?: 'unknown',
+            $requestStatus
+        );
         if ($delivery !== null) {
             $parameters = ['token' => $delivery['token'], 'lang' => (string) ($_SESSION['language'] ?? 'NL')];
             if ($company) {
@@ -57,6 +65,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $message = '<div class="alert alert-info" role="status">' . e(fn_t('recovery_requested')) . '</div>';
+        $waitHtml = '';
+        $resendDisabled = (int) ($requestStatus['remaining'] ?? 0) < 1;
+        $waitSeconds = $resendDisabled ? max(1, (int) ($requestStatus['retry_after_seconds'] ?? 60)) : 0;
+        if ($resendDisabled) {
+            $waitMinutes = max(1, (int) ceil($waitSeconds / 60));
+            $waitHtml = '<p id="recovery-resend-wait" class="small text-secondary mt-2 mb-0" role="status">'
+                . e(sprintf(fn_t('recovery_resend_wait'), $waitMinutes)) . '</p>';
+        }
+        $formHtml = fn_templateRender('forgot_password_resend.html', [
+            'recovery_form_action' => 'forgot-password.php' . $query,
+            'email_value' => $email,
+            '_csrf_field_html' => csrf_field(),
+            'recovery_resend_button' => fn_t('recovery_resend_link'),
+            '_recovery_wait_html' => $waitHtml,
+            'resend_disabled' => $resendDisabled ? 'disabled' : '',
+            'wait_seconds' => (string) $waitSeconds,
+        ]);
     } catch (Throwable $exception) {
         error_log('Password reset request could not be processed. Check the migration and public URL configuration.');
         $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('recovery_unavailable')) . '</div>';
@@ -67,7 +92,7 @@ echo fn_templateRender('password_recovery.html', [
     'recovery_description' => fn_t('recovery_request_intro'),
     'recovery_company_name' => $company ? (string) $company['name'] : 'Grompil',
     '_message_html' => $message,
-    '_recovery_form_html' => fn_templateRender('forgot_password_form.html', [
+    '_recovery_form_html' => $formHtml !== '' ? $formHtml : fn_templateRender('forgot_password_form.html', [
         'recovery_form_action' => 'forgot-password.php' . $query,
         'email_value' => $email,
         '_csrf_field_html' => csrf_field(),

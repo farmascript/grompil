@@ -59,6 +59,15 @@ try {
     $migration = str_replace('CREATE TABLE IF NOT EXISTS', 'CREATE TEMP TABLE IF NOT EXISTS', $migration);
     reset_test_expect((bool) @pg_query($connection, $migration), 'migration applies to temporary fixtures');
     reset_test_expect((bool) @pg_query($connection, $migration), 'migration can be repeated');
+    password_reset_query($connection,
+        "CREATE TEMP TABLE platform_system_settings (
+            "key" text PRIMARY KEY, value_integer integer NOT NULL, updated_at timestamptz DEFAULT now()
+        )"
+    );
+    password_reset_query($connection,
+        "INSERT INTO platform_system_settings (\"key\", value_integer)
+         VALUES ('password_reset_max_requests', 3), ('password_reset_window_minutes', 15)"
+    );
     password_reset_query($connection, 'INSERT INTO companies VALUES (11), (12)');
     $original = password_hash('Original-Password-123', PASSWORD_DEFAULT);
     foreach ([[1, null, 'shared@example.test', true, 'approved'], [2, 11, 'shared@example.test', true, 'approved'],

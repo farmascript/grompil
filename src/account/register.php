@@ -130,6 +130,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($membershipResult && pg_query(db(), 'COMMIT')) {
                     $messageKey = $customer ? 'register_success_customer' : 'register_success_staff';
                     $messageType = 'success';
+                    if ($customer) {
+                        try {
+                            require_once GROMPIL_ROOT . '/includes/mailer.php';
+                            require_once GROMPIL_ROOT . '/includes/password_reset.php';
+                            $mailLanguage = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
+                            if (!in_array($mailLanguage, ['NL', 'FR', 'EN', 'DE'], true)) {
+                                $mailLanguage = 'NL';
+                            }
+                            $companyName = (string) $registrationCompany['name'];
+                            $loginUrl = password_reset_base_url() . 'login.php?' . http_build_query([
+                                'c' => (string) $registrationCompany['slug'],
+                                'lang' => $mailLanguage,
+                            ], '', '&', PHP_QUERY_RFC3986);
+                            $welcomeHtml = fn_templateRender('welcome_customer_email.html', [
+                                'html_language' => strtolower($mailLanguage),
+                                'company_name' => $companyName,
+                                'customer_name' => $name,
+                                'login_url' => $loginUrl,
+                            ]);
+                            $welcomeText = fn_t('welcome_customer_greeting') . ' ' . $name . ",\n\n"
+                                . fn_t('welcome_customer_intro') . "\n\n"
+                                . fn_t('welcome_customer_login_help') . ' ' . $companyName . ".\n"
+                                . $loginUrl . "\n\n"
+                                . fn_t('welcome_customer_footer');
+                            grompil_send_mail(
+                                $email,
+                                fn_t('welcome_customer_subject') . ' · ' . $companyName,
+                                $welcomeHtml,
+                                $welcomeText
+                            );
+                        } catch (Throwable $exception) {
+                            error_log('Customer welcome email could not be sent.');
+                        }
+                    }
                 } else {
                     pg_query(db(), 'ROLLBACK');
                     grompil_show_error(500, 50631, 'Registratie is tijdelijk niet beschikbaar. Probeer het later opnieuw.', 'Registratie niet beschikbaar');

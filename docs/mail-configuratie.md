@@ -38,7 +38,7 @@ Voeg daar naast de bestaande `database`-sectie een `mail`-sectie aan toe. Behoud
 
 Installeer de projectafhankelijkheden vanuit de projectmap met `composer install`. Dit maakt `vendor/` en `composer.lock` aan. De `vendor/`-map bevat code van derden; `composer.lock` legt de gebruikte versies vast.
 
-De procedurele helper `includes/mailer.php` biedt `grompil_send_mail($recipient, $subject, $htmlBody, $textBody)`. De functie geeft een fout als de bibliotheek of configuratie ontbreekt en gooit een uitzondering als SMTP-verzending mislukt. De helper wordt gebruikt voor het eerste bedrijfsbeheerdersaccount en voor wachtwoordherstel. Voor wachtwoordherstel op hosting is ook `GROMPIL_PUBLIC_URL` nodig; zie [password-recovery.md](password-recovery.md).
+De procedurele helper `includes/mailer.php` biedt `grompil_send_mail($recipient, $subject, $htmlBody, $textBody)`. De functie geeft een fout als de bibliotheek of configuratie ontbreekt en gooit een uitzondering als SMTP-verzending mislukt. De helper wordt gebruikt voor het eerste bedrijfsbeheerdersaccount, wachtwoordherstel en de welkomstmail na een klantregistratie. De HTML-layout van de klantwelkomstmail staat in `tmpl/default/welcome_customer_email.html`. Voor e-mails met een absolute link is op hosting `GROMPIL_PUBLIC_URL` nodig; zie [password-recovery.md](password-recovery.md).
 
 Op localhost is uitgaand HTTPS/SMTP-verkeer nodig. Providerinstellingen, zoals host, poort en encryptie, verschillen per e-mailprovider. Gebruik een app-wachtwoord wanneer de provider dat vereist. Gebruik `encryption => 'none'` niet over een openbaar netwerk.
 

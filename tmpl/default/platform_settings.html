@@ -1,0 +1,28 @@
+<!-- 854169 b-->
+
+<div class="mb-4">
+    <h1 class="h2">@platform_settings_title@</h1>
+    <p class="text-secondary">@platform_settings_intro@</p>
+</div>
+@_message_html@
+<section class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h5">@platform_settings_password_reset@</h2>
+        <form method="post">
+            @_csrf_field_html@
+            <div class="mb-3">
+                <label class="form-label" for="password-reset-max-requests">@platform_settings_max_requests@</label>
+                <input class="form-control" id="password-reset-max-requests" name="password_reset_max_requests" type="number" min="1" max="10" required value="@max_requests_value@">
+                <div class="form-text">@platform_settings_max_requests_help@</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="password-reset-window-minutes">@platform_settings_window_minutes@</label>
+                <input class="form-control" id="password-reset-window-minutes" name="password_reset_window_minutes" type="number" min="1" max="1440" required value="@window_minutes_value@">
+                <div class="form-text">@platform_settings_window_minutes_help@</div>
+            </div>
+            <button class="btn btn-primary" type="submit">@platform_settings_save@</button>
+        </form>
+    </div>
+</section>
+
+<!-- 854169 e-->

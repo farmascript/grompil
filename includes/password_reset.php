@@ -26,36 +26,104 @@ function password_reset_query(PgSql\Connection $connection, string $sql, array $
     return $result;
 }
 
-/** Returns mail delivery data, or null for an unknown account or a limited request. */
-function password_reset_issue(PgSql\Connection $connection, ?int $companyId, string $email, string $ip): ?array
+/** Returns the platform-configured request limit and rolling window. */
+function password_reset_request_limits(PgSql\Connection $connection): array
 {
+    $result = password_reset_query($connection,
+        'SELECT "key", value_integer FROM platform_system_settings
+         WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')'
+    );
+    $limits = ['max_requests' => 3, 'window_minutes' => 15];
+    while ($row = pg_fetch_assoc($result)) {
+        if ($row['key'] === 'password_reset_max_requests') {
+            $limits['max_requests'] = (int) $row['value_integer'];
+        } elseif ($row['key'] === 'password_reset_window_minutes') {
+            $limits['window_minutes'] = (int) $row['value_integer'];
+        }
+    }
+    return $limits;
+}
+
+/** Returns current email/IP request totals and the wait until an attempt expires. */
+function password_reset_attempt_status(
+    PgSql\Connection $connection,
+    int $scope,
+    string $identifier,
+    string $ip,
+    int $windowMinutes,
+    int $maxRequests
+): array {
+    $row = pg_fetch_assoc(password_reset_query($connection,
+        "SELECT
+            count(*) FILTER (WHERE ip_address = $1) AS ip_total,
+            count(*) FILTER (WHERE company_id = $2 AND identifier_hash = $3) AS email_total,
+            COALESCE(CEIL(EXTRACT(EPOCH FROM (MIN(attempted_at) FILTER (WHERE ip_address = $1) + interval '1 hour' - now()))), 0)::integer AS ip_wait,
+            COALESCE(CEIL(EXTRACT(EPOCH FROM (MIN(attempted_at) FILTER (WHERE company_id = $2 AND identifier_hash = $3) + make_interval(mins => $4) - now()))), 0)::integer AS email_wait
+         FROM password_reset_attempts
+         WHERE (ip_address = $1 AND attempted_at > now() - interval '1 hour')
+            OR (company_id = $2 AND identifier_hash = $3 AND attempted_at > now() - make_interval(mins => $4))",
+        [$ip, $scope, $identifier, $windowMinutes]
+    ));
+    $ipTotal = (int) ($row['ip_total'] ?? 0);
+    $emailTotal = (int) ($row['email_total'] ?? 0);
+    $limited = $ipTotal >= 20 || $emailTotal >= $maxRequests;
+    return [
+        'remaining' => $limited ? 0 : max(0, $maxRequests - $emailTotal),
+        'retry_after_seconds' => $limited
+            ? max(1, ($ipTotal >= 20 ? (int) $row['ip_wait'] : 0), ($emailTotal >= $maxRequests ? (int) $row['email_wait'] : 0))
+            : 0,
+        'max_requests' => $maxRequests,
+        'window_minutes' => $windowMinutes,
+    ];
+}
+
+/** Returns mail delivery data, or null for an unknown account or a limited request. */
+function password_reset_issue(
+    PgSql\Connection $connection,
+    ?int $companyId,
+    string $email,
+    string $ip,
+    ?array &$requestStatus = null
+): ?array
+{
+    $requestStatus = ['remaining' => 0, 'retry_after_seconds' => 0, 'max_requests' => 3, 'window_minutes' => 15];
     $email = strtolower(trim($email));
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 254) {
         return null;
     }
     $scope = $companyId ?? 0;
     $identifier = hash('sha256', $email);
+    $limits = password_reset_request_limits($connection);
+    $requestStatus['max_requests'] = $limits['max_requests'];
+    $requestStatus['window_minutes'] = $limits['window_minutes'];
     password_reset_query($connection, 'BEGIN');
     try {
         // Serialize both limits so concurrent requests cannot exceed them.
         password_reset_query($connection, 'SELECT pg_advisory_xact_lock(hashtext($1))', ['reset-ip:' . $ip]);
         password_reset_query($connection, 'SELECT pg_advisory_xact_lock(hashtext($1))', ['reset-email:' . $scope . ':' . $identifier]);
-        $limits = pg_fetch_assoc(password_reset_query($connection,
-            "SELECT
-                count(*) FILTER (WHERE ip_address = $1 AND attempted_at > now() - interval '1 hour') AS ip_total,
-                count(*) FILTER (WHERE company_id = $2 AND identifier_hash = $3 AND attempted_at > now() - interval '15 minutes') AS email_total
-             FROM password_reset_attempts
-             WHERE attempted_at > now() - interval '1 hour'
-               AND (ip_address = $1 OR (company_id = $2 AND identifier_hash = $3))",
-            [$ip, $scope, $identifier]
-        ));
-        if ((int) $limits['ip_total'] >= 20 || (int) $limits['email_total'] >= 3) {
+        $requestStatus = password_reset_attempt_status(
+            $connection,
+            $scope,
+            $identifier,
+            $ip,
+            $limits['window_minutes'],
+            $limits['max_requests']
+        );
+        if ($requestStatus['remaining'] === 0) {
             password_reset_query($connection, 'COMMIT');
             return null;
         }
         password_reset_query($connection,
             'INSERT INTO password_reset_attempts (company_id, identifier_hash, ip_address) VALUES ($1, $2, $3)',
             [$scope, $identifier, $ip]
+        );
+        $requestStatus = password_reset_attempt_status(
+            $connection,
+            $scope,
+            $identifier,
+            $ip,
+            $limits['window_minutes'],
+            $limits['max_requests']
         );
         $user = pg_fetch_assoc(password_reset_query($connection,
             "SELECT id, email, password_hash FROM users

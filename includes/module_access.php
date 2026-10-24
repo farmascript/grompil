@@ -24,6 +24,7 @@ function grompil_module_access_rules(): array
         'account.php' => [],
         'select-company.php' => [],
         'companies.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
+        'platform-settings.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
         'users.php' => ['permission' => 'users.manage', 'level_range' => [1, 100]],
         'roles.php' => ['permission' => 'roles.manage', 'level_range' => [1, 100]],
         'translations.php' => ['permission' => 'translations.manage', 'level_range' => [1, 100]],

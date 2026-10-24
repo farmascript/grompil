@@ -121,6 +121,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $signedInUser = current_user();
         if ($signedInUser !== null) {
+            $lastLoginResult = pg_query_params(
+                db(),
+                'UPDATE users SET last_login_at = now() WHERE id = $1',
+                [(int) $signedInUser['id']]
+            );
+            if (!$lastLoginResult) {
+                error_log('Successful login timestamp could not be saved.');
+            }
             redirect_after_login($signedInUser);
         }
     }

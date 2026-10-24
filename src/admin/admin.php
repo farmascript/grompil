@@ -30,6 +30,7 @@ $modules = [
     ['companies.manage', 'navigation_keywords.php', 'translations_heading', 'admin_translations_description'],
     ['companies.manage', 'scripts/check_templates.php', 'template_check_heading', 'template_check_intro'],
     ['companies.manage', 'companies.php', 'nav_companies', 'admin_companies_description'],
+    ['companies.manage', 'platform-settings.php', 'platform_settings_title', 'platform_settings_intro'],
 ];
 $cards = '';
 foreach ($modules as [$permission, $path, $titleKey, $descriptionKey]) {

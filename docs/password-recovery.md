@@ -21,7 +21,7 @@ Het inlogscherm bevat **Wachtwoord vergeten?**. De algemene login verwijst naar 
 
 ## Eenmalig inschakelen
 
-1. Maak een backup en voer `migrations/20261021_password_reset.sql` in Adminer uit als databasebeheerder. Het volledige `schema.sql` bevat dezelfde uitbreiding. De kleine migratie volstaat voor een bestaande installatie.
+1. Maak een backup en voer `migrations/20261021_password_reset.sql` en daarna `migrations/20261024_platform_system_settings.sql` in Adminer uit als databasebeheerder. Het volledige `schema.sql` bevat beide uitbreidingen.
 2. SMTP gebruikt de bestaande instellingen in het private `credentials.php`; zie [mail-configuratie.md](mail-configuratie.md).
 3. Op localhost wordt het lokale serveradres met de Apache-poort gebruikt. Op hosting moet `GROMPIL_PUBLIC_URL` ingesteld zijn op de volledige HTTPS-basis-URL van de applicatie, bijvoorbeeld `https://voorbeeld.be/grompil/`. Gebruik bij installatie op de domeinroot `https://voorbeeld.be/`. De resetlink wordt niet uit een willekeurige Host-header opgebouwd.
 4. De nieuwe teksten staan in NL, FR, EN en DE in de gewone vertaalworkflow. Bij een andere installatie: importeer ontbrekende keys met `php scripts/import_translations.php` en publiceer met `php scripts/export_translations.php`.
@@ -35,7 +35,7 @@ De login blijft ook vóór de migratie bruikbaar. Resetaanvragen hebben de nieuw
 - Tokens bevatten 32 willekeurige bytes; alleen een SHA-256-hash wordt opgeslagen. Links verlopen na 30 minuten, zijn eenmalig en worden vervangen bij een nieuwe aanvraag. Een tussentijdse wachtwoordwijziging maakt een eerder uitgegeven link ook ongeldig.
 - Een geldige link wordt eerst in de serversessie opgenomen. Een redirect verwijdert het token uit de zichtbare URL voordat de formulierpagina externe stylesheets laadt. De pagina gebruikt `no-store` en `no-referrer`. De uiteindelijke wijziging vereist ook een geldige CSRF-token.
 - De database vergrendelt het account tijdens de wijziging, wijzigt het wachtwoord en verwijdert alle tokens voor dat account in één transactie. `users.auth_version` wordt verhoogd zodat bestaande aanmeldsessies bij hun volgende request ongeldig worden. Oudere sessies gelden als versie 0.
-- Per e-mailadres en bedrijf zijn maximaal drie aanvragen per 15 minuten toegestaan, en per IP maximaal twintig per uur. De limieten worden onder databasevergrendeling gecontroleerd. In de aanvraaghistoriek wordt een hash van het e-mailadres opgeslagen. Oude verzoeken en vervallen links worden bij nieuwe toegestane aanvragen opgeruimd.
+- Per e-mailadres en bedrijf geldt de platformlimiet voor aanvragen binnen een schuivende periode; standaard zijn dit drie aanvragen in 15 minuten, inclusief de eerste aanvraag. De platformbeheerder kan beide waarden wijzigen via **Beheeromgeving → Systeemparameters**. Daarnaast blijven maximaal twintig aanvragen per IP per uur toegestaan. De limieten worden onder databasevergrendeling gecontroleerd. Na een aanvraag verdwijnt het e-mailveld en verschijnt een knop om de link opnieuw te versturen. Bij het bereiken van de limiet wordt die knop tijdelijk uitgeschakeld en na de wachttijd weer actief. In de aanvraaghistoriek wordt een hash van het e-mailadres opgeslagen. Oude verzoeken en vervallen links worden bij nieuwe toegestane aanvragen opgeruimd.
 
 ## Controle
 

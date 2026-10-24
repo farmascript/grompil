@@ -234,6 +234,16 @@ CREATE TABLE IF NOT EXISTS platform_navigation_preferences (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS platform_system_settings (
+    "key" VARCHAR(80) PRIMARY KEY CHECK ("key" ~ '^[a-z][a-z0-9_]{0,79}$'),
+    value_integer INTEGER NOT NULL CHECK (value_integer > 0),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE platform_system_settings IS 'Non-secret platform runtime parameters; do not store credentials or private keys here.';
+INSERT INTO platform_system_settings ("key", value_integer)
+VALUES ('password_reset_max_requests', 3), ('password_reset_window_minutes', 15)
+ON CONFLICT ("key") DO NOTHING;
 UPDATE roles SET level = 10 WHERE name = 'Beheerder' AND level = 200;
 UPDATE roles SET level = 110 WHERE name = 'Apotheker' AND level = 200;
 UPDATE roles SET level = 120 WHERE name = 'Medewerker' AND level = 200;
@@ -456,6 +466,7 @@ ALTER TABLE company_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE company_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE company_navigation_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE platform_navigation_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platform_system_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE access_ip_allowlist ENABLE ROW LEVEL SECURITY;
 ALTER TABLE company_pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE substitutions ENABLE ROW LEVEL SECURITY;
@@ -587,6 +598,13 @@ DROP POLICY IF EXISTS platform_navigation_preferences_admin_write ON platform_na
 CREATE POLICY platform_navigation_preferences_admin_write ON platform_navigation_preferences
     FOR ALL USING (current_setting('grompil.platform_operator', true) = 'true')
     WITH CHECK (current_setting('grompil.platform_operator', true) = 'true');
+DROP POLICY IF EXISTS platform_system_settings_read ON platform_system_settings;
+CREATE POLICY platform_system_settings_read ON platform_system_settings
+    FOR SELECT USING (true);
+DROP POLICY IF EXISTS platform_system_settings_admin_write ON platform_system_settings;
+CREATE POLICY platform_system_settings_admin_write ON platform_system_settings
+    FOR ALL USING (current_setting('grompil.platform_operator', true) = 'true')
+    WITH CHECK (current_setting('grompil.platform_operator', true) = 'true');
 DROP POLICY IF EXISTS company_navigation_preferences_admin_write ON company_navigation_preferences;
 CREATE POLICY company_navigation_preferences_admin_write ON company_navigation_preferences
     FOR ALL USING (
@@ -647,6 +665,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON kbo_lookup_attempts TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON companies, company_users, company_pages TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON company_navigation_preferences TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON platform_navigation_preferences TO grompil_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON platform_system_settings TO grompil_app;
 DO $$
 BEGIN
     IF to_regclass('public.pharmacies') IS NOT NULL THEN
