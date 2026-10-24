@@ -54,7 +54,7 @@ try {
             must_change_password boolean DEFAULT TRUE, updated_at timestamptz DEFAULT now()
         )"
     );
-    $migration = file_get_contents(dirname(__DIR__) . '/migrations/20261021_password_reset.sql');
+    $migration = file_get_contents(dirname(__DIR__) . '/migrations/20261021-183938_password_reset.sql');
     $migration = preg_replace('/GRANT SELECT, INSERT, UPDATE, DELETE ON password_reset_tokens, password_reset_attempts TO grompil_app;/', '', $migration);
     $migration = str_replace('CREATE TABLE IF NOT EXISTS', 'CREATE TEMP TABLE IF NOT EXISTS', $migration);
     reset_test_expect((bool) @pg_query($connection, $migration), 'migration applies to temporary fixtures');

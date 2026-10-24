@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.4.6",
+    "applicationVersion": "0.5.0",
     "defaultLanguage": "nl",
     "languages": [
         "nl",
@@ -421,6 +421,66 @@
                 }
             },
             "sequence_number": 12,
+            "action": "manage"
+        },
+        {
+            "id": 18499,
+            "module": "platform-settings.php",
+            "group": "platform",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "Systeemparameters",
+                    "description": "Beheer algemene instellingen die voor het hele platform gelden.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Paramètres système",
+                    "description": "Gérez les paramètres généraux applicables à toute la plateforme.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "System parameters",
+                    "description": "Manage general settings that apply across the platform.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Systemparameter",
+                    "description": "Allgemeine Einstellungen für die gesamte Plattform verwalten.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 13,
+            "action": "manage"
+        },
+        {
+            "id": 63502,
+            "module": "customers.php",
+            "group": "company",
+            "public_visibility": true,
+            "i18n": {
+                "nl": {
+                    "title": "Klanten beheren",
+                    "description": "Zoek klanten binnen dit bedrijf en bekijk hun accountstatus en laatste aanmelding.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Gérer les clients",
+                    "description": "Recherchez les clients de cette entreprise et consultez leur état de compte et leur dernière connexion.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Manage customers",
+                    "description": "Search customers in this company and review their account status and last sign-in.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Kunden verwalten",
+                    "description": "Suchen Sie Kunden dieses Unternehmens und prüfen Sie ihren Kontostatus und die letzte Anmeldung.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 14,
             "action": "manage"
         }
     ],

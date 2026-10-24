@@ -421,6 +421,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_global_email_unique_idx
     ON users (lower(email)) WHERE company_id IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS users_company_email_unique_idx
     ON users (company_id, lower(email)) WHERE company_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS users_customer_name_prefix_idx
+    ON users (company_id, lower(display_name) text_pattern_ops) WHERE company_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS users_customer_email_prefix_idx
+    ON users (company_id, lower(email) text_pattern_ops) WHERE company_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS users_customer_acronym_prefix_idx
+    ON users (company_id, lower(acronym) text_pattern_ops)
+    WHERE company_id IS NOT NULL AND acronym IS NOT NULL AND acronym <> '';
 CREATE UNIQUE INDEX IF NOT EXISTS users_company_acronym_unique_idx
     ON users (company_id, lower(acronym))
     WHERE company_id IS NOT NULL AND acronym IS NOT NULL AND acronym <> '';

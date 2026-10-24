@@ -19,11 +19,33 @@
 
 ## 24 oktober 2026
 
+### Naamgeving database-migraties
+
+- Alle SQL-bestanden in `migrations/` gebruiken nu `YYYYMMDD-HHMMSS_omschrijving.sql`. Datum en tijd zijn 24-uurs lokale tijd; dezelfde datum sorteert daardoor chronologisch op bestandsnaam. Nieuwe migraties krijgen bij aanmaak een unieke tijdstempel.
+
+### Klantenmonitor per bedrijf
+
+- Een aparte pagina **Klanten beheren** toegevoegd voor beheerders met het bedrijfsrecht `company.users.manage`. De pagina gebruikt steeds de actieve bedrijfscontext; een bedrijfskiezer is niet nodig en een beheerder kan geen klanten van andere bedrijven opzoeken.
+- De type-ahead zoekt serverzijdig op naam, e-mailadres, acroniem of gebruikersnummer, vanaf twee tekens, en toont maximaal twintig suggesties. Alleen klantaccounts (globaal en binnen het bedrijf level 200 of hoger) verschijnen.
+- Na keuze toont de pagina accountstatus, goedkeuringsstatus, bedrijfsrol en -toegang, aanmaakdatum en laatste aanmelding. Er zijn geen wijzigingsacties of adresgegevens op deze monitor.
+- `migrations/20261024-105957_customer_monitor_search.sql` voegt prefixindexen voor de drie tekstvelden toe. Voer deze migratie uit op de testdatabase en later op productie voordat je de pagina daar gebruikt. `schema.sql` bevat dezelfde indexen.
+- Nieuwe teksten zijn toegevoegd voor NL, FR, EN en DE. Navigatiemetadata is toegevoegd en de applicatieversie is bijgewerkt naar `0.5.0`.
+
+### Huidige stand
+
+- De klantenmonitor is in de code opgenomen en beperkt alle zoek- en detailopvragingen tot het actieve bedrijf. De database-indexmigratie moet nog op de betreffende database worden uitgevoerd.
+
+### Volgende stap
+
+1. Voer `migrations/20261024-105957_customer_monitor_search.sql` uit op de lokale database en importeer/publiceer de nieuwe vertalingen.
+2. Meld aan als beheerder van een bedrijf en controleer dat de navigatie naar **Klanten beheren** verschijnt; probeer een klant op naam, e-mailadres en acroniem te vinden.
+3. Controleer dat een medewerker zonder `company.users.manage` geen toegang heeft en dat een andere bedrijfscontext geen klantgegevens kan teruggeven.
+
 ### Resetlink opnieuw versturen en platformparameters
 
 - Na het eerste resetverzoek toont de pagina geen e-mailveld meer, maar een knop **Link opnieuw versturen**. De knop gebruikt hetzelfde adres en dezelfde CSRF-bescherming.
 - Het maximum en de schuivende wachttijd zijn instelbaar in **Beheeromgeving → Systeemparameters**. De standaard blijft drie aanvragen per e-mailadres per 15 minuten, inclusief de eerste. Na het maximum wordt de knop tijdelijk uitgeschakeld en automatisch weer actief na de wachttijd. De aanvullende grens van twintig verzoeken per IP per uur blijft gelden.
-- De instellingen staan in `platform_system_settings`; `migrations/20261024_platform_system_settings.sql` maakt de tabel aan en stelt de beginwaarden in. De tabel bevat uitsluitend niet-geheime runtimeparameters: de applicatie kan ze lezen en alleen de platformbeheerder kan ze wijzigen. Bewaar hier geen wachtwoorden of sleutels.
+- De instellingen staan in `platform_system_settings`; `migrations/20261024-110624_platform_system_settings.sql` maakt de tabel aan en stelt de beginwaarden in. De tabel bevat uitsluitend niet-geheime runtimeparameters: de applicatie kan ze lezen en alleen de platformbeheerder kan ze wijzigen. Bewaar hier geen wachtwoorden of sleutels.
 - Uitrol: maak een databaseback-up en voer de migratie uit op elke database. De bijgewerkte `schema.sql` bevat dezelfde tabel en beleidsregels.
 
 ## 21 oktober 2026
@@ -31,7 +53,7 @@
 ### Wachtwoordherstel
 
 - De login bevat **Wachtwoord vergeten?**, met behoud van de bedrijfsroute. Aanvragen via `forgot-password.php` versturen met de bestaande SMTP-helper een eenmalige resetlink; `reset-password.php` laat een nieuw wachtwoord instellen.
-- Nieuwe migratie `migrations/20261021_password_reset.sql` en overeenkomstige aanvulling in `schema.sql`: gehashte resettokens, verzoeklimieten en `users.auth_version` voor het ongeldig maken van eerdere sessies na reset. Gewone logins blijven vóór de migratie bruikbaar.
+- Nieuwe migratie `migrations/20261021-183938_password_reset.sql` en overeenkomstige aanvulling in `schema.sql`: gehashte resettokens, verzoeklimieten en `users.auth_version` voor het ongeldig maken van eerdere sessies na reset. Gewone logins blijven vóór de migratie bruikbaar.
 - Links verlopen na 30 minuten, zijn aan het account en bedrijf gebonden en worden bij gebruik of vervanging ongeldig. De schermbevestiging onthult niet of een account bestaat. Aanvragen zijn begrensd per IP en per e-mailadres/bedrijf; formulieren gebruiken CSRF. Geldige mailtokens verdwijnen via een redirect uit de zichtbare URL.
 - Zeventien nieuwe vertaalkeys voor schermen en e-mail toegevoegd in NL, FR, EN en DE, geïmporteerd en gepubliceerd op deze werkplek.
 - `scripts/test_password_reset.php` slaagt met tijdelijke PostgreSQL-tabellen, zonder bestaande accounts te wijzigen of mail te sturen. De test dekt onder meer bedrijfsscheiding, hashing, vervallen/vervangen/hergebruikte links, accountstatus, verzoeklimieten, sessieversie, herhaalbare migratie en vertrouwde URL's. Browsercontrole bevestigt de resetlink en het aanvraagformulier voor Ariodante.
@@ -113,7 +135,7 @@
 ### Vandaag gedaan
 
 - De URL-manager scheidt nu de vaste Grompil-navigatie van de bedrijfsindeling. Alleen een ingelogde platformbeheerder kan vaste Grompil-links verslepen of vaste Grompil-groepen aanmaken, aanpassen en verwijderen.
-- De globale platformindeling wordt opgeslagen in PostgreSQL via `platform_navigation_preferences.php`; de nieuwe tabel en RLS-rechten zijn opgenomen in `schema.sql` en in migratie `migrations/20261018_platform_navigation_preferences.sql`.
+- De globale platformindeling wordt opgeslagen in PostgreSQL via `platform_navigation_preferences.php`; de nieuwe tabel en RLS-rechten zijn opgenomen in `schema.sql` en in migratie `migrations/20261018-212150_platform_navigation_preferences.sql`.
 - Bedrijfslinks en bedrijfsblokken blijven onder de bestaande bedrijfsrechten vallen en worden opgeslagen in `company_navigation_preferences`.
 - Het verslepen van blokken in de URL-manager is verbeterd zodat een blok ook naar een lege plek in het grid kan worden verplaatst. De grid heeft voldoende minimale hoogte om lege dropzones te bieden; de bestaande wisselwerking tussen twee bezette plekken blijft beschikbaar.
 - `url-manager/styles.css` is opnieuw geformatteerd met consistente inspringing en één CSS-declaratie per regel. Dit maakt de styles leesbaarder; de browser blijft hetzelfde CSS-bestand gebruiken.
@@ -130,7 +152,7 @@
 
 ### Huidige stand
 
-- Voer voor de bestaande lokale database `migrations/20261018_platform_navigation_preferences.sql` uit als databasebeheerder, of neem de nieuwe tabel en policies mee wanneer `schema.sql` opnieuw wordt toegepast.
+- Voer voor de bestaande lokale database `migrations/20261018-212150_platform_navigation_preferences.sql` uit als databasebeheerder, of neem de nieuwe tabel en policies mee wanneer `schema.sql` opnieuw wordt toegepast.
 - Na de migratie kan een platformbeheerder vanuit de URL-manager vaste Grompil-groepen aanmaken en vaste links verplaatsen. Die indeling geldt daarna voor alle bedrijven.
 - De managerwijzigingen zijn in de browser te gebruiken; de cacheversies van de manager-assets zijn verhoogd zodat de browser de bijgewerkte JavaScript, CSS en iframepagina opnieuw laadt. Same-origin persoonlijke URL's worden pas genormaliseerd wanneer de managerconfiguratie opnieuw wordt geladen.
 - De IP-regels beperken alleen beheertoegang. De server kan alleen het adres zien dat de verbinding met PHP aanbiedt. Lokaal kan dat `::1` zijn (loopback), wat niet het publieke IP-adres van de computer onthult.
@@ -147,7 +169,7 @@
 3. Open als companybeheerder **Beveiligingsinstellingen**, noteer het getoonde IP-adres en stel alleen als dit het juiste adres is de beperking in. Controleer daarna zowel toegestane toegang als herstel via platformbeheer.
 4. Voeg vertalingen voor de beveiligingsinstellingen toe in NL, FR, EN en DE en publiceer ze via de bestaande vertaalworkflow.
 5. Vóór hosting: configureer de exacte vertrouwde proxy-IP's in `GROMPIL_TRUSTED_PROXIES`, controleer welk clientadres PHP ziet en test de allowlist voordat je die voor echte beheerders activeert.
-6. Voer de migratie `migrations/20261018_platform_navigation_preferences.sql` uit als die nog niet op de lokale database is uitgevoerd; dit staat los van IP-beveiliging, waarvoor de bestaande `access_ip_allowlist`-tabel wordt gebruikt.
+6. Voer de migratie `migrations/20261018-212150_platform_navigation_preferences.sql` uit als die nog niet op de lokale database is uitgevoerd; dit staat los van IP-beveiliging, waarvoor de bestaande `access_ip_allowlist`-tabel wordt gebruikt.
 
 ## 17 oktober 2026
 

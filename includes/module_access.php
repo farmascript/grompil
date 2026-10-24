@@ -31,6 +31,7 @@ function grompil_module_access_rules(): array
         'navigation_keywords.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
         'scripts/check_templates.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
         'company_members.php' => ['company_permission' => 'company.users.manage', 'platform_without_company' => true],
+        'customers.php' => ['company_permission' => 'company.users.manage'],
         'company_roles.php' => ['company_permission' => 'company.roles.manage'],
         'company_translations.php' => ['company_permission' => 'company.translations.manage'],
         'company_security.php' => ['company_permission' => 'company.settings.manage'],

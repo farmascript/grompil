@@ -1,0 +1,21 @@
+<!-- 680241 b-->
+
+<div class="mb-4">
+    <h1 class="h2">@customers_heading@</h1>
+    <p class="text-secondary">@customers_intro@</p>
+</div>
+<section class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form id="customer-search-form" method="get" action="customers.php" data-customer-picker data-search-empty="@customers_search_empty@" data-search-unavailable="@customers_search_unavailable@">
+            <label class="form-label" for="customer-search">@customers_search_label@</label>
+            <input class="form-control" id="customer-search" type="search" autocomplete="off" aria-autocomplete="list" aria-controls="customer-search-results" aria-expanded="false" placeholder="@customers_search_placeholder@">
+            <input type="hidden" id="customer-id" name="customer_id" value="">
+            <div class="list-group mt-1" id="customer-search-results" role="listbox" hidden></div>
+            <div class="form-text" id="customer-search-status" aria-live="polite">@customers_search_help@</div>
+        </form>
+    </div>
+</section>
+@_customer_details_html@
+<script src="@_asset_base_href@assets/customers-picker.js"></script>
+
+<!-- 680241 e-->

@@ -50,7 +50,7 @@ De eerste beheerder wordt momenteel via de PHP CLI aangemaakt. Stel tijdelijk GR
 
 ### E-mail via SMTP
 
-Wachtwoordherstel via **Wachtwoord vergeten?** gebruikt dezelfde SMTP-configuratie. Voer voor bestaande databases `migrations/20261021_password_reset.sql` uit als databasebeheerder; zie [docs/password-recovery.md](docs/password-recovery.md) voor installatie en controle. Op hosting is hiervoor de vaste HTTPS-basis-URL `GROMPIL_PUBLIC_URL` vereist. Op localhost wordt de lokale serverpoort gebruikt.
+Wachtwoordherstel via **Wachtwoord vergeten?** gebruikt dezelfde SMTP-configuratie. Voer voor bestaande databases `migrations/20261021-183938_password_reset.sql` uit als databasebeheerder; zie [docs/password-recovery.md](docs/password-recovery.md) voor installatie en controle. Op hosting is hiervoor de vaste HTTPS-basis-URL `GROMPIL_PUBLIC_URL` vereist. Op localhost wordt de lokale serverpoort gebruikt.
 
 Grompil gebruikt PHPMailer voor SMTP. Voeg de mailinstellingen toe aan de `mail`-sectie van het privébestand `C:\usr\credentials.php`; zie [docs/mail-configuratie.md](docs/mail-configuratie.md). Installeer de afhankelijkheden vanuit de projectmap met `composer install`. De helper `includes/mailer.php` verzorgt SMTP-verzending.
 
