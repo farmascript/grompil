@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -16,6 +16,26 @@
 -->
 
 # Voortgang Grompil
+
+## 25 oktober 2026
+
+### Omgevingsafhankelijke credentials
+
+- `includes/credentials_config.php` leest nu per installatie `settings_local.php` en aanvaardt uitsluitend `local`, `test` of `production`. Selectie op basis van bezoeker-IP, Host-header of proxyheaders wordt niet gebruikt.
+- De locaties kiezen respectievelijk `credentials_local.php`, `credentials_db_test.php` en `credentials_db_production.php`. Dezelfde arraystructuur met `database`, `kbo` en `mail` blijft beschikbaar; secrets blijven buiten de webroots.
+- `.gitignore` sluit `settings_local.php` uit. De lokale marker wordt met een `GROMPIL_ROOT`-controle beschermd tegen rechtstreekse webtoegang; CLI-opdrachten mogen hem laden.
+- Ontbrekende of ongeldige markers en ontbrekende private credentials leiden niet tot een stille productie-fallback. De webapp toont de bestaande vertaalde databaseconfiguratiefout.
+- README-, mail- en wachtwoordherstel-documentatie bijgewerkt. De databasecontrolehelper gebruikt nu dezelfde selector.
+
+### Huidige stand
+
+- De code verwacht dat elke installatie een eigen `settings_local.php` in de projectroot heeft en dat de corresponderende credentialsfile één niveau boven de hostingwebroot staat. Er zijn in deze wijziging geen lokale of hostingsecrets aangemaakt of gekopieerd.
+
+### Volgende stap
+
+1. Maak lokaal `settings_local.php` met `location => local` en plaats `credentials_local.php` buiten de lokale webroot.
+2. Maak op de host afzonderlijke markers in `public_html` (`production`) en `grompil_test` (`test`), en plaats `credentials_db_production.php` en `credentials_db_test.php` erboven.
+3. Vul in elk credentialsbestand uitsluitend de gegevens van de bijbehorende omgeving in; gebruik aparte databasegebruikers en controleer de verbinding eerst op test.
 
 ## 24 oktober 2026
 
@@ -339,4 +359,40 @@
 
 1. Blijf deze afspraak toepassen wanneer nieuwe technische foutmeldingen of CLI-diagnostiek worden toegevoegd.
 2. Houd alle normale gebruikersinterfacecopy in de bestaande vertaalroutine of expliciete taalvarianten.
+
+## 24 oktober 2026
+
+### Vandaag gedaan
+
+- `scripts/generate_navigation.php` genereert nu naast `navigation.json` en `url-manager/catalog.js` ook `navigation.espanso.yml` in de projectroot.
+- Iedere aanroepbare applicatiemodule met een NAV-blok krijgt een individuele `:gp-...`-trigger en de gedeelde `:gpmod`-trigger. Espanso kan bij de gedeelde trigger een keuzelijst tonen; de bestandsnaam staat als label bij elke keuze. Modules onder `scripts/` worden uit het Espanso-bestand weggelaten.
+- Bestaande individuele triggers blijven bij opnieuw genereren behouden. Nieuwe modules krijgen een trigger op basis van hun modulepad.
+- De lokale URL-basis is standaard `http://localhost:8181/grompil/` en kan worden aangepast met `--base-url=URL`.
+- Semantische versie verhoogd van 0.5.0 naar 0.6.0 voor deze generatoruitbreiding.
+
+### Huidige stand
+
+- Na het toevoegen van een aanroepbare module met een geldig NAV-blok volstaat het om `php scripts/generate_navigation.php` opnieuw uit te voeren. Het Espanso-bestand wordt dan op dezelfde plek bijgewerkt.
+
+### Volgende stap
+
+1. Kopieer `navigation.espanso.yml` naar de Espanso-matchmap als die map een eigen kopie gebruikt; herlaad Espanso indien de wijziging niet automatisch wordt opgepikt.
+
+## 25 oktober 2026
+
+### Vandaag gedaan
+
+- Een platformbeheerder kan vanuit een actieve bedrijfscontext via **Terug naar platformbeheer** de company verlaten zonder uit te loggen. De knop wordt alleen getoond aan platformbeheerders en leidt terug naar het platformbeheerscherm.
+- Het wissen van de actieve context vraagt bevestiging omdat de sessiecontext ook in andere tabbladen van dezelfde browser verandert.
+- De knop en bevestiging zijn vertaald in NL, FR, EN en DE. De vertalingen staan in migratie `20261025-094147_platform_leave_company_context.sql`.
+- Semantische versie verhoogd naar 0.7.0.
+
+### Huidige stand
+
+- De bedrijfscontext wordt verwijderd uit de sessie; de platformbeheerder blijft ingelogd en behoudt platformrechten.
+- De vertaalmigratie moet nog op databases worden uitgevoerd waar de nieuwe teksten in `substitutions` moeten worden opgenomen.
+
+### Volgende stap
+
+1. Voer `migrations/20261025-094147_platform_leave_company_context.sql` uit op de lokale database en later op test en productie.
 

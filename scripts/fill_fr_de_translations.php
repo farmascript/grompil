@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:18:51
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -25,7 +25,7 @@ require_once dirname(__DIR__) . '/includes/database_config.php';
 
 $connectionString = grompil_database_connection_string();
 if ($connectionString === null) {
-    fwrite(STDERR, "Database password is missing from credentials.php or the environment variables.\n");
+    fwrite(STDERR, "The database password is missing from the selected credentials file.\n");
     exit(1);
 }
 $connection = @pg_connect($connectionString);

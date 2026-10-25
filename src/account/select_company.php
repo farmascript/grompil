@@ -32,6 +32,16 @@ require_once GROMPIL_ROOT . '/includes/kbo.php';
 require_once GROMPIL_ROOT . '/includes/company_admin.php';
 $user = require_login();
 $platformOperator = is_platform_operator($user);
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && (string) ($_POST['action'] ?? '') === 'leave_company_context') {
+    verify_csrf();
+    if (!$platformOperator) {
+        grompil_show_error(403, 40152, fn_t('access_denied'), 'Platform administrator required');
+    }
+    unset($_SESSION['active_company_id']);
+    set_database_tenant_context(0, (int) $user['id'], true);
+    redirect('admin.php');
+}
 $faggRegistryOnly = (string) ($_GET['fagg_registry'] ?? $_POST['fagg_registry'] ?? '') === '1';
 $ajaxAction = (string) ($_GET['ajax'] ?? '');
 if ($ajaxAction === 'pharmacy_search') {

@@ -22,7 +22,7 @@ declare(strict_types=1);
  * and are never included or executed.
  *
  * Usage: php scripts/generate_navigation.php [--root=PATH] [--webroot=PATH]
- *        [--output=PATH] [--application=ID]
+ *        [--output=PATH] [--application=ID] [--base-url=URL]
  */
 
 $arguments = [];
@@ -32,7 +32,7 @@ foreach (array_slice($argv, 1) as $argument) {
         exit(2);
     }
     [$name, $value] = explode('=', substr($argument, 2), 2);
-    if (!in_array($name, ['root', 'webroot', 'output', 'application'], true) || $value === '') {
+    if (!in_array($name, ['root', 'webroot', 'output', 'application', 'base-url'], true) || $value === '') {
         fwrite(STDERR, "Unknown or empty argument: {$argument}\n");
         exit(2);
     }
@@ -56,6 +56,50 @@ if (preg_match('/^\d+\.\d+\.\d+$/D', $applicationVersion) !== 1) {
 if (preg_match('/^[a-z0-9][a-z0-9_-]{0,63}$/', $application) !== 1) {
     fwrite(STDERR, "Invalid application identifier.\n");
     exit(2);
+}
+
+$espansoBaseUrl = rtrim($arguments['base-url'] ?? 'http://localhost:8181/grompil/', '/') . '/';
+$espansoBaseUrlParts = parse_url($espansoBaseUrl);
+if (filter_var($espansoBaseUrl, FILTER_VALIDATE_URL) === false
+    || !in_array(strtolower($espansoBaseUrlParts['scheme'] ?? ''), ['http', 'https'], true)) {
+    fwrite(STDERR, "The Espanso base URL must be a valid HTTP or HTTPS URL.\n");
+    exit(2);
+}
+
+$espansoPath = $sourceRoot . DIRECTORY_SEPARATOR . 'navigation.espanso.yml';
+$existingEspansoTriggers = [];
+if (is_file($espansoPath)) {
+    $existingEspanso = file_get_contents($espansoPath);
+    if ($existingEspanso !== false) {
+        $currentTriggers = [];
+        $currentReplace = '';
+        $saveExistingMatch = static function () use (&$currentTriggers, &$currentReplace, &$existingEspansoTriggers, $espansoBaseUrl): void {
+            if ($currentTriggers !== [] && str_starts_with($currentReplace, $espansoBaseUrl)) {
+                $module = substr($currentReplace, strlen($espansoBaseUrl));
+                if ($module !== '') {
+                    $existingEspansoTriggers[$module] = $currentTriggers[0];
+                }
+            }
+            $currentTriggers = [];
+            $currentReplace = '';
+        };
+
+        foreach (preg_split('/\R/', $existingEspanso) ?: [] as $line) {
+            if (preg_match('/^\s*-\s+trigger:\s*(.*?)\s*$/', $line, $match)) {
+                $saveExistingMatch();
+                $currentTriggers = [trim($match[1], "\"'")];
+            } elseif (preg_match('/^\s*-\s+triggers:\s*\[(.*?)\]\s*$/', $line, $match)) {
+                $saveExistingMatch();
+                $currentTriggers = array_map(
+                    static fn (string $trigger): string => trim(trim($trigger), "\"'"),
+                    explode(',', $match[1])
+                );
+            } elseif (preg_match('/^\s+replace:\s*(.*?)\s*$/', $line, $match)) {
+                $currentReplace = trim($match[1], "\"'");
+            }
+        }
+        $saveExistingMatch();
+    }
 }
 
 $languages = ['nl', 'fr', 'en', 'de'];
@@ -450,8 +494,59 @@ if (is_dir($managerDirectory)) {
     }
 }
 
+$espansoLines = [
+    '# Espanso matches generated from module NAV metadata by scripts/generate_navigation.php.',
+    '# URLs use the configured local Grompil base address: ' . $espansoBaseUrl,
+    'matches:',
+];
+$usedEspansoTriggers = [];
+foreach ($itemsById as $item) {
+    $module = $item['module'];
+    if (str_starts_with(strtolower($module), 'scripts/')) {
+        continue;
+    }
+    $trigger = $existingEspansoTriggers[$module] ?? null;
+    if (!is_string($trigger) || $trigger === '') {
+        $slug = preg_replace('/\.php$/i', '', $module) ?? $module;
+        $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $slug) ?? $slug, '-'));
+        $trigger = ':gp-' . ($slug !== '' ? $slug : (string) $item['id']);
+    }
+    if (isset($usedEspansoTriggers[$trigger])) {
+        $trigger .= '-' . $item['id'];
+    }
+    $usedEspansoTriggers[$trigger] = true;
+
+    $url = $espansoBaseUrl . ltrim($module, '/');
+    $triggerPair = [
+        json_encode($trigger, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+        json_encode(':gpmod', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+    ];
+    $triggers = '[' . implode(', ', $triggerPair) . ']';
+    $replace = json_encode($url, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    $label = basename($module);
+    $espansoLines[] = '  - triggers: ' . $triggers;
+    $espansoLines[] = '    replace: ' . $replace;
+    $espansoLines[] = '    label: ' . $label;
+    $espansoLines[] = '';
+}
+$espansoYaml = implode(PHP_EOL, $espansoLines) . PHP_EOL;
+$espansoTemporary = $espansoPath . '.' . bin2hex(random_bytes(8)) . '.tmp';
+if (file_put_contents($espansoTemporary, $espansoYaml, LOCK_EX) === false) {
+    fwrite(STDERR, "Could not write the temporary Espanso matches: {$espansoTemporary}\n");
+    exit(1);
+}
+if (!@rename($espansoTemporary, $espansoPath)) {
+    if (!@copy($espansoTemporary, $espansoPath)) {
+        @unlink($espansoTemporary);
+        fwrite(STDERR, "Could not publish the Espanso matches: {$espansoPath}\n");
+        exit(1);
+    }
+    @unlink($espansoTemporary);
+}
+
 fwrite(STDOUT, count($itemsById) . ' modules and ' . count($groupsById)
-    . " groups published to {$output}" . (is_dir($managerDirectory) ? " and url-manager/catalog.js.\n" : ".\n"));
+    . " groups published to {$output}" . (is_dir($managerDirectory) ? ' and url-manager/catalog.js' : '')
+    . ", and {$espansoPath}.\n");
 foreach (array_unique($warnings) as $warning) {
     fwrite(STDERR, "WARNING: {$warning}\n");
 }

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -17,11 +17,11 @@
 
 # E-mail via SMTP
 
-Grompil kan e-mail versturen via een SMTP-server met PHPMailer. De SMTP-gegevens horen in hetzelfde privébestand buiten de webroot als de databasegegevens, standaard `C:\usr\credentials.php`.
+Grompil kan e-mail versturen via een SMTP-server met PHPMailer. De SMTP-gegevens horen in de `mail`-sectie van het credentialsbestand dat bij de installatie hoort. Dat bestand staat buiten de webroot.
 
-Op hosting met de applicatie in `public_html/grompil` wordt automatisch `credentials.php` uit de map boven `public_html` gebruikt. Met `GROMPIL_CREDENTIALS_FILE` kun je een ander absoluut pad instellen. Database, KBO en mail gebruiken dezelfde centrale configuratielader. De inhoud en arraystructuur zijn op localhost en op hosting gelijk; een IP-test is niet nodig. Verschillende wachtwoorden kun je per machine in het eigen privébestand invullen.
+De lokale, test- en productie-installatie kiezen hun credentialsbestand via `settings_local.php`. De bestanden heten lokaal `credentials_local.php`, op test `credentials_db_test.php` en op productie `credentials_db_production.php`; op hosting staan ze boven respectievelijk `grompil_test` en `public_html`. Alle bestanden geven een configuratiearray met de bestaande secties `database`, `kbo` en `mail` terug. Zo kunnen SMTP-instellingen per omgeving verschillen en kan de testomgeving bijvoorbeeld een aparte mailconfiguratie gebruiken.
 
-Voeg daar naast de bestaande `database`-sectie een `mail`-sectie aan toe. Behoud de bestaande database-inhoud:
+Voeg in de `mail`-sectie van het geselecteerde bestand de SMTP-instellingen toe. Behoud ook de `database`- en eventuele `kbo`-secties:
 
 ```php
 'mail' => [

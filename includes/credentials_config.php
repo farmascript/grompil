@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-23
- * @date_mut: Fri 2026-10-23
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -10,38 +10,68 @@
  * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
  * @info_email: info@grompil.com
  *
- * @description: Loads the shared private credentials for database, KBO and mail.
+ * @description: Selects the deployment-specific private credentials for database, KBO and mail.
  *
  */
 
 declare(strict_types=1);
 
-/** Keep hosting credentials above public_html and preserve the existing local path. */
+/** Read and validate the deployment marker stored with this installation. */
+function grompil_deployment_location(string $projectRoot): string
+{
+    $settingsPath = rtrim($projectRoot, '/\\')
+        . DIRECTORY_SEPARATOR . 'settings_local.php';
+    if (!is_file($settingsPath)) {
+        throw new RuntimeException('The local deployment settings file is missing.');
+    }
+
+    $settings = require $settingsPath;
+    if (!is_array($settings)) {
+        throw new RuntimeException('The local deployment settings file has an invalid format.');
+    }
+
+    $location = $settings['location'] ?? null;
+    if (!is_string($location) || !in_array($location, ['local', 'test', 'production'], true)) {
+        throw new RuntimeException('The local deployment location is missing or invalid.');
+    }
+
+    return $location;
+}
+
+/** Resolve the selected private credentials file above the web root. */
 function grompil_credentials_default_path(string $projectRoot): string
 {
-    $directory = $projectRoot;
+    $location = grompil_deployment_location($projectRoot);
+    $fileName = match ($location) {
+        'local' => 'credentials_local.php',
+        'test' => 'credentials_db_test.php',
+        'production' => 'credentials_db_production.php',
+    };
+
+    $directory = rtrim($projectRoot, '/\\');
     while (dirname($directory) !== $directory) {
-        if (basename($directory) === 'public_html') {
-            return dirname($directory) . DIRECTORY_SEPARATOR . 'credentials.php';
+        if (in_array(basename($directory), ['public_html', 'grompil_test'], true)) {
+            return dirname($directory) . DIRECTORY_SEPARATOR . $fileName;
         }
         $directory = dirname($directory);
     }
-    return dirname($projectRoot, 3) . DIRECTORY_SEPARATOR . 'credentials.php';
+
+    return dirname($projectRoot, 3) . DIRECTORY_SEPARATOR . $fileName;
 }
 
-/** Resolve the private credentials path independently of HTTP request data. */
+/** Resolve credentials from the marker, never from request headers or IP addresses. */
 function grompil_credentials_path(): string
 {
-    return getenv('GROMPIL_CREDENTIALS_FILE')
-        ?: grompil_credentials_default_path(dirname(__DIR__));
+    $projectRoot = defined('GROMPIL_ROOT') ? GROMPIL_ROOT : dirname(__DIR__);
+    return grompil_credentials_default_path($projectRoot);
 }
 
-/** Read the same credentials format for web requests and CLI commands. */
+/** Read the selected credentials array for web requests and CLI commands. */
 function grompil_credentials_config(): array
 {
     $path = grompil_credentials_path();
-    if (!is_file($path)) {
-        return [];
+    if (!is_file($path) || !is_readable($path)) {
+        throw new RuntimeException('The selected private credentials file is missing or unreadable.');
     }
     $credentials = require $path;
     if (!is_array($credentials)) {

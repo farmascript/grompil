@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -52,7 +52,17 @@ function db(): PgSql\Connection
         return $connection;
     }
 
-    $connectionString = grompil_database_connection_string();
+    try {
+        $connectionString = grompil_database_connection_string();
+    } catch (Throwable $error) {
+        error_log('Grompil configuration error: ' . $error->getMessage());
+        grompil_show_error(
+            500,
+            32719,
+            'The database configuration is missing. Contact the system administrator.',
+            'Service temporarily unavailable'
+        );
+    }
     if ($connectionString === null) {
         grompil_show_error(500, 32719, 'The database configuration is missing. Contact the system administrator.', 'Service temporarily unavailable');
     }

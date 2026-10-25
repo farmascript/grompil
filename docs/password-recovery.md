@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -22,7 +22,7 @@ Het inlogscherm bevat **Wachtwoord vergeten?**. De algemene login verwijst naar 
 ## Eenmalig inschakelen
 
 1. Maak een backup en voer `migrations/20261021-183938_password_reset.sql` en daarna `migrations/20261024-110624_platform_system_settings.sql` in Adminer uit als databasebeheerder. Het volledige `schema.sql` bevat beide uitbreidingen.
-2. SMTP gebruikt de bestaande instellingen in het private `credentials.php`; zie [mail-configuratie.md](mail-configuratie.md).
+2. SMTP gebruikt de instellingen in de `mail`-sectie van het credentialsbestand dat via `settings_local.php` voor deze installatie is geselecteerd; zie [mail-configuratie.md](mail-configuratie.md).
 3. Op localhost wordt het lokale serveradres met de Apache-poort gebruikt. Op hosting moet `GROMPIL_PUBLIC_URL` ingesteld zijn op de volledige HTTPS-basis-URL van de applicatie, bijvoorbeeld `https://voorbeeld.be/grompil/`. Gebruik bij installatie op de domeinroot `https://voorbeeld.be/`. De resetlink wordt niet uit een willekeurige Host-header opgebouwd.
 4. De nieuwe teksten staan in NL, FR, EN en DE in de gewone vertaalworkflow. Bij een andere installatie: importeer ontbrekende keys met `php scripts/import_translations.php` en publiceer met `php scripts/export_translations.php`.
 

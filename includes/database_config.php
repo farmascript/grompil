@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:47:17
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -10,7 +10,7 @@
  * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
  * @info_email: info@grompil.com
  *
- * @description: Loads PostgreSQL connection settings from the private file or environment.
+ * @description: Loads PostgreSQL settings from the selected private credentials file.
  *
  */
 
@@ -18,19 +18,16 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
 
-/** Returns database settings from the private file, with environment fallback. */
+/** Returns database settings from the credentials file selected for this installation. */
 function grompil_database_config(): array
 {
     $config = [
-        'host' => getenv('GROMPIL_DB_HOST') ?: '127.0.0.1',
-        'port' => getenv('GROMPIL_DB_PORT') ?: '5432',
-        'name' => getenv('GROMPIL_DB_NAME') ?: 'grompil',
-        'user' => getenv('GROMPIL_DB_USER') ?: 'grompil_app',
-        'password' => getenv('GROMPIL_DB_PASSWORD') ?: '',
+        'host' => '127.0.0.1',
+        'port' => '5432',
+        'name' => 'grompil',
+        'user' => 'grompil_app',
+        'password' => '',
     ];
-    if (!is_file(grompil_credentials_path())) {
-        return $config;
-    }
     $credentials = grompil_credentials_config();
     if (!is_array($credentials['database'] ?? null)) {
         throw new RuntimeException('The credentials file has an invalid format.');

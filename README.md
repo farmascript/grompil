@@ -38,13 +38,7 @@ schema.sql bevat gewone PostgreSQL-SQL. Het maakt de tabellen en startrollen in 
 
 ## Applicatie configureren
 
-Stel deze omgevingsvariabelen in voor PHP:
-
-- GROMPIL_DB_HOST (standaard 127.0.0.1)
-- GROMPIL_DB_PORT (standaard 5432)
-- GROMPIL_DB_NAME (standaard grompil)
-- GROMPIL_DB_USER (standaard grompil_app)
-- GROMPIL_DB_PASSWORD (het wachtwoord van grompil_app)
+De database-, KBO- en SMTP-instellingen komen uit het private credentialsbestand dat bij deze installatie hoort. Zie **Databaseconfiguratie** verderop.
 
 De eerste beheerder wordt momenteel via de PHP CLI aangemaakt. Stel tijdelijk GROMPIL_SETUP_ADMIN_EMAIL en GROMPIL_SETUP_ADMIN_PASSWORD in (minimaal 12 tekens) en voer php setup-admin.php uit. Verwijder de setup-variabelen daarna.
 
@@ -52,7 +46,7 @@ De eerste beheerder wordt momenteel via de PHP CLI aangemaakt. Stel tijdelijk GR
 
 Wachtwoordherstel via **Wachtwoord vergeten?** gebruikt dezelfde SMTP-configuratie. Voer voor bestaande databases `migrations/20261021-183938_password_reset.sql` uit als databasebeheerder; zie [docs/password-recovery.md](docs/password-recovery.md) voor installatie en controle. Op hosting is hiervoor de vaste HTTPS-basis-URL `GROMPIL_PUBLIC_URL` vereist. Op localhost wordt de lokale serverpoort gebruikt.
 
-Grompil gebruikt PHPMailer voor SMTP. Voeg de mailinstellingen toe aan de `mail`-sectie van het privébestand `C:\usr\credentials.php`; zie [docs/mail-configuratie.md](docs/mail-configuratie.md). Installeer de afhankelijkheden vanuit de projectmap met `composer install`. De helper `includes/mailer.php` verzorgt SMTP-verzending.
+Grompil gebruikt PHPMailer voor SMTP. Voeg de mailinstellingen toe aan de `mail`-sectie van het credentialsbestand voor de gekozen omgeving; zie [docs/mail-configuratie.md](docs/mail-configuratie.md). Installeer de afhankelijkheden vanuit de projectmap met `composer install`. De helper `includes/mailer.php` verzorgt SMTP-verzending.
 
 Bij het aanmaken van een nieuw bedrijf vraagt het platformbeheer een e-mailadres voor de eerste bedrijfsbeheerder. Grompil maakt een company-gebonden account met de rol Beheerder aan en mailt een willekeurig tijdelijk wachtwoord. Bij de eerste aanmelding wordt de gebruiker naar **Mijn account** gestuurd om dat wachtwoord te wijzigen. Voer `schema.sql` uit om de kolom `users.must_change_password` toe te voegen voordat je deze functie gebruikt. Synchroniseer daarna de nieuwe vertaalteksten met `php scripts/import_translations.php` en `php scripts/export_translations.php`.
 
@@ -132,7 +126,7 @@ Gebruikers hebben naast `display_name` de velden `name_first` en `name_last`. Ni
 
 Een gebruiker met één company-membership komt na het inloggen meteen in dat bedrijf. Bij meerdere memberships kiest die gebruiker via `select-company.php`. Platformbeheer kan actieve bedrijven kiezen en gebruikers koppelen via `company_members.php`; tenantbeheerders kunnen daar aanvragen goedkeuren en toegang beheren. Bedrijfsrollen beheer je via `company_roles.php` nadat je dat bedrijf als actieve werkplek hebt gekozen.
 
-Platformbeheerders kunnen op `select-company.php` zoeken in het Belgische apothekenregister en een geregistreerde apotheek na een KBO-controle als afzonderlijke company aanmaken. Dit is een optionele, sectorspecifieke registratiebron; de SaaS-tenant en de overige bedrijfsmodules gebruiken generieke company-termen. Het KBO-nummer wordt uit `pharmacies."Vergunninghouder"` gelezen. De KBO-webservicegegevens horen in het private `credentials.php`-bestand onder `kbo` (`username` en `password`); aanvaard eerst de actuele gebruiksvoorwaarden via het KBO-portaal. Per dag zijn volgens de actuele FOD-documentatie maximaal 3.000 verzoeken beschikbaar. `company_permit_number` bewaart het externe vergunningsnummer.
+Platformbeheerders kunnen op `select-company.php` zoeken in het Belgische apothekenregister en een geregistreerde apotheek na een KBO-controle als afzonderlijke company aanmaken. Dit is een optionele, sectorspecifieke registratiebron; de SaaS-tenant en de overige bedrijfsmodules gebruiken generieke company-termen. Het KBO-nummer wordt uit `pharmacies."Vergunninghouder"` gelezen. De KBO-webservicegegevens horen in de `kbo`-sectie van het credentialsbestand dat bij de installatie hoort (`username` en `password`); aanvaard eerst de actuele gebruiksvoorwaarden via het KBO-portaal. Per dag zijn volgens de actuele FOD-documentatie maximaal 3.000 verzoeken beschikbaar. `company_permit_number` bewaart het externe vergunningsnummer.
 
 `index.php` toont de Grompil-startsite. De marketingpagina’s zijn bereikbaar met `?page=home`, `services`, `about_us` of `contact`; de taalkeuze staat rechts in de navigatie. Actieve bedrijven met een publieke website verschijnen op de startpagina. Een bedrijf is bereikbaar via `/c=<slug>` (Apache `mod_rewrite`) of `index.php?c=<slug>`.
 
@@ -154,15 +148,33 @@ De tenant-tabellen hebben PostgreSQL row-level security. De storefront, domeinko
 
 ## Databaseconfiguratie
 
-De applicatie leest databasegegevens uit `C:\usr\credentials.php`, buiten de projectmap en webroot. Het bestand moet een PHP-bestand zijn dat een array teruggeeft met een `database`-sectie. Vul lokaal het databasewachtwoord in. Deel of commit nooit de ingevulde credentials.
+Elke installatie krijgt een niet-gecommit `settings_local.php` in haar projectroot. Dit bestand geeft een array terug met `location` op exact `local`, `test` of `production`. De bootstrap gebruikt uitsluitend deze waarde en nooit het bezoeker-IP-adres, de Host-header of proxyheaders om een omgeving te kiezen. Ontbreekt de instelling of bevat ze een andere waarde, dan weigert de applicatie de configuratie.
 
-De hoster kan een ander pad gebruiken via `GROMPIL_CREDENTIALS_FILE`; deze omgevingsvariabele bevat alleen het pad naar het bestand. Als het wachtwoord in het PHP-bestand is ingevuld, zijn de afzonderlijke `GROMPIL_DB_*`-wachtwoordvariabelen niet nodig.
+De private credentialsbestanden staan buiten de webroot en gebruiken dezelfde arraystructuur met `database`, `kbo` en `mail`:
 
-Database, KBO en SMTP gebruiken samen `includes/credentials_config.php` om dit privébestand te laden. Dezelfde array met de secties `database`, `kbo` en `mail` werkt op localhost en op de server. Het bestand begint met `<?php` en geeft de array terug met `return`. Bij een installatie in `public_html/grompil` wordt automatisch `credentials.php` uit de map boven `public_html` geladen, bijvoorbeeld `/home/account/credentials.php`. Dit werkt ook voor CLI-opdrachten en geplande taken; een omgevingsvariabele is voor deze mappenstructuur niet nodig. Een expliciet ingestelde `GROMPIL_CREDENTIALS_FILE` blijft voorrang krijgen.
+- Lokaal: `C:\usr\credentials_local.php`.
+- Productie: `credentials_db_production.php` in de map boven `public_html`.
+- Test: `credentials_db_test.php` in de map boven `grompil_test`.
 
-Er is geen IP-test nodig wanneer beide installaties dezelfde instellingen gebruiken: databasehost `127.0.0.1` verwijst telkens naar de machine waarop PHP draait. Het IP-adres van de bezoeker, de Host-header en proxyheaders bepalen nooit welke credentials worden geladen. Als de databasewachtwoorden lokaal en op hosting verschillen, behoud je dezelfde arraystructuur en vul je per machine het eigen wachtwoord in; KBO- en mailgegevens kunnen gelijk blijven.
+De lokale marker bevat bijvoorbeeld:
 
-Controleer de configuratielader zonder databaseverbinding of mailverzending met `php scripts/test_credentials_config.php`.
+```php
+<?php
+if (PHP_SAPI !== 'cli' && !defined('GROMPIL_ROOT')) {
+    http_response_code(404);
+    exit;
+}
+
+return [
+    'location' => 'local',
+];
+```
+
+Op de hosting bevatten de twee markers respectievelijk `production` en `test`. De drie credentialsbestanden geven de bestaande configuratiearray terug. `settings_local.php` is opgenomen in `.gitignore` en moet per installatie eenmalig in de bijbehorende projectroot worden aangemaakt. Zet er geen wachtwoorden in. Kopieer de secrets niet naar Git of naar publiek toegankelijke mappen.
+
+`includes/credentials_config.php` selecteert het bijbehorende bestand voor webverzoeken en CLI-opdrachten. Er is geen omgevingsvariabele- of productie-fallback: ontbreekt het geselecteerde bestand of de databaseconfiguratie, dan stopt de verbinding. Gebruik voor productie, test en lokaal aparte databasegebruikers met alleen rechten op hun eigen database.
+
+Er is geen IP-test nodig om de omgeving te bepalen: `127.0.0.1` verwijst naar de machine waarop PHP draait. Upload of synchroniseer `settings_local.php` niet vanuit Git; maak het per installatie aan en sluit het uit van FTP-synchronisatie die serverbestanden verwijdert.
 
 ## Belgische adresopzoeking
 

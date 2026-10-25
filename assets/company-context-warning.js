@@ -21,7 +21,7 @@ document.addEventListener('submit', (event) => {
 
     const activeCompanyId = Number.parseInt(form.dataset.activeCompanyId || '0', 10);
     const targetCompanyId = Number.parseInt(form.dataset.targetCompanyId || '0', 10);
-    if (activeCompanyId > 0 && targetCompanyId > 0 && activeCompanyId !== targetCompanyId) {
+    if (activeCompanyId > 0 && activeCompanyId !== targetCompanyId) {
         if (!window.confirm(form.dataset.warning || 'A company switch also affects your other browser tabs. Continue?')) {
             event.preventDefault();
         }

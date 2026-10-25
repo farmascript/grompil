@@ -1,55 +1,55 @@
-# /**
-#  *
-#  * @date_cre: Sun 2026-10-18 20:35:46
-#  * @date_mut: Tue 2026-10-20 21:21:08
-#  *
-#  * @credit_software: Lieven Maus
-#  * @credit_code: chatGPT, codex
-#  *
-#  * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
-#  * @info_email: info@grompil.com
-#  *
-#  * @description: Defines Espanso shortcuts for Grompil modules.
-#  *
-#  */
-
-# Espanso match file generated from navigation.json.
-# These links assume the local Grompil address http://localhost:8181/grompil/.
-# Copy this file to the Espanso match directory, for example match/grompil.yml.
+# Espanso matches generated from module NAV metadata by scripts/generate_navigation.php.
+# URLs use the configured local Grompil base address: http://localhost:8181/grompil/
 matches:
-  - trigger: ":gp-companies"
+  - triggers: [":gp-companies", ":gpmod"]
     replace: "http://localhost:8181/grompil/companies.php"
-    # Grompil navigation ID 18472 · Companies
+    label: companies.php
 
-  - trigger: ":gp-users"
+  - triggers: [":gp-users", ":gpmod"]
     replace: "http://localhost:8181/grompil/users.php"
-    # Grompil navigation ID 18473 · Gebruikers en toegang
+    label: users.php
 
-  - trigger: ":gp-members"
+  - triggers: [":gp-members", ":gpmod"]
     replace: "http://localhost:8181/grompil/company_members.php"
-    # Grompil navigation ID 18474 · Medewerkers beheren
+    label: company_members.php
 
-  - trigger: ":gp-roles"
+  - triggers: [":gp-roles", ":gpmod"]
     replace: "http://localhost:8181/grompil/company_roles.php"
-    # Grompil navigation ID 18475 · Rollen beheren
+    label: company_roles.php
 
-  - trigger: ":gp-translations"
+  - triggers: [":gp-translations", ":gpmod"]
     replace: "http://localhost:8181/grompil/company_translations.php"
-    # Grompil navigation ID 18476 · Bedrijfsspecifieke vertalingen
+    label: company_translations.php
 
-  - trigger: ":gp-home"
+  - triggers: [":gp-home", ":gpmod"]
     replace: "http://localhost:8181/grompil/index.php"
-    # Grompil navigation ID 18477 · Home
+    label: index.php
 
-  - trigger: ":gp-check-templates"
-    replace: "http://localhost:8181/grompil/scripts/check_templates.php"
-    # Grompil navigation ID 48361 · Templatecontrole
+  - triggers: [":gp-translations-16721", ":gpmod"]
+    replace: "http://localhost:8181/grompil/translations.php"
+    label: translations.php
 
-  - trigger: ":gp-keywords"
-    replace: "http://localhost:8181/grompil/navigation_keywords.php"
-    # Grompil navigation ID 59384 · Vertalingen beheren
-
-  - trigger: ":gp-account"
+  - triggers: [":gp-account", ":gpmod"]
     replace: "http://localhost:8181/grompil/account.php"
-    # Grompil navigation ID 76506 · Mijn account
+    label: account.php
+
+  - triggers: [":gp-keywords", ":gpmod"]
+    replace: "http://localhost:8181/grompil/navigation_keywords.php"
+    label: navigation_keywords.php
+
+  - triggers: [":gp-company-security", ":gpmod"]
+    replace: "http://localhost:8181/grompil/company_security.php"
+    label: company_security.php
+
+  - triggers: [":gp-select-company", ":gpmod"]
+    replace: "http://localhost:8181/grompil/select-company.php"
+    label: select-company.php
+
+  - triggers: [":gp-platform-settings", ":gpmod"]
+    replace: "http://localhost:8181/grompil/platform-settings.php"
+    label: platform-settings.php
+
+  - triggers: [":gp-customers", ":gpmod"]
+    replace: "http://localhost:8181/grompil/customers.php"
+    label: customers.php
 

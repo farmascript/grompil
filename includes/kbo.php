@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
 
-/** Read KBO webservice credentials from the private credentials.php file. */
+/** Read KBO webservice credentials from the selected private credentials file. */
 function grompil_kbo_config(): array
 {
     $credentials = grompil_credentials_config();

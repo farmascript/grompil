@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Sun 2026-10-25 21:36:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -19,7 +19,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/database_config.php';
 
 /**
- * Sends an email using the SMTP settings in the private credentials file.
+ * Sends an email using the SMTP settings in the selected private credentials file.
  *
  * @throws RuntimeException when mail is not configured or cannot be sent.
  */
