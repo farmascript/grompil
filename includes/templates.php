@@ -16,6 +16,11 @@
 
 declare(strict_types=1);
 
+/**
+ * Load the active language strings for the current request.
+ *
+ * @return array
+ */
 function fn_loadLanguage(): array
 {
     $available = ['NL', 'FR', 'EN', 'DE'];
@@ -54,6 +59,11 @@ function fn_loadLanguage(): array
     return $translations;
 }
 
+/**
+ * Return the application version string.
+ *
+ * @return string
+ */
 function fn_appVersion(): string
 {
     static $version = null;
@@ -67,6 +77,12 @@ function fn_appVersion(): string
     return $version;
 }
 
+/**
+ * Build the path to a general language file.
+ *
+ * @param string $language The language code.
+ * @return string
+ */
 function fn_languageFilePath(string $language): string
 {
     $language = strtoupper($language);
@@ -77,6 +93,13 @@ function fn_languageFilePath(string $language): string
     return rtrim($directory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'lang_' . strtolower($language) . '.php';
 }
 
+/**
+ * Build the path to a company-specific language file.
+ *
+ * @param int $companyId The company database ID.
+ * @param string $language The language code.
+ * @return string
+ */
 function fn_companyLanguageFilePath(int $companyId, string $language): string
 {
     if ($companyId < 1 || !in_array(strtoupper($language), ['NL', 'FR', 'EN', 'DE'], true)) {
@@ -87,6 +110,12 @@ function fn_companyLanguageFilePath(int $companyId, string $language): string
         . DIRECTORY_SEPARATOR . $companyId . DIRECTORY_SEPARATOR . 'lang_' . strtolower($language) . '.php';
 }
 
+/**
+ * Read a general language file and return its translations.
+ *
+ * @param string $language The language code.
+ * @return array
+ */
 function fn_readLanguageFile(string $language): array
 {
     $language = strtoupper($language);
@@ -105,6 +134,12 @@ function fn_readLanguageFile(string $language): array
     return $arrSubst;
 }
 
+/**
+ * Read the source language strings used as translation defaults.
+ *
+ * @param string $language The language code.
+ * @return array
+ */
 function fn_readSourceLanguage(string $language): array
 {
     $path = dirname(__DIR__) . '/src/lang/lang_' . strtolower($language) . '.php';
@@ -116,6 +151,12 @@ function fn_readSourceLanguage(string $language): array
     return $arrSubst;
 }
 
+/**
+ * Return the translation seed for a language.
+ *
+ * @param string $language The language code.
+ * @return array
+ */
 function fn_translationSeed(string $language): array
 {
     $language = strtoupper($language);
@@ -135,6 +176,13 @@ function fn_translationSeed(string $language): array
     return $seed;
 }
 
+/**
+ * Write generated language content to its target file.
+ *
+ * @param string $target The destination file path.
+ * @param string $content The content to write.
+ * @return bool
+ */
 function fn_publishLanguageFile(string $target, string $content): bool
 {
     $temporary = $target . '.' . bin2hex(random_bytes(8)) . '.tmp';
@@ -152,6 +200,12 @@ function fn_publishLanguageFile(string $target, string $content): bool
     return false;
 }
 
+/**
+ * Export the merged translations for a general language.
+ *
+ * @param string $language The language code.
+ * @return bool
+ */
 function fn_exportLanguageFile(string $language): bool
 {
     $result = pg_query_params(db(), 'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"', [$language]);
@@ -171,6 +225,13 @@ function fn_exportLanguageFile(string $language): bool
     return fn_publishLanguageFile($target, $content);
 }
 
+/**
+ * Export translations for a company and language.
+ *
+ * @param int $companyId The company database ID.
+ * @param string $language The language code.
+ * @return bool
+ */
 function fn_exportCompanyLanguageFile(int $companyId, string $language): bool
 {
     $result = pg_query_params(
@@ -200,11 +261,23 @@ function fn_exportCompanyLanguageFile(int $companyId, string $language): bool
     return fn_publishLanguageFile($target, $content);
 }
 
+/**
+ * Return the translated text for a key in the active language.
+ *
+ * @param string $key The translation key.
+ * @return string
+ */
 function fn_t(string $key): string
 {
     return (string) ($GLOBALS['grompilTranslations'][$key] ?? $key);
 }
 
+/**
+ * Render the language selector control.
+ *
+ * @param string $class The CSS class attribute for the control.
+ * @return string
+ */
 function fn_languageSelector(string $class = 'form-select form-select-sm w-auto'): string
 {
     $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
@@ -217,6 +290,13 @@ function fn_languageSelector(string $class = 'form-select form-select-sm w-auto'
     return $html . '</select>';
 }
 
+/**
+ * Determine whether a template token appears in visible HTML text.
+ *
+ * @param string $html The HTML content to inspect.
+ * @param int $offset The byte offset within the HTML string.
+ * @return bool
+ */
 function fn_templateTokenIsVisibleText(string $html, int $offset): bool
 {
     $before = substr($html, 0, $offset);
@@ -238,6 +318,13 @@ function fn_templateTokenIsVisibleText(string $html, int $offset): bool
     return true;
 }
 
+/**
+ * Render a template file after replacing its tokens.
+ *
+ * @param string $path The application-relative path or filesystem path.
+ * @param array $values The values used to render the template.
+ * @return string
+ */
 function fn_templateRenderPath(string $path, array $values = []): string
 {
     $html = file_get_contents($path);
@@ -291,11 +378,23 @@ function fn_templateRenderPath(string $path, array $values = []): string
     return $rendered ?? $html;
 }
 
+/**
+ * Load and render a template by name.
+ *
+ * @param string $file The template or source file name.
+ * @param array $values The values used to render the template.
+ * @return string
+ */
 function fn_templateRender(string $file, array $values = []): string
 {
     return fn_templateRenderPath(dirname(__DIR__) . '/tmpl/default/' . basename($file), $values);
 }
 
+/**
+ * Return the application base path as an HTML href prefix.
+ *
+ * @return string
+ */
 function fn_appBaseHref(): string
 {
     $projectRoot = realpath(dirname(__DIR__));
@@ -321,6 +420,12 @@ function fn_appBaseHref(): string
     return rtrim($scriptDirectory, '/') . '/';
 }
 
+/**
+ * Resolve the storefront template for a company.
+ *
+ * @param array $company The company record.
+ * @return string
+ */
 function fn_companyStoreTemplatePath(array $company): string
 {
     $base = dirname(__DIR__) . '/tmpl';
@@ -341,6 +446,13 @@ function fn_companyStoreTemplatePath(array $company): string
     return $base . '/default/store.html';
 }
 
+/**
+ * Resolve the public URL for a company storefront image.
+ *
+ * @param array $company The company record.
+ * @param string $field The image field name.
+ * @return string
+ */
 function fn_companyStoreImageUrl(array $company, string $field): string
 {
     $allowedFields = ['store_logo_file', 'store_hero_image_file'];
@@ -359,6 +471,12 @@ function fn_companyStoreImageUrl(array $company, string $field): string
     return 'media/companies/' . $companyId . '/' . rawurlencode($filename);
 }
 
+/**
+ * Render the available storefront theme options.
+ *
+ * @param string $selected The selected theme identifier.
+ * @return string
+ */
 function fn_companyStoreThemeOptions(string $selected = 'default'): string
 {
     $themes = ['default' => fn_t('company_theme_default')];
@@ -381,6 +499,13 @@ function fn_companyStoreThemeOptions(string $selected = 'default'): string
     return $html;
 }
 
+/**
+ * Render the shared page header and open the main content area.
+ *
+ * @param string $title The response title.
+ * @param array $user The authenticated user record.
+ * @return void
+ */
 function page_start(string $title, array $user): void
 {
     $company = current_company_context($user);
@@ -443,6 +568,11 @@ function page_start(string $title, array $user): void
     ]);
 }
 
+/**
+ * Render the shared page footer and close the document.
+ *
+ * @return void
+ */
 function page_end(): void
 {
     $ipHtml = '';

@@ -18,7 +18,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
 
-/** Returns database settings from the credentials file selected for this installation. */
+/**
+ *  Returns database settings from the credentials file selected for this installation.
+ *
+ * @return array
+ */
 function grompil_database_config(): array
 {
     $config = [
@@ -40,7 +44,11 @@ function grompil_database_config(): array
     return $config;
 }
 
-/** Returns a PostgreSQL connection string or null when no password is set. */
+/**
+ *  Returns a PostgreSQL connection string or null when no password is set.
+ *
+ * @return ?string
+ */
 function grompil_database_connection_string(): ?string
 {
     $config = grompil_database_config();

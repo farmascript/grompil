@@ -102,6 +102,12 @@ $selectedEnterpriseNumber = !$faggRegistryOnly
     ? (string) preg_replace('/\D+/', '', (string) ($_GET['enterprise_number'] ?? $_POST['enterprise_number'] ?? ''))
     : '';
 
+/**
+ * Find a company registry entry using its access permit.
+ *
+ * @param string $permit The registry access permit.
+ * @return ?array
+ */
 function company_registry_entry_by_permit(string $permit): ?array
 {
     $result = pg_query_params(
@@ -114,6 +120,12 @@ function company_registry_entry_by_permit(string $permit): ?array
     return $row ?: null;
 }
 
+/**
+ * Extract the enterprise number from a registry entry.
+ *
+ * @param array $registryEntry The registry entry.
+ * @return string
+ */
 function company_registry_enterprise_number(array $registryEntry): string
 {
     if (preg_match('/KBO\s*([0-9][0-9.\s-]{8,14})/iu', (string) ($registryEntry['Vergunninghouder'] ?? ''), $match)) {

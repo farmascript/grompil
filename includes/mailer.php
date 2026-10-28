@@ -22,6 +22,12 @@ require_once __DIR__ . '/database_config.php';
  * Sends an email using the SMTP settings in the selected private credentials file.
  *
  * @throws RuntimeException when mail is not configured or cannot be sent.
+ *
+ * @param string $recipient The recipient email address.
+ * @param string $subject The email subject.
+ * @param string $htmlBody The HTML email body.
+ * @param string $textBody The plain-text email body.
+ * @return void
  */
 function grompil_send_mail(string $recipient, string $subject, string $htmlBody, string $textBody = ''): void
 {

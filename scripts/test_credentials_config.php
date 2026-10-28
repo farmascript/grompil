@@ -25,6 +25,13 @@ require_once dirname(__DIR__) . '/includes/database_config.php';
 require_once dirname(__DIR__) . '/includes/kbo.php';
 require_once dirname(__DIR__) . '/includes/mailer.php';
 
+/**
+ * Assert a condition in the credentials configuration check.
+ *
+ * @param bool $condition The condition expected to be true.
+ * @param string $message The assertion message used when the condition fails.
+ * @return void
+ */
 function credentials_test_expect(bool $condition, string $message): void
 {
     if (!$condition) {

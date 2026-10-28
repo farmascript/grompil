@@ -16,7 +16,11 @@
 
 declare(strict_types=1);
 
-/** Unknown modules stay hidden until their entry requirements have been registered. */
+/**
+ *  Unknown modules stay hidden until their entry requirements have been registered.
+ *
+ * @return array
+ */
 function grompil_module_access_rules(): array
 {
     return [
@@ -38,7 +42,14 @@ function grompil_module_access_rules(): array
     ];
 }
 
-/** Evaluate the same level and permission helpers used by the protected modules. */
+/**
+ *  Evaluate the same level and permission helpers used by the protected modules.
+ *
+ * @param string $module The module identifier.
+ * @param ?array $user The authenticated user record.
+ * @param ?array $company The company record.
+ * @return bool
+ */
 function grompil_can_access_module(string $module, ?array $user, ?array $company): bool
 {
     $rule = grompil_module_access_rules()[$module] ?? null;
@@ -55,7 +66,12 @@ function grompil_can_access_module(string $module, ?array $user, ?array $company
     return true;
 }
 
-/** Guard global management modules using the rule also exposed to navigation. */
+/**
+ *  Guard global management modules using the rule also exposed to navigation.
+ *
+ * @param string $module The module identifier.
+ * @return array
+ */
 function grompil_require_module_access(string $module): array
 {
     $user = require_login();

@@ -43,6 +43,8 @@ session_start();
 
 /**
  * Returns the shared PostgreSQL connection.
+ *
+ * @return PgSql\Connection
  */
 function db(): PgSql\Connection
 {
@@ -78,6 +80,9 @@ function db(): PgSql\Connection
 
 /**
  * Escapes text for safe insertion into HTML.
+ *
+ * @param string $value The text to escape for HTML output.
+ * @return string
  */
 function e(string $value): string
 {
@@ -90,6 +95,9 @@ function e(string $value): string
 
 /**
  * Redirects to a local application page.
+ *
+ * @param string $path The application-relative path or filesystem path.
+ * @return never
  */
 function redirect(string $path): never
 {
@@ -99,6 +107,8 @@ function redirect(string $path): never
 
 /**
  * Returns the currently authenticated user and their current role rights.
+ *
+ * @return ?array
  */
 function current_user(): ?array
 {
@@ -163,7 +173,14 @@ function current_user(): ?array
     return $user;
 }
 
-/** Sets request-local PostgreSQL row-security context after authentication. */
+/**
+ *  Sets request-local PostgreSQL row-security context after authentication.
+ *
+ * @param int $companyId The company database ID.
+ * @param int $userId The user database ID.
+ * @param bool $platformOperator Whether the user has platform-level access.
+ * @return void
+ */
 function set_database_tenant_context(int $companyId, int $userId, bool $platformOperator): void
 {
     pg_query_params(
@@ -180,6 +197,8 @@ function set_database_tenant_context(int $companyId, int $userId, bool $platform
 
 /**
  * Requires an authenticated user.
+ *
+ * @return array
  */
 function require_login(): array
 {
@@ -204,7 +223,11 @@ function require_login(): array
     return $user;
 }
 
-/** Returns the client IP observed by PHP, consulting forwarded headers only behind an explicitly trusted proxy. */
+/**
+ *  Returns the client IP observed by PHP, consulting forwarded headers only behind an explicitly trusted proxy.
+ *
+ * @return string
+ */
 function grompil_client_ip_address(): string
 {
     $address = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
@@ -236,7 +259,13 @@ function grompil_client_ip_address(): string
     return $client;
 }
 
-/** Checks the active company's IP allowlist for the management area. An empty list means unrestricted. */
+/**
+ *  Checks the active company's IP allowlist for the management area. An empty list means unrestricted.
+ *
+ * @param int $companyId The company database ID.
+ * @param ?string $address The client IP address to check.
+ * @return bool
+ */
 function company_management_ip_allowed(int $companyId, ?string $address = null): bool
 {
     $address ??= grompil_client_ip_address();
@@ -258,6 +287,10 @@ function company_management_ip_allowed(int $companyId, ?string $address = null):
 
 /**
  * Checks whether a user has a named permission.
+ *
+ * @param string $permission The permission identifier to check.
+ * @param ?array $user The authenticated user record.
+ * @return bool
  */
 function has_permission(string $permission, ?array $user = null): bool
 {
@@ -272,7 +305,7 @@ function has_permission(string $permission, ?array $user = null): bool
     }
 
     // Older installations may not have the platform permission backfilled yet.
-    // The global Beheerder role is reserved for platform accounts (company_id NULL,
+    // The global platform administrator role (currently named Beheerder) is reserved for platform accounts (company_id NULL,
     // platform role levels 1–99); recognize it so tenant RLS and the manager agree.
     return $permission === 'companies.manage'
         && ($user['company_id'] ?? null) === null
@@ -281,13 +314,23 @@ function has_permission(string $permission, ?array $user = null): bool
         && strtolower(trim((string) ($user['role_name'] ?? ''))) === 'beheerder';
 }
 
-/** Platform permissions are global and do not imply membership in a company. */
+/**
+ *  Platform permissions are global and do not imply membership in a company.
+ *
+ * @param ?array $user The authenticated user record.
+ * @return bool
+ */
 function is_platform_operator(?array $user = null): bool
 {
     return has_permission('companies.manage', $user);
 }
 
-/** Returns active companies the user may administer or work in. */
+/**
+ *  Returns active companies the user may administer or work in.
+ *
+ * @param array $user The authenticated user record.
+ * @return array
+ */
 function available_companies(array $user): array
 {
     if (is_platform_operator($user)) {
@@ -316,6 +359,12 @@ function available_companies(array $user): array
     return $companies;
 }
 
+/**
+ * Create the default set of roles for a company.
+ *
+ * @param int $companyId The company database ID.
+ * @return bool
+ */
 function seed_company_roles(int $companyId): bool
 {
     $result = pg_query_params(
@@ -334,7 +383,13 @@ function seed_company_roles(int $companyId): bool
     return (bool) $result;
 }
 
-/** Sets the active company only after rechecking the user's access. */
+/**
+ *  Sets the active company only after rechecking the user's access.
+ *
+ * @param int $companyId The company database ID.
+ * @param array $user The authenticated user record.
+ * @return bool
+ */
 function set_active_company(int $companyId, array $user): bool
 {
     if (is_platform_operator($user)) {
@@ -366,7 +421,12 @@ function set_active_company(int $companyId, array $user): bool
     return true;
 }
 
-/** Returns the active company and the user's company-specific role. */
+/**
+ *  Returns the active company and the user's company-specific role.
+ *
+ * @param ?array $user The authenticated user record.
+ * @return ?array
+ */
 function current_company_context(?array $user = null): ?array
 {
     $user ??= current_user();
@@ -409,6 +469,12 @@ function current_company_context(?array $user = null): ?array
     return $company;
 }
 
+/**
+ * Require an active company context for the current user.
+ *
+ * @param ?array $user The authenticated user record.
+ * @return array
+ */
 function require_company_context(?array $user = null): array
 {
     $user ??= require_login();
@@ -420,6 +486,12 @@ function require_company_context(?array $user = null): array
     return $company;
 }
 
+/**
+ * Redirect an authenticated user to the appropriate destination.
+ *
+ * @param array $user The authenticated user record.
+ * @return never
+ */
 function redirect_after_login(array $user): never
 {
     if (($user['must_change_password'] ?? 'f') === 't') {
@@ -452,6 +524,14 @@ function redirect_after_login(array $user): never
     redirect('select-company.php');
 }
 
+/**
+ * Check whether a user has a permission in the active company context.
+ *
+ * @param string $permission The permission identifier to check.
+ * @param ?array $company The company record.
+ * @param ?array $user The authenticated user record.
+ * @return bool
+ */
 function has_company_permission(string $permission, ?array $company = null, ?array $user = null): bool
 {
     $user ??= current_user();
@@ -460,7 +540,11 @@ function has_company_permission(string $permission, ?array $company = null, ?arr
         && ($company['is_platform_operator'] || in_array($permission, $company['company_permissions'] ?? [], true));
 }
 
-/** Resolve public shops from a verified host; the slug route is for local development only. */
+/**
+ *  Resolve public shops from a verified host; the slug route is for local development only.
+ *
+ * @return ?array
+ */
 function resolve_public_company(): ?array
 {
     $host = strtolower((string) (parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? ''), PHP_URL_HOST) ?: ''));
@@ -504,7 +588,13 @@ function resolve_public_company(): ?array
     return null;
 }
 
-/** Resolve the canonical company entry URL /c=<slug>. */
+/**
+ *  Resolve the canonical company entry URL /c=<slug>.
+ *
+ * @param string $slug The company URL slug.
+ * @param bool $requirePublic Whether the company must be publicly visible.
+ * @return ?array
+ */
 function resolve_company_slug(string $slug, bool $requirePublic = true): ?array
 {
     if (!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
@@ -526,7 +616,14 @@ function resolve_company_slug(string $slug, bool $requirePublic = true): ?array
     return $company ?: null;
 }
 
-/** Checks a role level using SS (exact) or SL (open interval) semantics. */
+/**
+ *  Checks a role level using SS (exact) or SL (open interval) semantics.
+ *
+ * @param int $lowerOrExact The exact level, or the lower bound of an open interval.
+ * @param ?int $upper The optional exclusive upper bound.
+ * @param ?array $user The authenticated user record.
+ * @return bool
+ */
 function has_level(int $lowerOrExact, ?int $upper = null, ?array $user = null): bool
 {
     $user ??= current_user();
@@ -539,7 +636,14 @@ function has_level(int $lowerOrExact, ?int $upper = null, ?array $user = null): 
         : $level > $lowerOrExact && $level < $upper;
 }
 
-/** Requires an open numeric level interval, such as the staff range. */
+/**
+ *  Requires an open numeric level interval, such as the staff range.
+ *
+ * @param int $lowerExclusive The exclusive lower bound.
+ * @param int $upperExclusive The exclusive upper bound.
+ * @param ?array $user The authenticated user record.
+ * @return array
+ */
 function require_level_range(int $lowerExclusive, int $upperExclusive, ?array $user = null): array
 {
     $user ??= require_login();
@@ -551,6 +655,9 @@ function require_level_range(int $lowerExclusive, int $upperExclusive, ?array $u
 
 /**
  * Requires a named permission or returns an HTTP 403 response.
+ *
+ * @param string $permission The permission identifier to check.
+ * @return array
  */
 function require_permission(string $permission): array
 {
@@ -565,6 +672,8 @@ function require_permission(string $permission): array
 
 /**
  * Creates or returns the CSRF token for the current session.
+ *
+ * @return string
  */
 function csrf_token(): string
 {
@@ -577,6 +686,8 @@ function csrf_token(): string
 
 /**
  * Returns a CSRF input for a form.
+ *
+ * @return string
  */
 function csrf_field(): string
 {
@@ -587,6 +698,8 @@ function csrf_field(): string
 
 /**
  * Verifies the token submitted by a POST request.
+ *
+ * @return void
  */
 function verify_csrf(): void
 {

@@ -21,6 +21,13 @@ require GROMPIL_ROOT . '/includes/bootstrap.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');
 
+/**
+ * Return a JSON response from platform navigation preferences.
+ *
+ * @param int $status The HTTP status code.
+ * @param array $data The response payload.
+ * @return never
+ */
 function platform_navigation_response(int $status, array $data): never
 {
     http_response_code($status);

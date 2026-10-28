@@ -18,7 +18,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
 
-/** Read KBO webservice credentials from the selected private credentials file. */
+/**
+ *  Read KBO webservice credentials from the selected private credentials file.
+ *
+ * @return array
+ */
 function grompil_kbo_config(): array
 {
     $credentials = grompil_credentials_config();
@@ -27,7 +31,11 @@ function grompil_kbo_config(): array
         : [];
 }
 
-/** Return KBO requests made in the rolling seven-day quota period. */
+/**
+ *  Return KBO requests made in the rolling seven-day quota period.
+ *
+ * @return int
+ */
 function grompil_kbo_weekly_usage(): int
 {
     $result = pg_query(
@@ -43,13 +51,25 @@ function grompil_kbo_weekly_usage(): int
     return (int) $row['request_count'];
 }
 
-/** Reserve and log one request atomically so concurrent clicks cannot exceed the weekly limit. */
+/**
+ *  Reserve and log one request atomically so concurrent clicks cannot exceed the weekly limit.
+ *
+ * @param string $term The normalized search term to record.
+ * @param string $requestType The KBO operation type.
+ * @return void
+ */
 function grompil_kbo_reserve_request(string $term, string $requestType = 'read_enterprise'): void
 {
     grompil_kbo_reserve_requests($term, [$requestType]);
 }
 
-/** Reserve a group of related requests as one atomic operation. */
+/**
+ *  Reserve a group of related requests as one atomic operation.
+ *
+ * @param string $term The normalized search term to record.
+ * @param array $requestTypes The KBO operation types to reserve.
+ * @return void
+ */
 function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
 {
     if ($requestTypes === []) {
@@ -97,7 +117,12 @@ function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
     }
 }
 
-/** Fetch public enterprise details from the official CBE/KBO Public Search service. */
+/**
+ *  Fetch public enterprise details from the official CBE/KBO Public Search service.
+ *
+ * @param string $number The enterprise number to look up.
+ * @return array
+ */
 function grompil_kbo_lookup(string $number): array
 {
     $number = preg_replace('/\D+/', '', $number) ?? '';
@@ -219,7 +244,12 @@ function grompil_kbo_lookup(string $number): array
     ];
 }
 
-/** Search all enterprise types by name phoneme through the official CBE/KBO Public Search service. */
+/**
+ *  Search all enterprise types by name phoneme through the official CBE/KBO Public Search service.
+ *
+ * @param string $query The user-supplied search query.
+ * @return array
+ */
 function grompil_kbo_search_enterprises(string $query): array
 {
     $query = trim(preg_replace('/\s+/u', ' ', $query) ?? '');
@@ -334,7 +364,12 @@ function grompil_kbo_search_enterprises(string $query): array
     return $results;
 }
 
-/** Search named establishment units and return their parent enterprise number. */
+/**
+ *  Search named establishment units and return their parent enterprise number.
+ *
+ * @param string $query The user-supplied search query.
+ * @return array
+ */
 function grompil_kbo_search_establishments(string $query): array
 {
     $query = trim(preg_replace('/\\s+/u', ' ', $query) ?? '');
@@ -448,7 +483,12 @@ function grompil_kbo_search_establishments(string $query): array
     return $results;
 }
 
-/** Search enterprises and establishment units; establishment results link to their parent enterprise. */
+/**
+ *  Search enterprises and establishment units; establishment results link to their parent enterprise.
+ *
+ * @param string $query The user-supplied search query.
+ * @return array
+ */
 function grompil_kbo_search(string $query): array
 {
     grompil_kbo_reserve_requests($query, [

@@ -24,6 +24,13 @@ require_once dirname(__DIR__) . '/includes/database_config.php';
 require_once dirname(__DIR__) . '/includes/templates.php';
 require_once dirname(__DIR__) . '/includes/password_reset.php';
 
+/**
+ * Assert a condition in the password reset check.
+ *
+ * @param bool $condition The condition expected to be true.
+ * @param string $message The assertion message used when the condition fails.
+ * @return void
+ */
 function reset_test_expect(bool $condition, string $message): void
 {
     if (!$condition) {

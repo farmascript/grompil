@@ -16,7 +16,15 @@
 
 declare(strict_types=1);
 
-/** Render a stable, user-facing error page without requiring the database. */
+/**
+ *  Render a stable, user-facing error page without requiring the database.
+ *
+ * @param int $status The HTTP status code.
+ * @param int $code The application error code.
+ * @param string $message The user-facing error message to display.
+ * @param string $title The response title.
+ * @return never
+ */
 function grompil_show_error(int $status, int $code, string $message, string $title = 'An error occurred'): never
 {
     require_once __DIR__ . '/templates.php';

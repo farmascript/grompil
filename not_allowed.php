@@ -11,7 +11,11 @@
 
 $theEpoch = time();
 
-/** Returns the client IP observed by PHP, consulting forwarded headers only behind an explicitly trusted proxy. */
+/**
+ *  Returns the client IP observed by PHP, consulting forwarded headers only behind an explicitly trusted proxy.
+ *
+ * @return string
+ */
 function grompil_client_ip_address_2(): string
 {
     $address = (string) ($_SERVER['REMOTE_ADDR'] ?? '');

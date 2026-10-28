@@ -21,6 +21,13 @@ if (PHP_SAPI !== 'cli') {
 }
 require dirname(__DIR__) . '/includes/bootstrap.php';
 
+/**
+ * Assert a condition in the navigation access check.
+ *
+ * @param bool $condition The condition expected to be true.
+ * @param string $message The assertion message used when the condition fails.
+ * @return void
+ */
 function navigation_test_expect(bool $condition, string $message): void
 {
     if (!$condition) throw new RuntimeException('Test failed: ' . $message);

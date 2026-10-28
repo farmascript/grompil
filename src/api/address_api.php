@@ -19,6 +19,13 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
+/**
+ * Return a JSON error response from the address lookup endpoint.
+ *
+ * @param int $status The HTTP status code.
+ * @param string $message The error message returned in the JSON response.
+ * @return never
+ */
 function address_api_error(int $status, string $message): never
 {
     http_response_code($status);
@@ -26,6 +33,13 @@ function address_api_error(int $status, string $message): never
     exit;
 }
 
+/**
+ * Send an HTTP request to the address lookup service.
+ *
+ * @param string $url The request URL.
+ * @param array $headers The HTTP request headers.
+ * @return array
+ */
 function address_api_http(string $url, array $headers): array
 {
     if (!function_exists('curl_init')) {

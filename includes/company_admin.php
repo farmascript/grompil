@@ -18,7 +18,16 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/mailer.php';
 
-/** Creates the first company administrator and emails a temporary password. */
+/**
+ *  Creates the first company administrator and emails a temporary password.
+ *
+ * @param int $companyId The company database ID.
+ * @param string $companyName The company name.
+ * @param string $companySlug The company URL slug.
+ * @param string $email The account email address.
+ * @param string $language The language code.
+ * @return bool
+ */
 function create_initial_company_administrator(
     int $companyId,
     string $companyName,

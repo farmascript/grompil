@@ -16,7 +16,14 @@
 
 declare(strict_types=1);
 
-/** Runs a reset query without exposing SQL parameters in the application log. */
+/**
+ *  Runs a reset query without exposing SQL parameters in the application log.
+ *
+ * @param PgSql\Connection $connection The PostgreSQL connection.
+ * @param string $sql The parameterized SQL statement.
+ * @param array $parameters The values to bind to the SQL placeholders.
+ * @return PgSql\Result
+ */
 function password_reset_query(PgSql\Connection $connection, string $sql, array $parameters = []): PgSql\Result
 {
     $result = @pg_query_params($connection, $sql, $parameters);
@@ -26,7 +33,12 @@ function password_reset_query(PgSql\Connection $connection, string $sql, array $
     return $result;
 }
 
-/** Returns the platform-configured request limit and rolling window. */
+/**
+ *  Returns the platform-configured request limit and rolling window.
+ *
+ * @param PgSql\Connection $connection The PostgreSQL connection.
+ * @return array
+ */
 function password_reset_request_limits(PgSql\Connection $connection): array
 {
     $result = password_reset_query($connection,
@@ -44,7 +56,17 @@ function password_reset_request_limits(PgSql\Connection $connection): array
     return $limits;
 }
 
-/** Returns current email/IP request totals and the wait until an attempt expires. */
+/**
+ *  Returns current email/IP request totals and the wait until an attempt expires.
+ *
+ * @param PgSql\Connection $connection The PostgreSQL connection.
+ * @param int $scope The reset-request company scope.
+ * @param string $identifier The hashed account identifier.
+ * @param string $ip The client IP address.
+ * @param int $windowMinutes The rate-limit window in minutes.
+ * @param int $maxRequests The maximum requests allowed in the window.
+ * @return array
+ */
 function password_reset_attempt_status(
     PgSql\Connection $connection,
     int $scope,
@@ -77,7 +99,16 @@ function password_reset_attempt_status(
     ];
 }
 
-/** Returns mail delivery data, or null for an unknown account or a limited request. */
+/**
+ *  Returns mail delivery data, or null for an unknown account or a limited request.
+ *
+ * @param PgSql\Connection $connection The PostgreSQL connection.
+ * @param ?int $companyId The company database ID.
+ * @param string $email The account email address.
+ * @param string $ip The client IP address.
+ * @param ?array $requestStatus The resulting request-limit status, passed by reference.
+ * @return ?array
+ */
 function password_reset_issue(
     PgSql\Connection $connection,
     ?int $companyId,
@@ -153,7 +184,14 @@ function password_reset_issue(
     }
 }
 
-/** Checks the token's scope, expiry and account state without consuming it. */
+/**
+ *  Checks the token's scope, expiry and account state without consuming it.
+ *
+ * @param PgSql\Connection $connection The PostgreSQL connection.
+ * @param ?int $companyId The company database ID.
+ * @param string $tokenHash The SHA-256 hash of the reset token.
+ * @return bool
+ */
 function password_reset_valid(PgSql\Connection $connection, ?int $companyId, string $tokenHash): bool
 {
     if (!preg_match('/^[a-f0-9]{64}$/', $tokenHash)) {
@@ -170,7 +208,15 @@ function password_reset_valid(PgSql\Connection $connection, ?int $companyId, str
     return pg_num_rows($result) === 1;
 }
 
-/** Atomically changes the password and revokes tokens and existing login sessions. */
+/**
+ *  Atomically changes the password and revokes tokens and existing login sessions.
+ *
+ * @param PgSql\Connection $connection The PostgreSQL connection.
+ * @param ?int $companyId The company database ID.
+ * @param string $tokenHash The SHA-256 hash of the reset token.
+ * @param string $password The new account password.
+ * @return bool
+ */
 function password_reset_consume(PgSql\Connection $connection, ?int $companyId, string $tokenHash, string $password): bool
 {
     if (!preg_match('/^[a-f0-9]{64}$/', $tokenHash) || strlen($password) < 12 || strlen($password) > 4096) {
@@ -203,7 +249,11 @@ function password_reset_consume(PgSql\Connection $connection, ?int $companyId, s
     }
 }
 
-/** Uses an explicitly configured public URL; only loopback has an automatic fallback. */
+/**
+ *  Uses an explicitly configured public URL; only loopback has an automatic fallback.
+ *
+ * @return string
+ */
 function password_reset_base_url(): string
 {
     $configured = trim((string) getenv('GROMPIL_PUBLIC_URL'));

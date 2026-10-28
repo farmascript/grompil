@@ -16,7 +16,12 @@
 
 declare(strict_types=1);
 
-/** Read and validate the deployment marker stored with this installation. */
+/**
+ *  Read and validate the deployment marker stored with this installation.
+ *
+ * @param string $projectRoot The application project root directory.
+ * @return string
+ */
 function grompil_deployment_location(string $projectRoot): string
 {
     $settingsPath = rtrim($projectRoot, '/\\')
@@ -38,7 +43,12 @@ function grompil_deployment_location(string $projectRoot): string
     return $location;
 }
 
-/** Resolve the selected private credentials file above the web root. */
+/**
+ *  Resolve the selected private credentials file above the web root.
+ *
+ * @param string $projectRoot The application project root directory.
+ * @return string
+ */
 function grompil_credentials_default_path(string $projectRoot): string
 {
     $location = grompil_deployment_location($projectRoot);
@@ -59,14 +69,22 @@ function grompil_credentials_default_path(string $projectRoot): string
     return dirname($projectRoot, 3) . DIRECTORY_SEPARATOR . $fileName;
 }
 
-/** Resolve credentials from the marker, never from request headers or IP addresses. */
+/**
+ *  Resolve credentials from the marker, never from request headers or IP addresses.
+ *
+ * @return string
+ */
 function grompil_credentials_path(): string
 {
     $projectRoot = defined('GROMPIL_ROOT') ? GROMPIL_ROOT : dirname(__DIR__);
     return grompil_credentials_default_path($projectRoot);
 }
 
-/** Read the selected credentials array for web requests and CLI commands. */
+/**
+ *  Read the selected credentials array for web requests and CLI commands.
+ *
+ * @return array
+ */
 function grompil_credentials_config(): array
 {
     $path = grompil_credentials_path();
