@@ -17,12 +17,12 @@
 declare(strict_types=1);
 
 /**
- *  Read and validate the deployment marker stored with this installation.
+ * Read and validate the deployment settings stored with this installation.
  *
  * @param string $projectRoot The application project root directory.
- * @return string
+ * @return array
  */
-function grompil_deployment_location(string $projectRoot): string
+function grompil_deployment_settings(string $projectRoot): array
 {
     $settingsPath = rtrim($projectRoot, '/\\')
         . DIRECTORY_SEPARATOR . 'settings_local.php';
@@ -34,6 +34,19 @@ function grompil_deployment_location(string $projectRoot): string
     if (!is_array($settings)) {
         throw new RuntimeException('The local deployment settings file has an invalid format.');
     }
+
+    return $settings;
+}
+
+/**
+ * Read the validated deployment location stored with this installation.
+ *
+ * @param string $projectRoot The application project root directory.
+ * @return string
+ */
+function grompil_deployment_location(string $projectRoot): string
+{
+    $settings = grompil_deployment_settings($projectRoot);
 
     $location = $settings['location'] ?? null;
     if (!is_string($location) || !in_array($location, ['local', 'test', 'production'], true)) {

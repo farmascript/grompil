@@ -16,6 +16,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/credentials_config.php';
+
 /**
  *  Runs a reset query without exposing SQL parameters in the application log.
  *
@@ -250,26 +252,35 @@ function password_reset_consume(PgSql\Connection $connection, ?int $companyId, s
 }
 
 /**
- *  Uses an explicitly configured public URL; only loopback has an automatic fallback.
+ * Uses a configured public URL; only loopback has an automatic fallback.
  *
  * @return string
  */
 function password_reset_base_url(): string
 {
     $configured = trim((string) getenv('GROMPIL_PUBLIC_URL'));
+    if ($configured === '') {
+        $projectRoot = defined('GROMPIL_ROOT') ? GROMPIL_ROOT : dirname(__DIR__);
+        $settings = grompil_deployment_settings($projectRoot);
+        $publicUrl = $settings['public_url'] ?? '';
+        if (!is_string($publicUrl)) {
+            throw new RuntimeException('The public_url deployment setting must be a string.');
+        }
+        $configured = trim($publicUrl);
+    }
     if ($configured !== '') {
         $parts = parse_url($configured);
         if (!$parts || !isset($parts['host'], $parts['scheme']) || isset($parts['user']) || isset($parts['pass'])
             || isset($parts['query']) || isset($parts['fragment']) || !filter_var($configured, FILTER_VALIDATE_URL)
             || ($parts['scheme'] !== 'https' && !($parts['scheme'] === 'http' && in_array($parts['host'], ['localhost', '127.0.0.1', '[::1]'], true)))) {
-            throw new RuntimeException('GROMPIL_PUBLIC_URL must be an HTTPS application URL, or an HTTP loopback URL.');
+            throw new RuntimeException('The public application URL must be HTTPS, or HTTP on loopback.');
         }
         return rtrim($configured, '/') . '/';
     }
     $host = strtolower((string) ($_SERVER['SERVER_NAME'] ?? ''));
     $port = (int) ($_SERVER['SERVER_PORT'] ?? 80);
     if (!in_array($host, ['localhost', '127.0.0.1', '[::1]', '::1'], true) || $port < 1 || $port > 65535) {
-        throw new RuntimeException('Set GROMPIL_PUBLIC_URL before sending password reset emails.');
+        throw new RuntimeException('Set public_url in settings_local.php before sending password reset emails.');
     }
     $scheme = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
     $host = $host === '::1' ? '[::1]' : $host;

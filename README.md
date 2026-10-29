@@ -148,7 +148,7 @@ De tenant-tabellen hebben PostgreSQL row-level security. De storefront, domeinko
 
 ## Databaseconfiguratie
 
-Elke installatie krijgt een niet-gecommit `settings_local.php` in haar projectroot. Dit bestand geeft een array terug met `location` op exact `local`, `test` of `production`. De bootstrap gebruikt uitsluitend deze waarde en nooit het bezoeker-IP-adres, de Host-header of proxyheaders om een omgeving te kiezen. Ontbreekt de instelling of bevat ze een andere waarde, dan weigert de applicatie de configuratie.
+Elke installatie krijgt een niet-gecommit `settings_local.php` in haar projectroot. Dit bestand geeft een array terug met `location` op exact `local`, `test` of `production`. Voor wachtwoordherstel kan het ook `public_url` bevatten: de vaste HTTPS-basis-URL van die installatie. Een ingestelde omgevingsvariabele `GROMPIL_PUBLIC_URL` heeft voorrang. De bootstrap gebruikt `location` uitsluitend om de omgeving te kiezen en nooit het bezoeker-IP-adres, de Host-header of proxyheaders. Ontbreekt de instelling of bevat ze een andere waarde, dan weigert de applicatie de configuratie.
 
 De private credentialsbestanden staan buiten de webroot en gebruiken dezelfde arraystructuur met `database`, `kbo` en `mail`:
 
@@ -167,12 +167,14 @@ if (PHP_SAPI !== 'cli' && !defined('GROMPIL_ROOT')) {
 
 return [
     'location' => 'local',
+    // Optional; required on hosting to create password-reset links.
+    'public_url' => 'http://localhost/grompil/',
 ];
 ```
 
-Op de hosting bevatten de twee markers respectievelijk `production` en `test`. De drie credentialsbestanden geven de bestaande configuratiearray terug. `settings_local.php` is opgenomen in `.gitignore` en moet per installatie eenmalig in de bijbehorende projectroot worden aangemaakt. Zet er geen wachtwoorden in. Kopieer de secrets niet naar Git of naar publiek toegankelijke mappen.
+Op de hosting bevatten de twee markers respectievelijk `production` en `test`; voeg daar ook de eigen vaste HTTPS-URL toe, bijvoorbeeld `'public_url' => 'https://test.grompil.com'` voor de testinstallatie. De drie credentialsbestanden geven de bestaande configuratiearray terug. `settings_local.php` is opgenomen in `.gitignore` en moet per installatie eenmalig in de bijbehorende projectroot worden aangemaakt. Zet er geen wachtwoorden in. Kopieer de secrets niet naar Git of naar publiek toegankelijke mappen.
 
-`includes/credentials_config.php` selecteert het bijbehorende bestand voor webverzoeken en CLI-opdrachten. Er is geen omgevingsvariabele- of productie-fallback: ontbreekt het geselecteerde bestand of de databaseconfiguratie, dan stopt de verbinding. Gebruik voor productie, test en lokaal aparte databasegebruikers met alleen rechten op hun eigen database.
+`includes/credentials_config.php` selecteert het bijbehorende credentialsbestand voor webverzoeken en CLI-opdrachten. Voor credentials is er geen omgevingsvariabele- of productie-fallback: ontbreekt het geselecteerde bestand of de databaseconfiguratie, dan stopt de verbinding. Gebruik voor productie, test en lokaal aparte databasegebruikers met alleen rechten op hun eigen database.
 
 Er is geen IP-test nodig om de omgeving te bepalen: `127.0.0.1` verwijst naar de machine waarop PHP draait. Upload of synchroniseer `settings_local.php` niet vanuit Git; maak het per installatie aan en sluit het uit van FTP-synchronisatie die serverbestanden verwijdert.
 
