@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdocumentor
+    configVersion="3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://www.phpdoc.org"
+    xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/phpDocumentor/phpDocumentor/master/data/xsd/phpdoc.xsd"
+>
+    <title>Grompil API Documentation</title>
+    <paths>
+        <output>../../../phpdoc-output/grompil</output>
+        <cache>../../../phpdoc-cache/grompil</cache>
+    </paths>
+    <version number="0.7.0">
+        <api>
+            <source dsn=".">
+                <path>includes</path>
+                <path>src</path>
+                <path>not_allowed.php</path>
+            </source>
+            <ignore hidden="true" symlinks="true">
+                <path>src/lang/**/*</path>
+            </ignore>
+            <default-package-name>Grompil</default-package-name>
+        </api>
+    </version>
+</phpdocumentor>
