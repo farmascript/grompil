@@ -1,4 +1,4 @@
-BEGIN
+BEGIN;
 
 GRANT CONNECT ON DATABASE grompil TO grompil_app;
 GRANT USAGE ON SCHEMA public TO grompil_app;
@@ -28,4 +28,4 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON password_reset_tokens, password_reset_attempts TO grompil_app;
 
-COMMIT
+COMMIT;
