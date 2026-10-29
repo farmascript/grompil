@@ -16,3 +16,4 @@
 /vendor/
 /src/lang/companies/
 settings_local.php
+/scripts/cryptUserPasswords.php
