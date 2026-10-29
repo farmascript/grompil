@@ -13,8 +13,8 @@
  *
  */
 
--- Voer dit bestand in Adminer uit nadat je de database grompil hebt geselecteerd.
--- Maak de PostgreSQL-rol grompil_app vooraf aan in Adminer.
+-- Voer dit bestand in Adminer uit nadat je de database [ grompil  | grompilc | grompilc_test ] hebt geselecteerd.
+-- Maak de PostgreSQL-rol [ grompil_app | grompilc_app | grompilc_test_app ] vooraf aan in Adminer.
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -660,37 +660,12 @@ CREATE POLICY access_ip_allowlist_tenant_or_platform ON access_ip_allowlist
         OR current_setting('grompil.platform_operator', true) = 'true'
     );
 
-GRANT CONNECT ON DATABASE grompil TO grompil_app;
-GRANT USAGE ON SCHEMA public TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE
-    ON ALL TABLES IN SCHEMA public TO grompil_app;
-GRANT USAGE, SELECT
-    ON ALL SEQUENCES IN SCHEMA public TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON substitutions TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON access_ip_allowlist TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON kbo_lookup_attempts TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON companies, company_users, company_pages TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON company_navigation_preferences TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON platform_navigation_preferences TO grompil_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON platform_system_settings TO grompil_app;
-DO $$
-BEGIN
-    IF to_regclass('public.pharmacies') IS NOT NULL THEN
-        EXECUTE 'GRANT SELECT ON public.pharmacies TO grompil_app';
-    END IF;
-END;
-$$;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO grompil_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-    GRANT USAGE, SELECT ON SEQUENCES TO grompil_app;
-
 -- Password reset support.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_version BIGINT NOT NULL DEFAULT 0 CHECK (auth_version >= 0);
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    token_hash CHAR(64) PRIMARY KEY CHECK (token_hash ~ '^[a-f0-9]{64}),
+---    token_hash CHAR(64) PRIMARY KEY CHECK (token_hash ~ '^[a-f0-9]{64}),
+	token_hash CHAR(64) PRIMARY KEY CHECK (token_hash ~ '^[a-f0-9]{64}$'),
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     company_id BIGINT REFERENCES companies(id) ON DELETE CASCADE,
     password_hash_at_issue VARCHAR(255) NOT NULL,
@@ -707,7 +682,5 @@ CREATE TABLE IF NOT EXISTS password_reset_attempts (
 );
 CREATE INDEX IF NOT EXISTS password_reset_attempts_ip_idx ON password_reset_attempts (ip_address, attempted_at);
 CREATE INDEX IF NOT EXISTS password_reset_attempts_identifier_idx ON password_reset_attempts (company_id, identifier_hash, attempted_at);
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON password_reset_tokens, password_reset_attempts TO grompil_app;
 
 COMMIT;
