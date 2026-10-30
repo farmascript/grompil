@@ -11,7 +11,8 @@ require_once __DIR__ . '/bootstrap.php';
  * Find SAM catalog rows by exact CNK or fuzzy Dutch/French prescription name.
  *
  * Numeric input is treated as an exact CNK lookup. Other input is matched
- * against both prescription-name columns with PostgreSQL pg_trgm similarity.
+ * against Dutch/French prescription names and package displays, using
+ * PostgreSQL pg_trgm similarity.
  * A CNK can belong to multiple AMP/AMPP registrations, so CNK lookups may
  * return multiple rows.
  *
@@ -44,6 +45,7 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
                 amp_status, ampp_status,
                 official_name, name_nl, name_fr,
                 prescription_name_nl, prescription_name_fr,
+                pack_display_nl, pack_display_fr,
                 medicine_type,
                 delivery_modus_codes_json,
                 delivery_modus_specification_codes_json,
@@ -75,7 +77,7 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
             return [];
         }
 
-        $nameFields = ['prescription_name_nl', 'prescription_name_fr'];
+        $nameFields = ['prescription_name_nl', 'prescription_name_fr', 'pack_display_nl', 'pack_display_fr'];
         // A compact alphabetic query can be an abbreviation made by taking
         // the start of successive words (for example "dafcod" for
         // "Dafalgan Codeine"). Keep the full token as a candidate and also
@@ -108,10 +110,6 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
                         static fn (string $field): string => "COALESCE({$field}, '') ~* {$placeholder}",
                         $nameFields
                     );
-                    // SAM also keeps the structured package components in the
-                    // current AMPP JSON. Searching it includes sizes such as
-                    // "5 x 1 ml" without creating a denormalized column.
-                    $fieldConditions[] = "COALESCE(ampp_data_json::text, '') ~* {$placeholder}";
                 } else {
                     $params[] = '%' . $token . '%';
                     $fieldConditions = array_map(
@@ -135,19 +133,24 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
                 amp_status, ampp_status,
                 official_name, name_nl, name_fr,
                 prescription_name_nl, prescription_name_fr,
+                pack_display_nl, pack_display_fr,
                 medicine_type,
                 delivery_modus_codes_json,
                 delivery_modus_specification_codes_json,
                 amp_data_json, ampp_data_json, dmpp_data_json,
                 GREATEST(
                     COALESCE(similarity(lower(prescription_name_nl), lower($1)), 0),
-                    COALESCE(similarity(lower(prescription_name_fr), lower($1)), 0)
+                    COALESCE(similarity(lower(prescription_name_fr), lower($1)), 0),
+                    COALESCE(similarity(lower(pack_display_nl), lower($1)), 0),
+                    COALESCE(similarity(lower(pack_display_fr), lower($1)), 0)
                 )::real AS match_score,
                 CASE WHEN {$allTermsMatch} THEN 'terms' ELSE 'fuzzy' END::text AS match_type
              FROM public.sam_public_products
              WHERE {$allTermsMatch}
                 OR lower(prescription_name_nl) % lower($1)
                 OR lower(prescription_name_fr) % lower($1)
+                OR lower(pack_display_nl) % lower($1)
+                OR lower(pack_display_fr) % lower($1)
              ORDER BY
                 ({$allTermsMatch}) DESC,
                 match_score DESC,

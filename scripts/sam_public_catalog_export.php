@@ -295,6 +295,7 @@ while ($reader->read()) {
             'prescription_name_nl', 'prescription_name_fr', 'medicine_type',
             'delivery_modus_codes_json', 'delivery_modus_specification_codes_json',
             'amp_data_json', 'ampp_data_json', 'dmpp_data_json',
+            'pack_display_nl', 'pack_display_fr',
         ], ',', '"', '');
         continue;
     }
@@ -384,6 +385,8 @@ while ($reader->read()) {
                 $ampDataJson === false ? 'null' : $ampDataJson,
                 $amppDataJson === false ? '' : $amppDataJson,
                 $dmppDataJson === false ? 'null' : $dmppDataJson,
+                csvValue(languageText($amppData, 'PackDisplayValue', 'Nl')),
+                csvValue(languageText($amppData, 'PackDisplayValue', 'Fr')),
             ], ',', '"', '');
             $rows++;
         }

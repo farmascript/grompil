@@ -69,6 +69,8 @@ $results = array_map(static function (array $row): array {
         'name_fr' => $row['name_fr'],
         'prescription_name_nl' => $row['prescription_name_nl'],
         'prescription_name_fr' => $row['prescription_name_fr'],
+        'pack_display_nl' => $row['pack_display_nl'],
+        'pack_display_fr' => $row['pack_display_fr'],
         'medicine_type' => $row['medicine_type'],
     ];
 }, $matches);

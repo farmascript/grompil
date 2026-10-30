@@ -39,7 +39,8 @@
             title.textContent = `${result.prescription_name_nl || result.prescription_name_fr || result.official_name || ''} · CNK ${result.cnk}`;
             const details = document.createElement('small');
             details.className = 'd-block text-secondary';
-            details.textContent = `${result.prescription_name_fr || ''} · ${result.ampp_status || ''} · ${Math.round((result.match_score || 0) * 100)}%`;
+            const packageText = [result.pack_display_nl, result.pack_display_fr].filter(Boolean).join(' / ');
+            details.textContent = [result.prescription_name_fr, packageText, result.ampp_status, `${Math.round((result.match_score || 0) * 100)}%`].filter(Boolean).join(' · ');
             button.append(title, details);
             button.addEventListener('click', () => chooseSuggestion(result));
             suggestions.append(button);

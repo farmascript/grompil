@@ -39,6 +39,8 @@ foreach ($matches as $match) {
         . '<td><strong>' . e((string) ($match['prescription_name_nl'] ?? '')) . '</strong>'
         . '<br><span class="text-secondary">' . e((string) ($match['prescription_name_fr'] ?? '')) . '</span>'
         . '<br><small>' . e((string) ($match['official_name'] ?? '')) . '</small></td>'
+        . '<td>' . e((string) ($match['pack_display_nl'] ?? ''))
+        . '<br><span class="text-secondary">' . e((string) ($match['pack_display_fr'] ?? '')) . '</span></td>'
         . '<td>' . e((string) ($match['medicine_type'] ?? '')) . '</td>'
         . '<td class="text-end">' . e(number_format((float) $match['match_score'] * 100, 1)) . '%</td>'
         . '</tr>';
@@ -58,6 +60,7 @@ echo fn_templateRender('sam_products_test.html', [
     'sam_products_test_amp_ampp' => fn_t('sam_products_test_amp_ampp'),
     'sam_products_test_status' => fn_t('sam_products_test_status'),
     'sam_products_test_prescription_name' => fn_t('sam_products_test_prescription_name'),
+    'sam_products_test_pack_display' => fn_t('sam_products_test_pack_display'),
     'sam_products_test_medicine_type' => fn_t('sam_products_test_medicine_type'),
     'sam_products_test_match_score' => fn_t('sam_products_test_match_score'),
     'sam_products_test_query_value' => $query,
@@ -71,6 +74,7 @@ echo fn_templateRender('sam_products_test.html', [
         . '<th scope="col">CNK</th><th scope="col">' . e(fn_t('sam_products_test_amp_ampp')) . '</th>'
         . '<th scope="col">' . e(fn_t('sam_products_test_status')) . '</th><th scope="col">'
         . e(fn_t('sam_products_test_prescription_name')) . '</th><th scope="col">'
+        . e(fn_t('sam_products_test_pack_display')) . '</th><th scope="col">'
         . e(fn_t('sam_products_test_medicine_type')) . '</th><th scope="col" class="text-end">'
         . e(fn_t('sam_products_test_match_score')) . '</th></tr></thead><tbody>' . $rowsHtml . '</tbody></table></div>',
     '_sam_products_test_results_heading_html' => $matches === [] ? '' : '<h2 class="h5 mb-3">'

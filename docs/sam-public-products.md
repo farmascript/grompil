@@ -17,8 +17,9 @@ Platform operators can also use the localized browser test page at
 The page shows suggestions while typing. Compact searches such as `hald50`
 match name fragment `hald` plus numeric component `50`; an alphabetic run such
 as `dafcod` is also tried as `daf` + `cod`. Numeric components are searched in
-the prescription name and in the structured AMPP package data, so package
-sizes such as `5 x 1 ml` can contribute to a match.
+the prescription name and package display. The localized SAM `PackDisplayValue`
+(for example `5 x 1 ml`) is exposed as `pack_display_nl` / `pack_display_fr`,
+shown in results, and included in search.
 
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity against both Dutch and French prescription names. Searches shorter
@@ -26,10 +27,13 @@ than three characters return no fuzzy matches. The result limit defaults to 20
 and is capped at 50. A CNK may map to more than one SAM registration, so a CNK
 lookup can return multiple rows.
 
-Before fuzzy search can run, execute `scripts/schema_sam_public_products_search.sql`
-as a database/table owner. It enables `pg_trgm` and creates GIN trigram indexes
-for both prescription-name columns. Fresh database creation through
-`scripts/schema_sam_public_products.sql` includes the same extension and indexes.
+For an existing catalog, run `scripts/schema_sam_public_products_pack_display.sql`
+as the table owner. It creates the localized package columns, fills them from
+the preserved `ampp_data_json`, and creates their search indexes. Run
+`scripts/schema_sam_public_products_search.sql` as the owner if the prescription
+search indexes have not yet been created (run the package-display migration
+first on an existing database). Fresh database creation through
+`scripts/schema_sam_public_products.sql` includes all fields and indexes.
 
 Callers must apply authentication and company access checks before showing
 results. The helper returns SAM snapshot data; it does not decide whether a
