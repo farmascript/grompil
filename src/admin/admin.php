@@ -31,10 +31,15 @@ $modules = [
     ['companies.manage', 'scripts/check_templates.php', 'template_check_heading', 'template_check_intro'],
     ['companies.manage', 'companies.php', 'nav_companies', 'admin_companies_description'],
     ['companies.manage', 'platform-settings.php', 'platform_settings_title', 'platform_settings_intro'],
+    ['companies.manage', 'dd-varia.php', 'dd_varia_title', 'dd_varia_intro'],
 ];
 $cards = '';
 foreach ($modules as [$permission, $path, $titleKey, $descriptionKey]) {
     if (!has_permission($permission, $currentUser)) {
+        continue;
+    }
+    if ($path === 'dd-varia.php'
+        && (($currentUser['company_id'] ?? null) !== null || !is_platform_operator($currentUser))) {
         continue;
     }
     $cards .= '<div class="col-md-6 col-xl-4"><a class="card h-100 text-decoration-none shadow-sm admin-module" href="'

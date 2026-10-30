@@ -29,6 +29,11 @@ function grompil_module_access_rules(): array
         'select-company.php' => [],
         'companies.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
         'platform-settings.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
+        'dd-varia.php' => [
+            'permission' => 'companies.manage',
+            'level_range' => [1, 100],
+            'platform_operator_only' => true,
+        ],
         'users.php' => ['permission' => 'users.manage', 'level_range' => [1, 100]],
         'roles.php' => ['permission' => 'roles.manage', 'level_range' => [1, 100]],
         'translations.php' => ['permission' => 'translations.manage', 'level_range' => [1, 100]],
@@ -59,6 +64,8 @@ function grompil_can_access_module(string $module, ?array $user, ?array $company
     if (($user['must_change_password'] ?? 'f') === 't' && $module !== 'account.php') return false;
     if (isset($rule['level_range']) && !has_level($rule['level_range'][0], $rule['level_range'][1], $user)) return false;
     if (isset($rule['permission']) && !has_permission($rule['permission'], $user)) return false;
+    if (($rule['platform_operator_only'] ?? false)
+        && (($user['company_id'] ?? null) !== null || !is_platform_operator($user))) return false;
     if (isset($rule['company_permission'])) {
         if (($rule['platform_without_company'] ?? false) && is_platform_operator($user)) return true;
         return $company !== null && has_company_permission($rule['company_permission'], $company, $user);

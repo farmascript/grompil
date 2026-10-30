@@ -13,6 +13,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON companies, company_users, company_pages 
 GRANT SELECT, INSERT, UPDATE, DELETE ON company_navigation_preferences TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON platform_navigation_preferences TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON platform_system_settings TO grompil_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON dd_varia TO grompil_app;
 DO $$
 BEGIN
     IF to_regclass('public.pharmacies') IS NOT NULL THEN

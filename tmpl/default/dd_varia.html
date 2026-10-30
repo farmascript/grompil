@@ -1,0 +1,106 @@
+<!-- 483102 b-->
+
+<div class="mb-4">
+    <h1 class="h2">@dd_varia_title@</h1>
+    <p class="text-secondary">@dd_varia_intro@</p>
+</div>
+@_dd_varia_message_html@
+
+<section class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" action="dd-varia.php" class="row g-2 align-items-end mb-4">
+            <div class="col-auto">
+                <label class="form-label" for="dd-varia-list-filter">@dd_varia_list_label@</label>
+                <select class="form-select" id="dd-varia-list-filter" name="list">
+                    @_dd_varia_list_options_html@
+                </select>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary" type="submit">@dd_varia_list_choose@</button>
+            </div>
+        </form>
+
+        <h2 class="h5">@dd_varia_add_heading@</h2>
+        <form method="post" action="dd-varia.php?list=@dd_varia_list_value@" class="row g-3">
+            @_dd_varia_csrf_field_html@
+            <input type="hidden" name="action" value="@_dd_varia_action@">
+            @_dd_varia_edit_id_html@
+            <div class="col-md-4">
+                <label class="form-label" for="dd-varia-list-key">@dd_varia_list_label@</label>
+                <input class="form-control" id="dd-varia-list-key" name="list_key" maxlength="80" pattern="[a-z][a-z0-9_-]*" required value="@dd_varia_list_value@" list="dd-varia-lists" @_dd_varia_list_readonly@>
+                <datalist id="dd-varia-lists">@_dd_varia_list_options_html@</datalist>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="dd-varia-key">@dd_varia_key_label@</label>
+                <input class="form-control" id="dd-varia-key" name="key" maxlength="80" pattern="(_root|[a-z][a-z0-9_-]*)" required value="@dd_varia_key_value@" @_dd_varia_key_readonly@>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="dd-varia-parent">@dd_varia_parent_label@</label>
+                <select class="form-select" id="dd-varia-parent" name="parent_id">
+                    @_dd_varia_parent_options_html@
+                </select>
+            </div>
+            <div class="col-12">
+                <div class="form-text">@dd_varia_translation_help@</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="dd-varia-translation-nl">@dd_varia_translation_label@ · @dd_varia_translation_nl@</label>
+                <input class="form-control" id="dd-varia-translation-nl" name="translation_nl" maxlength="500" required value="@dd_varia_translation_nl_value@">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="dd-varia-translation-fr">@dd_varia_translation_label@ · @dd_varia_translation_fr@</label>
+                <input class="form-control" id="dd-varia-translation-fr" name="translation_fr" maxlength="500" required value="@dd_varia_translation_fr_value@">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="dd-varia-translation-en">@dd_varia_translation_label@ · @dd_varia_translation_en@</label>
+                <input class="form-control" id="dd-varia-translation-en" name="translation_en" maxlength="500" required value="@dd_varia_translation_en_value@">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="dd-varia-translation-de">@dd_varia_translation_label@ · @dd_varia_translation_de@</label>
+                <input class="form-control" id="dd-varia-translation-de" name="translation_de" maxlength="500" required value="@dd_varia_translation_de_value@">
+            </div>
+            <div class="col-md-8">
+                <label class="form-label" for="dd-varia-info">@dd_varia_info_label@</label>
+                <textarea class="form-control" id="dd-varia-info" name="info" rows="2" maxlength="1000">@dd_varia_info_value@</textarea>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="dd-varia-order">@dd_varia_order_label@</label>
+                <input class="form-control" id="dd-varia-order" name="sort_order" type="number" min="-100000" max="100000" required value="@dd_varia_sort_value@">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check mb-2">
+                    <input type="hidden" name="is_active" value="0">
+                    <input class="form-check-input" id="dd-varia-active" name="is_active" type="checkbox" value="1" @_dd_varia_is_active_checked@>
+                    <label class="form-check-label" for="dd-varia-active">@dd_varia_active_label@</label>
+                </div>
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+                @_dd_varia_cancel_html@
+                <button class="btn btn-primary" type="submit">@dd_varia_save@</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th scope="col">@dd_varia_table_key@</th>
+                    <th scope="col">@dd_varia_table_parent@</th>
+                    <th scope="col">@dd_varia_table_label@</th>
+                    <th scope="col">@dd_varia_table_info@</th>
+                    <th scope="col">@dd_varia_table_order@</th>
+                    <th scope="col">@dd_varia_table_status@</th>
+                    <th scope="col" class="text-end">@dd_varia_table_actions@</th>
+                </tr>
+            </thead>
+            <tbody>
+                @_dd_varia_rows_html@
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- 483102 e-->

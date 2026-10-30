@@ -454,6 +454,36 @@
             "action": "manage"
         },
         {
+            "id": 28614,
+            "module": "dd-varia.php",
+            "group": "platform",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "Keuzelijsten beheren",
+                    "description": "Beheer platformbrede hiërarchische waarden en hun labels in vier talen.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Gérer les listes de choix",
+                    "description": "Gérez les valeurs hiérarchiques communes à la plateforme et leurs libellés dans quatre langues.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Manage lookup lists",
+                    "description": "Manage platform-wide hierarchical values and their labels in four languages.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Auswahllisten verwalten",
+                    "description": "Verwalten Sie plattformweite hierarchische Werte und deren Bezeichnungen in vier Sprachen.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 15,
+            "action": "manage"
+        },
+        {
             "id": 63502,
             "module": "customers.php",
             "group": "company",

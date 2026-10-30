@@ -176,6 +176,8 @@ Op de hosting bevatten de twee markers respectievelijk `production` en `test`; v
 
 `includes/credentials_config.php` selecteert het bijbehorende credentialsbestand voor webverzoeken en CLI-opdrachten. Voor credentials is er geen omgevingsvariabele- of productie-fallback: ontbreekt het geselecteerde bestand of de databaseconfiguratie, dan stopt de verbinding. Gebruik voor productie, test en lokaal aparte databasegebruikers met alleen rechten op hun eigen database.
 
+Platformbrede, hiërarchische keuzelijsten staan in `dd_varia`. De platformbeheerder beheert items en hun NL/FR/EN/DE-labels via `dd-varia.php`. Zie [docs/dd-varia.md](docs/dd-varia.md) voor de database-update en de herbruikbare ophaalfunctie.
+
 Er is geen IP-test nodig om de omgeving te bepalen: `127.0.0.1` verwijst naar de machine waarop PHP draait. Upload of synchroniseer `settings_local.php` niet vanuit Git; maak het per installatie aan en sluit het uit van FTP-synchronisatie die serverbestanden verwijdert.
 
 ## Belgische adresopzoeking

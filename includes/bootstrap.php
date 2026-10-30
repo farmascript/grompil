@@ -717,4 +717,5 @@ require_once __DIR__ . '/module_access.php';
 require_once __DIR__ . '/templates.php';
 
 $GLOBALS['grompilTranslations'] = fn_loadLanguage();
+require_once __DIR__ . '/dd_varia.php';
 
