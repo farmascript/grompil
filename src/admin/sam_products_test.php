@@ -39,21 +39,19 @@ if ($query !== '') {
 
 $rowsHtml = '';
 foreach ($matches as $match) {
-    $status = trim((string) ($match['ampp_status'] ?? ''));
-    if (($match['amp_status'] ?? '') !== '') {
-        $status = trim((string) $match['amp_status']) . ' / ' . $status;
-    }
+    $statusLetters = ['AUTHORIZED' => 'A', 'REVOKED' => 'R', 'SUSPENDED' => 'S'];
+    $statusCodes = array_values(array_unique(array_filter([
+        $statusLetters[$match['amp_status'] ?? ''] ?? null,
+        $statusLetters[$match['ampp_status'] ?? ''] ?? null,
+    ])));
+    $description = $match['prescription_name_nl'] ?: ($match['prescription_name_fr'] ?? '');
+    $package = $match['pack_display_nl'] ?: ($match['pack_display_fr'] ?? '');
     $rowsHtml .= '<tr>'
         . '<td><code>' . e((string) $match['cnk']) . '</code></td>'
-        . '<td><code>' . e((string) $match['amp_code']) . '</code><br><small class="text-secondary">'
-        . e((string) $match['ampp_code']) . '</small></td>'
-        . '<td>' . e($status) . '</td>'
-        . '<td><strong>' . e((string) ($match['prescription_name_nl'] ?? '')) . '</strong>'
-        . '<br><span class="text-secondary">' . e((string) ($match['prescription_name_fr'] ?? '')) . '</span>'
-        . '<br><small>' . e((string) ($match['official_name'] ?? '')) . '</small></td>'
-        . '<td>' . e((string) ($match['pack_display_nl'] ?? ''))
-        . '<br><span class="text-secondary">' . e((string) ($match['pack_display_fr'] ?? '')) . '</span></td>'
-        . '<td>' . e((string) ($match['medicine_type'] ?? '')) . '</td>'
+        . '<td>' . e((string) $description) . '</td>'
+        . '<td>' . e((string) $package) . '</td>'
+        . '<td>' . e(implode('/', $statusCodes)) . '</td>'
+        . '<td>' . e((string) ($match['atc_code'] ?? '')) . '</td>'
         . '</tr>';
 }
 
@@ -68,11 +66,10 @@ echo fn_templateRender('sam_products_test.html', [
     'sam_products_test_results' => fn_t('sam_products_test_results'),
     'sam_products_test_no_results' => fn_t('sam_products_test_no_results'),
     'sam_products_test_unavailable' => fn_t('sam_products_test_unavailable'),
-    'sam_products_test_amp_ampp' => fn_t('sam_products_test_amp_ampp'),
-    'sam_products_test_status' => fn_t('sam_products_test_status'),
+    'sam_products_test_status_code' => fn_t('sam_products_test_status_code'),
     'sam_products_test_prescription_name' => fn_t('sam_products_test_prescription_name'),
     'sam_products_test_pack_display' => fn_t('sam_products_test_pack_display'),
-    'sam_products_test_medicine_type' => fn_t('sam_products_test_medicine_type'),
+    'sam_products_test_atc_class' => fn_t('sam_products_test_atc_class'),
     'sam_products_test_query_value' => $query,
     'sam_products_test_status_filter' => fn_t('sam_products_test_status_filter'),
     '_sam_products_test_status_filters_html' => $statusFilterHtml,
@@ -83,11 +80,10 @@ echo fn_templateRender('sam_products_test.html', [
             ? '<div class="alert alert-info" role="status">' . e(fn_t('sam_products_test_no_results')) . '</div>'
             : ''),
     '_sam_products_test_table_html' => $matches === [] ? '' : '<div class="table-responsive"><table class="table table-striped align-middle mb-0"><thead><tr>'
-        . '<th scope="col">CNK</th><th scope="col">' . e(fn_t('sam_products_test_amp_ampp')) . '</th>'
-        . '<th scope="col">' . e(fn_t('sam_products_test_status')) . '</th><th scope="col">'
-        . e(fn_t('sam_products_test_prescription_name')) . '</th><th scope="col">'
-        . e(fn_t('sam_products_test_pack_display')) . '</th><th scope="col">'
-        . e(fn_t('sam_products_test_medicine_type')) . '</th></tr></thead><tbody>' . $rowsHtml . '</tbody></table></div>',
+        . '<th scope="col">CNK</th><th scope="col">' . e(fn_t('sam_products_test_prescription_name')) . '</th>'
+        . '<th scope="col">' . e(fn_t('sam_products_test_pack_display')) . '</th><th scope="col">'
+        . e(fn_t('sam_products_test_status_code')) . '</th><th scope="col">'
+        . e(fn_t('sam_products_test_atc_class')) . '</th></tr></thead><tbody>' . $rowsHtml . '</tbody></table></div>',
     '_sam_products_test_results_heading_html' => $matches === [] ? '' : '<h2 class="h5 mb-3">'
         . e(fn_t('sam_products_test_results')) . ' <span class="badge text-bg-secondary">'
         . count($matches) . '</span></h2>',

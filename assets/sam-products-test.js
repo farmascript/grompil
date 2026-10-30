@@ -36,12 +36,14 @@
 
             const title = document.createElement('span');
             title.className = 'd-block text-truncate';
-            const packageText = [result.pack_display_nl, result.pack_display_fr].filter(Boolean).join(' / ');
-            const statusCodes = [...new Set([result.amp_status, result.ampp_status]
+            const packageText = result.pack_display_nl || result.pack_display_fr;
+            const statusLetter = { AUTHORIZED: 'A', REVOKED: 'R', SUSPENDED: 'S' };
+            const statusCodes = [result.amp_status, result.ampp_status]
                 .filter(Boolean)
-                .map((status) => ({ AUTHORIZED: 'A', REVOKED: 'R', SUSPENDED: 'S' }[status] || status)))
+                .map((status) => statusLetter[status] || status)
+                .filter((status, index, values) => values.indexOf(status) === index)
                 .join('/');
-            title.textContent = [result.cnk, '–', result.prescription_name_nl || result.prescription_name_fr || result.official_name, packageText, result.atc_code, statusCodes]
+            title.textContent = [result.cnk, '–', result.prescription_name_nl || result.prescription_name_fr || result.official_name, packageText, statusCodes, result.atc_code]
                 .filter(Boolean)
                 .join(' ');
             button.append(title);
