@@ -51,7 +51,7 @@ foreach ($matches as $match) {
         . '<td>' . e((string) $description) . '</td>'
         . '<td>' . e((string) $package) . '</td>'
         . '<td>' . e(implode('/', $statusCodes)) . '</td>'
-        . '<td>' . e((string) ($match['atc_code'] ?? '')) . '</td>'
+        . '<td>' . e((string) ($match['atc_class_path'] ?? '')) . '</td>'
         . '</tr>';
 }
 

@@ -71,6 +71,7 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                 pack_display_nl, pack_display_fr,
                 medicine_type,
                 COALESCE(ampp_data_json -> 'Atc' ->> '@code', amp_data_json -> 'Atc' ->> '@code') AS atc_code,
+                " . samAtcClassPathSql() . " AS atc_class_path,
                 delivery_modus_codes_json,
                 delivery_modus_specification_codes_json,
                 amp_data_json, ampp_data_json, dmpp_data_json,
@@ -162,6 +163,7 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                 pack_display_nl, pack_display_fr,
                 medicine_type,
                 COALESCE(ampp_data_json -> 'Atc' ->> '@code', amp_data_json -> 'Atc' ->> '@code') AS atc_code,
+                " . samAtcClassPathSql() . " AS atc_class_path,
                 delivery_modus_codes_json,
                 delivery_modus_specification_codes_json,
                 amp_data_json, ampp_data_json, dmpp_data_json,
@@ -202,4 +204,21 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
     }
 
     return $matches;
+}
+
+/** Return the readable ATC hierarchy through the pharmacological subgroup. */
+function samAtcClassPathSql(): string
+{
+    $atcCode = "COALESCE(ampp_data_json -> 'Atc' ->> '@code', amp_data_json -> 'Atc' ->> '@code')";
+    return "COALESCE((
+        SELECT string_agg(classification.description, ' · ' ORDER BY atc_level.level_no)
+        FROM (VALUES
+            (1, left({$atcCode}, 1)),
+            (2, left({$atcCode}, 3)),
+            (3, left({$atcCode}, 4)),
+            (4, left({$atcCode}, 5))
+        ) AS atc_level(level_no, code)
+        JOIN public.sam_atc_classifications AS classification
+          ON classification.atc_code = atc_level.code
+    ), '')";
 }

@@ -25,6 +25,26 @@ The test page filters on AMP and AMPP status together. All three checkboxes
 (`AUTHORIZED`, `REVOKED`, `SUSPENDED`) are selected by default; a row is returned
 when both its AMP and AMPP statuses match selected values.
 
+The ATC column and suggestion line show the readable ATC hierarchy through the
+pharmacological subgroup. For example, `N05AD01` displays
+`Nervous System · Psycholeptics · Antipsychotics · Butyrophenone Derivatives`;
+the final substance-level label (`Haloperidol`) is omitted. These descriptions
+are English-only in the supplied SAM REF export.
+
+To populate the reference descriptions, create `sam_atc_classifications` with
+`scripts/schema_sam_atc_classifications.sql`, then export the REF file:
+
+```powershell
+php scripts/sam_atc_classifications_export.php "C:\path\to\REF-export.xml"
+```
+
+Import the generated CSV into `public.sam_atc_classifications` with columns
+`atc_code, description` (for example using Adminer or psql `\\copy`). Then
+run the matching `schema_grant_local.sql`, `schema_grant_test.sql`, or
+`schema_grant_production.sql` so the application role can read the table.
+This is a small, separate reference import; it does not require re-importing
+the SAM product CSV.
+
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity against both Dutch and French prescription names. Searches shorter
 than three characters return no fuzzy matches. The result limit defaults to 20

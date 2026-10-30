@@ -19,6 +19,9 @@ BEGIN
     IF to_regclass('public.sam_public_products') IS NOT NULL THEN
         EXECUTE 'GRANT SELECT ON public.sam_public_products TO grompil_app';
     END IF;
+    IF to_regclass('public.sam_atc_classifications') IS NOT NULL THEN
+        EXECUTE 'GRANT SELECT ON public.sam_atc_classifications TO grompil_app';
+    END IF;
 END;
 $$;
 DO $$

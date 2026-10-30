@@ -75,6 +75,7 @@ $results = array_map(static function (array $row): array {
         'pack_display_nl' => $row['pack_display_nl'],
         'pack_display_fr' => $row['pack_display_fr'],
         'atc_code' => $row['atc_code'],
+        'atc_class_path' => $row['atc_class_path'],
     ];
 }, $matches);
 
