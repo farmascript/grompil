@@ -212,7 +212,10 @@ function fn_exportLanguageFile(string $language): bool
     if (!$result) {
         return false;
     }
-    $translations = [];
+    // Keep the application source strings as defaults. The database may only
+    // contain a subset of translations (for example, newly managed dd_varia
+    // labels), so exporting it alone would erase other language entries.
+    $translations = fn_readSourceLanguage($language);
     while ($row = pg_fetch_assoc($result)) {
         $translations[$row['key']] = $row['value'];
     }
