@@ -46,18 +46,19 @@ This is a small, separate reference import; it does not require re-importing
 the SAM product CSV.
 
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
-similarity against both Dutch and French prescription names. Searches shorter
-than three characters return no fuzzy matches. The result limit defaults to 20
-and is capped at 50. A CNK may map to more than one SAM registration, so a CNK
-lookup can return multiple rows.
+similarity when the extension is installed, and otherwise falls back to
+substring/token matching. Compact fragment searches such as `dafcod` work in
+either mode; typo similarity requires `pg_trgm`. Searches shorter than three
+characters return no fuzzy matches. The result limit defaults to 20 and is
+capped at 50. A CNK may map to more than one SAM registration, so a CNK lookup
+can return multiple rows.
 
 For an existing catalog, run `scripts/schema_sam_public_products_pack_display.sql`
-as the table owner. It creates the localized package columns, fills them from
-the preserved `ampp_data_json`, and creates their search indexes. Run
-`scripts/schema_sam_public_products_search.sql` as the owner if the prescription
-search indexes have not yet been created (run the package-display migration
-first on an existing database). Fresh database creation through
-`scripts/schema_sam_public_products.sql` includes all fields and indexes.
+as the table owner. It creates the localized package columns and fills them
+from the preserved `ampp_data_json`. Run
+`scripts/schema_sam_public_products_search.sql` only on a server where
+`pg_trgm` is installed and available. Fresh database creation through
+`scripts/schema_sam_public_products.sql` works without that optional extension.
 
 Callers must apply authentication and company access checks before showing
 results. The helper returns SAM snapshot data; it does not decide whether a

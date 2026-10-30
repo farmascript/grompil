@@ -152,6 +152,28 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
         $params[] = $limit;
         $statusFilter = $makeStatusFilter($params);
 
+        $extensionResult = pg_query(db(), "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm')");
+        $trigramsAvailable = $extensionResult !== false
+            && pg_fetch_result($extensionResult, 0, 0) === 't';
+        $similaritySelect = $trigramsAvailable
+            ? "GREATEST(
+                    COALESCE(similarity(lower(prescription_name_nl), lower($1)), 0),
+                    COALESCE(similarity(lower(prescription_name_fr), lower($1)), 0),
+                    COALESCE(similarity(lower(pack_display_nl), lower($1)), 0),
+                    COALESCE(similarity(lower(pack_display_fr), lower($1)), 0)
+                )::real"
+            : "CASE WHEN lower(COALESCE(prescription_name_nl, '')) LIKE lower($1) || '%'
+                       OR lower(COALESCE(prescription_name_fr, '')) LIKE lower($1) || '%'
+                       OR lower(COALESCE(pack_display_nl, '')) LIKE lower($1) || '%'
+                       OR lower(COALESCE(pack_display_fr, '')) LIKE lower($1) || '%'
+                   THEN 1.0 ELSE 0.0 END::real";
+        $fuzzyConditions = $trigramsAvailable
+            ? "OR lower(prescription_name_nl) % lower($1)
+                    OR lower(prescription_name_fr) % lower($1)
+                    OR lower(pack_display_nl) % lower($1)
+                    OR lower(pack_display_fr) % lower($1)"
+            : '';
+
         $result = pg_query_params(
             db(),
             "SELECT
@@ -167,20 +189,12 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                 delivery_modus_codes_json,
                 delivery_modus_specification_codes_json,
                 amp_data_json, ampp_data_json, dmpp_data_json,
-                GREATEST(
-                    COALESCE(similarity(lower(prescription_name_nl), lower($1)), 0),
-                    COALESCE(similarity(lower(prescription_name_fr), lower($1)), 0),
-                    COALESCE(similarity(lower(pack_display_nl), lower($1)), 0),
-                    COALESCE(similarity(lower(pack_display_fr), lower($1)), 0)
-                )::real AS match_score,
+                {$similaritySelect} AS match_score,
                 CASE WHEN {$allTermsMatch} THEN 'terms' ELSE 'fuzzy' END::text AS match_type
              FROM public.sam_public_products
              WHERE (
                     {$allTermsMatch}
-                    OR lower(prescription_name_nl) % lower($1)
-                    OR lower(prescription_name_fr) % lower($1)
-                    OR lower(pack_display_nl) % lower($1)
-                    OR lower(pack_display_fr) % lower($1)
+                    {$fuzzyConditions}
                 )
                AND {$statusFilter}
              ORDER BY
