@@ -14,8 +14,11 @@ It returns a compact JSON summary without the full source JSON payloads.
 Platform operators can also use the localized browser test page at
 `sam-products-test.php`. It is registered in the URL-manager catalog as
 **Test SAM products / SAM-producten testen** and is hidden from other users.
-The page shows suggestions while typing; compacted letter/digit searches such
-as `hald50` match name fragments `hald` and the numeric component `50`.
+The page shows suggestions while typing. Compact searches such as `hald50`
+match name fragment `hald` plus numeric component `50`; an alphabetic run such
+as `dafcod` is also tried as `daf` + `cod`. Numeric components are searched in
+the prescription name and in the structured AMPP package data, so package
+sizes such as `5 x 1 ml` can contribute to a match.
 
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity against both Dutch and French prescription names. Searches shorter

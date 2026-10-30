@@ -76,28 +76,54 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
         }
 
         $nameFields = ['prescription_name_nl', 'prescription_name_fr'];
-        $params = [$query];
-        $termConditions = [];
-        foreach ($tokens as $token) {
-            $placeholder = '$' . (count($params) + 1);
-            if (ctype_digit($token)) {
-                // Match whole numeric components: searching for 50 must not
-                // accidentally return a product containing 150.
-                $params[] = '(^|[^0-9])' . $token . '([^0-9]|$)';
-                $fieldConditions = array_map(
-                    static fn (string $field): string => "COALESCE({$field}, '') ~* {$placeholder}",
-                    $nameFields
-                );
-            } else {
-                $params[] = '%' . $token . '%';
-                $fieldConditions = array_map(
-                    static fn (string $field): string => "lower({$field}) LIKE {$placeholder}",
-                    $nameFields
-                );
+        // A compact alphabetic query can be an abbreviation made by taking
+        // the start of successive words (for example "dafcod" for
+        // "Dafalgan Codeine"). Keep the full token as a candidate and also
+        // try every two-part split with at least three characters per part.
+        $alternatives = [$tokens];
+        foreach ($tokens as $tokenIndex => $token) {
+            if (ctype_digit($token) || preg_match('/^\p{L}{6,}$/u', $token) !== 1) {
+                continue;
             }
-            $termConditions[] = '(' . implode(' OR ', $fieldConditions) . ')';
+            $length = function_exists('mb_strlen') ? mb_strlen($token, 'UTF-8') : strlen($token);
+            for ($splitAt = 3; $splitAt <= $length - 3 && count($alternatives) < 30; $splitAt++) {
+                $left = function_exists('mb_substr') ? mb_substr($token, 0, $splitAt, 'UTF-8') : substr($token, 0, $splitAt);
+                $right = function_exists('mb_substr') ? mb_substr($token, $splitAt, null, 'UTF-8') : substr($token, $splitAt);
+                $candidate = $tokens;
+                array_splice($candidate, $tokenIndex, 1, [$left, $right]);
+                $alternatives[] = $candidate;
+            }
         }
-        $allTermsMatch = '(' . implode(' AND ', $termConditions) . ')';
+
+        $params = [$query];
+        $alternativeConditions = [];
+        foreach ($alternatives as $alternative) {
+            $termConditions = [];
+            foreach ($alternative as $token) {
+                $placeholder = '$' . (count($params) + 1);
+                if (ctype_digit($token)) {
+                    // Match whole numeric components so 50 does not match 150.
+                    $params[] = '(^|[^0-9])' . $token . '([^0-9]|$)';
+                    $fieldConditions = array_map(
+                        static fn (string $field): string => "COALESCE({$field}, '') ~* {$placeholder}",
+                        $nameFields
+                    );
+                    // SAM also keeps the structured package components in the
+                    // current AMPP JSON. Searching it includes sizes such as
+                    // "5 x 1 ml" without creating a denormalized column.
+                    $fieldConditions[] = "COALESCE(ampp_data_json::text, '') ~* {$placeholder}";
+                } else {
+                    $params[] = '%' . $token . '%';
+                    $fieldConditions = array_map(
+                        static fn (string $field): string => "lower({$field}) LIKE {$placeholder}",
+                        $nameFields
+                    );
+                }
+                $termConditions[] = '(' . implode(' OR ', $fieldConditions) . ')';
+            }
+            $alternativeConditions[] = '(' . implode(' AND ', $termConditions) . ')';
+        }
+        $allTermsMatch = '(' . implode(' OR ', $alternativeConditions) . ')';
         $limitPlaceholder = '$' . (count($params) + 1);
         $params[] = $limit;
 
