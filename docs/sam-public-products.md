@@ -14,6 +14,8 @@ It returns a compact JSON summary without the full source JSON payloads.
 Platform operators can also use the localized browser test page at
 `sam-products-test.php`. It is registered in the URL-manager catalog as
 **Test SAM products / SAM-producten testen** and is hidden from other users.
+The page shows suggestions while typing; compacted letter/digit searches such
+as `hald50` match name fragments `hald` and the numeric component `50`.
 
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity against both Dutch and French prescription names. Searches shorter

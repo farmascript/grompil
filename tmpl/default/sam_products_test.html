@@ -5,11 +5,12 @@
 
 <section class="card shadow-sm mb-4">
     <div class="card-body">
-        <form method="get" action="sam-products-test.php" class="row g-3 align-items-end">
-            <div class="col-md-9">
+        <form method="get" action="sam-products-test.php" class="row g-3 align-items-end" data-sam-search-form data-search-url="sam-products.php" data-search-error="@sam_products_test_unavailable@">
+            <div class="col-md-9 position-relative">
                 <label class="form-label" for="sam-products-query">@sam_products_test_query_label@</label>
-                <input class="form-control" id="sam-products-query" name="q" type="search" maxlength="200" value="@sam_products_test_query_value@" placeholder="@sam_products_test_query_placeholder@" autofocus>
+                <input class="form-control" id="sam-products-query" name="q" type="search" maxlength="200" value="@sam_products_test_query_value@" placeholder="@sam_products_test_query_placeholder@" autocomplete="off" aria-autocomplete="list" aria-controls="sam-products-suggestions" aria-expanded="false" data-sam-search-input>
                 <div class="form-text">@sam_products_test_help@</div>
+                <div class="list-group position-absolute top-100 start-0 mt-1 shadow w-100 d-none z-3" id="sam-products-suggestions" role="listbox" data-sam-suggestions></div>
             </div>
             <div class="col-md-3 d-grid">
                 <button class="btn btn-primary" type="submit">@sam_products_test_search@</button>
@@ -26,3 +27,5 @@
         @_sam_products_test_table_html@
     </div>
 </section>
+
+<script src="@_asset_base_href@assets/sam-products-test.js?v=0.10.0" defer></script>

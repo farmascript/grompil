@@ -65,6 +65,42 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
             return [];
         }
 
+        $tokenQuery = function_exists('mb_strtolower')
+            ? mb_strtolower($query, 'UTF-8')
+            : strtolower($query);
+        $tokenQuery = preg_replace('/([\p{L}])([\p{N}])/u', '$1 $2', $tokenQuery) ?? $tokenQuery;
+        $tokenQuery = preg_replace('/([\p{N}])([\p{L}])/u', '$1 $2', $tokenQuery) ?? $tokenQuery;
+        $tokens = preg_split('/[^\p{L}\p{N}]+/u', $tokenQuery, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if ($tokens === []) {
+            return [];
+        }
+
+        $nameFields = ['prescription_name_nl', 'prescription_name_fr'];
+        $params = [$query];
+        $termConditions = [];
+        foreach ($tokens as $token) {
+            $placeholder = '$' . (count($params) + 1);
+            if (ctype_digit($token)) {
+                // Match whole numeric components: searching for 50 must not
+                // accidentally return a product containing 150.
+                $params[] = '(^|[^0-9])' . $token . '([^0-9]|$)';
+                $fieldConditions = array_map(
+                    static fn (string $field): string => "COALESCE({$field}, '') ~* {$placeholder}",
+                    $nameFields
+                );
+            } else {
+                $params[] = '%' . $token . '%';
+                $fieldConditions = array_map(
+                    static fn (string $field): string => "lower({$field}) LIKE {$placeholder}",
+                    $nameFields
+                );
+            }
+            $termConditions[] = '(' . implode(' OR ', $fieldConditions) . ')';
+        }
+        $allTermsMatch = '(' . implode(' AND ', $termConditions) . ')';
+        $limitPlaceholder = '$' . (count($params) + 1);
+        $params[] = $limit;
+
         $result = pg_query_params(
             db(),
             "SELECT
@@ -81,16 +117,18 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
                     COALESCE(similarity(lower(prescription_name_nl), lower($1)), 0),
                     COALESCE(similarity(lower(prescription_name_fr), lower($1)), 0)
                 )::real AS match_score,
-                'prescription_name'::text AS match_type
+                CASE WHEN {$allTermsMatch} THEN 'terms' ELSE 'fuzzy' END::text AS match_type
              FROM public.sam_public_products
-             WHERE lower(prescription_name_nl) % lower($1)
+             WHERE {$allTermsMatch}
+                OR lower(prescription_name_nl) % lower($1)
                 OR lower(prescription_name_fr) % lower($1)
              ORDER BY
+                ({$allTermsMatch}) DESC,
                 match_score DESC,
                 CASE WHEN ampp_status = 'AUTHORIZED' THEN 0 ELSE 1 END,
                 amp_code, ampp_code
-             LIMIT $2",
-            [$query, $limit]
+             LIMIT {$limitPlaceholder}",
+            $params
         );
     }
 
