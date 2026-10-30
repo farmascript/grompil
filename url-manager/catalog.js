@@ -484,6 +484,36 @@ window.GROMPIL_NAVIGATION = {
             "action": "manage"
         },
         {
+            "id": 74268,
+            "module": "sam-products-test.php",
+            "group": "platform",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "SAM-producten testen",
+                    "description": "Test productopzoeking op CNK of voorschriftnaam in de Nederlandse en Franse SAM-gegevens.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Tester les produits SAM",
+                    "description": "Tester la recherche de produits par CNK ou nom de prescription dans les données SAM néerlandaises et françaises.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Test SAM products",
+                    "description": "Test product lookup by CNK or prescription name in the Dutch and French SAM data.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "SAM-Produkte testen",
+                    "description": "Produktsuche nach CNK oder Verschreibungsname in den niederländischen und französischen SAM-Daten testen.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 16,
+            "action": "manage"
+        },
+        {
             "id": 63502,
             "module": "customers.php",
             "group": "company",

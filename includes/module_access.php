@@ -34,6 +34,11 @@ function grompil_module_access_rules(): array
             'level_range' => [1, 100],
             'platform_operator_only' => true,
         ],
+        'sam-products-test.php' => [
+            'permission' => 'companies.manage',
+            'level_range' => [1, 100],
+            'platform_operator_only' => true,
+        ],
         'users.php' => ['permission' => 'users.manage', 'level_range' => [1, 100]],
         'roles.php' => ['permission' => 'roles.manage', 'level_range' => [1, 100]],
         'translations.php' => ['permission' => 'translations.manage', 'level_range' => [1, 100]],

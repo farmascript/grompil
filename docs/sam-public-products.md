@@ -11,6 +11,10 @@ After deployment, the authenticated JSON test endpoint is available at
 `/sam-products.php?q=0046128` or `/sam-products.php?q=Haldol%205%20mg%2Fml`.
 It returns a compact JSON summary without the full source JSON payloads.
 
+Platform operators can also use the localized browser test page at
+`sam-products-test.php`. It is registered in the URL-manager catalog as
+**Test SAM products / SAM-producten testen** and is hidden from other users.
+
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity against both Dutch and French prescription names. Searches shorter
 than three characters return no fuzzy matches. The result limit defaults to 20
