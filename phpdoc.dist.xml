@@ -10,7 +10,7 @@
         <output>../../../phpdoc-output/grompil</output>
         <cache>../../../phpdoc-cache/grompil</cache>
     </paths>
-    <version number="0.8.0">
+    <version number="0.8.1">
         <api>
             <source dsn=".">
                 <path>includes</path>

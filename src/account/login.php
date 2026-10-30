@@ -147,6 +147,7 @@ echo fn_templateRender('login.html', [
     'email_value' => $email,
     '_error_html' => $errorHtml,
     '_csrf_field_html' => csrf_field(),
+    '_registration_link_hidden' => $loginCompany ? '' : 'hidden',
     'login_form_action' => $loginCompany ? 'login.php?c=' . rawurlencode($companySlug) : 'login.php',
     'register_link' => $loginCompany ? 'register.php?c=' . rawurlencode($companySlug) : 'register.php',
     'forgot_password_link' => $loginCompany ? 'forgot-password.php?c=' . rawurlencode($companySlug) : 'forgot-password.php',
