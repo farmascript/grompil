@@ -34,14 +34,19 @@ body {
 }
 
 .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
     color: inherit;
     font-weight: 800;
     letter-spacing: -.05em;
+    line-height: 1;
     text-decoration: none;
 }
 
 .brandmark {
-    display: inline-grid;
+    display: grid;
+    flex: 0 0 2rem;
     width: 2rem;
     height: 2rem;
     place-items: center;
