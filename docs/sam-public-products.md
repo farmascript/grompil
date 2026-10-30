@@ -21,9 +21,9 @@ the prescription name and package display. The localized SAM `PackDisplayValue`
 (for example `5 x 1 ml`) is exposed as `pack_display_nl` / `pack_display_fr`,
 shown in results, and included in search.
 
-The test page filters on AMP or AMPP status. All three checkboxes (`AUTHORIZED`,
-`REVOKED`, `SUSPENDED`) are selected by default; a row is returned when either
-its AMP or its AMPP status matches at least one selected value.
+The test page filters on AMP and AMPP status together. All three checkboxes
+(`AUTHORIZED`, `REVOKED`, `SUSPENDED`) are selected by default; a row is returned
+when both its AMP and AMPP statuses match selected values.
 
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity against both Dutch and French prescription names. Searches shorter

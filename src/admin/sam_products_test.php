@@ -54,7 +54,6 @@ foreach ($matches as $match) {
         . '<td>' . e((string) ($match['pack_display_nl'] ?? ''))
         . '<br><span class="text-secondary">' . e((string) ($match['pack_display_fr'] ?? '')) . '</span></td>'
         . '<td>' . e((string) ($match['medicine_type'] ?? '')) . '</td>'
-        . '<td class="text-end">' . e(number_format((float) $match['match_score'] * 100, 1)) . '%</td>'
         . '</tr>';
 }
 
@@ -74,7 +73,6 @@ echo fn_templateRender('sam_products_test.html', [
     'sam_products_test_prescription_name' => fn_t('sam_products_test_prescription_name'),
     'sam_products_test_pack_display' => fn_t('sam_products_test_pack_display'),
     'sam_products_test_medicine_type' => fn_t('sam_products_test_medicine_type'),
-    'sam_products_test_match_score' => fn_t('sam_products_test_match_score'),
     'sam_products_test_query_value' => $query,
     'sam_products_test_status_filter' => fn_t('sam_products_test_status_filter'),
     '_sam_products_test_status_filters_html' => $statusFilterHtml,
@@ -89,8 +87,7 @@ echo fn_templateRender('sam_products_test.html', [
         . '<th scope="col">' . e(fn_t('sam_products_test_status')) . '</th><th scope="col">'
         . e(fn_t('sam_products_test_prescription_name')) . '</th><th scope="col">'
         . e(fn_t('sam_products_test_pack_display')) . '</th><th scope="col">'
-        . e(fn_t('sam_products_test_medicine_type')) . '</th><th scope="col" class="text-end">'
-        . e(fn_t('sam_products_test_match_score')) . '</th></tr></thead><tbody>' . $rowsHtml . '</tbody></table></div>',
+        . e(fn_t('sam_products_test_medicine_type')) . '</th></tr></thead><tbody>' . $rowsHtml . '</tbody></table></div>',
     '_sam_products_test_results_heading_html' => $matches === [] ? '' : '<h2 class="h5 mb-3">'
         . e(fn_t('sam_products_test_results')) . ' <span class="badge text-bg-secondary">'
         . count($matches) . '</span></h2>',

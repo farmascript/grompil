@@ -62,7 +62,6 @@ try {
 $results = array_map(static function (array $row): array {
     return [
         'match_type' => $row['match_type'],
-        'match_score' => $row['match_score'],
         'cnk' => $row['cnk'],
         'amp_code' => $row['amp_code'],
         'ampp_code' => $row['ampp_code'],
@@ -75,6 +74,7 @@ $results = array_map(static function (array $row): array {
         'prescription_name_fr' => $row['prescription_name_fr'],
         'pack_display_nl' => $row['pack_display_nl'],
         'pack_display_fr' => $row['pack_display_fr'],
+        'atc_code' => $row['atc_code'],
         'medicine_type' => $row['medicine_type'],
     ];
 }, $matches);

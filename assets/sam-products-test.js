@@ -35,13 +35,16 @@
             button.setAttribute('role', 'option');
 
             const title = document.createElement('span');
-            title.className = 'd-block fw-semibold';
-            title.textContent = `${result.prescription_name_nl || result.prescription_name_fr || result.official_name || ''} · CNK ${result.cnk}`;
-            const details = document.createElement('small');
-            details.className = 'd-block text-secondary';
+            title.className = 'd-block text-truncate';
             const packageText = [result.pack_display_nl, result.pack_display_fr].filter(Boolean).join(' / ');
-            details.textContent = [result.prescription_name_fr, packageText, result.ampp_status, `${Math.round((result.match_score || 0) * 100)}%`].filter(Boolean).join(' · ');
-            button.append(title, details);
+            const statusCodes = [...new Set([result.amp_status, result.ampp_status]
+                .filter(Boolean)
+                .map((status) => ({ AUTHORIZED: 'A', REVOKED: 'R', SUSPENDED: 'S' }[status] || status)))
+                .join('/');
+            title.textContent = [result.cnk, '–', result.prescription_name_nl || result.prescription_name_fr || result.official_name, packageText, result.atc_code, statusCodes]
+                .filter(Boolean)
+                .join(' ');
+            button.append(title);
             button.addEventListener('click', () => chooseSuggestion(result));
             suggestions.append(button);
         }

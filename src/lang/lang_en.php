@@ -59,7 +59,6 @@ $arrSubst = array (
   'sam_products_test_prescription_name' => 'Prescription name NL / FR',
   'sam_products_test_pack_display' => 'Package NL / FR',
   'sam_products_test_medicine_type' => 'Type',
-  'sam_products_test_match_score' => 'Match',
   'dd_varia_list_label' => 'List code',
   'dd_varia_list_choose' => 'Open list',
   'dd_varia_add_heading' => 'Add value',

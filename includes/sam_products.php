@@ -40,13 +40,14 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
     }
 
     $makeStatusFilter = static function (array &$params) use ($statuses): string {
-        $conditions = [];
+        $placeholders = [];
         foreach ($statuses as $status) {
             $placeholder = '$' . (count($params) + 1);
             $params[] = $status;
-            $conditions[] = "(amp_status = {$placeholder} OR ampp_status = {$placeholder})";
+            $placeholders[] = $placeholder;
         }
-        return '(' . implode(' OR ', $conditions) . ')';
+        $selected = implode(', ', $placeholders);
+        return "(amp_status IN ({$selected}) AND ampp_status IN ({$selected}))";
     };
 
     // CNKs may be visually grouped with spaces, dots, or hyphens. Preserve
@@ -69,6 +70,7 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                 prescription_name_nl, prescription_name_fr,
                 pack_display_nl, pack_display_fr,
                 medicine_type,
+                COALESCE(ampp_data_json -> 'Atc' ->> '@code', amp_data_json -> 'Atc' ->> '@code') AS atc_code,
                 delivery_modus_codes_json,
                 delivery_modus_specification_codes_json,
                 amp_data_json, ampp_data_json, dmpp_data_json,
@@ -159,6 +161,7 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                 prescription_name_nl, prescription_name_fr,
                 pack_display_nl, pack_display_fr,
                 medicine_type,
+                COALESCE(ampp_data_json -> 'Atc' ->> '@code', amp_data_json -> 'Atc' ->> '@code') AS atc_code,
                 delivery_modus_codes_json,
                 delivery_modus_specification_codes_json,
                 amp_data_json, ampp_data_json, dmpp_data_json,
