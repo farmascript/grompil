@@ -69,7 +69,7 @@ $templateValues = [
     'company_slug' => (string) $company['slug'],
     'company_logo_url' => $logoUrl,
     'company_hero_image_url' => $heroUrl,
-    '_company_logo_html' => $logoUrl === '' ? '<span class="brandmark">✳</span>'
+    '_company_logo_html' => $logoUrl === '' ? '<span class="brandmark"><img src="media/gromPilLogo.png" alt=""></span>'
         : '<img class="storefront-logo" src="' . e($logoUrl) . '" alt="' . e((string) $company['name']) . '">',
     '_company_hero_image_html' => $heroUrl === '' ? '' : '<img class="storefront-hero-image" src="'
         . e($heroUrl) . '" alt="">',
