@@ -20,7 +20,7 @@ require_once __DIR__ . '/bootstrap.php';
  *
  * @return list<array<string, mixed>>
  */
-function grompil_sam_product_search(string $query, int $limit = 20): array
+function grompil_sam_product_search(string $query, int $limit = 20, ?array $statuses = null): array
 {
     $query = trim($query);
     if ($query === '' || strlen($query) > 200) {
@@ -28,6 +28,26 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
     }
 
     $limit = max(1, min($limit, 50));
+    $allowedStatuses = ['AUTHORIZED', 'REVOKED', 'SUSPENDED'];
+    $requestedStatuses = $statuses === null
+        ? $allowedStatuses
+        : array_map('strtoupper', array_filter($statuses, 'is_string'));
+    $statuses = $statuses === null
+        ? $requestedStatuses
+        : array_values(array_unique(array_intersect($allowedStatuses, $requestedStatuses)));
+    if ($statuses === []) {
+        return [];
+    }
+
+    $makeStatusFilter = static function (array &$params) use ($statuses): string {
+        $conditions = [];
+        foreach ($statuses as $status) {
+            $placeholder = '$' . (count($params) + 1);
+            $params[] = $status;
+            $conditions[] = "(amp_status = {$placeholder} OR ampp_status = {$placeholder})";
+        }
+        return '(' . implode(' OR ', $conditions) . ')';
+    };
 
     // CNKs may be visually grouped with spaces, dots, or hyphens. Preserve
     // leading zeroes and query only the exact normalized code.
@@ -37,6 +57,8 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
             return [];
         }
 
+        $params = [$cnk, $limit];
+        $statusFilter = $makeStatusFilter($params);
         $result = pg_query_params(
             db(),
             "SELECT
@@ -54,11 +76,12 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
                 'cnk'::text AS match_type
              FROM public.sam_public_products
              WHERE cnk = $1
+               AND {$statusFilter}
              ORDER BY
                 CASE WHEN ampp_status = 'AUTHORIZED' THEN 0 ELSE 1 END,
                 amp_code, ampp_code
              LIMIT $2",
-            [$cnk, $limit]
+            $params
         );
     } else {
         $queryLength = function_exists('mb_strlen') ? mb_strlen($query, 'UTF-8') : strlen($query);
@@ -124,6 +147,7 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
         $allTermsMatch = '(' . implode(' OR ', $alternativeConditions) . ')';
         $limitPlaceholder = '$' . (count($params) + 1);
         $params[] = $limit;
+        $statusFilter = $makeStatusFilter($params);
 
         $result = pg_query_params(
             db(),
@@ -146,11 +170,14 @@ function grompil_sam_product_search(string $query, int $limit = 20): array
                 )::real AS match_score,
                 CASE WHEN {$allTermsMatch} THEN 'terms' ELSE 'fuzzy' END::text AS match_type
              FROM public.sam_public_products
-             WHERE {$allTermsMatch}
-                OR lower(prescription_name_nl) % lower($1)
-                OR lower(prescription_name_fr) % lower($1)
-                OR lower(pack_display_nl) % lower($1)
-                OR lower(pack_display_fr) % lower($1)
+             WHERE (
+                    {$allTermsMatch}
+                    OR lower(prescription_name_nl) % lower($1)
+                    OR lower(prescription_name_fr) % lower($1)
+                    OR lower(pack_display_nl) % lower($1)
+                    OR lower(pack_display_fr) % lower($1)
+                )
+               AND {$statusFilter}
              ORDER BY
                 ({$allTermsMatch}) DESC,
                 match_score DESC,

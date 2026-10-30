@@ -14,11 +14,23 @@ require_once GROMPIL_ROOT . '/includes/sam_products.php';
 
 $rawQuery = $_GET['q'] ?? '';
 $query = is_scalar($rawQuery) ? trim((string) $rawQuery) : '';
+$availableStatuses = ['AUTHORIZED', 'REVOKED', 'SUSPENDED'];
+$rawStatuses = $_GET['status'] ?? null;
+$statuses = array_key_exists('status_filter', $_GET)
+    ? (is_array($rawStatuses) ? array_values(array_intersect($availableStatuses, array_filter($rawStatuses, 'is_string'))) : [])
+    : $availableStatuses;
+$statusFilterHtml = '';
+foreach ($availableStatuses as $statusValue) {
+    $checked = in_array($statusValue, $statuses, true) ? ' checked' : '';
+    $statusFilterHtml .= '<label class="form-check form-check-inline mb-0">'
+        . '<input class="form-check-input" type="checkbox" name="status[]" value="' . e($statusValue) . '"' . $checked . ' data-sam-status-filter>'
+        . '<span class="form-check-label">' . e($statusValue) . '</span></label>';
+}
 $matches = [];
 $searchError = false;
 if ($query !== '') {
     try {
-        $matches = grompil_sam_product_search($query, 50);
+        $matches = grompil_sam_product_search($query, 50, $statuses);
     } catch (Throwable $error) {
         error_log('SAM product test lookup failed: ' . $error->getMessage());
         $searchError = true;
@@ -64,6 +76,8 @@ echo fn_templateRender('sam_products_test.html', [
     'sam_products_test_medicine_type' => fn_t('sam_products_test_medicine_type'),
     'sam_products_test_match_score' => fn_t('sam_products_test_match_score'),
     'sam_products_test_query_value' => $query,
+    'sam_products_test_status_filter' => fn_t('sam_products_test_status_filter'),
+    '_sam_products_test_status_filters_html' => $statusFilterHtml,
     '_sam_products_test_results_html' => $rowsHtml,
     '_sam_products_test_feedback_html' => $searchError
         ? '<div class="alert alert-danger" role="alert">' . e(fn_t('sam_products_test_unavailable')) . '</div>'

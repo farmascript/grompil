@@ -6,6 +6,11 @@
 <section class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="get" action="sam-products-test.php" class="row g-3 align-items-end" data-sam-search-form data-search-url="sam-products.php" data-search-error="@sam_products_test_unavailable@">
+            <input type="hidden" name="status_filter" value="1">
+            <div class="col-12">
+                <div class="form-label mb-2">@sam_products_test_status_filter@</div>
+                @_sam_products_test_status_filters_html@
+            </div>
             <div class="col-md-9 position-relative">
                 <label class="form-label" for="sam-products-query">@sam_products_test_query_label@</label>
                 <input class="form-control" id="sam-products-query" name="q" type="search" maxlength="200" value="@sam_products_test_query_value@" placeholder="@sam_products_test_query_placeholder@" autocomplete="off" aria-autocomplete="list" aria-controls="sam-products-suggestions" aria-expanded="false" data-sam-search-input>
@@ -28,4 +33,4 @@
     </div>
 </section>
 
-<script src="@_asset_base_href@assets/sam-products-test.js?v=0.10.1" defer></script>
+<script src="@_asset_base_href@assets/sam-products-test.js?v=0.10.2" defer></script>

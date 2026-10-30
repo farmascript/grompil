@@ -55,6 +55,7 @@ $arrSubst = array (
   'sam_products_test_unavailable' => 'De productzoekfunctie is tijdelijk niet beschikbaar. Controleer of de SAM-zoekindexen zijn aangemaakt.',
   'sam_products_test_amp_ampp' => 'SAM-registratie',
   'sam_products_test_status' => 'Status AMP / AMPP',
+  'sam_products_test_status_filter' => 'Toon producten met status',
   'sam_products_test_prescription_name' => 'Voorschriftnaam NL / FR',
   'sam_products_test_pack_display' => 'Verpakking NL / FR',
   'sam_products_test_medicine_type' => 'Type',

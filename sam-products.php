@@ -45,9 +45,13 @@ $rawLimit = $_GET['limit'] ?? 20;
 $limit = is_scalar($rawLimit) && filter_var($rawLimit, FILTER_VALIDATE_INT) !== false
     ? (int) $rawLimit
     : 20;
+$rawStatuses = $_GET['status'] ?? null;
+$statuses = array_key_exists('status_filter', $_GET)
+    ? (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : [])
+    : (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : null);
 
 try {
-    $matches = grompil_sam_product_search($query, $limit);
+    $matches = grompil_sam_product_search($query, $limit, $statuses);
 } catch (Throwable $error) {
     error_log('SAM product lookup failed: ' . $error->getMessage());
     http_response_code(503);

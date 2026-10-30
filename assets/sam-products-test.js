@@ -63,6 +63,10 @@
         const url = new URL(form.dataset.searchUrl, window.location.href);
         url.searchParams.set('q', query);
         url.searchParams.set('limit', '10');
+        url.searchParams.set('status_filter', '1');
+        form.querySelectorAll('[data-sam-status-filter]:checked').forEach((checkbox) => {
+            url.searchParams.append('status[]', checkbox.value);
+        });
 
         try {
             const response = await fetch(url, {
@@ -90,6 +94,13 @@
     input.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(search, 250);
+    });
+
+    form.querySelectorAll('[data-sam-status-filter]').forEach((checkbox) => {
+        checkbox.addEventListener('change', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(search, 0);
+        });
     });
 
     input.addEventListener('keydown', (event) => {
