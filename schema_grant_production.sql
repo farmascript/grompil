@@ -16,6 +16,13 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON platform_system_settings TO grompilc_app
 GRANT SELECT, INSERT, UPDATE, DELETE ON dd_varia TO grompilc_app;
 DO $$
 BEGIN
+    IF to_regclass('public.sam_public_products') IS NOT NULL THEN
+        EXECUTE 'GRANT SELECT ON public.sam_public_products TO grompilc_app';
+    END IF;
+END;
+$$;
+DO $$
+BEGIN
     IF to_regclass('public.pharmacies') IS NOT NULL THEN
         EXECUTE 'GRANT SELECT ON public.pharmacies TO grompilc_app';
     END IF;
