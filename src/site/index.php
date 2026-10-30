@@ -26,6 +26,30 @@ if (isset($_GET['c'])) {
 }
 
 $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
+$user = current_user();
+$companyContext = $user === null ? null : current_company_context($user);
+$accountStatusHtml = '';
+$accountActionHtml = '<a class="btn btn-outline-primary btn-sm" href="login.php">' . e(fn_t('login_title')) . '</a>';
+if ($user !== null) {
+    $userName = trim((string) ($user['display_name'] ?? '')) ?: (string) ($user['email'] ?? '');
+    $roleName = (string) ($companyContext['company_role_name'] ?? $user['role_name'] ?? '');
+    $accountStatusHtml = '<span>' . e(fn_t('dashboard_logged_in_as')) . ' <strong>' . e($userName) . '</strong>'
+        . ($roleName !== '' ? ' · ' . e($roleName) : '') . '</span>';
+
+    if ($companyContext !== null) {
+        $companyLabelKey = is_platform_operator($user) ? 'platform_context_for' : 'active_company_label';
+        $accountStatusHtml .= '<span>' . e(fn_t($companyLabelKey)) . ' <strong>'
+            . e((string) $companyContext['name']) . '</strong></span>';
+        $accountActionHtml = '<a class="btn btn-outline-primary btn-sm" href="dashboard.php">'
+            . e(fn_t('workspace_label')) . '</a>';
+    } elseif (is_platform_operator($user)) {
+        $accountActionHtml = '<a class="btn btn-outline-primary btn-sm" href="admin.php">'
+            . e(fn_t('nav_admin')) . '</a>';
+    } else {
+        $accountActionHtml = '<a class="btn btn-outline-primary btn-sm" href="select-company.php">'
+            . e(fn_t('tenant_select_title')) . '</a>';
+    }
+}
 $page = (string) ($_GET['page'] ?? 'home');
 $pages = ['home', 'services', 'about_us', 'contact'];
 if (!in_array($page, $pages, true)) {
@@ -64,6 +88,8 @@ echo fn_templateRender('marketing.html', [
     'marketing_title' => $pageTitle,
     '_navigation_html' => $links,
     '_language_selector_html' => $languageSelector,
+    '_account_status_html' => $accountStatusHtml,
+    '_account_action_html' => $accountActionHtml,
     '_page_body_html' => $body,
 ]);
 

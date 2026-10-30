@@ -16,14 +16,17 @@
                 <a class="navbar-brand" href="index.php">
                     <img class="brand-logo" src="media/gromPilLogo.png" alt="Grompil">
                 </a>
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center flex-wrap gap-3">
                     <div class="navbar-nav flex-row gap-3">
                         @_navigation_html@
                     </div>
                     <div class="ms-3">
                         @_language_selector_html@
                     </div>
-                    <a class="btn btn-outline-primary btn-sm" href="login.php">@login_title@</a>
+                    <div class="d-flex flex-column small text-secondary" aria-live="polite">
+                        @_account_status_html@
+                    </div>
+                    @_account_action_html@
                 </div>
             </div>
         </nav>
