@@ -583,7 +583,7 @@
         if (personal) {
             const href = personalLinkUrl(item.url);
             const number = Number(item.referenceNumber) || 100;
-            return `<article class="tile" draggable="${canEditShared}" data-drag-key="link:${escapeHtml(item.id)}"><a href="${escapeHtml(href)}" target="${linkTarget}" rel="noopener noreferrer" class="tile-link"><span class="tile-number" aria-label="Nummer ${number}">${number}</span><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M6.2 4.2 4.7 5.7a3 3 0 0 0 4.2 4.2l1.4-1.4M9.8 11.8l1.5-1.5a3 3 0 0 0-4.2-4.2L5.7 7.5"/></svg></span><span class="tile-title">${escapeHtml(item.title)}</span></a>${canEditShared ? `<button class="favorite" data-edit-link="${escapeHtml(item.id)}" title="${escapeHtml(t('edit_link'))}" aria-label="${escapeHtml(t('edit_link'))}">⋯</button>` : ''}</article>`;
+            return `<article class="tile" draggable="${canEditShared}" data-drag-key="link:${escapeHtml(item.id)}"><a href="${escapeHtml(href)}" target="${linkTarget}" rel="noopener noreferrer" class="tile-link"><span class="tile-number" aria-label="Nummer ${number}">${number}</span><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M6.2 4.2 4.7 5.7a3 3 0 0 0 4.2 4.2l1.4-1.4M9.8 11.8l1.5-1.5a3 3 0 0 0-4.2-4.2L5.7 7.5"/></svg></span><span class="tile-title">${escapeHtml(item.title)}</span></a>${canEditShared ? `<button type="button" class="favorite link-edit-button" data-edit-link="${escapeHtml(item.id)}" title="${escapeHtml(t('edit_link'))}" aria-label="${escapeHtml(t('edit_link'))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m11.8 2.2 2 2a1 1 0 0 1 0 1.4l-7.9 7.9-3.3.8.8-3.3 7.9-7.9a1 1 0 0 1 1.5 0Z"/><path d="m9.9 4.1 2 2"/></svg></button>` : ''}</article>`;
         }
         const shown = shownItem(item);
         const number = formatReferenceNumber(catalogNumber(item));
@@ -991,12 +991,14 @@
         $('#link-form').addEventListener('submit', (event) => {
             if (event.submitter?.value === 'cancel') return;
             event.preventDefault();
+            if (remoteSync.enabled && !remoteSync.canEdit) return;
             saveLink();
         });
         $('#confirm-link-delete').addEventListener('change', (event) => {
             $('#link-delete').disabled = !event.target.checked;
         });
         $('#link-delete').addEventListener('click', async () => {
+            if (remoteSync.enabled && !remoteSync.canEdit) return;
             const id = state.editingLinkId;
             if (!id || !$('#confirm-link-delete').checked) return;
             state.personal.links = state.personal.links.filter((link) => link.id !== id);
@@ -1010,7 +1012,7 @@
             const favoriteButton = event.target.closest('[data-favorite]');
             if (favoriteButton) { const key = favoriteButton.dataset.favorite; state.personal.favorites = state.personal.favorites.includes(key) ? state.personal.favorites.filter((value) => value !== key) : [...state.personal.favorites, key]; await saveState(); render(); }
             const editButton = event.target.closest('[data-edit-link]');
-            if (editButton) openLinkDialog(editButton.dataset.editLink);
+            if (editButton && (!remoteSync.enabled || remoteSync.canEdit)) openLinkDialog(editButton.dataset.editLink);
             const groupActionsButton = event.target.closest('[data-group-actions]');
             if (groupActionsButton) {
                 state.selectedGroupId = groupActionsButton.dataset.groupActions;
@@ -1143,6 +1145,7 @@
     }
 
     function openLinkDialog(id = null) {
+        if (remoteSync.enabled && !remoteSync.canEdit) return;
         state.editingLinkId = id;
         const link = state.personal.links.find((entry) => entry.id === id);
         $('#dialog-title').textContent = link ? t('edit_link') : t('add_link_title');
@@ -1188,6 +1191,7 @@
     }
 
     async function saveLink() {
+        if (remoteSync.enabled && !remoteSync.canEdit) return;
         const title = $('#link-title').value.trim();
         const url = $('#link-url').value.trim();
         try {
