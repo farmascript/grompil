@@ -468,3 +468,8 @@
 - De links naar de company- en platformnavigatievoorkeuren bevatten nu de verplichte `application=grompil`-parameter.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.9.
 
+### Aanvulling: vertaling van de knop naar de publieke website
+
+- Het navigatielabel **Naar publiekswebsite** komt nu uit de algemene vertalingen en is beschikbaar in NL, FR, EN en DE.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.10.
+

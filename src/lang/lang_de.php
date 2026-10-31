@@ -382,6 +382,7 @@ $arrSubst = array (
   'nav_companies' => 'Unternehmen',
   'nav_dashboard' => 'Übersicht',
   'nav_logout' => 'Abmelden',
+  'nav_public_site' => 'Zur öffentlichen Website',
   'nav_roles' => 'Rollen und Berechtigungen',
   'nav_store' => 'Öffentliche Unternehmenswebsite',
   'nav_translations' => 'Übersetzungen',

@@ -588,7 +588,7 @@ function page_start(string $title, array $user): void
         ? '<a class="btn btn-outline-secondary btn-sm" href="' . e($publicSiteUrl)
             . '" target="_blank" rel="noopener noreferrer" data-bs-toggle="tooltip"'
             . ' data-bs-placement="bottom" data-bs-title="' . e($publicSiteUrl)
-            . '">Naar publiekswebsite</a>'
+            . '">' . e(fn_t('nav_public_site')) . '</a>'
         : '';
     $platformLeaveCompanyButton = '';
     $platformChooseCompanyButton = '';
