@@ -47,7 +47,6 @@ $arrSubst = array (
   'sam_products_test_title' => '!sam_products_test_title!',
   'sam_products_test_intro' => '!sam_products_test_intro!',
   'sam_products_test_query_label' => 'CNK or prescription name',
-  'sam_products_test_query_placeholder' => 'For example 0046128 or Haldol 5 mg/ml',
   'sam_products_test_help' => 'Suggestions start after three characters. Numeric input looks up an exact CNK; other terms search prescription names and package displays in NL/FR. Letters and numbers can be joined, like hald50.',
   'sam_products_test_search' => 'Search products',
   'sam_products_test_results' => 'Search results',

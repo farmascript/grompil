@@ -47,7 +47,6 @@ $arrSubst = array (
   'sam_products_test_title' => '!sam_products_test_title!',
   'sam_products_test_intro' => '!sam_products_test_intro!',
   'sam_products_test_query_label' => 'CNK oder Verschreibungsname',
-  'sam_products_test_query_placeholder' => 'Zum Beispiel 0046128 oder Haldol 5 mg/ml',
   'sam_products_test_help' => 'Vorschläge erscheinen ab drei Zeichen. Numerische Eingaben suchen den exakten CNK; andere Begriffe suchen Verschreibungsnamen und Packungsgrößen in NL/FR. Buchstaben und Zahlen dürfen zusammenstehen, wie bei hald50.',
   'sam_products_test_search' => 'Produkte suchen',
   'sam_products_test_results' => 'Suchergebnisse',

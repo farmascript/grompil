@@ -60,7 +60,6 @@ echo fn_templateRender('sam_products_test.html', [
     'sam_products_test_title' => fn_t('sam_products_test_title'),
     'sam_products_test_intro' => fn_t('sam_products_test_intro'),
     'sam_products_test_query_label' => fn_t('sam_products_test_query_label'),
-    'sam_products_test_query_placeholder' => fn_t('sam_products_test_query_placeholder'),
     'sam_products_test_help' => fn_t('sam_products_test_help'),
     'sam_products_test_search' => fn_t('sam_products_test_search'),
     'sam_products_test_results' => fn_t('sam_products_test_results'),
