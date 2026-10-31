@@ -115,12 +115,12 @@ if ($user === null) {
     $accountLinks = '<a class="btn btn-outline-primary" href="dashboard.php">' . e(fn_t('workspace_label')) . '</a>';
 }
 $accountLinks = $identityHtml . $accountLinks;
-$pageContent = fn_templateRender('company_page_content.html', [
+$pageContent = fn_templateRenderPath(fn_companySitePageTemplatePath($company, $page), [
     'company_name' => (string) $company['name'],
     'page_title' => $title,
     '_page_body_html' => nl2br(e($bodyText)),
 ]);
-echo fn_templateRender('company_site.html', [
+echo fn_templateRenderPath(fn_companySiteLayoutTemplatePath($company), [
     'html_language' => strtolower($language),
     'page_title' => $title,
     'company_name' => (string) $company['name'],

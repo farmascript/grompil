@@ -10,7 +10,7 @@
  * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
  * @info_email: info@grompil.com
  *
- * @description: Blocks direct HTTP access to default templates.
+ * @description: Blocks direct HTTP access to core templates.
  *
  */
 

@@ -431,3 +431,11 @@
 - `schema.sql` seed geen dubbele standaardrollen met alleen een andere hoofdletter en past de standaardrollen ook lowercase toe.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.2.
 
+### Aanvulling: scheiding van app- en front-endtemplates
+
+- Generieke beheer-, account-, e-mail- en productsite-templates staan nu onder `tmpl/core/`.
+- De publieke companysite gebruikt `tmpl/themes/<thema>/site/layout.html` en aparte bodytemplates voor `home`, `services`, `about_us` en `contact` in `site/pages/`.
+- De standaardstorefront staat onder `tmpl/themes/default/store.html`; de bestaande `serene` storefront bleef op zijn huidige pad staan.
+- Een company-override gebruikt dezelfde relatieve paden onder `tmpl/companies/<company-id>/` en valt per ontbrekend bestand terug op het geselecteerde thema en daarna op `default`.
+- De standaard app-renderer en foutpagina laden hun templates voortaan uit `tmpl/core/`. Er is geen databasemigratie nodig; softwareversie verhoogd naar 0.11.3.
+

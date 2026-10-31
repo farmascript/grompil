@@ -390,7 +390,7 @@ function fn_templateRenderPath(string $path, array $values = []): string
  */
 function fn_templateRender(string $file, array $values = []): string
 {
-    return fn_templateRenderPath(dirname(__DIR__) . '/tmpl/default/' . basename($file), $values);
+    return fn_templateRenderPath(dirname(__DIR__) . '/tmpl/core/' . basename($file), $values);
 }
 
 /**
@@ -424,6 +424,62 @@ function fn_appBaseHref(): string
 }
 
 /**
+ * Resolve an allow-listed template from a company, theme, or default theme.
+ *
+ * @param array $company The company record.
+ * @return string
+ */
+function fn_companyThemeTemplatePath(array $company, string $template): string
+{
+    $base = dirname(__DIR__) . '/tmpl';
+    $allowedTemplate = $template === 'store.html'
+        || $template === 'site/layout.html'
+        || preg_match('/^site\/pages\/(?:home|services|about_us|contact)\.html$/', $template) === 1;
+    if (!$allowedTemplate) {
+        grompil_show_error(500, 72805, 'Een paginaonderdeel kon niet worden geladen. Neem contact op met de beheerder.', 'Pagina niet beschikbaar');
+    }
+
+    $companyId = (int) ($company['id'] ?? 0);
+    if ($companyId > 0) {
+        $companyTemplate = $base . '/companies/' . $companyId . '/' . $template;
+        if (is_file($companyTemplate)) {
+            return $companyTemplate;
+        }
+    }
+    $theme = (string) ($company['store_theme'] ?? 'default');
+    if (preg_match('/^[a-z0-9_-]{1,64}$/', $theme) === 1) {
+        $themeTemplate = $base . '/themes/' . $theme . '/' . $template;
+        if (is_file($themeTemplate)) {
+            return $themeTemplate;
+        }
+    }
+    return $base . '/themes/default/' . $template;
+}
+
+/**
+ * Resolve the company public-site layout.
+ *
+ * @param array $company The company record.
+ * @return string
+ */
+function fn_companySiteLayoutTemplatePath(array $company): string
+{
+    return fn_companyThemeTemplatePath($company, 'site/layout.html');
+}
+
+/**
+ * Resolve a page body template for the company public site.
+ *
+ * @param array $company The company record.
+ * @param string $page The public page key.
+ * @return string
+ */
+function fn_companySitePageTemplatePath(array $company, string $page): string
+{
+    return fn_companyThemeTemplatePath($company, 'site/pages/' . $page . '.html');
+}
+
+/**
  * Resolve the storefront template for a company.
  *
  * @param array $company The company record.
@@ -431,22 +487,7 @@ function fn_appBaseHref(): string
  */
 function fn_companyStoreTemplatePath(array $company): string
 {
-    $base = dirname(__DIR__) . '/tmpl';
-    $companyId = (int) ($company['id'] ?? 0);
-    if ($companyId > 0) {
-        $companyTemplate = $base . '/companies/' . $companyId . '/store.html';
-        if (is_file($companyTemplate)) {
-            return $companyTemplate;
-        }
-    }
-    $theme = (string) ($company['store_theme'] ?? 'default');
-    if (preg_match('/^[a-z0-9_-]{1,64}$/', $theme) === 1 && $theme !== 'default') {
-        $themeTemplate = $base . '/themes/' . $theme . '/store.html';
-        if (is_file($themeTemplate)) {
-            return $themeTemplate;
-        }
-    }
-    return $base . '/default/store.html';
+    return fn_companyThemeTemplatePath($company, 'store.html');
 }
 
 /**

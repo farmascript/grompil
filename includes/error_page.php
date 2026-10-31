@@ -103,7 +103,7 @@ function grompil_show_error(int $status, int $code, string $message, string $tit
         'EN' => ['Reference number', 'Go to manager', 'Home'],
         'DE' => ['Meldungsnummer', 'Zum Manager', 'Startseite'],
     ][$language];
-    $templatePath = dirname(__DIR__) . '/tmpl/default/error.html';
+    $templatePath = dirname(__DIR__) . '/tmpl/core/error.html';
     $template = is_file($templatePath) ? file_get_contents($templatePath) : false;
     $values = [
         'error_title' => htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),

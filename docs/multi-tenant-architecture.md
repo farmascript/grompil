@@ -47,6 +47,8 @@ An active hostname resolves to exactly one company tenant. Support both a Grompi
 
 System UI translations use the existing DB-to-PHP export workflow. General substitutions use `company_id = 0`; a company can override an existing key with a row scoped to its company ID. Runtime loading merges the company array over the general language array. Company override files are exported under `src/lang/companies/<company_id>/`. Company-specific page copy belongs in `company_pages`, keyed by company, page and language. Templates and fallback copy remain in source files.
 
+General application templates live in `tmpl/core/`. Public company-site layouts and per-page bodies live in `tmpl/themes/<theme>/site/`; storefront templates live in the same theme folder as `store.html`. A company can override a layout or page under `tmpl/companies/<company_id>/` using the same relative path. Resolution checks the company override, then its selected theme, then `themes/default`. The theme resolver only accepts known page keys and template paths.
+
 ## Catalogue, patient files, and history
 
 Keep a shared, versioned product master for supplier/manufacturer reference data (external identifiers, pack size, descriptions, product classification, and source/import version). Do not copy the entire master catalog once per company. Each company has a sparse `company_products`/offer table keyed by `(company_id, product_id)` for whether it carries the item, local sales status, price, stock, supplier mapping, and company-specific settings. Orders store an immutable price and product-description snapshot so later price or catalog imports cannot rewrite historical receipts.
