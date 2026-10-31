@@ -419,3 +419,9 @@
 2. Synchroniseer naar test; voeg daar een aparte sleutel toe en voer migratie en grants uit.
 3. Test platformaanmelding, herstelcodes en toegestane IP-regels op test voordat productie aan de beurt komt.
 
+### Aanvulling: company-context na platformlogin
+
+- Platformbeheerders komen na een nieuwe login altijd eerst in het platformbeheer, ook als ze maar één company kunnen kiezen.
+- **Terug naar platformbeheer** wist de actieve company-context dus ook voor volgende logins. Opnieuw naar een company gaan gebeurt bewust via **Bedrijven kiezen**.
+- Semantische versie verhoogd naar 0.11.1; hiervoor is geen databasemigratie nodig.
+

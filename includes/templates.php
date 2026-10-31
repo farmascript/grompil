@@ -535,6 +535,7 @@ function page_start(string $title, array $user): void
             . '">Naar publiekswebsite</a>'
         : '';
     $platformLeaveCompanyButton = '';
+    $platformChooseCompanyButton = '';
     if ($isPlatformOperator && $company !== null) {
         $platformLeaveCompanyButton = '<form method="post" action="' . e(fn_appBaseHref() . 'select-company.php')
             . '" class="m-0" data-company-choice data-active-company-id="'
@@ -544,6 +545,10 @@ function page_start(string $title, array $user): void
             . '<input type="hidden" name="action" value="leave_company_context">'
             . '<button class="btn btn-outline-secondary btn-sm" type="submit">'
             . e(fn_t('platform_leave_company')) . '</button></form>';
+    }
+    if ($isPlatformOperator && $company === null) {
+        $platformChooseCompanyButton = '<a class="btn btn-outline-secondary btn-sm" href="'
+            . e(fn_appBaseHref() . 'select-company.php') . '">' . e(fn_t('company_select')) . '</a>';
     }
     echo fn_templateRender('html_head.html', ['_page_title' => e($title . ' · Grompil'), 'html_language' => strtolower((string) ($_SESSION['language'] ?? 'NL'))]);
     echo fn_templateRender('header.html', [
@@ -558,6 +563,7 @@ function page_start(string $title, array $user): void
         'manager_home_label' => fn_t('manager_home'),
         '_public_site_button_html' => $publicSiteButton,
         '_platform_leave_company_html' => $platformLeaveCompanyButton,
+        '_platform_choose_company_html' => $platformChooseCompanyButton,
         '_manager_href' => e(fn_appBaseHref() . 'url-manager/index.html?v=' . $managerCatalogVersion),
         '_company_badge_html' => $company !== null
             ? '<span class="btn btn-success btn-sm company-context-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="'

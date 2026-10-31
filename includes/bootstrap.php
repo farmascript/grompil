@@ -515,6 +515,13 @@ function redirect_after_login(array $user): never
         redirect('account.php?password_change_required=1#change-password');
     }
 
+    // Platform operators start in the platform context. In particular, do not
+    // silently restore their only company membership after they leave it.
+    if (is_platform_operator($user)) {
+        unset($_SESSION['active_company_id']);
+        redirect('admin.php');
+    }
+
     if (($user['company_id'] ?? null) !== null) {
         $result = pg_query_params(db(), 'SELECT id FROM companies WHERE id = $1 AND is_active', [$user['company_id']]);
         $company = $result ? pg_fetch_assoc($result) : false;
@@ -530,9 +537,6 @@ function redirect_after_login(array $user): never
     if (count($companies) > 1) {
         unset($_SESSION['active_company_id']);
         redirect('select-company.php');
-    }
-    if (is_platform_operator($user)) {
-        redirect('admin.php');
     }
     if ((int) ($user['role_level'] ?? 200) >= 200) {
         redirect('index.php');
