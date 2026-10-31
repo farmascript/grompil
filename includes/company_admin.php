@@ -43,8 +43,8 @@ function create_initial_company_administrator(
     $roles = pg_query_params(
         db(),
         "SELECT
-            (SELECT id FROM roles WHERE name = 'Publiek') AS base_role_id,
-            (SELECT id FROM company_roles WHERE company_id = $1 AND name = 'Beheerder') AS company_role_id",
+            (SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1) AS base_role_id,
+            (SELECT id FROM company_roles WHERE company_id = $1 AND lower(name) = 'beheerder' ORDER BY id LIMIT 1) AS company_role_id",
         [$companyId]
     );
     $role = $roles ? pg_fetch_assoc($roles) : false;

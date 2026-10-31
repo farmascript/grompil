@@ -44,7 +44,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 12) {
 
 $roleResult = pg_query_params(
     db(),
-    'SELECT id FROM roles WHERE name = $1',
+    'SELECT id FROM roles WHERE lower(name) = lower($1) ORDER BY id LIMIT 1',
     ['Beheerder']
 );
 

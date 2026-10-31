@@ -388,7 +388,7 @@ function seed_company_roles(int $companyId): bool
         db(),
         "INSERT INTO company_roles (company_id, name, description, level, permissions, is_system)
          SELECT $1, r.name, r.description, r.level,
-                CASE WHEN r.name = 'Beheerder'
+                CASE WHEN lower(r.name) = 'beheerder'
                      THEN '[\"company.users.manage\", \"company.roles.manage\", \"company.settings.manage\", \"company.translations.manage\"]'::jsonb
                      ELSE '[]'::jsonb
                 END,

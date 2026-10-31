@@ -24,7 +24,7 @@ SELECT u.id
 FROM users AS u
 JOIN roles AS r ON r.id = u.role_id
 WHERE u.company_id IS NULL
-  AND r.name = 'Beheerder'
+  AND lower(r.name) = 'beheerder'
   AND r.level < 100;
 
 DO $$

@@ -425,3 +425,9 @@
 - **Terug naar platformbeheer** wist de actieve company-context dus ook voor volgende logins. Opnieuw naar een company gaan gebeurt bewust via **Bedrijven kiezen**.
 - Semantische versie verhoogd naar 0.11.1; hiervoor is geen databasemigratie nodig.
 
+### Aanvulling: rolnaamvergelijkingen bij company-aanmaak
+
+- Rolnamen worden bij lookup hoofdletterongevoelig vergeleken. Dit ondersteunt bestaande databases waarin standaardrollen lowercase zijn opgeslagen.
+- `schema.sql` seed geen dubbele standaardrollen met alleen een andere hoofdletter en past de standaardrollen ook lowercase toe.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.2.
+

@@ -268,9 +268,9 @@ CREATE TABLE IF NOT EXISTS dd_varia (
 COMMENT ON TABLE dd_varia IS 'Platform-managed hierarchical lookup values. content stores an @translation_key@ token.';
 CREATE INDEX IF NOT EXISTS dd_varia_lookup_idx
     ON dd_varia (list_key, parent_id, is_active, sort_order, id);
-UPDATE roles SET level = 10 WHERE name = 'Beheerder' AND level = 200;
-UPDATE roles SET level = 110 WHERE name = 'Apotheker' AND level = 200;
-UPDATE roles SET level = 120 WHERE name = 'Medewerker' AND level = 200;
+UPDATE roles SET level = 10 WHERE lower(name) = 'beheerder' AND level = 200;
+UPDATE roles SET level = 110 WHERE lower(name) = 'apotheker' AND level = 200;
+UPDATE roles SET level = 120 WHERE lower(name) = 'medewerker' AND level = 200;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_approval_status_check;
 ALTER TABLE users ADD CONSTRAINT users_approval_status_check
     CHECK (approval_status IN ('pending', 'approved', 'rejected'));
@@ -357,7 +357,8 @@ CREATE POLICY kbo_lookup_attempts_platform_only ON kbo_lookup_attempts
     WITH CHECK (current_setting('grompil.platform_operator', true) = 'true');
 
 INSERT INTO roles (name, description, permissions, is_system)
-VALUES
+SELECT seed.name, seed.description, seed.permissions::jsonb, seed.is_system
+FROM (VALUES
     (
         'Beheerder',
         'Gebruikers en rollen beheren.',
@@ -367,29 +368,33 @@ VALUES
     ('Apotheker', 'Apotheker.', '[]', TRUE),
     ('Medewerker', 'Medewerker.', '[]', TRUE),
     ('Publiek', 'Publieke klant.', '[]', TRUE)
+ ) AS seed(name, description, permissions, is_system)
+WHERE NOT EXISTS (
+    SELECT 1 FROM roles AS existing WHERE lower(existing.name) = lower(seed.name)
+)
 ON CONFLICT (name) DO NOTHING;
 
 UPDATE roles
 SET is_system = TRUE, updated_at = now()
-WHERE name IN ('Beheerder', 'Apotheker', 'Medewerker', 'Publiek')
+WHERE lower(name) IN ('beheerder', 'apotheker', 'medewerker', 'publiek')
   AND is_system = FALSE;
 
-UPDATE roles SET level = 10 WHERE name = 'Beheerder' AND level = 200;
-UPDATE roles SET level = 110 WHERE name = 'Apotheker' AND level = 200;
-UPDATE roles SET level = 120 WHERE name = 'Medewerker' AND level = 200;
+UPDATE roles SET level = 10 WHERE lower(name) = 'beheerder' AND level = 200;
+UPDATE roles SET level = 110 WHERE lower(name) = 'apotheker' AND level = 200;
+UPDATE roles SET level = 120 WHERE lower(name) = 'medewerker' AND level = 200;
 UPDATE roles
 SET permissions = permissions || '["translations.manage"]'::jsonb
-WHERE name = 'Beheerder' AND NOT (permissions ? 'translations.manage');
+WHERE lower(name) = 'beheerder' AND NOT (permissions ? 'translations.manage');
 UPDATE roles
 SET permissions = permissions || '["companies.manage"]'::jsonb
-WHERE name = 'Beheerder' AND NOT (permissions ? 'companies.manage');
+WHERE lower(name) = 'beheerder' AND NOT (permissions ? 'companies.manage');
 UPDATE company_roles
 SET permissions = permissions || '["company.translations.manage"]'::jsonb
-WHERE name = 'Beheerder' AND NOT (permissions ? 'company.translations.manage');
+WHERE lower(name) = 'beheerder' AND NOT (permissions ? 'company.translations.manage');
 
 INSERT INTO company_roles (company_id, name, description, level, permissions, is_system)
 SELECT c.id, r.name, r.description, r.level,
-       CASE WHEN r.name = 'Beheerder'
+       CASE WHEN lower(r.name) = 'beheerder'
                      THEN '["company.users.manage", "company.roles.manage", "company.settings.manage", "company.translations.manage"]'::jsonb
             ELSE '[]'::jsonb
        END,
@@ -400,7 +405,7 @@ ON CONFLICT (company_id, name) DO NOTHING;
 
 UPDATE company_roles
 SET is_system = TRUE, updated_at = now()
-WHERE name IN ('Beheerder', 'Apotheker', 'Medewerker', 'Publiek')
+WHERE lower(name) IN ('beheerder', 'apotheker', 'medewerker', 'publiek')
   AND is_system = FALSE;
 
 -- Give every existing tenant membership its own login identity row. Keep global
@@ -419,7 +424,7 @@ INSERT INTO users (
 )
 SELECT u.email, u.display_name, u.name_first, u.name_last, u.street, u.house_number, u.box_number,
        u.postal_code, u.city, u.country_code, u.address_reference_id, u.acronym, u.password_hash,
-       (SELECT id FROM roles WHERE name = 'Publiek'),
+       (SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1),
        u.is_active, u.approval_status, u.approved_at, u.approved_by, u.last_login_at,
        u.created_at, u.updated_at, cu.company_id
 FROM company_users AS cu
