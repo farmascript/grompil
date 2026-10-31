@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Sat 2026-10-31 21:23:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -455,7 +455,7 @@ function current_company_context(?array $user = null): ?array
 
     $result = pg_query_params(
         db(),
-        'SELECT c.id, c.name, c.slug, c.default_language,
+        'SELECT c.id, c.name, c.slug, c.default_language, c.is_public,
                 cu.is_active AS membership_active, cu.approval_status,
                 cr.id AS company_role_id, cr.name AS company_role_name,
                 cr.level AS company_role_level, cr.permissions AS company_permissions

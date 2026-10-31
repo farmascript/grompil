@@ -491,3 +491,8 @@
 - De README beschrijft nu dat Serene ook eigen templates voor de publieke bedrijfspagina’s heeft.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.13.
 
+### Aanvulling: link naar publieke website in bedrijfscontext
+
+- De gedeelde navigatie had de link naar de publieke website al, maar `current_company_context()` haalde `is_public` niet op. Daardoor bleef de knop verborgen in een actieve bedrijfscontext. De query geeft dit veld nu mee, zodat de knop verschijnt als de publieke website van het bedrijf openbaar is.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.14.
+
