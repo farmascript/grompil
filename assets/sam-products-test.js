@@ -115,13 +115,23 @@
                 .map((status) => statusLetter[status] || status)
                 .filter((status, index, values) => values.indexOf(status) === index)
                 .join('/');
-            const description = result.prescription_name_nl || result.prescription_name_fr || result.official_name || '';
+            const description = result.prescription_name_nl
+                || result.prescription_name_fr
+                || result.official_name
+                || result.name_nl
+                || result.name_fr
+                || '';
             const parts = [];
             const addPart = (text, highlight = false) => {
                 if (!text) return;
                 if (parts.length > 0) title.append(document.createTextNode(' '));
-                if (highlight) highlightText(title, text, query);
-                else title.append(document.createTextNode(text));
+                if (highlight) {
+                    const part = document.createElement('span');
+                    highlightText(part, text, query);
+                    title.append(part);
+                } else {
+                    title.append(document.createTextNode(text));
+                }
                 parts.push(text);
             };
             addPart(result.cnk || '', /^[0-9 .-]+$/.test(query));
