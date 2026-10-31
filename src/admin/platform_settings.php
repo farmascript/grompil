@@ -18,6 +18,9 @@ declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 $currentUser = grompil_require_module_access('platform-settings.php');
+if (current_company_context($currentUser) !== null) {
+    grompil_show_error(403, 86142, 'Deze keuze is niet mogelijk zolang je voor een bedrijf werkt. Keer terug naar platformbeheer en probeer het opnieuw.', 'Keuze niet mogelijk');
+}
 $message = '';
 $values = ['password_reset_max_requests' => 3, 'password_reset_window_minutes' => 15];
 
@@ -59,7 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === '') {
     $result = pg_query_params(db(),
         'SELECT "key", value_integer FROM platform_system_settings
-         WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')'
+         WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')',
+        []
     );
     if ($result) {
         while ($row = pg_fetch_assoc($result)) {

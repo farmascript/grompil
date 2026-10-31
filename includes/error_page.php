@@ -95,6 +95,12 @@ function grompil_show_error(int $status, int $code, string $message, string $tit
             'EN' => ['Page unavailable', 'A page component could not be loaded. Contact the administrator.'],
             'DE' => ['Seite nicht verfügbar', 'Ein Seitenelement konnte nicht geladen werden. Wenden Sie sich an den Administrator.'],
         ],
+        86142 => [
+            'NL' => ['Keuze niet mogelijk', 'Deze keuze is niet mogelijk zolang je voor een bedrijf werkt. Keer terug naar platformbeheer en probeer het opnieuw.'],
+            'FR' => ['Choix impossible', 'Ce choix n’est pas disponible lorsque vous travaillez pour une entreprise. Retournez à l’administration de la plateforme et réessayez.'],
+            'EN' => ['Choice unavailable', 'This choice is unavailable while you are working for a company. Return to platform administration and try again.'],
+            'DE' => ['Auswahl nicht möglich', 'Diese Auswahl ist nicht verfügbar, solange Sie für ein Unternehmen arbeiten. Kehren Sie zur Plattformverwaltung zurück und versuchen Sie es erneut.'],
+        ],
     ];
     [$title, $message] = $catalog[$code][$language] ?? [$title, $message];
     $labels = [

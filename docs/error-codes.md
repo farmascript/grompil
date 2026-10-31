@@ -31,6 +31,7 @@ Meldingsnummers zijn vaste identificaties van foutsoorten. Gebruik hetzelfde num
 | 50631 | Registratie tijdelijk niet beschikbaar |
 | 61724 | Vertalingen konden niet worden gecontroleerd |
 | 72805 | Template niet beschikbaar |
+| 86142 | Keuze niet mogelijk in actieve bedrijfscontext |
 
 Ken nieuwe nummers toe door deze lijst te controleren en een nog ongebruikt nummer van vijf cijfers vast te leggen.
 

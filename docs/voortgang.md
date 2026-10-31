@@ -473,3 +473,10 @@
 - Het navigatielabel **Naar publiekswebsite** komt nu uit de algemene vertalingen en is beschikbaar in NL, FR, EN en DE.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.10.
 
+### Aanvulling: platforminstellingen en modulelijstbreedte
+
+- `platform-settings.php` toont nu foutcode 86142 met **Keuze niet mogelijk** wanneer de platformbeheerder nog voor een bedrijf werkt. De pagina kan daardoor niet meer in een kale HTTP 500 eindigen.
+- Een ontbrekende lege parameterlijst in de query voor platforminstellingen is aangevuld.
+- Het Module lijst-tabblad spant nu de volledige managerbreedte en lange URL-paden mogen afbreken zodat hun eindtekens zichtbaar blijven.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.11.
+
