@@ -438,4 +438,5 @@
 - De standaardstorefront staat onder `tmpl/themes/default/store.html`; de bestaande `serene` storefront bleef op zijn huidige pad staan.
 - Een company-override gebruikt dezelfde relatieve paden onder `tmpl/companies/<company-id>/` en valt per ontbrekend bestand terug op het geselecteerde thema en daarna op `default`.
 - De standaard app-renderer en foutpagina laden hun templates voortaan uit `tmpl/core/`. Er is geen databasemigratie nodig; softwareversie verhoogd naar 0.11.3.
+- Bij een eerste bezoek via een companylink wordt nu de standaardtaal van die company gebruikt. Een expliciete taalkeuze via de taalselector blijft leidend in de sessie; softwareversie verhoogd naar 0.11.4.
 

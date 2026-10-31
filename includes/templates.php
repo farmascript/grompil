@@ -24,18 +24,33 @@ declare(strict_types=1);
 function fn_loadLanguage(): array
 {
     $available = ['NL', 'FR', 'EN', 'DE'];
-    $requested = strtoupper((string) ($_GET['lang'] ?? $_SESSION['language'] ?? 'NL'));
-    $language = in_array($requested, $available, true) ? $requested : 'NL';
+    $requestedSlug = trim((string) ($_GET['c'] ?? ''));
+    $requestedCompany = $requestedSlug !== ''
+        ? resolve_company_slug($requestedSlug, false)
+        : null;
+    $requestedLanguage = strtoupper(trim((string) ($_GET['lang'] ?? '')));
+    if (in_array($requestedLanguage, $available, true)) {
+        $_SESSION['language_preference_set'] = true;
+        $_SESSION['language'] = $requestedLanguage;
+    }
+
+    $sessionLanguage = strtoupper((string) ($_SESSION['language'] ?? ''));
+    if (!empty($_SESSION['language_preference_set']) && in_array($sessionLanguage, $available, true)) {
+        $language = $sessionLanguage;
+    } elseif ($requestedCompany !== null
+        && in_array(strtoupper((string) $requestedCompany['default_language']), $available, true)) {
+        $language = strtoupper((string) $requestedCompany['default_language']);
+    } else {
+        $language = in_array($sessionLanguage, $available, true) ? $sessionLanguage : 'NL';
+    }
     $_SESSION['language'] = $language;
     $translations = array_replace(
         fn_readSourceLanguage($language),
         fn_readLanguageFile($language)
     );
     $companyId = (int) ($_SESSION['active_company_id'] ?? 0);
-    $requestedSlug = trim((string) ($_GET['c'] ?? ''));
-    if ($requestedSlug !== '') {
-        $company = resolve_company_slug($requestedSlug);
-        $companyId = $company === null ? 0 : (int) $company['id'];
+    if ($requestedCompany !== null) {
+        $companyId = (int) $requestedCompany['id'];
     }
     if ($companyId > 0) {
         set_database_tenant_context($companyId, (int) ($_SESSION['user_id'] ?? 0), false);
