@@ -440,3 +440,9 @@
 - De standaard app-renderer en foutpagina laden hun templates voortaan uit `tmpl/core/`. Er is geen databasemigratie nodig; softwareversie verhoogd naar 0.11.3.
 - Bij een eerste bezoek via een companylink wordt nu de standaardtaal van die company gebruikt. Een expliciete taalkeuze via de taalselector blijft leidend in de sessie; softwareversie verhoogd naar 0.11.4.
 
+### Aanvulling: publieke companysite voor het Serene-thema
+
+- Serene heeft nu een eigen site-layout en eigen bodytemplates voor Home, Diensten, Over ons en Contact onder `tmpl/themes/serene/site/`.
+- De pagina’s houden de inhoud per bedrijf en taal uit `company_pages`; Serene bepaalt de omlijsting en presentatie. Een eigen stylesheet geeft het thema een zachtere, ruimere vormgeving dan `default`.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.5.
+
