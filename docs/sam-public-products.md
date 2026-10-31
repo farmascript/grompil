@@ -45,13 +45,17 @@ run the matching `schema_grant_local.sql`, `schema_grant_test.sql`, or
 This is a small, separate reference import; it does not require re-importing
 the SAM product CSV.
 
+The per-installation maximum number of product results is configured in
+`settings_local.php` with `'sam_product_search_limit' => 20`. The default is
+20, and values above 100 are capped at 100. The result page and JSON endpoint
+also report when matching rows remain beyond the displayed limit.
+
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity when the extension is installed, and otherwise falls back to
 substring/token matching. Compact fragment searches such as `dafcod` work in
 either mode; typo similarity requires `pg_trgm`. Searches shorter than three
-characters return no fuzzy matches. The result limit defaults to 20 and is
-capped at 50. A CNK may map to more than one SAM registration, so a CNK lookup
-can return multiple rows.
+characters return no fuzzy matches. A CNK may map to more than one SAM
+registration, so a CNK lookup can return multiple rows.
 
 For an existing catalog, run `scripts/schema_sam_public_products_pack_display.sql`
 as the table owner. It creates the localized package columns and fills them

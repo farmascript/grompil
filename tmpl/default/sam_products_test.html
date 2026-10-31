@@ -5,7 +5,7 @@
 
 <section class="card shadow-sm mb-4">
     <div class="card-body">
-        <form method="get" action="sam-products-test.php" class="row g-3 align-items-end" data-sam-search-form data-search-url="sam-products.php" data-search-error="@sam_products_test_unavailable@">
+        <form method="get" action="sam-products-test.php" class="row g-3 align-items-end" data-sam-search-form data-search-url="sam-products.php" data-search-limit="@sam_products_test_search_limit@" data-search-error="@sam_products_test_unavailable@" data-search-more="@sam_products_test_showing_results@">
             <input type="hidden" name="status_filter" value="1">
             <input type="hidden" name="selected_suggestion" value="" data-selected-suggestion>
             <div class="col-12">
@@ -16,7 +16,7 @@
                 <label class="form-label" for="sam-products-query">@sam_products_test_query_label@</label>
                 <input class="form-control" id="sam-products-query" name="q" type="search" maxlength="200" value="@sam_products_test_query_value@" autocomplete="off" aria-autocomplete="list" aria-controls="sam-products-suggestions" aria-expanded="false" data-sam-search-input>
                 <div class="form-text">@sam_products_test_help@</div>
-                <div class="list-group position-absolute top-100 start-0 mt-1 shadow w-100 d-none z-3" id="sam-products-suggestions" role="listbox" data-sam-suggestions></div>
+                <div class="list-group position-absolute top-100 start-0 mt-1 shadow w-100 d-none z-3 overflow-auto" style="max-height: min(60vh, 30rem)" id="sam-products-suggestions" role="listbox" data-sam-suggestions></div>
             </div>
             <div class="col-md-3 d-grid">
                 <button class="btn btn-primary" type="submit">@sam_products_test_search@</button>
@@ -34,4 +34,4 @@
     </div>
 </section>
 
-<script src="@_asset_base_href@assets/sam-products-test.js?v=0.10.11" defer></script>
+<script src="@_asset_base_href@assets/sam-products-test.js?v=0.10.12" defer></script>

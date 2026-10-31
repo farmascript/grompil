@@ -41,17 +41,19 @@ if ($query === '') {
     exit;
 }
 
-$rawLimit = $_GET['limit'] ?? 20;
+$maximumResults = grompil_sam_product_search_limit();
+$rawLimit = $_GET['limit'] ?? $maximumResults;
 $limit = is_scalar($rawLimit) && filter_var($rawLimit, FILTER_VALIDATE_INT) !== false
-    ? (int) $rawLimit
-    : 20;
+    ? min($maximumResults, max(1, (int) $rawLimit))
+    : $maximumResults;
 $rawStatuses = $_GET['status'] ?? null;
 $statuses = array_key_exists('status_filter', $_GET)
     ? (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : [])
     : (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : null);
 
 try {
-    $matches = grompil_sam_product_search($query, $limit, $statuses);
+    $totalCount = 0;
+    $matches = grompil_sam_product_search($query, $limit, $statuses, $totalCount);
 } catch (Throwable $error) {
     error_log('SAM product lookup failed: ' . $error->getMessage());
     http_response_code(503);
@@ -80,6 +82,12 @@ $results = array_map(static function (array $row): array {
 }, $matches);
 
 echo json_encode(
-    ['query' => $query, 'count' => count($results), 'results' => $results],
+    [
+        'query' => $query,
+        'count' => count($results),
+        'total_count' => $totalCount,
+        'has_more' => $totalCount > count($results),
+        'results' => $results,
+    ],
     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
 );

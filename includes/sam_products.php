@@ -11,8 +11,8 @@ require_once __DIR__ . '/bootstrap.php';
  * Find SAM catalog rows by exact CNK or fuzzy Dutch/French prescription name.
  *
  * Numeric input is treated as an exact CNK lookup. Other input is matched
- * against Dutch/French prescription names and package displays, using
- * PostgreSQL pg_trgm similarity.
+ * against the displayed prescription name and package display. PostgreSQL
+ * pg_trgm similarity is added when the extension is available.
  * A CNK can belong to multiple AMP/AMPP registrations, so CNK lookups may
  * return multiple rows.
  *
@@ -20,14 +20,15 @@ require_once __DIR__ . '/bootstrap.php';
  *
  * @return list<array<string, mixed>>
  */
-function grompil_sam_product_search(string $query, int $limit = 20, ?array $statuses = null): array
+function grompil_sam_product_search(string $query, int $limit = 20, ?array $statuses = null, ?int &$totalCount = null): array
 {
     $query = trim($query);
+    $totalCount = 0;
     if ($query === '' || strlen($query) > 200) {
         return [];
     }
 
-    $limit = max(1, min($limit, 50));
+    $limit = max(1, min($limit, grompil_sam_product_search_limit()));
     $allowedStatuses = ['AUTHORIZED', 'REVOKED', 'SUSPENDED'];
     $requestedStatuses = $statuses === null
         ? $allowedStatuses
@@ -64,6 +65,7 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
             db(),
             "SELECT
                 sam_export_version, sam_id, validity_date,
+                count(*) OVER() AS total_count,
                 amp_code, ampp_code, cnk,
                 amp_status, ampp_status,
                 official_name, name_nl, name_fr,
@@ -103,23 +105,47 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
             return [];
         }
 
-        $nameFields = ['prescription_name_nl', 'prescription_name_fr', 'pack_display_nl', 'pack_display_fr'];
+        $nameFields = [
+            "COALESCE(NULLIF(prescription_name_nl, ''), prescription_name_fr)",
+            "COALESCE(NULLIF(pack_display_nl, ''), pack_display_fr)",
+        ];
         // A compact alphabetic query can be an abbreviation made by taking
         // the start of successive words (for example "dafcod" for
         // "Dafalgan Codeine"). Keep the full token as a candidate and also
-        // try every two-part split with at least three characters per part.
-        $alternatives = [$tokens];
-        foreach ($tokens as $tokenIndex => $token) {
-            if (ctype_digit($token) || preg_match('/^\p{L}{6,}$/u', $token) !== 1) {
-                continue;
-            }
-            $length = function_exists('mb_strlen') ? mb_strlen($token, 'UTF-8') : strlen($token);
-            for ($splitAt = 3; $splitAt <= $length - 3 && count($alternatives) < 30; $splitAt++) {
-                $left = function_exists('mb_substr') ? mb_substr($token, 0, $splitAt, 'UTF-8') : substr($token, 0, $splitAt);
-                $right = function_exists('mb_substr') ? mb_substr($token, $splitAt, null, 'UTF-8') : substr($token, $splitAt);
-                $candidate = $tokens;
-                array_splice($candidate, $tokenIndex, 1, [$left, $right]);
-                $alternatives[] = $candidate;
+        // try word-prefix splits for compact abbreviations.
+        $alternatives = [[
+            'terms' => array_map(
+                static fn (string $token): array => ['value' => $token, 'word_prefix' => false],
+                $tokens
+            ),
+        ]];
+        $compactQuery = preg_match('/^[\p{L}\p{N}]+$/u', $query) === 1;
+        if ($compactQuery) {
+            foreach ($tokens as $tokenIndex => $token) {
+                $isLetters = preg_match('/^\p{L}{6,}$/u', $token) === 1;
+                $isLongNumber = ctype_digit($token) && strlen($token) >= 4;
+                if (!$isLetters && !$isLongNumber) {
+                    continue;
+                }
+                $length = function_exists('mb_strlen') ? mb_strlen($token, 'UTF-8') : strlen($token);
+                for ($splitAt = 2; $splitAt <= $length - 2 && count($alternatives) < 30; $splitAt++) {
+                    $left = function_exists('mb_substr') ? mb_substr($token, 0, $splitAt, 'UTF-8') : substr($token, 0, $splitAt);
+                    $right = function_exists('mb_substr') ? mb_substr($token, $splitAt, null, 'UTF-8') : substr($token, $splitAt);
+                    $candidate = array_map(
+                        static fn (string $part): array => ['value' => $part, 'word_prefix' => false],
+                        $tokens
+                    );
+                    array_splice(
+                        $candidate,
+                        $tokenIndex,
+                        1,
+                        [
+                            ['value' => $left, 'word_prefix' => $isLetters],
+                            ['value' => $right, 'word_prefix' => $isLetters],
+                        ]
+                    );
+                    $alternatives[] = ['terms' => $candidate];
+                }
             }
         }
 
@@ -127,7 +153,8 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
         $alternativeConditions = [];
         foreach ($alternatives as $alternative) {
             $termConditions = [];
-            foreach ($alternative as $token) {
+            foreach ($alternative['terms'] as $term) {
+                $token = $term['value'];
                 $placeholder = '$' . (count($params) + 1);
                 if (ctype_digit($token)) {
                     // Match whole numeric components so 50 does not match 150.
@@ -136,12 +163,29 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                         static fn (string $field): string => "COALESCE({$field}, '') ~* {$placeholder}",
                         $nameFields
                     );
+                } elseif ($term['word_prefix']) {
+                    $params[] = '(^|[^[:alnum:]])' . $token;
+                    $fieldConditions = array_map(
+                        static fn (string $field): string => "lower(COALESCE({$field}, '')) ~* {$placeholder}",
+                        $nameFields
+                    );
                 } else {
                     $params[] = '%' . $token . '%';
                     $fieldConditions = array_map(
-                        static fn (string $field): string => "lower({$field}) LIKE {$placeholder}",
+                        static fn (string $field): string => "lower(COALESCE({$field}, '')) LIKE {$placeholder}",
                         $nameFields
                     );
+                    if ($compactQuery && preg_match('/^\p{L}+$/u', $token) === 1) {
+                        $normalizedPlaceholder = '$' . (count($params) + 1);
+                        $params[] = '%' . $token . '%';
+                        $fieldConditions = array_merge(
+                            $fieldConditions,
+                            array_map(
+                                static fn (string $field): string => "regexp_replace(lower(COALESCE({$field}, '')), '[^[:alnum:]]', '', 'g') LIKE {$normalizedPlaceholder}",
+                                $nameFields
+                            )
+                        );
+                    }
                 }
                 $termConditions[] = '(' . implode(' OR ', $fieldConditions) . ')';
             }
@@ -155,29 +199,29 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
         $extensionResult = pg_query(db(), "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm')");
         $trigramsAvailable = $extensionResult !== false
             && pg_fetch_result($extensionResult, 0, 0) === 't';
+        $displayName = $nameFields[0];
+        $displayPackage = $nameFields[1];
         $similaritySelect = $trigramsAvailable
             ? "GREATEST(
-                    COALESCE(similarity(lower(prescription_name_nl), lower($1)), 0),
-                    COALESCE(similarity(lower(prescription_name_fr), lower($1)), 0),
-                    COALESCE(similarity(lower(pack_display_nl), lower($1)), 0),
-                    COALESCE(similarity(lower(pack_display_fr), lower($1)), 0)
+                    COALESCE(similarity(lower({$displayName}), lower($1)), 0),
+                    COALESCE(similarity(lower({$displayPackage}), lower($1)), 0)
                 )::real"
-            : "CASE WHEN lower(COALESCE(prescription_name_nl, '')) LIKE lower($1) || '%'
-                       OR lower(COALESCE(prescription_name_fr, '')) LIKE lower($1) || '%'
-                       OR lower(COALESCE(pack_display_nl, '')) LIKE lower($1) || '%'
-                       OR lower(COALESCE(pack_display_fr, '')) LIKE lower($1) || '%'
+            : "CASE WHEN lower(COALESCE({$displayName}, '')) LIKE lower($1) || '%'
+                       OR lower(COALESCE({$displayPackage}, '')) LIKE lower($1) || '%'
                    THEN 1.0 ELSE 0.0 END::real";
         $fuzzyConditions = $trigramsAvailable
-            ? "OR lower(prescription_name_nl) % lower($1)
-                    OR lower(prescription_name_fr) % lower($1)
-                    OR lower(pack_display_nl) % lower($1)
-                    OR lower(pack_display_fr) % lower($1)"
+            ? "OR lower({$displayName}) % lower($1)
+                    OR lower({$displayPackage}) % lower($1)"
             : '';
+        if (count($tokens) > 1) {
+            $fuzzyConditions = '';
+        }
 
         $result = pg_query_params(
             db(),
             "SELECT
                 sam_export_version, sam_id, validity_date,
+                count(*) OVER() AS total_count,
                 amp_code, ampp_code, cnk,
                 amp_status, ampp_status,
                 official_name, name_nl, name_fr,
@@ -213,11 +257,31 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
 
     $matches = [];
     while ($row = pg_fetch_assoc($result)) {
+        $totalCount = (int) $row['total_count'];
+        unset($row['total_count']);
         $row['match_score'] = (float) $row['match_score'];
         $matches[] = $row;
     }
 
     return $matches;
+}
+
+/** Maximum rows per SAM product search, configurable per installation. */
+function grompil_sam_product_search_limit(): int
+{
+    try {
+        $settings = grompil_deployment_settings(GROMPIL_ROOT);
+        $configured = $settings['sam_product_search_limit'] ?? 20;
+        if (is_string($configured) && ctype_digit($configured)) {
+            $configured = (int) $configured;
+        }
+        if (!is_int($configured) || $configured < 1) {
+            return 20;
+        }
+        return min($configured, 100);
+    } catch (Throwable) {
+        return 20;
+    }
 }
 
 /** Return the readable ATC hierarchy through the pharmacological subgroup. */

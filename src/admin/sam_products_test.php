@@ -27,13 +27,29 @@ foreach ($availableStatuses as $statusValue) {
         . '<span class="form-check-label">' . e($statusValue) . '</span></label>';
 }
 $matches = [];
+$totalCount = 0;
 $searchError = false;
 if ($query !== '') {
     try {
-        $matches = grompil_sam_product_search($query, 50, $statuses);
+        $matches = grompil_sam_product_search($query, grompil_sam_product_search_limit(), $statuses, $totalCount);
     } catch (Throwable $error) {
         error_log('SAM product test lookup failed: ' . $error->getMessage());
         $searchError = true;
+    }
+}
+
+$resultsHeadingHtml = '';
+if ($matches !== []) {
+    $resultsHeadingHtml = '<h2 class="h5 mb-3">'
+        . e(fn_t('sam_products_test_results')) . ' <span class="badge text-bg-secondary">'
+        . count($matches) . '</span></h2>';
+    if ($totalCount > count($matches)) {
+        $countMessage = str_replace(
+            ['{shown}', '{total}'],
+            [(string) count($matches), (string) $totalCount],
+            fn_t('sam_products_test_showing_results')
+        );
+        $resultsHeadingHtml .= '<p class="text-secondary small mb-3">' . e($countMessage) . '</p>';
     }
 }
 
@@ -70,6 +86,7 @@ echo fn_templateRender('sam_products_test.html', [
     'sam_products_test_pack_display' => fn_t('sam_products_test_pack_display'),
     'sam_products_test_atc_class' => fn_t('sam_products_test_atc_class'),
     'sam_products_test_query_value' => $query,
+    'sam_products_test_search_limit' => (string) grompil_sam_product_search_limit(),
     'sam_products_test_status_filter' => fn_t('sam_products_test_status_filter'),
     '_sam_products_test_status_filters_html' => $statusFilterHtml,
     '_sam_products_test_results_html' => $rowsHtml,
@@ -83,8 +100,6 @@ echo fn_templateRender('sam_products_test.html', [
         . '<th scope="col">' . e(fn_t('sam_products_test_pack_display')) . '</th><th scope="col">'
         . e(fn_t('sam_products_test_status_code')) . '</th><th scope="col">'
         . e(fn_t('sam_products_test_atc_class')) . '</th></tr></thead><tbody>' . $rowsHtml . '</tbody></table></div>',
-    '_sam_products_test_results_heading_html' => $matches === [] ? '' : '<h2 class="h5 mb-3">'
-        . e(fn_t('sam_products_test_results')) . ' <span class="badge text-bg-secondary">'
-        . count($matches) . '</span></h2>',
+    '_sam_products_test_results_heading_html' => $resultsHeadingHtml,
 ]);
 page_end();
