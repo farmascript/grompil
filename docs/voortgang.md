@@ -485,3 +485,9 @@
 - De Module lijst opent `address_api.php` nu met de verplichte parameters voor een voorbeeldzoekopdracht (`type=postal&q=1000`) in plaats van een onvolledige API-aanroep.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.12.
 
+### Aanvulling: geselecteerd thema op publieke companysite
+
+- `resolve_company_slug()` gaf het veld `store_theme` niet mee, waardoor de publieke companysite bij elk bezoek op het standaardthema terugviel. De query haalt het thema nu ook op; bedrijfssite en storefront gebruiken daarmee allebei de ingestelde themakeuze.
+- De README beschrijft nu dat Serene ook eigen templates voor de publieke bedrijfspagina’s heeft.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.13.
+

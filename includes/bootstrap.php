@@ -626,7 +626,7 @@ function resolve_company_slug(string $slug, bool $requirePublic = true): ?array
     }
     $result = pg_query_params(
         db(),
-        'SELECT id, name, slug, city, default_language FROM companies
+        'SELECT id, name, slug, city, default_language, store_theme FROM companies
          WHERE slug = $1 AND is_active AND ($2::boolean = FALSE OR is_public)',
         [$slug, $requirePublic ? 'true' : 'false']
     );
