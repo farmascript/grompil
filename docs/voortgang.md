@@ -480,3 +480,8 @@
 - Het Module lijst-tabblad spant nu de volledige managerbreedte en lange URL-paden mogen afbreken zodat hun eindtekens zichtbaar blijven.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.11.
 
+### Aanvulling: voorbeeldlink voor de adres-API
+
+- De Module lijst opent `address_api.php` nu met de verplichte parameters voor een voorbeeldzoekopdracht (`type=postal&q=1000`) in plaats van een onvolledige API-aanroep.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.12.
+

@@ -522,6 +522,10 @@
             if (['navigation_preferences.php', 'platform_navigation_preferences.php'].includes(modulePath)) {
                 url.searchParams.set('application', state.catalog?.application || 'grompil');
             }
+            if (modulePath === 'address_api.php') {
+                url.searchParams.set('type', 'postal');
+                url.searchParams.set('q', '1000');
+            }
             return url.href;
         }
         catch { return '#'; }
