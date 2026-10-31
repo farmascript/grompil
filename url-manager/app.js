@@ -705,9 +705,9 @@
                 const title = translated.title || module.replace(/\.php$/i, '').split('/').pop().replace(/[-_]/g, ' ').replace(/^\w/, (letter) => letter.toLocaleUpperCase());
                 const description = translated.description || '';
                 const href = moduleUrl(module);
-                return `<tr><td><strong>${escapeHtml(title)}</strong>${description ? `<small>${escapeHtml(description)}</small>` : ''}</td><td><code>${escapeHtml(module)}</code></td><td><a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('module_open'))}</a></td></tr>`;
+                return `<tr><td><strong>${escapeHtml(title)}</strong>${description ? `<small>${escapeHtml(description)}</small>` : ''}</td><td><a class="module-path-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"><code>${escapeHtml(module)}</code></a></td></tr>`;
             }).join('');
-            catalog.innerHTML = `<section class="content-section module-inventory"><div class="section-heading"><div><div class="eyebrow">GROMPIL</div><h2>${escapeHtml(t('module_list'))}</h2></div></div><p class="module-inventory-intro">${escapeHtml(t('module_list_intro'))}</p><div class="module-inventory-scroll"><table><thead><tr><th>${escapeHtml(t('module_name'))}</th><th>${escapeHtml(t('module_path'))}</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="3">${escapeHtml(t('module_list_empty'))}</td></tr>`}</tbody></table></div></section>`;
+            catalog.innerHTML = `<section class="content-section module-inventory"><div class="section-heading"><div><div class="eyebrow">GROMPIL</div><h2>${escapeHtml(t('module_list'))}</h2></div></div><p class="module-inventory-intro">${escapeHtml(t('module_list_intro'))}</p><div class="module-inventory-scroll"><table><thead><tr><th>${escapeHtml(t('module_name'))}</th><th>${escapeHtml(t('module_path'))}</th></tr></thead><tbody>${rows || `<tr><td colspan="2">${escapeHtml(t('module_list_empty'))}</td></tr>`}</tbody></table></div></section>`;
             $('#catalog-status').textContent = `${callableModules.length} ${t('module_count')}`;
         } else if (!state.catalog && !state.personal.groups.length && !state.personal.links.length) {
             catalog.innerHTML = `<div class="content-section empty-note">Nog geen functielijst geladen. Open ⚙ en kies navigation.json.</div>`;

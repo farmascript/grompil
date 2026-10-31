@@ -458,3 +458,8 @@
 - Webrootmodules worden automatisch gevonden; geregistreerde geneste modules komen uit `grompil_module_access_rules()`. De lijst blijft daardoor actueel als de routebestanden volgens die conventie worden toegevoegd.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.7.
 
+### Aanvulling: compactere Module lijst
+
+- In het platformblad **Module lijst** is de bestandsnaam nu zelf de link; de aparte kolom met de knop **Openen** is verwijderd.
+- De tabel gebruikt de beschikbare breedte beter. Versie verhoogd naar 0.11.8; geen databasemigratie nodig.
+
