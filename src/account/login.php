@@ -30,9 +30,6 @@ if ($companySlug !== '' && $loginCompany === null) {
 }
 if ($loginCompany !== null) {
     set_database_tenant_context((int) $loginCompany['id'], 0, false);
-    if (!company_management_ip_allowed((int) $loginCompany['id'])) {
-        grompil_show_error(403, 57314, 'Aanmelden bij het bedrijfsbeheer is vanaf dit IP-adres niet toegestaan. Neem contact op met de platformbeheerder.', 'Toegang vanaf dit IP-adres geweigerd');
-    }
 }
 
 $introHtml = '<span class="eyebrow">' . e(fn_t('login_eyebrow')) . '</span>'
@@ -78,13 +75,14 @@ if ($loginCompany !== null) {
 }
 
 $errorHtml = '';
+$loginErrorKey = 'login_error';
 $email = (string) ($_POST['email'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $email = trim($email);
     $password = (string) ($_POST['password'] ?? '');
-    $ipAddress = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $ipAddress = grompil_client_ip_address() ?: 'unknown';
     $attemptCompanyId = $loginCompany ? (int) $loginCompany['id'] : 0;
     $attemptResult = pg_query_params(
         db(),
@@ -101,35 +99,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userResult = false;
     if (!$isLocked) {
         $userResult = $loginCompany
-            ? pg_query_params(db(), 'SELECT id, password_hash, is_active, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
-            : pg_query_params(db(), 'SELECT id, password_hash, is_active, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id IS NULL AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email]);
+            ? pg_query_params(db(), 'SELECT id, password_hash, is_active, company_id, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
+            : pg_query_params(db(), 'SELECT u.id, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM users AS u JOIN roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
     }
     $user = $userResult && pg_num_rows($userResult) === 1 ? pg_fetch_assoc($userResult) : false;
 
     if ($user && $user['is_active'] === 't' && password_verify($password, $user['password_hash'])) {
-        pg_query_params(
-            db(),
-            'DELETE FROM login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3',
-            [$attemptCompanyId, $email, $ipAddress]
-        );
-        session_regenerate_id(true);
-        unset($_SESSION['active_company_id']);
-        $_SESSION['user_id'] = (int) $user['id'];
-        $_SESSION['auth_version'] = (int) $user['auth_version'];
-        if ($loginCompany) {
-            $_SESSION['active_company_id'] = (int) $loginCompany['id'];
-        }
-        $signedInUser = current_user();
-        if ($signedInUser !== null) {
-            $lastLoginResult = pg_query_params(
-                db(),
-                'UPDATE users SET last_login_at = now() WHERE id = $1',
-                [(int) $signedInUser['id']]
-            );
-            if (!$lastLoginResult) {
-                error_log('Successful login timestamp could not be saved.');
+        $account = [
+            'company_id' => $user['company_id'] === null ? null : (int) $user['company_id'],
+            'role_level' => isset($user['role_level']) ? (int) $user['role_level'] : 0,
+            'role_name' => (string) ($user['role_name'] ?? ''),
+            'permissions' => json_decode((string) ($user['permissions'] ?? '[]'), true) ?: [],
+        ];
+        $isPlatformLogin = !$loginCompany && is_platform_operator($account);
+        $ipAllowed = true;
+
+        if ($isPlatformLogin) {
+            $ipAllowed = platform_management_ip_allowed($ipAddress);
+            if ($ipAllowed) {
+                try {
+                    grompil_totp_encryption_key();
+                    grompil_totp_library_ready();
+                } catch (Throwable $error) {
+                    error_log('Platform authenticator configuration is unavailable: ' . $error->getMessage());
+                    $ipAllowed = false;
+                    $loginErrorKey = 'platform_mfa_unavailable';
+                }
             }
-            redirect_after_login($signedInUser);
+            if ($ipAllowed) {
+                session_regenerate_id(true);
+                unset($_SESSION['user_id'], $_SESSION['auth_version'], $_SESSION['active_company_id']);
+                unset($_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+                $_SESSION['mfa_pending_user_id'] = (int) $user['id'];
+                $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
+                $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
+                $_SESSION['mfa_pending_attempt_email'] = $email;
+                $_SESSION['mfa_pending_ip'] = $ipAddress;
+                redirect('authenticator.php');
+            }
+        } elseif ($loginCompany !== null) {
+            set_database_tenant_context((int) $loginCompany['id'], (int) $user['id'], false);
+            $membershipResult = pg_query_params(
+                db(),
+                'SELECT cr.level
+                 FROM company_users AS cu
+                 JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
+                 WHERE cu.company_id = $1 AND cu.user_id = $2
+                   AND cu.is_active AND cu.approval_status = \'approved\'',
+                [(int) $loginCompany['id'], (int) $user['id']]
+            );
+            $membership = $membershipResult ? pg_fetch_assoc($membershipResult) : false;
+            if ($membership && (int) $membership['level'] > 0 && (int) $membership['level'] < 200
+                && !company_management_ip_allowed((int) $loginCompany['id'], $ipAddress)) {
+                $ipAllowed = false;
+            }
+        }
+
+        if ($ipAllowed) {
+            pg_query_params(
+                db(),
+                'DELETE FROM login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3',
+                [$attemptCompanyId, $email, $ipAddress]
+            );
+            session_regenerate_id(true);
+            unset($_SESSION['active_company_id']);
+            unset($_SESSION['platform_mfa_verified']);
+            unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+            $_SESSION['user_id'] = (int) $user['id'];
+            $_SESSION['auth_version'] = (int) $user['auth_version'];
+            if ($loginCompany) {
+                $_SESSION['active_company_id'] = (int) $loginCompany['id'];
+            }
+            $signedInUser = current_user();
+            if ($signedInUser !== null) {
+                $lastLoginResult = pg_query_params(
+                    db(),
+                    'UPDATE users SET last_login_at = now() WHERE id = $1',
+                    [(int) $signedInUser['id']]
+                );
+                if (!$lastLoginResult) {
+                    error_log('Successful login timestamp could not be saved.');
+                }
+                redirect_after_login($signedInUser);
+            }
         }
     }
     if (!$isLocked) {
@@ -139,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             [$attemptCompanyId, $email, $ipAddress]
         );
     }
-    $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('login_error')) . '</div>';
+    $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t($loginErrorKey)) . '</div>';
 }
 
 echo fn_templateRender('login.html', [

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="@html_language@">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="@_asset_base_href@media/gromPilLogo.png">
+    <title>@platform_mfa_title@ · gromPil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="@_asset_base_href@assets/app.css?v=2">
+</head>
+<body class="login-page">
+<main class="container min-vh-100 d-flex align-items-center justify-content-center py-4">
+    <section class="login-card w-100" style="max-width: 30rem">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a class="brand" href="index.php"><span class="brandmark"><img src="@_asset_base_href@media/gromPilLogo.png" alt="" width="32" height="32"></span> gromPil</a>
+            @_language_selector_html@
+        </div>
+        <h1 class="h2">@platform_mfa_title@</h1>
+        <p class="text-secondary">@platform_mfa_instructions@</p>
+        @_error_html@
+        @_setup_html@
+        @_recovery_codes_html@
+        <form method="post" autocomplete="off">
+            @_csrf_field_html@
+            <input type="hidden" name="action" value="@platform_mfa_action@">
+            @_code_input_html@
+            <button class="btn btn-grompil btn-lg w-100" type="submit">@platform_mfa_verify@</button>
+        </form>
+        <a class="d-inline-block mt-3" href="login.php">@platform_mfa_login_link@</a>
+    </section>
+</main>
+@_cookie_footer_html@
+</body>
+</html>

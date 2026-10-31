@@ -13,6 +13,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON companies, company_users, company_pages 
 GRANT SELECT, INSERT, UPDATE, DELETE ON company_navigation_preferences TO grompilc_test_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON platform_navigation_preferences TO grompilc_test_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON platform_system_settings TO grompilc_test_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON platform_totp_credentials, platform_totp_recovery_codes TO grompilc_test_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON dd_varia TO grompilc_test_app;
 DO $$
 BEGIN

@@ -396,3 +396,26 @@
 
 1. Voer `migrations/20261025-094147_platform_leave_company_context.sql` uit op de lokale database en later op test en productie.
 
+## 31 oktober 2026
+
+### Vandaag gedaan
+
+- Platformbeheerders met een globale rol op level 1–100 krijgen na hun wachtwoord een TOTP-stap voor Google Authenticator en compatibele apps. Nieuwe koppelingen tonen handmatig invoerbare sleutel en eenmalige herstelcodes.
+- TOTP-geheimen worden met Sodium versleuteld in `platform_totp_credentials`; herstelcodes worden gehasht opgeslagen. De encryptiesleutel komt uit `settings_local.php` en hoort per installatie uniek te zijn.
+- De bestaande `access_ip_allowlist` is aangesloten voor platformbeheer. Een beheerpagina laat platformbeheerders IP-adressen of CIDR-netwerken beheren.
+- De IP-controle voor companybeheer geldt voor rollen onder level 200. Klantrollen vanaf level 200 worden niet door de bedrijfs-allowlist geblokkeerd.
+- OTPHP 11.5.0 en de vereiste pakketten zijn toegevoegd via Composer. De softwareversie is verhoogd naar 0.11.0.
+- Databasewijziging: `migrations/20261031-090000_platform_mfa.sql`. De drie omgevingsgebonden `schema_grant_*.sql`-bestanden verlenen ook toegang tot de nieuwe MFA-tabellen.
+- De instel- en uitrolstappen staan in `docs/platform-login-security.md`.
+
+### Huidige stand
+
+- De code en migratie zijn lokaal voorbereid; de migratie is nog niet uitgevoerd op een database en niets is naar de test- of productiesite gedeployed. Omdat `vendor/` niet in Git staat, moet op de testserver na synchronisatie ook `composer install --no-dev --prefer-dist --optimize-autoloader` worden uitgevoerd.
+- Configureer eerst per omgeving `platform_totp_encryption_key` in het genegeerde `settings_local.php`-bestand. Zonder geldige sleutel kan platformbeheer niet aanmelden.
+
+### Volgende stappen
+
+1. Volg `docs/platform-login-security.md` voor de lokale sleutel, migratie en grants.
+2. Synchroniseer naar test; voeg daar een aparte sleutel toe en voer migratie en grants uit.
+3. Test platformaanmelding, herstelcodes en toegestane IP-regels op test voordat productie aan de beurt komt.
+

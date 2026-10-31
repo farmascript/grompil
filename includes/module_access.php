@@ -29,6 +29,7 @@ function grompil_module_access_rules(): array
         'select-company.php' => [],
         'companies.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
         'platform-settings.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100]],
+        'platform-security.php' => ['permission' => 'companies.manage', 'level_range' => [1, 100], 'platform_operator_only' => true],
         'dd-varia.php' => [
             'permission' => 'companies.manage',
             'level_range' => [1, 100],

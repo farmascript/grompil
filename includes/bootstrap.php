@@ -158,6 +158,11 @@ function current_user(): ?array
     $user['role_id'] = (int) $user['role_id'];
     $user['role_level'] = (int) $user['role_level'];
     $user['permissions'] = json_decode($user['permissions'], true) ?: [];
+    if (is_platform_operator($user) && ($_SESSION['platform_mfa_verified'] ?? false) !== true) {
+        $_SESSION = [];
+        session_destroy();
+        return null;
+    }
     if ($user['company_id'] !== null
         && (int) ($_SESSION['active_company_id'] ?? 0) !== $user['company_id']) {
         $_SESSION = [];
@@ -209,10 +214,17 @@ function require_login(): array
     }
 
     $activeCompanyId = (int) ($_SESSION['active_company_id'] ?? 0);
-    if ($activeCompanyId > 0
-        && !is_platform_operator($user)
-        && !company_management_ip_allowed($activeCompanyId)) {
-        grompil_show_error(403, 57314, 'Toegang tot het bedrijfsbeheer is vanaf dit IP-adres niet toegestaan. Neem contact op met de platformbeheerder.', 'Toegang vanaf dit IP-adres geweigerd');
+    if (is_platform_operator($user)) {
+        if (!platform_management_ip_allowed(null, (int) $user['id'])) {
+            grompil_show_error(403, 57314, 'Toegang tot het platformbeheer is vanaf dit IP-adres niet toegestaan.', 'Toegang vanaf dit IP-adres geweigerd');
+        }
+    } elseif ($activeCompanyId > 0) {
+        $company = current_company_context($user);
+        $companyRoleLevel = (int) ($company['company_role_level'] ?? 0);
+        if ($companyRoleLevel > 0 && $companyRoleLevel < 200
+            && !company_management_ip_allowed($activeCompanyId)) {
+            grompil_show_error(403, 57314, 'Toegang tot het bedrijfsbeheer is vanaf dit IP-adres niet toegestaan. Neem contact op met de platformbeheerder.', 'Toegang vanaf dit IP-adres geweigerd');
+        }
     }
 
     if ($user['must_change_password'] === 't'
@@ -310,7 +322,7 @@ function has_permission(string $permission, ?array $user = null): bool
     return $permission === 'companies.manage'
         && ($user['company_id'] ?? null) === null
         && (int) ($user['role_level'] ?? 0) > 0
-        && (int) ($user['role_level'] ?? 0) < 100
+        && (int) ($user['role_level'] ?? 0) <= 100
         && strtolower(trim((string) ($user['role_name'] ?? ''))) === 'beheerder';
 }
 
@@ -322,7 +334,12 @@ function has_permission(string $permission, ?array $user = null): bool
  */
 function is_platform_operator(?array $user = null): bool
 {
-    return has_permission('companies.manage', $user);
+    $user ??= current_user();
+    return $user !== null
+        && ($user['company_id'] ?? null) === null
+        && (int) ($user['role_level'] ?? 0) > 0
+        && (int) ($user['role_level'] ?? 0) <= 100
+        && has_permission('companies.manage', $user);
 }
 
 /**
@@ -715,6 +732,10 @@ function verify_csrf(): void
 
 require_once __DIR__ . '/module_access.php';
 require_once __DIR__ . '/templates.php';
+$platformAuthenticatorPath = __DIR__ . '/platform_authenticator.php';
+if (is_file($platformAuthenticatorPath)) {
+    require_once $platformAuthenticatorPath;
+}
 
 $GLOBALS['grompilTranslations'] = fn_loadLanguage();
 require_once __DIR__ . '/dd_varia.php';
