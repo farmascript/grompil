@@ -452,3 +452,9 @@
 - Een taalkeuze die de gebruiker daarna zelf in de URL-manager maakt, werkt zoals voorheen en wordt bewaard.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.6.
 
+### Aanvulling: platformblad met URL-modules
+
+- Platformbeheerders krijgen in de URL-manager een apart blad **Module lijst** met de bereikbare PHP-ingangen en rechtstreekse links.
+- Webrootmodules worden automatisch gevonden; geregistreerde geneste modules komen uit `grompil_module_access_rules()`. De lijst blijft daardoor actueel als de routebestanden volgens die conventie worden toegevoegd.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.7.
+

@@ -1186,6 +1186,16 @@ html[data-text-size="2"] #catalog .section-heading h2 {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.module-inventory-intro { max-width: 850px; color: var(--muted, #65736b); line-height: 1.6; }
+.module-inventory-scroll { overflow-x: auto; }
+.module-inventory table { width: 100%; border-collapse: collapse; }
+.module-inventory th, .module-inventory td { padding: .8rem .75rem; border-bottom: 1px solid #e5e9e6; text-align: left; vertical-align: top; }
+.module-inventory th { color: #68766e; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; }
+.module-inventory td:first-child { min-width: 260px; }
+.module-inventory td:first-child small { display: block; margin-top: .25rem; color: #748078; line-height: 1.45; }
+.module-inventory code { color: #315a4b; white-space: nowrap; }
+.module-inventory a { white-space: nowrap; }
+.module-inventory tbody tr:hover { background: #f7f9f6; }
 @media (max-width: 760px) {
     .topbar {
         grid-template-columns: minmax(0, 1fr);

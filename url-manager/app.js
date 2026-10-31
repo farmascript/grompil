@@ -22,6 +22,7 @@
     const DB_NAME = 'grompil-url-manager';
     const DB_VERSION = 1;
     const STORE = 'state';
+    const MODULE_LIST_PAGE_ID = 'platform:module-list';
     const $ = (selector) => document.querySelector(selector);
     const bundledCatalog = window.GROMPIL_NAVIGATION || null;
     let launchLanguage = new URLSearchParams(location.search).get('lang')?.toLowerCase() || '';
@@ -38,6 +39,7 @@
     let managerLabels = bundledCatalog?.managerI18n || {};
     let allowedModules = null;
     let knownModules = new Set();
+    let callableModules = [];
     let logoutContext = null;
     let accessRequestSequence = 0;
 
@@ -63,6 +65,7 @@
         if (!['http:', 'https:'].includes(location.protocol)) return;
         const sequence = ++accessRequestSequence;
         allowedModules = null;
+        callableModules = [];
         logoutContext = null;
         render();
         try {
@@ -73,9 +76,12 @@
             const result = await response.json();
             if (sequence !== accessRequestSequence || !Array.isArray(result.allowedModules)
                 || !Array.isArray(result.knownModules)
+                || (result.callableModules !== undefined && (!Array.isArray(result.callableModules)
+                    || !result.callableModules.every((module) => typeof module === 'string')))
                 || ![...result.allowedModules, ...result.knownModules].every((module) => typeof module === 'string')) return;
             allowedModules = new Set(result.allowedModules);
             knownModules = new Set(result.knownModules);
+            callableModules = Array.isArray(result.callableModules) ? result.callableModules : [];
             if (typeof result.logout?.csrfToken === 'string' && result.logout.csrfToken
                 && typeof result.logout.companySlug === 'string') {
                 logoutContext = result.logout;
@@ -627,17 +633,22 @@
             try { activePageId = localStorage.getItem(`grompil-manager:${activePageContext}:page`) || state.personal.pages[0].id; }
             catch { activePageId = state.personal.pages[0].id; }
         }
-        if (!state.personal.pages.some((page) => page.id === activePageId)) activePageId = state.personal.pages[0].id;
+        const isModuleListPage = canEditPlatformLayout() && activePageId === MODULE_LIST_PAGE_ID;
+        if (!state.personal.pages.some((page) => page.id === activePageId) && !isModuleListPage) activePageId = state.personal.pages[0].id;
         const canEditPages = !remoteSync.enabled || remoteSync.canEdit;
         const basePageId = state.personal.pages[0]?.id;
-        $('#page-navigation').innerHTML = state.personal.pages.map((page) => {
+        const pageButtons = state.personal.pages.map((page) => {
             const canRenamePage = remoteSync.isPlatformOperator || (page.id !== basePageId && (!remoteSync.enabled || remoteSync.canEdit));
             const lockedBasePage = !remoteSync.isPlatformOperator && page.id === basePageId;
             const pageEditor = canRenamePage
                 ? `<button type="button" class="icon-button page-rename" data-rename-page="${escapeHtml(page.id)}" aria-label="${escapeHtml(t('rename_page_label', { name: pageTitle(page) }))}" title="${escapeHtml(t('rename_page'))}">✎</button>`
                 : (lockedBasePage ? '<span class="page-lock" role="img" aria-label="Alleen de platformbeheerder kan dit blad wijzigen" title="Alleen de platformbeheerder kan dit blad wijzigen"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="8" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg></span>' : '');
             return `<span class="page-button-group"><button type="button" class="button ${page.id === activePageId ? 'button-primary' : 'button-light'}" data-page="${escapeHtml(page.id)}" ${page.id === activePageId ? 'aria-current="page"' : ''}>${escapeHtml(pageTitle(page))}</button>${pageEditor}</span>`;
-        }).join('')
+        }).join('');
+        const moduleListTab = canEditPlatformLayout()
+            ? `<span class="page-button-group"><button type="button" class="button ${isModuleListPage ? 'button-primary' : 'button-light'}" data-page="${MODULE_LIST_PAGE_ID}" ${isModuleListPage ? 'aria-current="page"' : ''}>${escapeHtml(t('module_list'))}</button></span>`
+            : '';
+        $('#page-navigation').innerHTML = pageButtons + moduleListTab
             + (canEditPages ? `<button type="button" class="button button-light" id="add-page">${escapeHtml(t('add_page'))}</button>` : '');
         const storageStatus = $('#storage-status');
         if (canEditPlatformLayout()) {
@@ -687,7 +698,18 @@
         languageSelect.disabled = availableLanguages.length < 2;
         languageSelect.value = language();
         const catalog = $('#catalog');
-        if (!state.catalog && !state.personal.groups.length && !state.personal.links.length) {
+        if (isModuleListPage) {
+            const rows = callableModules.map((module) => {
+                const catalogItem = (state.catalog?.items || []).find((item) => item.module === module);
+                const translated = catalogItem ? textFor(catalogItem) : {};
+                const title = translated.title || module.replace(/\.php$/i, '').split('/').pop().replace(/[-_]/g, ' ').replace(/^\w/, (letter) => letter.toLocaleUpperCase());
+                const description = translated.description || '';
+                const href = moduleUrl(module);
+                return `<tr><td><strong>${escapeHtml(title)}</strong>${description ? `<small>${escapeHtml(description)}</small>` : ''}</td><td><code>${escapeHtml(module)}</code></td><td><a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('module_open'))}</a></td></tr>`;
+            }).join('');
+            catalog.innerHTML = `<section class="content-section module-inventory"><div class="section-heading"><div><div class="eyebrow">GROMPIL</div><h2>${escapeHtml(t('module_list'))}</h2></div></div><p class="module-inventory-intro">${escapeHtml(t('module_list_intro'))}</p><div class="module-inventory-scroll"><table><thead><tr><th>${escapeHtml(t('module_name'))}</th><th>${escapeHtml(t('module_path'))}</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="3">${escapeHtml(t('module_list_empty'))}</td></tr>`}</tbody></table></div></section>`;
+            $('#catalog-status').textContent = `${callableModules.length} ${t('module_count')}`;
+        } else if (!state.catalog && !state.personal.groups.length && !state.personal.links.length) {
             catalog.innerHTML = `<div class="content-section empty-note">Nog geen functielijst geladen. Open ⚙ en kies navigation.json.</div>`;
             $('#catalog-status').textContent = 'Geen catalogus geladen';
         } else {

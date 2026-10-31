@@ -42,6 +42,9 @@ foreach (grompil_module_access_rules() as $module => $rule) {
 echo json_encode([
     'allowedModules' => $allowedModules,
     'knownModules' => array_keys(grompil_module_access_rules()),
+    'callableModules' => $user !== null && is_platform_operator($user)
+        ? grompil_callable_module_paths()
+        : [],
     'logout' => $user === null ? null : [
         'csrfToken' => csrf_token(),
         'companySlug' => (string) ($company['slug'] ?? ''),

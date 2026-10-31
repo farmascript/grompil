@@ -55,6 +55,34 @@ function grompil_module_access_rules(): array
 }
 
 /**
+ * Return web entry points for the platform administrator's module inventory.
+ * Root PHP files are public URL entry points; registered nested modules are
+ * added as well. CLI setup and the local secrets file are intentionally omitted.
+ *
+ * @return list<string>
+ */
+function grompil_callable_module_paths(): array
+{
+    $root = dirname(__DIR__);
+    $modules = [];
+    foreach (glob($root . '/*.php') ?: [] as $path) {
+        $module = basename($path);
+        if (in_array($module, ['settings_local.php', 'setup-admin.php'], true)) {
+            continue;
+        }
+        $modules[] = $module;
+    }
+    foreach (array_keys(grompil_module_access_rules()) as $module) {
+        $path = $root . '/' . $module;
+        if (is_file($path) && !in_array($module, $modules, true)) {
+            $modules[] = $module;
+        }
+    }
+    sort($modules, SORT_NATURAL | SORT_FLAG_CASE);
+    return $modules;
+}
+
+/**
  *  Evaluate the same level and permission helpers used by the protected modules.
  *
  * @param string $module The module identifier.
