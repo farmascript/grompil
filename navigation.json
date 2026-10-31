@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.11.8",
+    "applicationVersion": "0.11.9",
     "defaultLanguage": "nl",
     "languages": [
         "nl",

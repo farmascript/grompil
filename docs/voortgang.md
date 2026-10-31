@@ -463,3 +463,8 @@
 - In het platformblad **Module lijst** is de bestandsnaam nu zelf de link; de aparte kolom met de knop **Openen** is verwijderd.
 - De tabel gebruikt de beschikbare breedte beter. Versie verhoogd naar 0.11.8; geen databasemigratie nodig.
 
+### Aanvulling: links naar navigatie-API’s
+
+- De links naar de company- en platformnavigatievoorkeuren bevatten nu de verplichte `application=grompil`-parameter.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.9.
+

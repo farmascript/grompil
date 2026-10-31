@@ -517,7 +517,13 @@
     function moduleUrl(modulePath) {
         const base = state.personal.settings.baseUrl || guessBaseUrl();
         if (!base) return '#';
-        try { return new URL(modulePath.split('/').map(encodeURIComponent).join('/'), base.endsWith('/') ? base : `${base}/`).href; }
+        try {
+            const url = new URL(modulePath.split('/').map(encodeURIComponent).join('/'), base.endsWith('/') ? base : `${base}/`);
+            if (['navigation_preferences.php', 'platform_navigation_preferences.php'].includes(modulePath)) {
+                url.searchParams.set('application', state.catalog?.application || 'grompil');
+            }
+            return url.href;
+        }
         catch { return '#'; }
     }
 
