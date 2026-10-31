@@ -48,10 +48,10 @@ foreach ($matches as $match) {
     $package = $match['pack_display_nl'] ?: ($match['pack_display_fr'] ?? '');
     $rowsHtml .= '<tr>'
         . '<td><code>' . e((string) $match['cnk']) . '</code></td>'
-        . '<td>' . e((string) $description) . '</td>'
+        . '<td class="sam-products-prescription-name">' . e((string) $description) . '</td>'
         . '<td>' . e((string) $package) . '</td>'
         . '<td>' . e(implode('/', $statusCodes)) . '</td>'
-        . '<td>' . e((string) ($match['atc_class_path'] ?? '')) . '</td>'
+        . '<td class="sam-products-atc-class">' . e((string) ($match['atc_class_path'] ?? '')) . '</td>'
         . '</tr>';
 }
 

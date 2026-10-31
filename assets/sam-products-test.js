@@ -2,11 +2,17 @@
     const form = document.querySelector('[data-sam-search-form]');
     const input = document.querySelector('[data-sam-search-input]');
     const suggestions = document.querySelector('[data-sam-suggestions]');
-    if (!form || !input || !suggestions) return;
+    const selectedSuggestion = form?.querySelector('[data-selected-suggestion]');
+    if (!form || !input || !suggestions || !selectedSuggestion) return;
 
     let debounceTimer = null;
     let activeRequest = null;
     let activeIndex = -1;
+
+    if (new URLSearchParams(window.location.search).get('selected_suggestion') === '1') {
+        input.value = '';
+        input.focus({ preventScroll: true });
+    }
 
     const closeSuggestions = () => {
         suggestions.replaceChildren();
@@ -17,6 +23,7 @@
 
     const chooseSuggestion = (result) => {
         input.value = result.cnk || '';
+        selectedSuggestion.value = '1';
         closeSuggestions();
         form.requestSubmit();
     };
