@@ -3,6 +3,7 @@
     const input = document.querySelector('[data-sam-search-input]');
     const suggestions = document.querySelector('[data-sam-suggestions]');
     const selectedSuggestion = form?.querySelector('[data-selected-suggestion]');
+    const priorResults = document.querySelector('[data-sam-prior-results]');
     if (!form || !input || !suggestions || !selectedSuggestion) return;
 
     let debounceTimer = null;
@@ -19,6 +20,10 @@
         suggestions.classList.add('d-none');
         input.setAttribute('aria-expanded', 'false');
         activeIndex = -1;
+    };
+
+    const clearPriorResults = () => {
+        if (priorResults) priorResults.hidden = true;
     };
 
     const compactWordMatches = (query, value) => {
@@ -89,6 +94,7 @@
     const chooseSuggestion = (result) => {
         input.value = result.cnk || '';
         selectedSuggestion.value = '1';
+        clearPriorResults();
         closeSuggestions();
         form.requestSubmit();
     };
@@ -207,12 +213,14 @@
     };
 
     input.addEventListener('input', () => {
+        clearPriorResults();
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(search, 250);
     });
 
     form.querySelectorAll('[data-sam-status-filter]').forEach((checkbox) => {
         checkbox.addEventListener('change', () => {
+            clearPriorResults();
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(search, 0);
         });

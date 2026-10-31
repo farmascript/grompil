@@ -25,13 +25,14 @@
     </div>
 </section>
 
-@_sam_products_test_feedback_html@
+<div data-sam-prior-results>
+    @_sam_products_test_feedback_html@
+    <section class="card shadow-sm">
+        <div class="card-body">
+            @_sam_products_test_results_heading_html@
+            @_sam_products_test_table_html@
+        </div>
+    </section>
+</div>
 
-<section class="card shadow-sm">
-    <div class="card-body">
-        @_sam_products_test_results_heading_html@
-        @_sam_products_test_table_html@
-    </div>
-</section>
-
-<script src="@_asset_base_href@assets/sam-products-test.js?v=0.10.12" defer></script>
+<script src="@_asset_base_href@assets/sam-products-test.js?v=0.10.14" defer></script>

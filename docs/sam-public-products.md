@@ -21,6 +21,11 @@ the prescription name and package display. The localized SAM `PackDisplayValue`
 (for example `5 x 1 ml`) is exposed as `pack_display_nl` / `pack_display_fr`,
 shown in results, and included in search.
 
+The suggestion line displays the CNK, prescription name, package display,
+status letters, and readable ATC hierarchy. Matching text is highlighted. A
+new query or status-filter change hides the previous result panel so that it
+cannot be confused with the new suggestions.
+
 The test page filters on AMP and AMPP status together. All three checkboxes
 (`AUTHORIZED`, `REVOKED`, `SUSPENDED`) are selected by default; a row is returned
 when both its AMP and AMPP statuses match selected values.
@@ -48,7 +53,10 @@ the SAM product CSV.
 The per-installation maximum number of product results is configured in
 `settings_local.php` with `'sam_product_search_limit' => 20`. The default is
 20, and values above 100 are capped at 100. The result page and JSON endpoint
-also report when matching rows remain beyond the displayed limit.
+also report when matching rows remain beyond the displayed limit. The cap
+limits the response and the number of result rows rendered in the browser; it
+is a practical payload and interface limit, not a PostgreSQL restriction. The
+total match count is still calculated for the “shown of total” message.
 
 Numeric input is an exact CNK lookup. Other input uses PostgreSQL `pg_trgm`
 similarity when the extension is installed, and otherwise falls back to
