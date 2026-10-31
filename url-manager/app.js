@@ -24,6 +24,7 @@
     const STORE = 'state';
     const $ = (selector) => document.querySelector(selector);
     const bundledCatalog = window.GROMPIL_NAVIGATION || null;
+    let launchLanguage = new URLSearchParams(location.search).get('lang')?.toLowerCase() || '';
     const defaultPages = () => [{ id: 'page:1', title: 'blad1', defaultNumber: 1 }, { id: 'page:2', title: 'blad2', defaultNumber: 2 }];
     const emptyPersonalState = () => ({ favorites: [], hidden: [], overrides: {}, links: [], settings: {}, groups: [], assignments: {}, groupOrder: [], pages: defaultPages() });
     const state = { catalog: null, personal: emptyPersonalState(), platformLayout: { groups: [], assignments: {}, groupColors: {}, groupTitles: {}, groupOrder: [] }, query: '', favoritesOnly: false, editingLinkId: null, editingGroupId: null, selectedGroupId: null, groupEditScope: 'company' };
@@ -395,6 +396,7 @@
 
     function language() {
         const available = state.catalog?.languages || ['nl'];
+        if (available.includes(launchLanguage)) return launchLanguage;
         const preferred = state.personal.settings.language;
         const selected = available.includes(preferred) ? preferred : (available.includes(state.catalog?.defaultLanguage) ? state.catalog.defaultLanguage : available[0]);
         return String(selected || 'nl').toLowerCase();
@@ -870,6 +872,7 @@
         $('#language-select').addEventListener('change', async (event) => {
             const nextLanguage = event.target.value;
             if (!(state.catalog?.languages || []).includes(nextLanguage)) return;
+            launchLanguage = '';
             state.personal.settings.language = nextLanguage;
             await saveState();
             render();

@@ -620,7 +620,8 @@ function page_start(string $title, array $user): void
         '_public_site_button_html' => $publicSiteButton,
         '_platform_leave_company_html' => $platformLeaveCompanyButton,
         '_platform_choose_company_html' => $platformChooseCompanyButton,
-        '_manager_href' => e(fn_appBaseHref() . 'url-manager/index.html?v=' . $managerCatalogVersion),
+        '_manager_href' => e(fn_appBaseHref() . 'url-manager/index.html?v=' . $managerCatalogVersion
+            . '&lang=' . rawurlencode(strtolower((string) ($_SESSION['language'] ?? 'NL')))),
         '_company_badge_html' => $company !== null
             ? '<span class="btn btn-success btn-sm company-context-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="'
                 . ($isPlatformOperator ? 'Platformbeheer voor company #' : 'Actieve company #')

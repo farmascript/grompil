@@ -446,3 +446,9 @@
 - De pagina’s houden de inhoud per bedrijf en taal uit `company_pages`; Serene bepaalt de omlijsting en presentatie. Een eigen stylesheet geeft het thema een zachtere, ruimere vormgeving dan `default`.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.5.
 
+### Aanvulling: URL-manager opent in de actieve taal
+
+- De URL-manager krijgt de huidige sessietaal mee bij het openen vanuit de applicatie en gebruikt die als starttaal boven de eerder opgeslagen managerkeuze.
+- Een taalkeuze die de gebruiker daarna zelf in de URL-manager maakt, werkt zoals voorheen en wordt bewaard.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.6.
+
