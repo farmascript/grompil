@@ -49,11 +49,15 @@ matches:
     replace: "http://localhost:8181/grompil/platform-settings.php"
     label: platform-settings.php
 
+  - triggers: [":gp-customers", ":gpmod"]
+    replace: "http://localhost:8181/grompil/customers.php"
+    label: customers.php
+
   - triggers: [":gp-dd-varia", ":gpmod"]
     replace: "http://localhost:8181/grompil/dd-varia.php"
     label: dd-varia.php
 
-  - triggers: [":gp-customers", ":gpmod"]
-    replace: "http://localhost:8181/grompil/customers.php"
-    label: customers.php
+  - triggers: [":gp-sam-products-test", ":gpmod"]
+    replace: "http://localhost:8181/grompil/sam-products-test.php"
+    label: sam-products-test.php
 

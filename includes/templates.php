@@ -16,6 +16,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/dokuwiki.php';
+
 /**
  * Load the active language strings for the current request.
  *

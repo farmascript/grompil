@@ -1,7 +1,7 @@
 window.GROMPIL_NAVIGATION = {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.11.14",
+    "applicationVersion": "0.12.0",
     "defaultLanguage": "nl",
     "languages": [
         "nl",
@@ -281,22 +281,22 @@ window.GROMPIL_NAVIGATION = {
             "i18n": {
                 "nl": {
                     "title": "Vertalingen",
-                    "description": "toekennen van teksten aan keywords",
+                    "description": "Vertalingen beheren",
                     "keywords": []
                 },
                 "fr": {
                     "title": "Traductions",
-                    "description": "!admin_translations!",
+                    "description": "Traductions",
                     "keywords": []
                 },
                 "en": {
                     "title": "Translations",
-                    "description": "!admin_translations!",
+                    "description": "Translations",
                     "keywords": []
                 },
                 "de": {
                     "title": "Übersetzungen",
-                    "description": "!admin_translations!",
+                    "description": "Übersetzungen",
                     "keywords": []
                 }
             },
@@ -310,23 +310,23 @@ window.GROMPIL_NAVIGATION = {
             "public_visibility": true,
             "i18n": {
                 "nl": {
-                    "title": "mijn account titles",
-                    "description": "mijn account description",
+                    "title": "Aanspreektitels en accounttitels beheren.",
+                    "description": "Je persoonlijke accountgegevens beheren.",
                     "keywords": []
                 },
                 "fr": {
-                    "title": "!admin_account_titles!",
-                    "description": "!admin_account_description!",
+                    "title": "Gérer les civilités et titres de compte.",
+                    "description": "Gérer les informations de votre compte personnel.",
                     "keywords": []
                 },
                 "en": {
-                    "title": "!admin_account_titles!",
-                    "description": "!admin_account_description!",
+                    "title": "Manage account salutations and titles.",
+                    "description": "Manage your personal account details.",
                     "keywords": []
                 },
                 "de": {
-                    "title": "!admin_account_titles!",
-                    "description": "!admin_account_description!",
+                    "title": "Anreden und Kontotitel verwalten.",
+                    "description": "Persönliche Kontodaten verwalten.",
                     "keywords": []
                 }
             },
@@ -430,27 +430,57 @@ window.GROMPIL_NAVIGATION = {
             "public_visibility": false,
             "i18n": {
                 "nl": {
-                    "title": "Systeemparameters",
-                    "description": "Beheer algemene instellingen die voor het hele platform gelden.",
+                    "title": "Platforminstellingen",
+                    "description": "Beheer algemene instellingen voor het platform.",
                     "keywords": []
                 },
                 "fr": {
-                    "title": "Paramètres système",
-                    "description": "Gérez les paramètres généraux applicables à toute la plateforme.",
+                    "title": "Paramètres de la plateforme",
+                    "description": "Gérer les paramètres généraux de la plateforme.",
                     "keywords": []
                 },
                 "en": {
-                    "title": "System parameters",
-                    "description": "Manage general settings that apply across the platform.",
+                    "title": "Platform settings",
+                    "description": "Manage general settings for the platform.",
                     "keywords": []
                 },
                 "de": {
-                    "title": "Systemparameter",
-                    "description": "Allgemeine Einstellungen für die gesamte Plattform verwalten.",
+                    "title": "Plattformeinstellungen",
+                    "description": "Allgemeine Einstellungen der Plattform verwalten.",
                     "keywords": []
                 }
             },
             "sequence_number": 13,
+            "action": "manage"
+        },
+        {
+            "id": 63502,
+            "module": "customers.php",
+            "group": "company",
+            "public_visibility": true,
+            "i18n": {
+                "nl": {
+                    "title": "Klanten",
+                    "description": "Beheer de klantaccounts van dit bedrijf.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Clients",
+                    "description": "Gérer les comptes clients de cette entreprise.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Customers",
+                    "description": "Manage this company’s customer accounts.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Kunden",
+                    "description": "Kundenkonten dieses Unternehmens verwalten.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 14,
             "action": "manage"
         },
         {
@@ -460,23 +490,23 @@ window.GROMPIL_NAVIGATION = {
             "public_visibility": false,
             "i18n": {
                 "nl": {
-                    "title": "Keuzelijsten beheren",
-                    "description": "Beheer platformbrede hiërarchische waarden en hun labels in vier talen.",
+                    "title": "Platformlijsten beheren",
+                    "description": "Beheer de gedeelde keuzelijsten en hun vertalingen.",
                     "keywords": []
                 },
                 "fr": {
-                    "title": "Gérer les listes de choix",
-                    "description": "Gérez les valeurs hiérarchiques communes à la plateforme et leurs libellés dans quatre langues.",
+                    "title": "Gérer les listes de la plateforme",
+                    "description": "Gérer les listes de choix partagées et leurs traductions.",
                     "keywords": []
                 },
                 "en": {
-                    "title": "Manage lookup lists",
-                    "description": "Manage platform-wide hierarchical values and their labels in four languages.",
+                    "title": "Manage platform lists",
+                    "description": "Manage shared dropdown lists and their translations.",
                     "keywords": []
                 },
                 "de": {
-                    "title": "Auswahllisten verwalten",
-                    "description": "Verwalten Sie plattformweite hierarchische Werte und deren Bezeichnungen in vier Sprachen.",
+                    "title": "Plattformlisten verwalten",
+                    "description": "Gemeinsame Auswahllisten und ihre Übersetzungen verwalten.",
                     "keywords": []
                 }
             },
@@ -491,17 +521,17 @@ window.GROMPIL_NAVIGATION = {
             "i18n": {
                 "nl": {
                     "title": "SAM-producten testen",
-                    "description": "Test productopzoeking op CNK of voorschriftnaam in de Nederlandse en Franse SAM-gegevens.",
+                    "description": "Test de productzoeking op CNK of voorschriftnaam in de Nederlandstalige en Franstalige SAM-gegevens.",
                     "keywords": []
                 },
                 "fr": {
                     "title": "Tester les produits SAM",
-                    "description": "Tester la recherche de produits par CNK ou nom de prescription dans les données SAM néerlandaises et françaises.",
+                    "description": "Tester la recherche de produits par CNK ou nom de prescription dans les données SAM en néerlandais et en français.",
                     "keywords": []
                 },
                 "en": {
                     "title": "Test SAM products",
-                    "description": "Test product lookup by CNK or prescription name in the Dutch and French SAM data.",
+                    "description": "Test product search by CNK or prescription name in the Dutch and French SAM data.",
                     "keywords": []
                 },
                 "de": {
@@ -511,36 +541,6 @@ window.GROMPIL_NAVIGATION = {
                 }
             },
             "sequence_number": 16,
-            "action": "manage"
-        },
-        {
-            "id": 63502,
-            "module": "customers.php",
-            "group": "company",
-            "public_visibility": true,
-            "i18n": {
-                "nl": {
-                    "title": "Klanten beheren",
-                    "description": "Zoek klanten binnen dit bedrijf en bekijk hun accountstatus en laatste aanmelding.",
-                    "keywords": []
-                },
-                "fr": {
-                    "title": "Gérer les clients",
-                    "description": "Recherchez les clients de cette entreprise et consultez leur état de compte et leur dernière connexion.",
-                    "keywords": []
-                },
-                "en": {
-                    "title": "Manage customers",
-                    "description": "Search customers in this company and review their account status and last sign-in.",
-                    "keywords": []
-                },
-                "de": {
-                    "title": "Kunden verwalten",
-                    "description": "Suchen Sie Kunden dieses Unternehmens und prüfen Sie ihren Kontostatus und die letzte Anmeldung.",
-                    "keywords": []
-                }
-            },
-            "sequence_number": 14,
             "action": "manage"
         }
     ],
@@ -584,13 +584,13 @@ window.GROMPIL_NAVIGATION = {
             "manager_home": "Navigatie",
             "manager_import_json": "JSON importeren",
             "manager_language": "Taal",
-            "manager_module_list": "module lijst",
-            "manager_module_list_intro": "Automatisch overzicht van de PHP-ingangen die via een Grompil-URL bereikbaar zijn. Toegang kan afhankelijk zijn van login en rechten.",
-            "manager_module_name": "Modulenaam",
-            "manager_module_path": "Bestand / URL",
-            "manager_module_open": "Openen ↗",
-            "manager_module_empty": "Geen webmodules gevonden.",
             "manager_module_count": "URL-modules",
+            "manager_module_empty": "Geen webmodules gevonden.",
+            "manager_module_list": "Module lijst",
+            "manager_module_list_intro": "Automatisch overzicht van PHP-ingangen die via een Grompil-URL bereikbaar zijn. Toegang kan afhankelijk zijn van login en rechten.",
+            "manager_module_name": "Modulenaam",
+            "manager_module_open": "Openen ↗",
+            "manager_module_path": "Bestand / URL",
             "manager_link_name": "Naam",
             "manager_link_url": "Webadres of pad",
             "manager_local": "Lokaal",
@@ -660,13 +660,13 @@ window.GROMPIL_NAVIGATION = {
             "manager_home": "Navigation",
             "manager_import_json": "Importer JSON",
             "manager_language": "Langue",
-            "manager_module_list": "liste des modules",
+            "manager_module_count": "modules URL",
+            "manager_module_empty": "Aucun module web trouvé.",
+            "manager_module_list": "Liste des modules",
             "manager_module_list_intro": "Inventaire automatique des points d’entrée PHP accessibles par une URL Grompil. L’accès peut dépendre de la connexion et des autorisations.",
             "manager_module_name": "Nom du module",
-            "manager_module_path": "Fichier / URL",
             "manager_module_open": "Ouvrir ↗",
-            "manager_module_empty": "Aucun module web trouvé.",
-            "manager_module_count": "modules URL",
+            "manager_module_path": "Fichier / URL",
             "manager_link_name": "Nom",
             "manager_link_url": "Adresse web ou chemin",
             "manager_local": "Local",
@@ -736,13 +736,13 @@ window.GROMPIL_NAVIGATION = {
             "manager_home": "Navigation",
             "manager_import_json": "Import JSON",
             "manager_language": "Language",
-            "manager_module_list": "module list",
+            "manager_module_count": "URL modules",
+            "manager_module_empty": "No web modules found.",
+            "manager_module_list": "Module list",
             "manager_module_list_intro": "Automatically generated list of PHP entry points reachable through a Grompil URL. Access may depend on login and permissions.",
             "manager_module_name": "Module name",
-            "manager_module_path": "File / URL",
             "manager_module_open": "Open ↗",
-            "manager_module_empty": "No web modules found.",
-            "manager_module_count": "URL modules",
+            "manager_module_path": "File / URL",
             "manager_link_name": "Name",
             "manager_link_url": "Web address or path",
             "manager_local": "Local",
@@ -812,13 +812,13 @@ window.GROMPIL_NAVIGATION = {
             "manager_home": "Navigation",
             "manager_import_json": "JSON importieren",
             "manager_language": "Sprache",
+            "manager_module_count": "URL-Module",
+            "manager_module_empty": "Keine Webmodule gefunden.",
             "manager_module_list": "Modulliste",
             "manager_module_list_intro": "Automatisch erstellte Liste der PHP-Einstiegspunkte, die über eine Grompil-URL erreichbar sind. Der Zugriff kann eine Anmeldung und Berechtigungen erfordern.",
             "manager_module_name": "Modulname",
-            "manager_module_path": "Datei / URL",
             "manager_module_open": "Öffnen ↗",
-            "manager_module_empty": "Keine Webmodule gefunden.",
-            "manager_module_count": "URL-Module",
+            "manager_module_path": "Datei / URL",
             "manager_link_name": "Name",
             "manager_link_url": "Webadresse oder Pfad",
             "manager_local": "Lokal",
