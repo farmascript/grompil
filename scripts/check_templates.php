@@ -32,7 +32,10 @@ description: @template_check_intro@
 $isCli = PHP_SAPI === 'cli';
 $currentUser = null;
 if (!$isCli) {
-    require dirname(__DIR__) . '/includes/bootstrap.php';
+    if (!defined('GROMPIL_ROOT')) {
+        define('GROMPIL_ROOT', dirname(__DIR__));
+    }
+    require GROMPIL_ROOT . '/includes/bootstrap.php';
     $currentUser = grompil_require_module_access('scripts/check_templates.php');
 }
 
