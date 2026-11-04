@@ -496,3 +496,8 @@
 - De gedeelde navigatie had de link naar de publieke website al, maar `current_company_context()` haalde `is_public` niet op. Daardoor bleef de knop verborgen in een actieve bedrijfscontext. De query geeft dit veld nu mee, zodat de knop verschijnt als de publieke website van het bedrijf openbaar is.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.11.14.
 
+### Aanvulling: DokuWiki-links volgen de actieve taal
+
+- Contextuele DokuWiki-links behouden in het Nederlands hun bestaande pagina-ID. Bij FR, EN en DE wordt de taalnamespace vóór het bestaande ID geplaatst (`fr:`, `en:` of `de:`).
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.12.1.
+

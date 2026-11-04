@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-11-01
- * @date_mut: Sun 2026-11-01
+ * @date_mut: Wed 2026-11-04 15:05:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -39,7 +39,10 @@ function fn_dokuwikiUrl(string $level, string $pageId): string
         throw new InvalidArgumentException('Invalid DokuWiki base URL.');
     }
 
-    return rtrim($baseUrl, '/') . '/doku.php?id=doc:grompil:' . $level . ':' . $pageId;
+    $language = strtolower((string) ($_SESSION['language'] ?? 'NL'));
+    $languagePrefix = in_array($language, ['fr', 'en', 'de'], true) ? $language . ':' : '';
+
+    return rtrim($baseUrl, '/') . '/doku.php?id=' . $languagePrefix . 'doc:grompil:' . $level . ':' . $pageId;
 }
 
 /** Render a keyboard-accessible information link with a localized accessible name. */

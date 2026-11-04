@@ -32,8 +32,10 @@ En op de gewenste plaats in de HTML-template:
 <h1>@page_title@ @_page_help_html@</h1>
 ```
 
-De ondersteunde levels zijn `users`, `dev`, `testers` en `extern`. De URL wordt
-`<basisurl>/doku.php?id=doc:grompil:<level>:<id>`. ID's zijn vaste numerieke strings;
+De ondersteunde levels zijn `users`, `dev`, `testers` en `extern`. Voor NL wordt
+`<basisurl>/doku.php?id=doc:grompil:<level>:<id>` gebruikt. Voor FR, EN en DE
+wordt de taalnamespace voor het pagina-ID geplaatst, bijvoorbeeld
+`<basisurl>/doku.php?id=en:doc:grompil:<level>:<id>`. ID's zijn vaste numerieke strings;
 zowel bestaande NAV-ID's als zes willekeurige cijfers zijn bruikbaar. Controleer
 een nieuwe ID op duplicaten en hergebruik de ID niet voor een ander onderwerp.
 Houd ook de namespace vast; een verhuizing verandert de link.
@@ -55,7 +57,8 @@ aangemaakt door iemand met de juiste rechten; de SaaS maakt ze niet zelf aan.
 Open de publieke homepagina van Ariodante. Naast de welkomsttitel hoort een
 rond informatie-icoon te staan. De link opent in een nieuw tabblad:
 
-`https://dw.grompil.com/!saas/doku.php?id=doc:grompil:extern:511300`
+`https://dw.grompil.com/!saas/doku.php?id=doc:grompil:extern:511300` in NL, of
+`https://dw.grompil.com/!saas/doku.php?id=en:doc:grompil:extern:511300` in EN.
 
 Ontbreekt het icoon, controleer dan eerst de `dokuwiki`-instelling in
 `settings_local.php` van de installatie die je daadwerkelijk bezoekt. Controleer
