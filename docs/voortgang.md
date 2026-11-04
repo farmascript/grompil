@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Wed 2026-11-04 18:10:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -243,7 +243,7 @@
 1. Maak een databasebackup en voer het bijgewerkte `schema.sql` uit.
 2. Plaats desgewenst logo- en hero-bestanden in `media/companies/<company-id>/` en vul de bestandsnamen in bij **Beheer → Bedrijven**.
 3. Maak voor een eerste alternatief thema `tmpl/themes/<naam>/store.html`, of maak voor één bedrijf `tmpl/companies/<company-id>/store.html`.
-4. Voer `php scripts/import_translations.php` uit en publiceer de bijgewerkte NL-, FR-, EN- en DE-bestanden, inclusief de nieuwe rolbevestiging en cookie-uitleg.
+4. Voer `php scripts/translations_import.php` uit en publiceer de bijgewerkte NL-, FR-, EN- en DE-bestanden, inclusief de nieuwe rolbevestiging en cookie-uitleg.
 5. Controleer de publieke bedrijfswebsite, de bevestiging bij het toevoegen van medewerkers, en het gedrag van de login-cookie en cookiemelding.
 
 ### Eerder vandaag: platform- en bedrijfsfuncties
@@ -273,7 +273,7 @@
 - De code en `schema.sql` zijn aangepast, maar de schemawijziging is nog niet uitgevoerd op de lokale database. Maak eerst een database-export.
 - De schemawijziging dupliceert bestaande gebruikers voor hun bestaande bedrijfslidmaatschappen en deactiveert daarna de oude niet-platformaccounts. De oude records blijven bewaard. Voer de migratie alleen uit nadat de backup is gecontroleerd.
 - De publieke route vereist dat het bedrijf actief en publiek is. Test na de migratie zowel `/c=<slug>` als de queryroute, en controleer registratie en login afzonderlijk voor twee bedrijven.
-- De Grompil-vertalingen zijn toegevoegd aan de PHP-taalbestanden. Na de schemamigratie kunnen ontbrekende keys met `php scripts/import_translations.php` aan de vertalingstabel worden toegevoegd en via Beheer → Vertalingen worden gepubliceerd.
+- De Grompil-vertalingen zijn toegevoegd aan de PHP-taalbestanden. Na de schemamigratie kunnen ontbrekende keys met `php scripts/translations_import.php` aan de vertalingstabel worden toegevoegd en via Beheer → Vertalingen worden gepubliceerd.
 - Voor de acroniemwijziging moet `schema.sql` opnieuw worden uitgevoerd; daarin staat de idempotente `ALTER TABLE` en de unieke index per bedrijf. Importeer daarna ook de nieuwe acroniemvertalingen.
 - `.htaccess` gebruikt Apache `mod_rewrite`; als die niet beschikbaar is, blijft `index.php?c=<slug>` werken.
 
@@ -281,7 +281,7 @@
 
 1. Exporteer de huidige PostgreSQL-database als backup.
 2. Voer `schema.sql` uit met de databasebeheerder en controleer dat alle statements slagen.
-3. Voer `php scripts/import_translations.php` uit en publiceer de taalbestanden.
+3. Voer `php scripts/translations_import.php` uit en publiceer de taalbestanden.
 4. Controleer in de browser de marketingpagina’s, de taalkeuze, een publieke bedrijfsroute, en registratie/login met dezelfde e-mail bij twee bedrijven.
 5. Maak daarna een beheerscherm voor de vier bedrijfspagina’s en hun NL/FR/EN/DE-teksten.
 
@@ -313,7 +313,7 @@
 
 1. Maak een export/backup van de lokale PostgreSQL-database.
 2. Voer het bijgewerkte `schema.sql` in Adminer uit met een databasebeheerder. Controleer dat de migratie afrondt, inclusief `name_first`, `name_last`, tenantrollen en RLS-beleid.
-3. Voer `php scripts/import_translations.php` uit en publiceer de vertalingen via `translations.php` of `php scripts/export_translations.php`.
+3. Voer `php scripts/translations_import.php` uit en publiceer de vertalingen via `translations.php` of `php scripts/translations_export.php`.
 4. Controleer in de browser het aanmaken van een gebruiker, het koppelen aan een apotheek en de nieuwe knop voor openbare website aan/uit.
 5. Voeg daarna een beheerscherm toe voor domeinnamen en verificatie, zodat ook domeininstellingen Adminer niet meer vereisen.
 

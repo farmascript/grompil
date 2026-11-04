@@ -48,7 +48,7 @@ Wachtwoordherstel via **Wachtwoord vergeten?** gebruikt dezelfde SMTP-configurat
 
 Grompil gebruikt PHPMailer voor SMTP. Voeg de mailinstellingen toe aan de `mail`-sectie van het credentialsbestand voor de gekozen omgeving; zie [docs/mail-configuratie.md](docs/mail-configuratie.md). Installeer de afhankelijkheden vanuit de projectmap met `composer install`. De helper `includes/mailer.php` verzorgt SMTP-verzending.
 
-Bij het aanmaken van een nieuw bedrijf vraagt het platformbeheer een e-mailadres voor de eerste bedrijfsbeheerder. Grompil maakt een company-gebonden account met de rol Beheerder aan en mailt een willekeurig tijdelijk wachtwoord. Bij de eerste aanmelding wordt de gebruiker naar **Mijn account** gestuurd om dat wachtwoord te wijzigen. Voer `schema.sql` uit om de kolom `users.must_change_password` toe te voegen voordat je deze functie gebruikt. Synchroniseer daarna de nieuwe vertaalteksten met `php scripts/import_translations.php` en `php scripts/export_translations.php`.
+Bij het aanmaken van een nieuw bedrijf vraagt het platformbeheer een e-mailadres voor de eerste bedrijfsbeheerder. Grompil maakt een company-gebonden account met de rol Beheerder aan en mailt een willekeurig tijdelijk wachtwoord. Bij de eerste aanmelding wordt de gebruiker naar **Mijn account** gestuurd om dat wachtwoord te wijzigen. Voer `schema.sql` uit om de kolom `users.must_change_password` toe te voegen voordat je deze functie gebruikt. Synchroniseer daarna de nieuwe vertaalteksten met `php scripts/translations_import.php` en `php scripts/translations_export.php`.
 
 Stel de webroot in op deze map en configureer PHP via je webserver. Voor lokaal testen kan de PHP development server worden gebruikt.
 
@@ -95,7 +95,7 @@ Algemene vertalingen worden bijgehouden in de tabel `substitutions` met een rij 
 De zelfstandige URL-manager gebruikt `scripts/generate_navigation.php` om NAV-commentaarblokken uit aanroepbare modules om te zetten naar `navigation.json`. De generator hergebruikt de bestaande gegenereerde PHP-taalarrays en voert de applicatiemodules niet uit. De NAV-conventie, het JSON-schema en de eerste permanente module-ID's staan in [docs/url-manager.md](docs/url-manager.md).
 
 ```powershell
-php scripts/import_translations.php
+php scripts/translations_import.php
 ```
 
 De uitbreidbare beheeromgeving staat op `admin.php`. Modules worden daar alleen getoond als de ingelogde gebruiker de bijbehorende machtiging heeft. Elke beheermodule controleert bovendien het strikte levelbereik tussen 1 en 100 (grenzen exclusief). Nieuwe beheerfuncties kunnen later als extra module worden toegevoegd.
@@ -105,16 +105,16 @@ Voor dagelijks vertaalbeheer gebruikt een beheerder met de rolmachtiging `transl
 De CLI-scripts blijven beschikbaar als technische fallback. Exporteer wijzigingen naar de PHP-taalbestanden met:
 
 ```powershell
-php scripts/export_translations.php
+php scripts/translations_export.php
 ```
 
-Geef desgewenst een taalcode mee, bijvoorbeeld `php scripts/export_translations.php FR`. De export genereert `src/lang/lang_<code-lowercase>.php` als `$arrSubst`-array. De vertaalde templatekeys staan tussen `@...@`. Placeholders die met `_` beginnen en runtimewaarden zoals een gebruikersnaam blijven rechtstreeks uit PHP komen. De importer vult alleen ontbrekende sleutels aan en overschrijft bestaande databasevertalingen niet. De webserver moet schrijfrechten hebben op `src/lang/` om taalbestanden te publiceren. Voor productie kun je `GROMPIL_LANGUAGE_DIR` instellen op een bestaande aparte map buiten de webroot; PHP moet daar bestanden kunnen lezen en vervangen. Als de taalbestanden daar nog niet staan, gebruikt de app bij de eerste paginaweergave de standaardbestanden en publiceert de beheerpagina ze naar die aparte map. Stel dezelfde variabele in voor de CLI-export als je die als fallback gebruikt.
+Geef desgewenst een taalcode mee, bijvoorbeeld `php scripts/translations_export.php FR`. De export genereert `src/lang/lang_<code-lowercase>.php` als `$arrSubst`-array. De vertaalde templatekeys staan tussen `@...@`. Placeholders die met `_` beginnen en runtimewaarden zoals een gebruikersnaam blijven rechtstreeks uit PHP komen. De importer vult alleen ontbrekende sleutels aan en overschrijft bestaande databasevertalingen niet. De webserver moet schrijfrechten hebben op `src/lang/` om taalbestanden te publiceren. Voor productie kun je `GROMPIL_LANGUAGE_DIR` instellen op een bestaande aparte map buiten de webroot; PHP moet daar bestanden kunnen lezen en vervangen. Als de taalbestanden daar nog niet staan, gebruikt de app bij de eerste paginaweergave de standaardbestanden en publiceert de beheerpagina ze naar die aparte map. Stel dezelfde variabele in voor de CLI-export als je die als fallback gebruikt.
 
 ## Registratie en accountgoedkeuring
 
 Publieke registratie verloopt via `register.php`. Klantaccounts krijgen de rol Publiek en worden direct actief. Personeelsaanvragen blijven inactief totdat een beheerder ze goedkeurt en een personeelsrol toewijst. Registratie vereist een wachtwoord van minimaal 12 tekens en is per IP beperkt. Voer na deze schemawijziging `schema.sql` opnieuw uit in Adminer; de wijzigingen vullen bestaande tabellen aan.
 
-Voer daarna `php scripts/import_translations.php` uit om de nieuwe vertaaltermen als ontbrekende sleutels aan de vertaaltabel toe te voegen, en vervolgens `php scripts/export_translations.php` om ze in de PHP-taalbestanden beschikbaar te maken.
+Voer daarna `php scripts/translations_import.php` uit om de nieuwe vertaaltermen als ontbrekende sleutels aan de vertaaltabel toe te voegen, en vervolgens `php scripts/translations_export.php` om ze in de PHP-taalbestanden beschikbaar te maken.
 
 Rollen hebben een numeriek `level`. De huidige startindeling is Beheerder 10, Apotheker 110, Medewerker 120 en Publiek 200. `has_level($exact)` vergelijkt exact (SS); met twee grenzen toetst het een open interval (SL), dus strikt groter dan de ondergrens en kleiner dan de bovengrens. Dit is een extra classificatie; routebeveiliging blijft ook expliciete rechten vereisen.
 
@@ -138,11 +138,11 @@ De algemene vertalingen staan in `substitutions` met `company_id = 0` en worden 
 
 Mislukte logins worden in `login_attempts` per company, e-mailadres en IP-adres geteld. `company_id = 0` is de globale loginroute; een login vanaf een companypagina gebruikt het ID van die company.
 
-Voer voor de company-vertalingen eerst het bijgewerkte `schema.sql` uit in Adminer en daarna `php scripts/import_translations.php` om nieuwe algemene vertaalsleutels toe te voegen. Publiceer daarna de algemene taalbestanden met `php scripts/export_translations.php`. De companybeheerder kan vervolgens per taal eigen overrides publiceren vanuit de beheerpagina.
+Voer voor de company-vertalingen eerst het bijgewerkte `schema.sql` uit in Adminer en daarna `php scripts/translations_import.php` om nieuwe algemene vertaalsleutels toe te voegen. Publiceer daarna de algemene taalbestanden met `php scripts/translations_export.php`. De companybeheerder kan vervolgens per taal eigen overrides publiceren vanuit de beheerpagina.
 
 Registratie en login via `/c=<slug>` zijn bedrijfsspecifiek. Elke bedrijfsregistratie maakt een eigen `users`-record met `company_id`; hetzelfde e-mailadres kan bij meerdere bedrijven bestaan, maar wordt daar niet als hetzelfde gebruikersrecord hergebruikt. `users.acronym` is optioneel en uniek binnen het bedrijf (hoofdletterongevoelig). Een gebruiker kan het bij registratie kiezen of later via **Mijn account** wijzigen; login accepteert het e-mailadres of acroniem. De schemawijziging dupliceert bestaande membership-accounts en deactiveert oude niet-platformaccounts. Maak vóór uitvoering een databasebackup en voer daarna het bijgewerkte `schema.sql` uit als databasebeheerder.
 
-Voer voor deze wijziging eerst een database-export/backup uit. Voer daarna het bijgewerkte `schema.sql` uit in Adminer met een databasebeheerder; de toepassing moet verbinden als `grompil_app`, die geen eigenaar van de tabellen en geen `BYPASSRLS` mag zijn. Importeer daarna de nieuwe taaltermen met `php scripts/import_translations.php` en publiceer ze via `translations.php` of `php scripts/export_translations.php`. Controleer vervolgens welke bestaande apotheek en medewerker als eerste tenant gebruikt worden. De schemawijziging is voorbereid maar nog niet op jouw lokale database uitgevoerd.
+Voer voor deze wijziging eerst een database-export/backup uit. Voer daarna het bijgewerkte `schema.sql` uit in Adminer met een databasebeheerder; de toepassing moet verbinden als `grompil_app`, die geen eigenaar van de tabellen en geen `BYPASSRLS` mag zijn. Importeer daarna de nieuwe taaltermen met `php scripts/translations_import.php` en publiceer ze via `translations.php` of `php scripts/translations_export.php`. Controleer vervolgens welke bestaande apotheek en medewerker als eerste tenant gebruikt worden. De schemawijziging is voorbereid maar nog niet op jouw lokale database uitgevoerd.
 
 De tenant-tabellen hebben PostgreSQL row-level security. De storefront, domeinkoppeling, membership en rolbasis zijn geïmplementeerd; productcatalogus, voorraad, patiëntendossiers, bestellingen, betalingen, auditing en productie-isolatiecontrole zijn volgende stappen. Zie [docs/multi-tenant-architecture.md](docs/multi-tenant-architecture.md) voor ontwerpafspraken en de resterende uitrolstappen.
 
@@ -186,7 +186,7 @@ Er is geen IP-test nodig om de omgeving te bepalen: `127.0.0.1` verwijst naar de
 
 De adresvelden van bedrijven en gebruikers kunnen officiële Belgische suggesties gebruiken via BeSt Address. De browser praat alleen met `address_api.php`, dat de gratis openbare BOSA-endpoint server-side aanroept; voor deze endpoint is geen OAuth-configuratie nodig. `BEST_ADDRESS_API_URL` is optioneel en heeft als standaard de openbare dienst; die heeft geen beschikbaarheidsgarantie. Als de API tijdelijk onbeschikbaar is, blijven handmatige adresinvoer en opslaan mogelijk.
 
-Voer na de adreswijziging opnieuw `schema.sql` uit. Daarna kun je `php scripts/import_translations.php` uitvoeren en de taalbestanden publiceren. Het formulier biedt suggesties voor postcode/gemeente, straat en huisnummer; pas na het kiezen van een officieel adres wordt de BeSt-identificator opgeslagen.
+Voer na de adreswijziging opnieuw `schema.sql` uit. Daarna kun je `php scripts/translations_import.php` uitvoeren en de taalbestanden publiceren. Het formulier biedt suggesties voor postcode/gemeente, straat en huisnummer; pas na het kiezen van een officieel adres wordt de BeSt-identificator opgeslagen.
 
 Voer na een schemawijziging `schema.sql` opnieuw uit in Adminer. Het bestand gebruikt idempotente tabellen en kolommen.
 
