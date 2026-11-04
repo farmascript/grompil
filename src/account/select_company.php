@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-10-21 09:38:39
+ * @date_mut: Wed 2026-11-04 18:34:10
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -264,9 +264,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insert = $begun ? pg_query_params(
                         db(),
                         'INSERT INTO companies (
-                            slug, name, legal_name, enterprise_number, billing_email, phone, street, house_number,
-                            postal_code, city, country_code, default_language, is_active, is_public, company_permit_number
-                         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,\'BE\',\'NL\',TRUE,FALSE,\'\') RETURNING id',
+                            slug, name, legal_name, enterprise_number, enterprise_number_status,
+                            billing_email, phone, street, house_number, postal_code, city,
+                            country_code, default_language, is_active, is_public, company_permit_number, vat_number_status
+                         ) VALUES ($1,$2,$3,$4,\'known\',$5,$6,$7,$8,$9,$10,\'BE\',\'NL\',TRUE,FALSE,\'\',\'unknown\') RETURNING id',
                         [$slug, $companyName, $companyName, $number, (string) ($details['email'] ?? ''),
                             (string) ($details['phone'] ?? ''), $street, $houseNumber,
                             (string) ($details['postal_code'] ?? ''), (string) ($details['city'] ?? '')]
@@ -363,9 +364,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insert = $begun ? pg_query_params(
                     db(),
                     'INSERT INTO companies (
-                        slug, name, legal_name, enterprise_number, billing_email, phone, street, house_number,
-                        postal_code, city, country_code, default_language, is_active, is_public, company_permit_number
-                     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,\'BE\',\'NL\',TRUE,FALSE,$11) RETURNING id',
+                        slug, name, legal_name, enterprise_number, enterprise_number_status,
+                        billing_email, phone, street, house_number, postal_code, city,
+                        country_code, default_language, is_active, is_public, company_permit_number, vat_number_status
+                     ) VALUES ($1,$2,$3,$4,\'known\',$5,$6,$7,$8,$9,$10,\'BE\',\'NL\',TRUE,FALSE,$11,\'unknown\') RETURNING id',
                     [$slug, $companyName, (string) ($details['name'] ?? ''), $number,
                         (string) ($details['email'] ?? ''), (string) ($details['phone'] ?? ''),
                         $street, $houseNumber, trim((string) $selected['Postcode']), trim((string) $selected['Gemeente']), $selectedPermit]

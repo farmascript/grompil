@@ -19,3 +19,9 @@ Removing a value deactivates it rather than deleting it, preserving references a
 `includes/dd_varia.php` provides `dd_varia_get_options($listKey, $parentKey, $includeInactive)`. It returns localized child options ordered by `sort_order`, then stable key. Passing a null parent key returns root rows; passing a parent key such as `media` returns its children. Inactive rows are omitted by default, and only a platform administrator can request them.
 
 Use each returned `key` as the stable application value and `label` for display. Do not save the translated label as the selected value.
+
+## Company number statuses
+
+The `company_number_status` list contains the platform-managed choices for enterprise-number and VAT-number status. `schema.sql` creates the root and the initial choices (`known`, `pending`, `not_applicable`, and `unknown`) when they are absent. For an existing database, run `migrations/20261104-183410_company_number_status.sql` after the `dd_varia` table migration. The `companies` table stores the selected stable key separately in `enterprise_number_status` and `vat_number_status`.
+
+To add a choice, add a child under `_root` in the `company_number_status` list and provide its translated label in NL, FR, EN, and DE. No PHP change is needed for a new status choice. The key `known` has one special validation rule: the corresponding number field must contain a number. Other statuses can be saved with or without a number. Deactivating a status hides it from new selections; an existing company can retain its inactive value until an administrator chooses an active status.

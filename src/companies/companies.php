@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:45:51
- * @date_mut: Wed 2026-10-21 09:38:39
+ * @date_mut: Wed 2026-11-04 18:34:10
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -25,12 +25,29 @@ $messageKey = '';
 $languages = ['NL', 'FR', 'EN', 'DE'];
 $publicEnabled = false;
 $companyId = (int) ($_GET['edit'] ?? $_POST['id'] ?? 0);
+$numberStatusOptions = dd_varia_get_options('company_number_status', '_root');
+$allNumberStatusOptions = dd_varia_get_options('company_number_status', '_root', true);
+$activeNumberStatusKeys = array_column($numberStatusOptions, 'key');
+$existingNumberStatuses = [];
+if ($companyId > 0) {
+    $statusResult = pg_query_params(
+        db(),
+        'SELECT enterprise_number_status, vat_number_status FROM companies WHERE id = $1',
+        [$companyId]
+    );
+    $statusRow = $statusResult ? pg_fetch_assoc($statusResult) : false;
+    if (is_array($statusRow)) {
+        $existingNumberStatuses = $statusRow;
+    }
+}
 $initialAdminEmail = strtolower(trim((string) ($_POST['initial_admin_email'] ?? '')));
 $fields = [
     'slug' => trim((string) ($_POST['slug'] ?? '')),
     'name' => trim((string) ($_POST['name'] ?? '')),
     'enterprise_number' => trim((string) ($_POST['enterprise_number'] ?? '')),
+    'enterprise_number_status' => trim((string) ($_POST['enterprise_number_status'] ?? 'unknown')),
     'vat_number' => trim((string) ($_POST['vat_number'] ?? '')),
+    'vat_number_status' => trim((string) ($_POST['vat_number_status'] ?? 'unknown')),
     'billing_email' => strtolower(trim((string) ($_POST['billing_email'] ?? ''))),
     'phone' => trim((string) ($_POST['phone'] ?? '')),
     'street' => trim((string) ($_POST['street'] ?? '')),
@@ -65,6 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isActive = isset($_POST['is_active']) ? 'true' : 'false';
         $isPublic = isset($_POST['is_public']) ? 'true' : 'false';
         $publicEnabled = isset($_POST['is_public']);
+        $enterpriseStatusValid = in_array($fields['enterprise_number_status'], $activeNumberStatusKeys, true)
+            || ($companyId > 0 && $fields['enterprise_number_status'] === ($existingNumberStatuses['enterprise_number_status'] ?? null));
+        $vatStatusValid = in_array($fields['vat_number_status'], $activeNumberStatusKeys, true)
+            || ($companyId > 0 && $fields['vat_number_status'] === ($existingNumberStatuses['vat_number_status'] ?? null));
+        $numberStatusesValid = $enterpriseStatusValid && $vatStatusValid
+            && ($fields['enterprise_number_status'] !== 'known' || $fields['enterprise_number'] !== '')
+            && ($fields['vat_number_status'] !== 'known' || $fields['vat_number'] !== '');
         $valid = preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $fields['slug']) === 1
             && strlen($fields['slug']) <= 80
             && $fields['name'] !== ''
@@ -80,10 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             && preg_match('/^(?:|[A-Za-z0-9][A-Za-z0-9._-]{0,126}\\.(?:jpe?g|png|webp|gif))$/i', $fields['store_logo_file']) === 1
             && preg_match('/^(?:|[A-Za-z0-9][A-Za-z0-9._-]{0,126}\\.(?:jpe?g|png|webp|gif))$/i', $fields['store_hero_image_file']) === 1;
 
-        if (!$valid) {
+        if (!$valid || !$numberStatusesValid) {
             $messageKey = $companyId === 0 && !filter_var($initialAdminEmail, FILTER_VALIDATE_EMAIL)
                 ? 'company_admin_email_invalid'
-                : 'company_invalid';
+                : (!$numberStatusesValid ? 'company_number_status_invalid' : 'company_invalid');
         } else {
             $values = array_values($fields);
             if ($companyId > 0) {
@@ -92,12 +116,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $values[] = $companyId;
                 $result = pg_query_params(
                     db(),
-                    'UPDATE companies SET slug=$1, name=$2, enterprise_number=$3, vat_number=$4,
-                        billing_email=$5, phone=$6, street=$7, house_number=$8, box_number=$9,
-                        postal_code=$10, city=$11, address_reference_id=$12,
-                        country_code=$13, default_language=$14, store_theme=$15, store_logo_file=$16,
-                        store_hero_image_file=$17, is_active=$18, is_public=$19, updated_at=now()
-                     WHERE id=$20',
+                    'UPDATE companies SET slug=$1, name=$2, enterprise_number=$3, enterprise_number_status=$4,
+                        vat_number=$5, vat_number_status=$6, billing_email=$7, phone=$8, street=$9,
+                        house_number=$10, box_number=$11, postal_code=$12, city=$13, address_reference_id=$14,
+                        country_code=$15, default_language=$16, store_theme=$17, store_logo_file=$18,
+                        store_hero_image_file=$19, is_active=$20, is_public=$21, updated_at=now()
+                     WHERE id=$22',
                     $values
                 );
             } else {
@@ -105,11 +129,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insert = $transaction ? pg_query_params(
                     db(),
                     'INSERT INTO companies (
-                        slug, name, enterprise_number, vat_number, billing_email, phone,
+                        slug, name, enterprise_number, enterprise_number_status, vat_number, vat_number_status,
+                        billing_email, phone,
                         street, house_number, box_number, postal_code, city, address_reference_id,
                         country_code, default_language, store_theme, store_logo_file, store_hero_image_file,
                         is_active, is_public
-                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id',
+                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING id',
                     [...$values, $isActive, $isPublic]
                 ) : false;
                 $createdCompany = $insert ? pg_fetch_assoc($insert) : false;
@@ -135,6 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fields = array_fill_keys(array_keys($fields), '');
                 $fields['country_code'] = 'BE';
                 $fields['default_language'] = 'NL';
+                $fields['enterprise_number_status'] = 'unknown';
+                $fields['vat_number_status'] = 'unknown';
                 $fields['store_theme'] = 'default';
                 $publicEnabled = false;
                 $initialAdminEmail = '';
@@ -196,6 +223,32 @@ while ($companyResult && $company = pg_fetch_assoc($companyResult)) {
     ]);
 }
 
+$renderNumberStatusOptions = static function (string $selected, ?string $existingStatus) use ($numberStatusOptions, $allNumberStatusOptions): string {
+    $options = $numberStatusOptions;
+    $activeOptionKeys = array_column($options, 'key');
+    $isStoredStatus = $existingStatus !== null && $selected === $existingStatus;
+    if ($isStoredStatus && !in_array($selected, $activeOptionKeys, true)) {
+        foreach ($allNumberStatusOptions as $option) {
+            if ((string) $option['key'] === $selected) {
+                $options[] = $option;
+                break;
+            }
+        }
+    }
+
+    $html = '';
+    foreach ($options as $option) {
+        $key = (string) $option['key'];
+        $label = (string) $option['label'];
+        if (!$option['is_active']) {
+            $label .= ' · ' . fn_t('inactive');
+        }
+        $html .= '<option value="' . e($key) . '"' . ($key === $selected ? ' selected' : '')
+            . '>' . e($label) . '</option>';
+    }
+    return $html;
+};
+
 page_start(fn_t('companies_heading'), $currentUser);
 echo fn_templateRender('companies.html', [
     '_message_html' => $messageKey === '' ? '' : '<div class="alert alert-info" role="status">' . e(fn_t($messageKey)) . '</div>',
@@ -204,7 +257,15 @@ echo fn_templateRender('companies.html', [
     'slug_value' => (string) $fields['slug'],
     'name_value' => (string) $fields['name'],
     'enterprise_number_value' => (string) $fields['enterprise_number'],
+    '_enterprise_number_status_options_html' => $renderNumberStatusOptions(
+        (string) $fields['enterprise_number_status'],
+        isset($existingNumberStatuses['enterprise_number_status']) ? (string) $existingNumberStatuses['enterprise_number_status'] : null
+    ),
     'vat_number_value' => (string) $fields['vat_number'],
+    '_vat_number_status_options_html' => $renderNumberStatusOptions(
+        (string) $fields['vat_number_status'],
+        isset($existingNumberStatuses['vat_number_status']) ? (string) $existingNumberStatuses['vat_number_status'] : null
+    ),
     'billing_email_value' => (string) $fields['billing_email'],
     'phone_value' => (string) $fields['phone'],
     'street_value' => (string) $fields['street'],

@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:27:16
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Wed 2026-11-04 18:34:10
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -105,6 +105,12 @@ BEGIN
 END;
 $$;
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS company_permit_number VARCHAR(32) NOT NULL DEFAULT '';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS enterprise_number_status VARCHAR(80) NOT NULL DEFAULT 'unknown';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS vat_number_status VARCHAR(80) NOT NULL DEFAULT 'unknown';
+UPDATE companies SET enterprise_number_status = 'known'
+WHERE enterprise_number <> '' AND enterprise_number_status = 'unknown';
+UPDATE companies SET vat_number_status = 'known'
+WHERE vat_number <> '' AND vat_number_status = 'unknown';
 DROP INDEX IF EXISTS companies_pharmacy_permit_number_unique_idx;
 CREATE UNIQUE INDEX IF NOT EXISTS companies_company_permit_number_unique_idx
     ON companies (company_permit_number)
@@ -268,6 +274,28 @@ CREATE TABLE IF NOT EXISTS dd_varia (
 COMMENT ON TABLE dd_varia IS 'Platform-managed hierarchical lookup values. content stores an @translation_key@ token.';
 CREATE INDEX IF NOT EXISTS dd_varia_lookup_idx
     ON dd_varia (list_key, parent_id, is_active, sort_order, id);
+
+INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order)
+VALUES (
+    'company_number_status', '_root', '@company_number_status_root@', NULL,
+    'Shared status choices for enterprise and VAT numbers.', 0
+)
+ON CONFLICT (list_key, "key") DO NOTHING;
+
+WITH root AS (
+    SELECT id FROM dd_varia WHERE list_key = 'company_number_status' AND "key" = '_root'
+)
+INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order)
+SELECT 'company_number_status', item.status_key, '@' || item.translation_key || '@', root.id,
+       'Shared status choice for company identification numbers.', item.sort_order
+FROM root
+CROSS JOIN (VALUES
+    ('known', 'company_number_status_known', 10),
+    ('pending', 'company_number_status_pending', 20),
+    ('not_applicable', 'company_number_status_not_applicable', 30),
+    ('unknown', 'company_number_status_unknown', 40)
+) AS item(status_key, translation_key, sort_order)
+ON CONFLICT (list_key, "key") DO NOTHING;
 UPDATE roles SET level = 10 WHERE lower(name) = 'beheerder' AND level = 200;
 UPDATE roles SET level = 110 WHERE lower(name) = 'apotheker' AND level = 200;
 UPDATE roles SET level = 120 WHERE lower(name) = 'medewerker' AND level = 200;

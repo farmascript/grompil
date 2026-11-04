@@ -41,17 +41,23 @@
                                 @company_enterprise_number@
                             </label>
                             <input class="form-control" id="company-enterprise" name="enterprise_number" maxlength="32" value="@enterprise_number_value@">
+                            <label class="form-label mt-2" for="company-enterprise-status">@company_enterprise_number_status@</label>
+                            <select class="form-select" id="company-enterprise-status" name="enterprise_number_status" required>
+                                @_enterprise_number_status_options_html@
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="company-vat">
                                 @company_vat_number@
                             </label>
                             <input class="form-control" id="company-vat" name="vat_number" maxlength="32" value="@vat_number_value@">
-                            <div class="form-text">
-                                @no_vat_number@
-                            </div>
+                            <label class="form-label mt-2" for="company-vat-status">@company_vat_number_status@</label>
+                            <select class="form-select" id="company-vat-status" name="vat_number_status" required>
+                                @_vat_number_status_options_html@
+                            </select>
                         </div>
                     </div>
+                    <div class="form-text mt-2">@company_number_status_help@</div>
                     <div class="row g-3 mt-1">
                         <div class="col-md-8">
                             <label class="form-label" for="company-billing-email">
