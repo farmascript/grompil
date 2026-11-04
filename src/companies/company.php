@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04 15:59:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -118,8 +118,6 @@ $accountLinks = $identityHtml . $accountLinks;
 $pageContent = fn_templateRenderPath(fn_companySitePageTemplatePath($company, $page), [
     'company_name' => (string) $company['name'],
     'page_title' => $title,
-    '_page_help_html' => $slug === 'ariodante' && $page === 'home'
-        ? fn_dokuwikiIcon('extern', '511300') : '',
     '_page_body_html' => nl2br(e($bodyText)),
 ]);
 echo fn_templateRenderPath(fn_companySiteLayoutTemplatePath($company), [

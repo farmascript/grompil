@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Wed 2026-10-21 16:50:00
+ * @date_mut: Wed 2026-11-04 15:59:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -367,6 +367,10 @@ function fn_templateRenderPath(string $path, array $values = []): string
             $key = $match[1][0];
             $token = $match[0][0];
             $offset = $match[0][1];
+
+            if (preg_match('/^_page_help_html_(users|dev|testers|extern)_([0-9]+)$/D', $key, $helpMatch) === 1) {
+                return fn_dokuwikiIcon($helpMatch[1], $helpMatch[2]);
+            }
 
             if (array_key_exists($key, $values)) {
                 return str_starts_with($key, '_')
