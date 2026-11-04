@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:27:16
- * @date_mut: Wed 2026-11-04 21:11:55
+ * @date_mut: Wed 2026-11-04 21:18:21
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -276,7 +276,7 @@ CREATE INDEX IF NOT EXISTS dd_varia_lookup_idx
     ON dd_varia (list_key, parent_id, is_active, sort_order, id);
 
 INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order)
-SELECT DISTINCT item.list_key, '_root', '@dd_varia_root@', NULL,
+SELECT DISTINCT item.list_key, '_root', '@dd_varia_root@', NULL::BIGINT,
        'Root entry for this lookup list.', 0
 FROM dd_varia AS item
 ON CONFLICT (list_key, "key") DO NOTHING;

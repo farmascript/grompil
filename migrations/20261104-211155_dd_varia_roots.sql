@@ -2,7 +2,7 @@
 BEGIN;
 
 INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order)
-SELECT DISTINCT item.list_key, '_root', '@dd_varia_root@', NULL,
+SELECT DISTINCT item.list_key, '_root', '@dd_varia_root@', NULL::BIGINT,
        'Root entry for this lookup list.', 0
 FROM dd_varia AS item
 ON CONFLICT (list_key, "key") DO NOTHING;

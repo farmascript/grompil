@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Wed 2026-11-04 21:11:55
+ * @date_mut: Wed 2026-11-04 21:25:09
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -385,7 +385,7 @@ if ($editingId > 0) {
     };
     $collectDescendants($editingId);
 }
-$addParentOptions = static function (?int $parentId, int $depth) use (&$addParentOptions, &$parentOptionsHtml, $childrenByParent, $rowsById, $descendantIds, $editingId, $formValues): void {
+$addParentOptions = static function (?int $parentId, int $depth) use (&$addParentOptions, &$parentOptionsHtml, $childrenByParent, $rowsById, $descendantIds, $editingId, $formValues, $selectedList): void {
     foreach ($childrenByParent[$parentId === null ? 'root' : (string) $parentId] ?? [] as $rowId) {
         if ($rowId === $editingId || isset($descendantIds[$rowId])) {
             continue;
@@ -396,14 +396,15 @@ $addParentOptions = static function (?int $parentId, int $depth) use (&$addParen
         }
         $selected = (string) $formValues['parent_id'] === (string) $rowId ? ' selected' : '';
         $prefix = str_repeat('— ', min($depth, 12));
+        $parentLabel = (string) $row['key'] === '_root' ? $selectedList : (string) $row['key'];
         $parentOptionsHtml .= '<option value="' . $rowId . '"' . $selected . '>'
-            . e($prefix . $row['key']) . '</option>';
+            . e($prefix . $parentLabel) . '</option>';
         $addParentOptions($rowId, $depth + 1);
     }
 };
 $addParentOptions(null, 0);
 
-$renderRows = static function (?int $parentId, int $depth) use (&$renderRows, $childrenByParent, $rowsById): string {
+$renderRows = static function (?int $parentId, int $depth) use (&$renderRows, $childrenByParent, $rowsById, $selectedList): string {
     $html = '';
     foreach ($childrenByParent[$parentId === null ? 'root' : (string) $parentId] ?? [] as $rowId) {
         $row = $rowsById[$rowId];
@@ -414,9 +415,11 @@ $renderRows = static function (?int $parentId, int $depth) use (&$renderRows, $c
             . '<input type="hidden" name="list_key" value="' . e((string) $row['list_key']) . '">'
             . '<button class="btn btn-link btn-sm text-danger p-0" type="submit">' . e(fn_t('dd_varia_remove')) . '</button>'
             . '</form>';
+        $parentKey = $row['parent_id'] === null ? null : (string) $rowsById[$row['parent_id']]['key'];
+        $parentLabel = $parentKey === null ? '—' : ($parentKey === '_root' ? $selectedList : $parentKey);
         $html .= fn_templateRender('dd_varia_row.html', [
             'dd_varia_key' => (string) $row['key'],
-            'dd_varia_parent' => $row['parent_id'] === null ? '—' : (string) $rowsById[$row['parent_id']]['key'],
+            'dd_varia_parent' => $parentLabel,
             'dd_varia_label' => fn_t(substr((string) $row['content'], 1, -1)),
             'dd_varia_info' => (string) $row['info'],
             'dd_varia_order' => (string) $row['sort_order'],
