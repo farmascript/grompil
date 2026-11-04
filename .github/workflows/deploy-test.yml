@@ -43,6 +43,26 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Check remote shell output and rsync
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          probe_output="$(ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" 'printf "__GROMPIL_SSH_PROBE__\n"; command -v rsync')"
+          printf 'Remote SSH probe output:\n%s\n' "$probe_output"
+          first_line="$(printf '%s\n' "$probe_output" | head -n 1)"
+          last_line="$(printf '%s\n' "$probe_output" | tail -n 1)"
+          if [ "$first_line" != '__GROMPIL_SSH_PROBE__' ]; then
+            echo 'Unexpected output preceded the remote command; rsync would fail.' >&2
+            exit 1
+          fi
+          if [ "$last_line" = '__GROMPIL_SSH_PROBE__' ] || [ -z "$last_line" ]; then
+            echo 'The remote server did not report an rsync executable.' >&2
+            exit 1
+          fi
+
       - name: Synchronize files to test site
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
