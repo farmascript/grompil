@@ -123,6 +123,10 @@ foreach ($templateFiles as $entry) {
             continue;
         }
 
+        if (preg_match('/^_page_help_html_(users|dev|testers|extern)_[0-9]+$/D', $key) === 1) {
+            continue;
+        }
+
         if (str_starts_with($key, '_')) {
             $errors[] = "{$relativePath}:{$line}: templatewaarde @{$key}@ komt niet voor als PHP-templatewaarde.";
             continue;
