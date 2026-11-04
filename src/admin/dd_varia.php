@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Wed 2026-11-04 21:25:09
+ * @date_mut: Wed 2026-11-04 21:36:02
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -61,11 +61,11 @@ function dd_varia_admin_redirect(string $key, string $type, string $listKey): ne
 function dd_varia_admin_translation_key(string $listKey, string $key): string
 {
     $normalizedKey = $key === '_root' ? 'root' : $key;
-    $translationKey = 'ddv.' . $listKey . '.' . $normalizedKey;
+    $translationKey = 'ddv_' . $listKey . '_' . $normalizedKey;
     if (strlen($translationKey) <= 120) {
         return $translationKey;
     }
-    return 'ddv.' . substr($listKey, 0, 40) . '.' . substr($normalizedKey, 0, 40) . '.'
+    return 'ddv_' . substr($listKey, 0, 40) . '_' . substr($normalizedKey, 0, 40) . '_'
         . substr(md5($listKey . ':' . $normalizedKey), 0, 16);
 }
 

@@ -8,13 +8,13 @@ For an existing database, run `migrations/20261030-120000_dd_varia.sql`, then ru
 
 For an existing `dd_varia` table whose values have no `_root` row, run `migrations/20261104-211155_dd_varia_roots.sql` as the database owner. It creates one root for each existing list and attaches previously root-level values to it without deleting their labels or IDs.
 
-The root migration also changes numeric `@ddv_123@` handles to readable tokens such as `@ddv.media.facebook@`, while preserving the four translations in `substitutions`. After running it, use the normal translation import/export workflow for that database so the language files reflect the renamed keys.
+After the root migration, run `migrations/20261104-213519_dd_varia_content_keys.sql`. It gives each list root a distinct token such as `@dd_varia_root_media@` and normalizes item tokens to underscore-separated names such as `@ddv_address_mevr@`. It moves existing translation values in `substitutions` to the new keys. Then use the normal translation import/export workflow for that database so the new root labels and item tokens are available in the language files.
 
 ## Lists and hierarchy
 
 `list_key` identifies a separate collection, such as `media` or `company_number_status`. It is the namespace for one tree, not a node in the hierarchy. Each collection starts with a root row whose key is `_root` and whose `parent_id` is null. Every value in that collection is a child or descendant of the root and points to its parent through `parent_id`. Keys are unique within a list. `sort_order` controls the order among siblings.
 
-Use the `dd-varia.php` platform management page to create and edit values. When adding an item to a list with a root, the form selects that root as the default parent. It collects the label in NL, FR, EN, and DE. The application creates a readable translation token based on `list_key` and `key` in `content`, saves the four translations in the platform-wide translation records, and publishes the language files. `info` is an optional internal note. `updated_at` records the last edit.
+Use the `dd-varia.php` platform management page to create and edit values. When adding an item to a list with a root, the form selects that root as the default parent. It collects the label in NL, FR, EN, and DE. The application creates an underscore-separated translation token based on `list_key` and `key` in `content`, saves the four translations in the platform-wide translation records, and publishes the language files. `info` is an optional internal note. `updated_at` records the last edit.
 
 Removing a value deactivates it rather than deleting it, preserving references already stored by the application. A value with active child items cannot be deactivated until those children are deactivated.
 
