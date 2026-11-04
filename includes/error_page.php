@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Wed 2026-11-04 16:15:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -34,75 +34,9 @@ function grompil_show_error(int $status, int $code, string $message, string $tit
     if (!in_array($language, ['NL', 'FR', 'EN', 'DE'], true)) {
         $language = 'NL';
     }
-    $catalog = [
-        12544 => [
-            'NL' => ['Website niet beschikbaar', 'Deze website is niet beschikbaar. Controleer de link of neem contact op met het bedrijf.'],
-            'FR' => ['Site web indisponible', 'Ce site web est indisponible. Vérifiez le lien ou contactez l’entreprise.'],
-            'EN' => ['Website unavailable', 'This website is unavailable. Check the link or contact the company.'],
-            'DE' => ['Website nicht verfügbar', 'Diese Website ist nicht verfügbar. Prüfen Sie den Link oder wenden Sie sich an das Unternehmen.'],
-        ],
-        18403 => [
-            'NL' => ['Aanmelden niet mogelijk', 'Het bedrijfsinlogscherm is niet beschikbaar. Controleer de bedrijfslink.'],
-            'FR' => ['Connexion impossible', 'L’écran de connexion de cette entreprise est indisponible. Vérifiez le lien.'],
-            'EN' => ['Sign-in unavailable', 'The company sign-in page is unavailable. Check the company link.'],
-            'DE' => ['Anmeldung nicht möglich', 'Die Anmeldeseite des Unternehmens ist nicht verfügbar. Prüfen Sie den Link.'],
-        ],
-        21607 => [
-            'NL' => ['Aanvraag niet toegestaan', 'Gebruik de afmeldknop in de applicatie om af te melden.'],
-            'FR' => ['Requête non autorisée', 'Utilisez le bouton de déconnexion de l’application pour vous déconnecter.'],
-            'EN' => ['Request not allowed', 'Use the sign-out button in the application to sign out.'],
-            'DE' => ['Anfrage nicht zulässig', 'Verwenden Sie zum Abmelden die Schaltfläche in der Anwendung.'],
-        ],
-        32719 => [
-            'NL' => ['Dienst tijdelijk niet beschikbaar', 'De databaseconfiguratie ontbreekt. Neem contact op met de systeembeheerder.'],
-            'FR' => ['Service temporairement indisponible', 'La configuration de la base de données est manquante. Contactez l’administrateur système.'],
-            'EN' => ['Service temporarily unavailable', 'The database configuration is missing. Contact the system administrator.'],
-            'DE' => ['Dienst vorübergehend nicht verfügbar', 'Die Datenbankkonfiguration fehlt. Wenden Sie sich an den Systemadministrator.'],
-        ],
-        33826 => [
-            'NL' => ['Dienst tijdelijk niet beschikbaar', 'De database is momenteel niet bereikbaar. Probeer het later opnieuw.'],
-            'FR' => ['Service temporairement indisponible', 'La base de données est momentanément inaccessible. Réessayez plus tard.'],
-            'EN' => ['Service temporarily unavailable', 'The database is currently unreachable. Please try again later.'],
-            'DE' => ['Dienst vorübergehend nicht verfügbar', 'Die Datenbank ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut.'],
-        ],
-        40152 => [
-            'NL' => ['Geen toegang', 'Je hebt geen toegang tot deze pagina.'],
-            'FR' => ['Accès refusé', 'Vous n’avez pas accès à cette page.'],
-            'EN' => ['Access denied', 'You do not have access to this page.'],
-            'DE' => ['Zugriff verweigert', 'Sie haben keinen Zugriff auf diese Seite.'],
-        ],
-        45878 => [
-            'NL' => ['Ongeldige aanvraag', 'De aanvraag kon niet worden gecontroleerd. Vernieuw de pagina en probeer opnieuw.'],
-            'FR' => ['Requête invalide', 'La requête n’a pas pu être vérifiée. Actualisez la page et réessayez.'],
-            'EN' => ['Invalid request', 'The request could not be verified. Refresh the page and try again.'],
-            'DE' => ['Ungültige Anfrage', 'Die Anfrage konnte nicht überprüft werden. Aktualisieren Sie die Seite und versuchen Sie es erneut.'],
-        ],
-        50631 => [
-            'NL' => ['Registratie niet beschikbaar', 'Registratie is tijdelijk niet beschikbaar. Probeer het later opnieuw.'],
-            'FR' => ['Inscription indisponible', 'L’inscription est temporairement indisponible. Réessayez plus tard.'],
-            'EN' => ['Registration unavailable', 'Registration is temporarily unavailable. Please try again later.'],
-            'DE' => ['Registrierung nicht verfügbar', 'Die Registrierung ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.'],
-        ],
-        61724 => [
-            'NL' => ['Controle mislukt', 'De bestaande vertalingen konden niet worden gecontroleerd. Probeer het later opnieuw.'],
-            'FR' => ['Vérification échouée', 'Les traductions existantes n’ont pas pu être vérifiées. Réessayez plus tard.'],
-            'EN' => ['Check failed', 'The existing translations could not be checked. Please try again later.'],
-            'DE' => ['Prüfung fehlgeschlagen', 'Die vorhandenen Übersetzungen konnten nicht geprüft werden. Bitte versuchen Sie es später erneut.'],
-        ],
-        72805 => [
-            'NL' => ['Pagina niet beschikbaar', 'Een paginaonderdeel kon niet worden geladen. Neem contact op met de beheerder.'],
-            'FR' => ['Page indisponible', 'Un élément de la page n’a pas pu être chargé. Contactez l’administrateur.'],
-            'EN' => ['Page unavailable', 'A page component could not be loaded. Contact the administrator.'],
-            'DE' => ['Seite nicht verfügbar', 'Ein Seitenelement konnte nicht geladen werden. Wenden Sie sich an den Administrator.'],
-        ],
-        86142 => [
-            'NL' => ['Keuze niet mogelijk', 'Deze keuze is niet mogelijk zolang je voor een bedrijf werkt. Keer terug naar platformbeheer en probeer het opnieuw.'],
-            'FR' => ['Choix impossible', 'Ce choix n’est pas disponible lorsque vous travaillez pour une entreprise. Retournez à l’administration de la plateforme et réessayez.'],
-            'EN' => ['Choice unavailable', 'This choice is unavailable while you are working for a company. Return to platform administration and try again.'],
-            'DE' => ['Auswahl nicht möglich', 'Diese Auswahl ist nicht verfügbar, solange Sie für ein Unternehmen arbeiten. Kehren Sie zur Plattformverwaltung zurück und versuchen Sie es erneut.'],
-        ],
-    ];
-    [$title, $message] = $catalog[$code][$language] ?? [$title, $message];
+    $translations = $GLOBALS['grompilTranslations'] ?? fn_readLanguageFile($language);
+    $title = (string) ($translations['err_' . $code . '_title'] ?? $title);
+    $message = (string) ($translations['err_' . $code] ?? $message);
     $labels = [
         'NL' => ['Meldingsnummer', 'Naar manager', 'Startpagina'],
         'FR' => ['Numéro de référence', 'Accéder au gestionnaire', 'Accueil'],

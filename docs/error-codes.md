@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04 16:15:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -22,7 +22,10 @@ Meldingsnummers zijn vaste identificaties van foutsoorten. Gebruik hetzelfde num
 | Nummer | Betekenis |
 |---:|---|
 | 12544 | Bedrijf of website niet beschikbaar |
+| 12545 | Registratie vereist een bedrijfswebsite |
 | 18403 | Aanmelden bij dit bedrijf niet mogelijk |
+| 18404 | Wachtwoordherstel voor dit bedrijf niet mogelijk |
+| 18405 | Wachtwoord opnieuw instellen niet mogelijk |
 | 21607 | Aanvraagmethode niet toegestaan |
 | 32719 | Databaseconfiguratie ontbreekt |
 | 33826 | Database niet bereikbaar |
@@ -34,4 +37,10 @@ Meldingsnummers zijn vaste identificaties van foutsoorten. Gebruik hetzelfde num
 | 86142 | Keuze niet mogelijk in actieve bedrijfscontext |
 
 Ken nieuwe nummers toe door deze lijst te controleren en een nog ongebruikt nummer van vijf cijfers vast te leggen.
+
+De foutpagina haalt de vertaalde uitleg op uit `err_<nummer>` en de titel uit
+`err_<nummer>_title` in de taalbestanden. Voeg beide sleutels toe aan NL, FR,
+EN en DE wanneer je een foutnummer toevoegt. De tekstargumenten van
+`grompil_show_error()` blijven terugvalwaarden voor fouten waarvoor nog geen
+vertaalsleutels bestaan.
 

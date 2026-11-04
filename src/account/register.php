@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:15:50
- * @date_mut: Wed 2026-10-21 20:45:00
+ * @date_mut: Wed 2026-11-04 16:15:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -25,7 +25,7 @@ if ($signedInUser !== null) {
 
 $registrationCompany = resolve_company_slug(trim((string) ($_GET['c'] ?? '')));
 if ($registrationCompany === null) {
-    grompil_show_error(404, 12544, 'Open eerst de publieke website van een bedrijf om te registreren.', 'Bedrijf niet beschikbaar');
+    grompil_show_error(404, 12545, 'Open eerst de publieke website van een bedrijf om te registreren.', 'Registratie vereist een bedrijfswebsite');
 }
 set_database_tenant_context((int) $registrationCompany['id'], 0, false);
 

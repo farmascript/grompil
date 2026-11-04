@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Wed 2026-11-04 16:15:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -25,7 +25,7 @@ header('Referrer-Policy: no-referrer');
 $slug = trim((string) ($_GET['c'] ?? ''));
 $company = $slug === '' ? null : resolve_company_slug($slug, false);
 if ($slug !== '' && $company === null) {
-    grompil_show_error(404, 18403, fn_t('recovery_company_unavailable'), fn_t('recovery_reset_title'));
+    grompil_show_error(404, 18405, fn_t('recovery_company_unavailable'), fn_t('recovery_reset_title'));
 }
 $companyId = $company ? (int) $company['id'] : null;
 $scope = $companyId ?? 0;
