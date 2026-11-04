@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Sat 2026-10-31 21:23:17
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -77,6 +77,8 @@ function db(): PgSql\Connection
 
     return $connection;
 }
+
+require_once __DIR__ . '/database_queries.php';
 
 /**
  * Escapes text for safe insertion into HTML.

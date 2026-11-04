@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Fri 2026-10-30
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -74,22 +74,22 @@ function dd_varia_get_options(string $listKey, ?string $parentKey = null, bool $
         return $cache[$cacheKey];
     }
 
-    $result = pg_query_params(
-        db(),
-        'SELECT item.id, item.list_key, item."key", item.content, item.parent_id,
-                parent."key" AS parent_key, item.info, item.sort_order, item.is_active,
-                item.updated_at
-         FROM dd_varia AS item
-         LEFT JOIN dd_varia AS parent
-           ON parent.list_key = item.list_key AND parent.id = item.parent_id
-         WHERE item.list_key = $1
-           AND (($2::VARCHAR IS NULL AND item.parent_id IS NULL) OR parent."key" = $2)
-           AND ($3::BOOLEAN OR item.is_active)
-         ORDER BY item.sort_order, item."key", item.id',
-        [$listKey, $parentKey, $includeInactive ? 'true' : 'false']
-    );
-    if (!$result) {
-        error_log('Platform lookup values could not be loaded.');
+    try {
+        $result = db_query_params(
+            'dd_varia.options',
+            'SELECT item.id, item.list_key, item."key", item.content, item.parent_id,
+                    parent."key" AS parent_key, item.info, item.sort_order, item.is_active,
+                    item.updated_at
+             FROM dd_varia AS item
+             LEFT JOIN dd_varia AS parent
+               ON parent.list_key = item.list_key AND parent.id = item.parent_id
+             WHERE item.list_key = $1
+               AND (($2::VARCHAR IS NULL AND item.parent_id IS NULL) OR parent."key" = $2)
+               AND ($3::BOOLEAN OR item.is_active)
+             ORDER BY item.sort_order, item."key", item.id',
+            [$listKey, $parentKey, $includeInactive ? 'true' : 'false']
+        );
+    } catch (GrompilDatabaseQueryException) {
         return $cache[$cacheKey] = [];
     }
 
