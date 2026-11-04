@@ -105,6 +105,7 @@ $arrSubst = array (
   'dd_varia_table_status' => 'Status',
   'dd_varia_table_actions' => 'Acties',
   'dd_varia_remove' => 'Verwijderen',
+  'dd_varia_root' => 'Hoofdingang van de lijst',
   'dd_varia_no_rows' => 'Deze lijst bevat nog geen waarden.',
   'dd_varia_invalid' => 'Controleer de lijstcode, sleutel, bovenliggend item, volgorde en vier vertalingen.',
   'dd_varia_saved' => 'De waarde en vertalingen zijn opgeslagen.',

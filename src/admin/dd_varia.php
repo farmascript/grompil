@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Fri 2026-10-30
+ * @date_mut: Wed 2026-11-04 21:11:55
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -52,15 +52,45 @@ function dd_varia_admin_redirect(string $key, string $type, string $listKey): ne
 }
 
 /**
- * Validate and save the four platform-wide translations for one lookup row.
+ * Build a readable, stable translation key for one list value.
  *
- * @param int $id The lookup row ID.
+ * @param string $listKey The lookup-list identifier.
+ * @param string $key The stable item key.
+ * @return string
+ */
+function dd_varia_admin_translation_key(string $listKey, string $key): string
+{
+    $normalizedKey = $key === '_root' ? 'root' : $key;
+    $translationKey = 'ddv.' . $listKey . '.' . $normalizedKey;
+    if (strlen($translationKey) <= 120) {
+        return $translationKey;
+    }
+    return 'ddv.' . substr($listKey, 0, 40) . '.' . substr($normalizedKey, 0, 40) . '.'
+        . substr(md5($listKey . ':' . $normalizedKey), 0, 16);
+}
+
+/**
+ * Return the translation key stored in a dd_varia content token.
+ *
+ * @param string $content The token stored in the content column.
+ * @return string
+ */
+function dd_varia_admin_translation_key_from_content(string $content): string
+{
+    return preg_match('/^@([A-Za-z0-9_.-]{1,120})@$/', $content, $match) === 1
+        ? $match[1]
+        : '';
+}
+
+/**
+ * Save the four platform-wide translations for one lookup row.
+ *
+ * @param string $translationKey The stable translation key for the row.
  * @param array $values The translation values by language code.
  * @return bool
  */
-function dd_varia_admin_save_translations(int $id, array $values): bool
+function dd_varia_admin_save_translations(string $translationKey, array $values): bool
 {
-    $translationKey = 'ddv_' . $id;
     foreach (['NL', 'FR', 'EN', 'DE'] as $language) {
         $result = pg_query_params(
             db(),
@@ -218,7 +248,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageKey = 'dd_varia_invalid';
         $messageType = 'danger';
     } else {
-        $contentToken = $editingId > 0 ? (string) $existing['content'] : '@ddv_pending@';
+        $translationKey = $editingId > 0
+            ? dd_varia_admin_translation_key_from_content((string) $existing['content'])
+            : dd_varia_admin_translation_key($listKey, $key);
+        $contentToken = '@' . $translationKey . '@';
         $started = (bool) pg_query(db(), 'BEGIN');
         if ($started && $editingId > 0) {
             $saved = pg_query_params(
@@ -240,21 +273,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $inserted = $saved ? pg_fetch_assoc($saved) : false;
             $rowId = is_array($inserted) ? (int) $inserted['id'] : 0;
-            if ($rowId > 0) {
-                $contentToken = '@ddv_' . $rowId . '@';
-                $saved = pg_query_params(
-                    db(),
-                    'UPDATE dd_varia SET content = $1 WHERE id = $2',
-                    [$contentToken, $rowId]
-                );
-            }
         } else {
             $saved = false;
             $rowId = 0;
         }
 
         if ($saved && $rowId > 0) {
-            $saved = dd_varia_admin_save_translations($rowId, $translationValues);
+            $saved = $translationKey !== ''
+                && dd_varia_admin_save_translations($translationKey, $translationValues);
         }
         if ($saved && $rowId > 0 && pg_query(db(), 'COMMIT')) {
             dd_varia_clear_options_cache();
@@ -301,6 +327,15 @@ if ($selectedList !== '' && preg_match('/^[a-z][a-z0-9_-]{0,79}$/', $selectedLis
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $editingId === 0 && $formValues['parent_id'] === '') {
+    foreach ($rowsById as $row) {
+        if ((string) $row['key'] === '_root' && $row['parent_id'] === null && $row['is_active'] === 't') {
+            $formValues['parent_id'] = (string) $row['id'];
+            break;
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $editId = filter_var($_GET['edit'] ?? null, FILTER_VALIDATE_INT);
     if ($editId !== false && $editId !== null && (int) $editId > 0) {
@@ -314,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $formValues['info'] = (string) $editRow['info'];
             $formValues['sort_order'] = (string) $editRow['sort_order'];
             $formValues['is_active'] = $editRow['is_active'] === 't';
-            $translationKey = 'ddv_' . $editingId;
+            $translationKey = dd_varia_admin_translation_key_from_content((string) $editRow['content']);
             $translationResult = pg_query_params(
                 db(),
                 'SELECT code, "value" FROM substitutions

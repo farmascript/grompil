@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:27:16
- * @date_mut: Wed 2026-11-04 18:34:10
+ * @date_mut: Wed 2026-11-04 21:11:55
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -274,6 +274,21 @@ CREATE TABLE IF NOT EXISTS dd_varia (
 COMMENT ON TABLE dd_varia IS 'Platform-managed hierarchical lookup values. content stores an @translation_key@ token.';
 CREATE INDEX IF NOT EXISTS dd_varia_lookup_idx
     ON dd_varia (list_key, parent_id, is_active, sort_order, id);
+
+INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order)
+SELECT DISTINCT item.list_key, '_root', '@dd_varia_root@', NULL,
+       'Root entry for this lookup list.', 0
+FROM dd_varia AS item
+ON CONFLICT (list_key, "key") DO NOTHING;
+
+UPDATE dd_varia AS item
+SET parent_id = root.id, updated_at = now()
+FROM dd_varia AS root
+WHERE item.list_key = root.list_key
+  AND root."key" = '_root'
+  AND root.parent_id IS NULL
+  AND item.id <> root.id
+  AND item.parent_id IS NULL;
 
 INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order)
 VALUES (

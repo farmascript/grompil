@@ -105,6 +105,7 @@ $arrSubst = array (
   'dd_varia_table_status' => 'Status',
   'dd_varia_table_actions' => 'Aktionen',
   'dd_varia_remove' => 'Entfernen',
+  'dd_varia_root' => 'Listenstamm',
   'dd_varia_no_rows' => 'Diese Liste enthält noch keine Werte.',
   'dd_varia_invalid' => 'Prüfen Sie Listencode, Schlüssel, übergeordnetes Element, Reihenfolge und alle vier Übersetzungen.',
   'dd_varia_saved' => 'Der Wert und seine Übersetzungen wurden gespeichert.',
