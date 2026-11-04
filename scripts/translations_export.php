@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:02:45
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -22,6 +22,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once dirname(__DIR__) . '/includes/database_config.php';
+require_once dirname(__DIR__) . '/includes/database_queries.php';
 
 $languages = array_slice($argv, 1) ?: ['NL', 'FR', 'EN', 'DE'];
 $connectionString = grompil_database_connection_string();
@@ -42,12 +43,14 @@ foreach ($languages as $language) {
         fwrite(STDERR, "Invalid language code: {$language}\n");
         exit(1);
     }
-    $result = pg_query_params(
-        $connection,
-        'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
-        [$language]
-    );
-    if (!$result) {
+    try {
+        $result = db_query_params(
+            'translations_export.read_language',
+            'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
+            [$language],
+            $connection
+        );
+    } catch (GrompilDatabaseQueryException) {
         fwrite(STDERR, "Failed to fetch translations for {$language}.\n");
         exit(1);
     }

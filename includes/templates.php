@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Wed 2026-11-04 15:59:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -225,7 +225,15 @@ function fn_publishLanguageFile(string $target, string $content): bool
  */
 function fn_exportLanguageFile(string $language): bool
 {
-    $result = pg_query_params(db(), 'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"', [$language]);
+    try {
+        $result = db_query_params(
+            'translations.export_general',
+            'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
+            [$language]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
     if (!$result) {
         return false;
     }
@@ -254,11 +262,15 @@ function fn_exportLanguageFile(string $language): bool
  */
 function fn_exportCompanyLanguageFile(int $companyId, string $language): bool
 {
-    $result = pg_query_params(
-        db(),
-        'SELECT "key", "value" FROM substitutions WHERE company_id = $1 AND code = $2 ORDER BY "key"',
-        [$companyId, strtoupper($language)]
-    );
+    try {
+        $result = db_query_params(
+            'translations.export_company',
+            'SELECT "key", "value" FROM substitutions WHERE company_id = $1 AND code = $2 ORDER BY "key"',
+            [$companyId, strtoupper($language)]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
     if (!$result) {
         return false;
     }

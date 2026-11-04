@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -18,11 +18,18 @@ declare(strict_types=1);
 
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+$accountQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
 $user = require_login();
 $message = '';
 $acronym = '';
 $displayName = (string) ($user['display_name'] ?? '');
-$result = pg_query_params(db(), 'SELECT display_name, acronym, street, house_number, box_number, postal_code, city, country_code, address_reference_id, password_hash, must_change_password FROM users WHERE id = $1', [$user['id']]);
+$result = $accountQuery('account.load', 'SELECT display_name, acronym, street, house_number, box_number, postal_code, city, country_code, address_reference_id, password_hash, must_change_password FROM users WHERE id = $1', [$user['id']]);
 $account = $result ? pg_fetch_assoc($result) : false;
 $address = [
     'street' => (string) ($user['street'] ?? ''),
@@ -81,8 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $profileValid = false;
                 } elseif ($profileValid) {
                     $scopeResult = $user['company_id'] === null
-                        ? pg_query_params(
-                            db(),
+                        ? $accountQuery(
+                            'account.check_acronym_platform',
                             'SELECT id FROM users
                              WHERE company_id IS NULL AND id <> $1
                                AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
@@ -90,8 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                              LIMIT 1',
                             [$user['id'], $acronym, $user['email']]
                         )
-                        : pg_query_params(
-                            db(),
+                        : $accountQuery(
+                            'account.check_acronym_company',
                             'SELECT id FROM users
                              WHERE company_id = $1 AND id <> $2
                                AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
@@ -107,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if ($profileValid) {
                 if ($profileSubmitted) {
-                    $saved = pg_query_params(
-                        db(),
+                    $saved = $accountQuery(
+                        'account.change_password_and_profile',
                         'UPDATE users SET password_hash = $1, must_change_password = FALSE,
                             display_name = $2, acronym = NULLIF($3, \'\'), street = $4, house_number = $5,
                             box_number = $6, postal_code = $7, city = $8, country_code = $9,
@@ -119,8 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $address['address_reference_id'], $user['id']]
                     );
                 } else {
-                    $saved = pg_query_params(
-                        db(),
+                    $saved = $accountQuery(
+                        'account.change_password',
                         'UPDATE users SET password_hash = $1, must_change_password = FALSE, updated_at = now() WHERE id = $2',
                         [password_hash($newPassword, PASSWORD_DEFAULT), $user['id']]
                     );
@@ -146,8 +153,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_invalid')) . '</div>';
         } else {
             $scopeResult = $user['company_id'] === null
-                ? pg_query_params(
-                    db(),
+                ? $accountQuery(
+                    'account.check_acronym_platform',
                     'SELECT id FROM users
                      WHERE company_id IS NULL AND id <> $1
                        AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
@@ -155,8 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      LIMIT 1',
                     [$user['id'], $acronym, $user['email']]
                 )
-                : pg_query_params(
-                    db(),
+                : $accountQuery(
+                    'account.check_acronym_company',
                     'SELECT id FROM users
                      WHERE company_id = $1 AND id <> $2
                        AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
@@ -167,8 +174,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$scopeResult || pg_num_rows($scopeResult) > 0) {
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_taken')) . '</div>';
             } else {
-                $saved = pg_query_params(
-                    db(),
+                $saved = $accountQuery(
+                    'account.save_profile',
                     "UPDATE users SET display_name = $1, acronym = NULLIF($2, ''), street = $3,
                         house_number = $4, box_number = $5, postal_code = $6, city = $7,
                         country_code = $8, address_reference_id = $9, updated_at = now() WHERE id = $10",

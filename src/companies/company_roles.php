@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:49
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -48,21 +48,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageKey = $name === '' ? 'role_name_required' : 'company_role_level_invalid';
     } else {
         $permissionsJson = json_encode($permissions, JSON_THROW_ON_ERROR);
-        if ($id > 0) {
-            $result = pg_query_params(
-                db(),
-                'UPDATE company_roles SET name=$1, description=$2, level=$3,
-                    permissions=$4::jsonb, updated_at=now()
-                 WHERE id=$5 AND company_id=$6 AND is_system=FALSE',
-                [$name, $description, $level, $permissionsJson, $id, $company['id']]
-            );
-        } else {
-            $result = pg_query_params(
-                db(),
-                'INSERT INTO company_roles (company_id, name, description, level, permissions)
-                 VALUES ($1, $2, $3, $4, $5::jsonb)',
-                [$company['id'], $name, $description, $level, $permissionsJson]
-            );
+        try {
+            if ($id > 0) {
+                $result = db_query_params(
+                    'company_roles.update',
+                    'UPDATE company_roles SET name=$1, description=$2, level=$3,
+                        permissions=$4::jsonb, updated_at=now()
+                     WHERE id=$5 AND company_id=$6 AND is_system=FALSE',
+                    [$name, $description, $level, $permissionsJson, $id, $company['id']]
+                );
+            } else {
+                $result = db_query_params(
+                    'company_roles.create',
+                    'INSERT INTO company_roles (company_id, name, description, level, permissions)
+                     VALUES ($1, $2, $3, $4, $5::jsonb)',
+                    [$company['id'], $name, $description, $level, $permissionsJson]
+                );
+            }
+        } catch (GrompilDatabaseQueryException) {
+            $result = false;
         }
         $messageKey = $result ? 'company_role_saved' : 'company_role_save_failed';
     }
@@ -70,11 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $editing = null;
 if (isset($_GET['edit'])) {
-    $result = pg_query_params(
-        db(),
-        'SELECT * FROM company_roles WHERE id=$1 AND company_id=$2 AND is_system=FALSE',
-        [(int) $_GET['edit'], $company['id']]
-    );
+    try {
+        $result = db_query_params(
+            'company_roles.load_for_edit',
+            'SELECT * FROM company_roles WHERE id=$1 AND company_id=$2 AND is_system=FALSE',
+            [(int) $_GET['edit'], $company['id']]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        $result = false;
+    }
     $editing = $result ? pg_fetch_assoc($result) : null;
 }
 
@@ -89,15 +97,19 @@ foreach ($permissionCatalog as $permission => $label) {
 }
 
 $rows = '';
-$result = pg_query_params(
-    db(),
-    'SELECT cr.*, count(cu.user_id) AS users_count
-     FROM company_roles AS cr
-     LEFT JOIN company_users AS cu ON cu.company_id=cr.company_id AND cu.company_role_id=cr.id
-     WHERE cr.company_id=$1 AND cr.level > 0 AND cr.level < 200
-     GROUP BY cr.id ORDER BY cr.is_system DESC, cr.level, cr.name',
-    [$company['id']]
-);
+try {
+    $result = db_query_params(
+        'company_roles.list',
+        'SELECT cr.*, count(cu.user_id) AS users_count
+         FROM company_roles AS cr
+         LEFT JOIN company_users AS cu ON cu.company_id=cr.company_id AND cu.company_role_id=cr.id
+         WHERE cr.company_id=$1 AND cr.level > 0 AND cr.level < 200
+         GROUP BY cr.id ORDER BY cr.is_system DESC, cr.level, cr.name',
+        [$company['id']]
+    );
+} catch (GrompilDatabaseQueryException) {
+    $result = false;
+}
 while ($result && $role = pg_fetch_assoc($result)) {
     $permissionKeys = json_decode($role['permissions'], true) ?: [];
     $labels = array_map(

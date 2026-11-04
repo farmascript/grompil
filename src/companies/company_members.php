@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -19,12 +19,19 @@ declare(strict_types=1);
 
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+$companyMemberQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
 $actor = require_login();
 $isPlatformOperator = is_platform_operator($actor);
 $tenant = null;
 
 if ($isPlatformOperator) {
-    $companiesResult = pg_query(db(), 'SELECT id, name FROM companies ORDER BY name');
+    $companiesResult = $companyMemberQuery('company_members.company_options', 'SELECT id, name FROM companies ORDER BY name');
     $companies = [];
     while ($companiesResult && $companyRow = pg_fetch_assoc($companiesResult)) {
         $companies[] = $companyRow;
@@ -61,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('company_not_found')) . '</div>';
     } elseif ($action === 'add' && $isPlatformOperator) {
         $roleId = (int) ($_POST['company_role_id'] ?? 0);
-        $selectedRoleResult = $roleId > 0 ? pg_query_params(
-            db(),
+        $selectedRoleResult = $roleId > 0 ? $companyMemberQuery(
+            'company_members.add.validate_role',
             'SELECT id, name FROM company_roles WHERE company_id = $1 AND id = $2 AND level > 0 AND level < 200',
             [$companyId, $roleId]
         ) : false;
@@ -71,8 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '<div class="alert alert-warning" role="status">'
                 . e(fn_t('company_members_role_required')) . '</div>';
         } else {
-        $collisionResult = pg_query_params(
-            db(),
+        $collisionResult = $companyMemberQuery(
+            'company_members.add.check_collision',
             "SELECT 1
              FROM users AS target
              JOIN users AS existing ON existing.company_id = $1 AND existing.id <> target.id
@@ -90,9 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '<div class="alert alert-warning" role="status">'
                 . e(fn_t('company_member_already_exists')) . '</div>';
         } else {
-            pg_query(db(), 'BEGIN');
-            $claimResult = pg_query_params(
-                db(),
+            $companyMemberQuery('company_members.add.begin', 'BEGIN');
+            $claimResult = $companyMemberQuery(
+                'company_members.add.claim_user',
                 "UPDATE users AS u SET company_id = $2, updated_at = now()
                  FROM roles AS r
                  WHERE u.id = $1 AND u.company_id IS NULL AND u.role_id = r.id
@@ -112,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    )",
                 [$targetUserId, $companyId]
             );
-            $result = $claimResult && pg_affected_rows($claimResult) === 1 ? pg_query_params(
-                db(),
+            $result = $claimResult && pg_affected_rows($claimResult) === 1 ? $companyMemberQuery(
+                'company_members.add.membership',
                 "INSERT INTO company_users (
                     company_id, user_id, company_role_id, is_active,
                     approval_status, approved_at, approved_by
@@ -131,9 +138,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     updated_at = now()",
                 [$companyId, $targetUserId, $roleId, $actor['id']]
             ) : false;
-            $saved = $result && pg_affected_rows($result) > 0 && pg_query(db(), 'COMMIT');
+            $saved = $result && pg_affected_rows($result) > 0 && $companyMemberQuery('company_members.add.commit', 'COMMIT');
             if (!$saved) {
-                pg_query(db(), 'ROLLBACK');
+                $companyMemberQuery('company_members.add.rollback', 'ROLLBACK');
             }
             $message = $saved
                 ? '<div class="alert alert-success" role="status">' . e(fn_t('company_member_saved')) . '</div>'
@@ -142,8 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'role' && ($isPlatformOperator || $targetUserId !== (int) $actor['id'])) {
         $roleId = (int) ($_POST['company_role_id'] ?? 0);
-        $roleResult = $roleId > 0 ? pg_query_params(
-            db(),
+        $roleResult = $roleId > 0 ? $companyMemberQuery(
+            'company_members.change_role',
             'UPDATE company_users AS cu SET company_role_id = cr.id, updated_at = now()
              FROM company_roles AS cr
              WHERE cu.company_id = $1 AND cu.user_id = $2
@@ -157,9 +164,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             : '<div class="alert alert-danger" role="alert">' . e(fn_t('company_member_save_failed')) . '</div>';
     } elseif ($action === 'approve') {
         $roleId = (int) ($_POST['company_role_id'] ?? 0);
-        pg_query(db(), 'BEGIN');
-        $result = pg_query_params(
-            db(),
+        $companyMemberQuery('company_members.approve.begin', 'BEGIN');
+        $result = $companyMemberQuery(
+            'company_members.approve.membership',
             "UPDATE company_users AS cu SET company_role_id = cr.id,
                     is_active = TRUE, approval_status = 'approved',
                     approved_at = now(), approved_by = $4, updated_at = now()
@@ -171,41 +178,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             [$companyId, $targetUserId, $roleId, $actor['id']]
         );
         if ($result && pg_affected_rows($result) === 1) {
-            pg_query_params(
-                db(),
+            $companyMemberQuery(
+                'company_members.approve.user',
                 "UPDATE users SET is_active = TRUE, approval_status = 'approved',
                     approved_at = COALESCE(approved_at, now()),
                     approved_by = COALESCE(approved_by, $2), updated_at = now()
                  WHERE id = $1",
                 [$targetUserId, $actor['id']]
             );
-            $ok = (bool) pg_query(db(), 'COMMIT');
+            $ok = (bool) $companyMemberQuery('company_members.approve.commit', 'COMMIT');
         } else {
-            pg_query(db(), 'ROLLBACK');
+            $companyMemberQuery('company_members.approve.rollback', 'ROLLBACK');
             $ok = false;
         }
         $message = $ok
             ? '<div class="alert alert-success" role="status">' . e(fn_t('company_member_saved')) . '</div>'
             : '<div class="alert alert-danger" role="alert">' . e(fn_t('company_member_save_failed')) . '</div>';
     } elseif ($action === 'reject') {
-        pg_query(db(), 'BEGIN');
-        $result = pg_query_params(
-            db(),
+        $companyMemberQuery('company_members.reject.begin', 'BEGIN');
+        $result = $companyMemberQuery(
+            'company_members.reject.membership',
             "UPDATE company_users SET is_active = FALSE, approval_status = 'rejected',
                 approved_by = $3, updated_at = now()
              WHERE company_id = $1 AND user_id = $2 AND approval_status = 'pending'",
             [$companyId, $targetUserId, $actor['id']]
         );
         if ($result && pg_affected_rows($result) === 1) {
-            pg_query_params(
-                db(),
+            $companyMemberQuery(
+                'company_members.reject.user',
                 "UPDATE users SET is_active = FALSE, approval_status = 'rejected', updated_at = now()
                  WHERE id = $1 AND company_id = $2 AND approval_status = 'pending'",
                 [$targetUserId, $companyId]
             );
-            $rejected = (bool) pg_query(db(), 'COMMIT');
+            $rejected = (bool) $companyMemberQuery('company_members.reject.commit', 'COMMIT');
         } else {
-            pg_query(db(), 'ROLLBACK');
+            $companyMemberQuery('company_members.reject.rollback', 'ROLLBACK');
             $rejected = false;
         }
         $message = $rejected
@@ -213,8 +220,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             : '<div class="alert alert-danger" role="alert">' . e(fn_t('company_member_save_failed')) . '</div>';
     } elseif ($action === 'status' && ($isPlatformOperator || $targetUserId !== (int) $actor['id'])) {
         $active = (($_POST['is_active'] ?? '') === '1');
-        $result = pg_query_params(
-            db(),
+        $result = $companyMemberQuery(
+            'company_members.change_status',
             "UPDATE company_users SET is_active = $1, updated_at = now()
              WHERE company_id = $2 AND user_id = $3 AND approval_status = 'approved'",
             [$active ? 'true' : 'false', $companyId, $targetUserId]
@@ -252,8 +259,8 @@ $roles = [];
 $users = [];
 $memberRows = '';
 if ($company !== null) {
-    $roleResult = pg_query_params(
-        db(),
+    $roleResult = $companyMemberQuery(
+        'company_members.list_roles',
         'SELECT id, name FROM company_roles WHERE company_id = $1 AND level > 0 AND level < 200 ORDER BY level, name',
         [$companyId]
     );
@@ -262,8 +269,8 @@ if ($company !== null) {
     }
 
     if ($isPlatformOperator) {
-        $userResult = pg_query_params(
-            db(),
+        $userResult = $companyMemberQuery(
+            'company_members.list_unassigned_users',
             "SELECT u.id, u.display_name, u.email
              FROM users AS u JOIN roles AS r ON r.id = u.role_id
              WHERE u.company_id IS NULL AND u.is_active AND u.approval_status = 'approved'
@@ -287,8 +294,8 @@ if ($company !== null) {
         }
     }
 
-    $membersResult = pg_query_params(
-        db(),
+    $membersResult = $companyMemberQuery(
+        'company_members.list_members',
         'SELECT u.id, u.display_name, u.email, cu.is_active, cu.approval_status,
                 cu.company_role_id, cr.name AS role_name
          FROM company_users AS cu

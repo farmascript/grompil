@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -17,6 +17,16 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
+
+/** Execute a KBO-related query while preserving this module's false-based flow. */
+function grompil_kbo_query(string $operation, string $sql, array $params = []): PgSql\Result|false
+{
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+}
 
 /**
  *  Read KBO webservice credentials from the selected private credentials file.
@@ -38,8 +48,8 @@ function grompil_kbo_config(): array
  */
 function grompil_kbo_weekly_usage(): int
 {
-    $result = pg_query(
-        db(),
+    $result = grompil_kbo_query(
+        'kbo.weekly_usage',
         "SELECT count(*) AS request_count
          FROM kbo_lookup_attempts
          WHERE requested_at >= now() - interval '7 days'"
@@ -75,16 +85,15 @@ function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
     if ($requestTypes === []) {
         return;
     }
-    $connection = db();
-    if (!pg_query($connection, 'BEGIN')) {
+    if (!grompil_kbo_query('kbo.reserve.begin', 'BEGIN')) {
         throw new RuntimeException('Unable to record KBO usage.');
     }
     try {
-        if (!pg_query($connection, 'SELECT pg_advisory_xact_lock(812710, 1)')) {
+        if (!grompil_kbo_query('kbo.reserve.lock', 'SELECT pg_advisory_xact_lock(812710, 1)')) {
             throw new RuntimeException('Unable to record KBO usage.');
         }
-        $countResult = pg_query(
-            $connection,
+        $countResult = grompil_kbo_query(
+            'kbo.reserve.count',
             "SELECT count(*) AS request_count
              FROM kbo_lookup_attempts
              WHERE requested_at >= now() - interval '7 days'"
@@ -98,8 +107,8 @@ function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
         }
         $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
         foreach ($requestTypes as $requestType) {
-            $inserted = pg_query_params(
-                $connection,
+            $inserted = grompil_kbo_query(
+                'kbo.reserve.insert',
                 'INSERT INTO kbo_lookup_attempts (enterprise_number, request_type, requested_by)
                  VALUES ($1, $2, $3)',
                 [$requestType === 'read_enterprise' ? $term : '', $requestType, $userId]
@@ -108,11 +117,11 @@ function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
                 throw new RuntimeException('Unable to record KBO usage.');
             }
         }
-        if (!pg_query($connection, 'COMMIT')) {
+        if (!grompil_kbo_query('kbo.reserve.commit', 'COMMIT')) {
             throw new RuntimeException('Unable to record KBO usage.');
         }
     } catch (Throwable $exception) {
-        @pg_query($connection, 'ROLLBACK');
+        grompil_kbo_query('kbo.reserve.rollback', 'ROLLBACK');
         throw $exception;
     }
 }

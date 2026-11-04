@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -29,12 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $action = (string) ($_POST['action'] ?? 'save');
     if ($action === 'delete') {
-        $deleteResult = pg_query_params(
-            db(),
-            'DELETE FROM roles WHERE id = $1 AND is_system = FALSE
-             AND NOT EXISTS (SELECT 1 FROM users WHERE role_id = $1)',
-            [(int) ($_POST['id'] ?? 0)]
-        );
+        try {
+            $deleteResult = db_query_params(
+                'roles.delete',
+                'DELETE FROM roles WHERE id = $1 AND is_system = FALSE
+                 AND NOT EXISTS (SELECT 1 FROM users WHERE role_id = $1)',
+                [(int) ($_POST['id'] ?? 0)]
+            );
+        } catch (GrompilDatabaseQueryException) {
+            $deleteResult = false;
+        }
         $messageKey = $deleteResult && pg_affected_rows($deleteResult) > 0
             ? 'role_deleted' : 'role_delete_blocked';
     } else {
@@ -50,9 +54,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageKey = $name === '' ? 'role_name_required' : 'role_level_invalid';
         } else {
             $permissionsJson = json_encode($permissions, JSON_THROW_ON_ERROR);
-            $saveResult = $roleId > 0
-                ? pg_query_params(db(), 'UPDATE roles SET name = $1, description = $2, level = $3, permissions = $4::jsonb, updated_at = now() WHERE id = $5', [$name, $description, $level, $permissionsJson, $roleId])
-                : pg_query_params(db(), 'INSERT INTO roles (name, description, level, permissions) VALUES ($1, $2, $3, $4::jsonb)', [$name, $description, $level, $permissionsJson]);
+            try {
+                $saveResult = $roleId > 0
+                    ? db_query_params(
+                        'roles.update',
+                        'UPDATE roles SET name = $1, description = $2, level = $3, permissions = $4::jsonb, updated_at = now() WHERE id = $5',
+                        [$name, $description, $level, $permissionsJson, $roleId]
+                    )
+                    : db_query_params(
+                        'roles.create',
+                        'INSERT INTO roles (name, description, level, permissions) VALUES ($1, $2, $3, $4::jsonb)',
+                        [$name, $description, $level, $permissionsJson]
+                    );
+            } catch (GrompilDatabaseQueryException) {
+                $saveResult = false;
+            }
             $messageKey = $saveResult ? 'role_saved' : 'role_save_failed';
         }
     }
@@ -60,14 +76,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $editingRole = null;
 if (isset($_GET['edit'])) {
-    $roleResult = pg_query_params(db(), 'SELECT * FROM roles WHERE id = $1', [(int) $_GET['edit']]);
+    try {
+        $roleResult = db_query_params(
+            'roles.load_for_edit',
+            'SELECT * FROM roles WHERE id = $1',
+            [(int) $_GET['edit']]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        $roleResult = false;
+    }
     $editingRole = $roleResult ? pg_fetch_assoc($roleResult) : null;
 }
-$rolesResult = pg_query(
-    db(),
-    'SELECT r.*, count(u.id) AS users_count FROM roles AS r
-     LEFT JOIN users AS u ON u.role_id = r.id GROUP BY r.id ORDER BY r.id'
-);
+try {
+    $rolesResult = db_query_params(
+        'roles.list',
+        'SELECT r.*, count(u.id) AS users_count FROM roles AS r
+         LEFT JOIN users AS u ON u.role_id = r.id GROUP BY r.id ORDER BY r.id'
+    );
+} catch (GrompilDatabaseQueryException) {
+    $rolesResult = false;
+}
 $selectedPermissions = $editingRole ? (json_decode($editingRole['permissions'], true) ?: []) : [];
 
 $permissionChecks = '';

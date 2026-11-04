@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -58,14 +58,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             || trim((string) $value) === '') {
             $messageKey = 'company_translation_invalid';
         } else {
-            $result = pg_query_params(
-                db(),
-                'INSERT INTO substitutions (company_id, "key", "value", code)
-                 VALUES ($1, $2, $3, $4)
-                 ON CONFLICT (company_id, "key", code) DO UPDATE
-                 SET "value" = EXCLUDED."value", updated_at = now()',
-                [(int) $company['id'], $key, (string) $value, $language]
-            );
+            try {
+                $result = db_query_params(
+                    'company_translations.add',
+                    'INSERT INTO substitutions (company_id, "key", "value", code)
+                     VALUES ($1, $2, $3, $4)
+                     ON CONFLICT (company_id, "key", code) DO UPDATE
+                     SET "value" = EXCLUDED."value", updated_at = now()',
+                    [(int) $company['id'], $key, (string) $value, $language]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $result = false;
+            }
             $ok = (bool) $result && fn_exportCompanyLanguageFile((int) $company['id'], $language);
             $messageKey = $ok ? 'company_translation_saved' : 'company_translation_publish_failed';
         }
@@ -74,15 +78,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($deleteKey !== '' && !preg_match('/^[a-zA-Z0-9_.-]{1,120}$/', $deleteKey)) {
             $messageKey = 'company_translation_invalid';
         } elseif ($deleteKey !== '') {
-            $result = pg_query_params(
-                db(),
-                'DELETE FROM substitutions WHERE company_id = $1 AND "key" = $2 AND code = $3',
-                [(int) $company['id'], $deleteKey, $language]
-            );
+            try {
+                $result = db_query_params(
+                    'company_translations.delete',
+                    'DELETE FROM substitutions WHERE company_id = $1 AND "key" = $2 AND code = $3',
+                    [(int) $company['id'], $deleteKey, $language]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $result = false;
+            }
             $ok = (bool) $result && fn_exportCompanyLanguageFile((int) $company['id'], $language);
             $messageKey = $ok ? 'company_translation_deleted' : 'company_translation_publish_failed';
         } else {
-            $transaction = (bool) pg_query(db(), 'BEGIN');
+            try {
+                $transaction = (bool) db_query_params('company_translations.save.begin', 'BEGIN');
+            } catch (GrompilDatabaseQueryException) {
+                $transaction = false;
+            }
             $ok = $transaction;
             foreach ((array) ($_POST['translations'] ?? []) as $key => $value) {
                 $key = (string) $key;
@@ -90,22 +102,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ok = false;
                     break;
                 }
-                $result = pg_query_params(
-                    db(),
-                    'UPDATE substitutions SET "value" = $1, updated_at = now()
-                     WHERE company_id = $2 AND "key" = $3 AND code = $4',
-                    [(string) $value, (int) $company['id'], $key, $language]
-                );
+                try {
+                    $result = db_query_params(
+                        'company_translations.save_value',
+                        'UPDATE substitutions SET "value" = $1, updated_at = now()
+                         WHERE company_id = $2 AND "key" = $3 AND code = $4',
+                        [(string) $value, (int) $company['id'], $key, $language]
+                    );
+                } catch (GrompilDatabaseQueryException) {
+                    $result = false;
+                }
                 if (!$result) {
                     $ok = false;
                     break;
                 }
             }
+            $committed = false;
             if ($ok) {
-                $ok = (bool) pg_query(db(), 'COMMIT');
-                $ok = $ok && fn_exportCompanyLanguageFile((int) $company['id'], $language);
-            } else {
-                pg_query(db(), 'ROLLBACK');
+                try {
+                    db_query_params('company_translations.save.commit', 'COMMIT');
+                    $committed = true;
+                } catch (GrompilDatabaseQueryException) {
+                    $ok = false;
+                }
+            }
+            if ($committed) {
+                $ok = fn_exportCompanyLanguageFile((int) $company['id'], $language);
+            } elseif ($transaction) {
+                try {
+                    db_query_params('company_translations.save.rollback', 'ROLLBACK');
+                } catch (GrompilDatabaseQueryException) {
+                    // The helper already logged the rollback failure.
+                }
             }
             $messageKey = $ok ? 'company_translation_saved' : 'company_translation_publish_failed';
         }
@@ -117,12 +145,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$result = pg_query_params(
-    db(),
-    'SELECT "key", "value" FROM substitutions
-     WHERE company_id = $1 AND code = $2 ORDER BY "key"',
-    [(int) $company['id'], $language]
-);
+try {
+    $result = db_query_params(
+        'company_translations.list',
+        'SELECT "key", "value" FROM substitutions
+         WHERE company_id = $1 AND code = $2 ORDER BY "key"',
+        [(int) $company['id'], $language]
+    );
+} catch (GrompilDatabaseQueryException) {
+    $result = false;
+}
 $rows = '';
 while ($result && $row = pg_fetch_assoc($result)) {
     $rows .= fn_templateRender('company_translations_row.html', [

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Wed 2026-11-04 21:36:02
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -36,6 +36,23 @@ $formValues = [
     'is_active' => true,
     'translations' => array_fill_keys($languages, ''),
 ];
+
+/**
+ * Keep this page's existing false-result branches while logging failures centrally.
+ *
+ * @param string $operation Stable database operation identifier.
+ * @param string $sql Parameterized PostgreSQL statement.
+ * @param array<int, mixed> $params Positional query parameters.
+ * @return PgSql\Result|false
+ */
+function dd_varia_admin_query(string $operation, string $sql, array $params = []): PgSql\Result|false
+{
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+}
 
 /**
  * Store a translated message for the next request and redirect after a change.
@@ -92,8 +109,8 @@ function dd_varia_admin_translation_key_from_content(string $content): string
 function dd_varia_admin_save_translations(string $translationKey, array $values): bool
 {
     foreach (['NL', 'FR', 'EN', 'DE'] as $language) {
-        $result = pg_query_params(
-            db(),
+        $result = dd_varia_admin_query(
+            'dd_varia.save_translation',
             'INSERT INTO substitutions (company_id, "key", "value", code)
              VALUES (0, $1, $2, $3)
              ON CONFLICT (company_id, "key", code) DO UPDATE
@@ -130,8 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'deactivate') {
         $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
         $result = $id !== false && $id !== null
-            ? pg_query_params(
-                db(),
+            ? dd_varia_admin_query(
+                'dd_varia.deactivate',
                 'UPDATE dd_varia AS item SET is_active = FALSE, updated_at = now()
                  WHERE item.id = $1 AND item.list_key = $2
                    AND NOT EXISTS (
@@ -184,8 +201,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $existing = null;
     if ($valid && $editingId > 0) {
-        $existingResult = pg_query_params(
-            db(),
+        $existingResult = dd_varia_admin_query(
+            'dd_varia.load_existing',
             'SELECT id, list_key, "key", content FROM dd_varia WHERE id = $1',
             [$editingId]
         );
@@ -198,8 +215,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($valid && $editingId === 0) {
-        $duplicateResult = pg_query_params(
-            db(),
+        $duplicateResult = dd_varia_admin_query(
+            'dd_varia.check_duplicate',
             'SELECT 1 FROM dd_varia WHERE list_key = $1 AND "key" = $2',
             [$listKey, $key]
         );
@@ -207,8 +224,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($valid && $parentId !== null) {
-        $parentResult = pg_query_params(
-            db(),
+        $parentResult = dd_varia_admin_query(
+            'dd_varia.check_parent',
             'SELECT id FROM dd_varia
              WHERE id = $1 AND list_key = $2 AND (is_active OR $3::BOOLEAN = false)',
             [$parentId, $listKey, $isActive ? 'true' : 'false']
@@ -217,8 +234,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($valid && $editingId > 0 && $parentId !== null) {
-        $cycleResult = pg_query_params(
-            db(),
+        $cycleResult = dd_varia_admin_query(
+            'dd_varia.check_cycle',
             'WITH RECURSIVE descendants(id) AS (
                  SELECT id FROM dd_varia WHERE id = $1
                  UNION
@@ -233,8 +250,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($valid && $editingId > 0 && !$isActive) {
-        $activeChildResult = pg_query_params(
-            db(),
+        $activeChildResult = dd_varia_admin_query(
+            'dd_varia.check_active_children',
             'SELECT EXISTS (
                 SELECT 1 FROM dd_varia WHERE parent_id = $1 AND is_active
              )',
@@ -252,10 +269,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ? dd_varia_admin_translation_key_from_content((string) $existing['content'])
             : dd_varia_admin_translation_key($listKey, $key);
         $contentToken = '@' . $translationKey . '@';
-        $started = (bool) pg_query(db(), 'BEGIN');
+        $started = (bool) dd_varia_admin_query('dd_varia.save.begin', 'BEGIN');
         if ($started && $editingId > 0) {
-            $saved = pg_query_params(
-                db(),
+            $saved = dd_varia_admin_query(
+                'dd_varia.update',
                 'UPDATE dd_varia
                  SET parent_id = $1::BIGINT, info = $2, sort_order = $3,
                      is_active = $4, updated_at = now()
@@ -264,8 +281,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $rowId = $editingId;
         } elseif ($started) {
-            $saved = pg_query_params(
-                db(),
+            $saved = dd_varia_admin_query(
+                'dd_varia.insert',
                 'INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order, is_active)
                  VALUES ($1, $2, $3, $4::BIGINT, $5, $6, $7)
                  RETURNING id',
@@ -282,7 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $saved = $translationKey !== ''
                 && dd_varia_admin_save_translations($translationKey, $translationValues);
         }
-        if ($saved && $rowId > 0 && pg_query(db(), 'COMMIT')) {
+        if ($saved && $rowId > 0 && dd_varia_admin_query('dd_varia.save.commit', 'COMMIT')) {
             dd_varia_clear_options_cache();
             $published = dd_varia_admin_publish_translations();
             dd_varia_admin_redirect(
@@ -291,7 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $listKey
             );
         }
-        pg_query(db(), 'ROLLBACK');
+        dd_varia_admin_query('dd_varia.save.rollback', 'ROLLBACK');
         error_log('Platform lookup value could not be saved.');
         $messageKey = 'dd_varia_save_failed';
         $messageType = 'danger';
@@ -299,7 +316,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $selectedList = strtolower(trim((string) ($formValues['list_key'] ?: ($_GET['list'] ?? ''))));
-$listResult = pg_query(db(), 'SELECT DISTINCT list_key FROM dd_varia ORDER BY list_key');
+$listResult = dd_varia_admin_query(
+    'dd_varia.list_keys',
+    'SELECT DISTINCT list_key FROM dd_varia ORDER BY list_key'
+);
 $listKeys = [];
 while ($listResult && $listRow = pg_fetch_assoc($listResult)) {
     $listKeys[] = (string) $listRow['list_key'];
@@ -312,8 +332,8 @@ if ($selectedList === '' && $listKeys !== []) {
 $rowsById = [];
 $childrenByParent = [];
 if ($selectedList !== '' && preg_match('/^[a-z][a-z0-9_-]{0,79}$/', $selectedList)) {
-    $listResult = pg_query_params(
-        db(),
+    $listResult = dd_varia_admin_query(
+        'dd_varia.list_rows',
         'SELECT id, list_key, "key", content, parent_id, info, sort_order, is_active, updated_at
          FROM dd_varia WHERE list_key = $1 ORDER BY sort_order, "key", id',
         [$selectedList]
@@ -339,7 +359,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $editingId === 0 && $formValues['pa
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $editId = filter_var($_GET['edit'] ?? null, FILTER_VALIDATE_INT);
     if ($editId !== false && $editId !== null && (int) $editId > 0) {
-        $editResult = pg_query_params(db(), 'SELECT * FROM dd_varia WHERE id = $1', [(int) $editId]);
+        $editResult = dd_varia_admin_query(
+            'dd_varia.load_for_edit',
+            'SELECT * FROM dd_varia WHERE id = $1',
+            [(int) $editId]
+        );
         $editRow = $editResult ? pg_fetch_assoc($editResult) : false;
         if ($editRow && (string) $editRow['list_key'] === $selectedList) {
             $editingId = (int) $editRow['id'];
@@ -350,8 +374,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $formValues['sort_order'] = (string) $editRow['sort_order'];
             $formValues['is_active'] = $editRow['is_active'] === 't';
             $translationKey = dd_varia_admin_translation_key_from_content((string) $editRow['content']);
-            $translationResult = pg_query_params(
-                db(),
+            $translationResult = dd_varia_admin_query(
+                'dd_varia.load_translations',
                 'SELECT code, "value" FROM substitutions
                  WHERE company_id = 0 AND "key" = $1 AND code IN (\'NL\', \'FR\', \'EN\', \'DE\')',
                 [$translationKey]

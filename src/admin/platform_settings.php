@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24 00:00:00
- * @date_mut: Sat 2026-10-24 00:00:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -43,34 +43,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$valid) {
         $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_settings_invalid')) . '</div>';
     } else {
-        $saved = pg_query_params(db(),
-            "INSERT INTO platform_system_settings (\"key\", value_integer, updated_at)
-             VALUES ('password_reset_max_requests', $1, now()), ('password_reset_window_minutes', $2, now())
-             ON CONFLICT (\"key\") DO UPDATE
-                SET value_integer = EXCLUDED.value_integer, updated_at = now()",
-            [$values['password_reset_max_requests'], $values['password_reset_window_minutes']]
-        );
+        try {
+            $saved = db_query_params(
+                'platform_settings.save',
+                "INSERT INTO platform_system_settings (\"key\", value_integer, updated_at)
+                 VALUES ('password_reset_max_requests', $1, now()), ('password_reset_window_minutes', $2, now())
+                 ON CONFLICT (\"key\") DO UPDATE
+                    SET value_integer = EXCLUDED.value_integer, updated_at = now()",
+                [$values['password_reset_max_requests'], $values['password_reset_window_minutes']]
+            );
+        } catch (GrompilDatabaseQueryException) {
+            $saved = false;
+        }
         if ($saved) {
             $message = '<div class="alert alert-success" role="status">' . e(fn_t('platform_settings_saved')) . '</div>';
         } else {
-            error_log('Platform system parameters could not be saved.');
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_settings_unavailable')) . '</div>';
         }
     }
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === '') {
-    $result = pg_query_params(db(),
-        'SELECT "key", value_integer FROM platform_system_settings
-         WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')',
-        []
-    );
+    try {
+        $result = db_query_params(
+            'platform_settings.load',
+            'SELECT "key", value_integer FROM platform_system_settings
+             WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')'
+        );
+    } catch (GrompilDatabaseQueryException) {
+        $result = false;
+    }
     if ($result) {
         while ($row = pg_fetch_assoc($result)) {
             $values[$row['key']] = (int) $row['value_integer'];
         }
     } elseif ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        error_log('Platform system parameters could not be loaded.');
         $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_settings_unavailable')) . '</div>';
     }
 }

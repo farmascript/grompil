@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -42,11 +42,15 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 12) {
     exit(1);
 }
 
-$roleResult = pg_query_params(
-    db(),
-    'SELECT id FROM roles WHERE lower(name) = lower($1) ORDER BY id LIMIT 1',
-    ['Beheerder']
-);
+try {
+    $roleResult = db_query_params(
+        'setup_admin.find_role',
+        'SELECT id FROM roles WHERE lower(name) = lower($1) ORDER BY id LIMIT 1',
+        ['Beheerder']
+    );
+} catch (GrompilDatabaseQueryException) {
+    $roleResult = false;
+}
 
 $adminRole = $roleResult
     ? pg_fetch_assoc($roleResult)
@@ -57,11 +61,16 @@ if (!$adminRole) {
     exit(1);
 }
 
-$existingUserResult = pg_query_params(
-    db(),
-    'SELECT id FROM users WHERE lower(email) = lower($1) AND company_id IS NULL',
-    [$email]
-);
+try {
+    $existingUserResult = db_query_params(
+        'setup_admin.check_existing',
+        'SELECT id FROM users WHERE lower(email) = lower($1) AND company_id IS NULL',
+        [$email]
+    );
+} catch (GrompilDatabaseQueryException) {
+    fwrite(STDERR, "Account check failed.\n");
+    exit(1);
+}
 
 if (
     $existingUserResult
@@ -71,25 +80,29 @@ if (
     exit(1);
 }
 
-$createUserResult = pg_query_params(
-    db(),
-    'INSERT INTO users (
-        email,
-        display_name,
-        name_first,
-        name_last,
-        password_hash,
-        role_id
-     ) VALUES ($1, $2, $3, $4, $5, $6)',
-    [
-        $email,
-        $displayName,
-        $firstName,
-        $lastName,
-        password_hash($password, PASSWORD_DEFAULT),
-        (int) $adminRole['id'],
-    ]
-);
+try {
+    $createUserResult = db_query_params(
+        'setup_admin.create',
+        'INSERT INTO users (
+            email,
+            display_name,
+            name_first,
+            name_last,
+            password_hash,
+            role_id
+         ) VALUES ($1, $2, $3, $4, $5, $6)',
+        [
+            $email,
+            $displayName,
+            $firstName,
+            $lastName,
+            password_hash($password, PASSWORD_DEFAULT),
+            (int) $adminRole['id'],
+        ]
+    );
+} catch (GrompilDatabaseQueryException) {
+    $createUserResult = false;
+}
 
 if (!$createUserResult) {
     fwrite(STDERR, "Account creation failed.\n");

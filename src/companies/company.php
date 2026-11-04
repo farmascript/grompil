@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Wed 2026-11-04 15:59:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -65,10 +65,26 @@ $defaults = [
     ],
 ];
 $content = $defaults[$language][$page];
-$result = pg_query_params(db(), 'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published', [(int) $company['id'], $page, $language]);
+try {
+    $result = db_query_params(
+        'company_page.load',
+        'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
+        [(int) $company['id'], $page, $language]
+    );
+} catch (GrompilDatabaseQueryException) {
+    $result = false;
+}
 $custom = $result ? pg_fetch_assoc($result) : false;
 if (!$custom && $language !== $company['default_language']) {
-    $result = pg_query_params(db(), 'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published', [(int) $company['id'], $page, (string) $company['default_language']]);
+    try {
+        $result = db_query_params(
+            'company_page.load_default_language',
+            'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
+            [(int) $company['id'], $page, (string) $company['default_language']]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        $result = false;
+    }
     $custom = $result ? pg_fetch_assoc($result) : false;
 }
 $title = $custom && trim((string) $custom['title']) !== '' ? (string) $custom['title'] : str_replace('@company@', (string) $company['name'], $content[0]);

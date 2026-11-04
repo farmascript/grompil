@@ -61,8 +61,8 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
 
         $params = [$cnk, $limit];
         $statusFilter = $makeStatusFilter($params);
-        $result = pg_query_params(
-            db(),
+        $result = db_query_params(
+            'sam_products.search_cnk',
             "SELECT
                 sam_export_version, sam_id, validity_date,
                 count(*) OVER() AS total_count,
@@ -196,9 +196,16 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
         $params[] = $limit;
         $statusFilter = $makeStatusFilter($params);
 
-        $extensionResult = pg_query(db(), "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm')");
-        $trigramsAvailable = $extensionResult !== false
-            && pg_fetch_result($extensionResult, 0, 0) === 't';
+        try {
+            $extensionResult = db_query_params(
+                'sam_products.check_trigram_extension',
+                "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm')"
+            );
+            $trigramsAvailable = pg_fetch_result($extensionResult, 0, 0) === 't';
+        } catch (GrompilDatabaseQueryException) {
+            // Prefix/substring matching remains available without the optional extension.
+            $trigramsAvailable = false;
+        }
         $displayName = $nameFields[0];
         $displayPackage = $nameFields[1];
         $similaritySelect = $trigramsAvailable
@@ -217,8 +224,8 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
             $fuzzyConditions = '';
         }
 
-        $result = pg_query_params(
-            db(),
+        $result = db_query_params(
+            'sam_products.search_name',
             "SELECT
                 sam_export_version, sam_id, validity_date,
                 count(*) OVER() AS total_count,

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -160,12 +160,19 @@ unset($_SESSION['template_check_flash_message'], $_SESSION['template_check_flash
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
-    $ok = pg_query(db(), 'BEGIN') !== false;
+    $templateCheckQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+        try {
+            return db_query_params($operation, $sql, $params);
+        } catch (GrompilDatabaseQueryException) {
+            return false;
+        }
+    };
+    $ok = $templateCheckQuery('template_check.begin', 'BEGIN') !== false;
     $inserted = 0;
     foreach ($ok ? $missingTranslations : [] as $key => $missingLanguages) {
         foreach ($missingLanguages as $language) {
-            $result = pg_query_params(
-                db(),
+            $result = $templateCheckQuery(
+                'template_check.insert_missing_translation',
                 'INSERT INTO substitutions (company_id, "key", "value", code)
                  VALUES (0, $1, $2, $3)
                  ON CONFLICT (company_id, "key", code) DO NOTHING',
@@ -179,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($ok && pg_query(db(), 'COMMIT')) {
+    if ($ok && $templateCheckQuery('template_check.commit', 'COMMIT')) {
         $published = true;
         foreach (array_map('strtoupper', $languages) as $language) {
             $published = fn_exportLanguageFile($language) && $published;
@@ -189,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             : sprintf('%d ontbrekende vertalingen staan in de database, maar een of meer taalbestanden konden niet worden bijgewerkt.', $inserted);
         $_SESSION['template_check_flash_type'] = $published ? 'success' : 'warning';
     } else {
-        pg_query(db(), 'ROLLBACK');
+        $templateCheckQuery('template_check.rollback', 'ROLLBACK');
         $_SESSION['template_check_flash_message'] = 'The update failed; no changes were saved.';
         $_SESSION['template_check_flash_type'] = 'danger';
     }

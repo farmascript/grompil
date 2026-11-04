@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -38,7 +38,11 @@ $selectedNewRoleId = (int) ($_POST['new_role_id'] ?? 0);
 $addFormOpen = false;
 
 $roles = [];
-$roleResult = pg_query(db(), 'SELECT id, name, level FROM roles ORDER BY name');
+try {
+    $roleResult = db_query_params('users.role_options', 'SELECT id, name, level FROM roles ORDER BY name');
+} catch (GrompilDatabaseQueryException) {
+    $roleResult = false;
+}
 while ($roleResult && $role = pg_fetch_assoc($roleResult)) {
     $roles[] = $role;
 }
@@ -74,31 +78,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             || preg_match('/^[A-Z]{2}$/', $newUserAddress['country_code']) !== 1) {
             $messageKey = 'user_add_invalid';
         } else {
-            $result = pg_query_params(
-                db(),
-                "INSERT INTO users (
-                    email, display_name, name_first, name_last, street, house_number, box_number,
-                    postal_code, city, country_code, address_reference_id, password_hash, role_id, is_active,
-                    approval_status, approved_at, approved_by
-                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, 'approved', now(), $14)
-                 ON CONFLICT DO NOTHING RETURNING id",
-                [
-                    $newUserEmail,
-                    $newUserName,
-                    $newUserFirstName,
-                    $newUserLastName,
-                    $newUserAddress['street'],
-                    $newUserAddress['house_number'],
-                    $newUserAddress['box_number'],
-                    $newUserAddress['postal_code'],
-                    $newUserAddress['city'],
-                    $newUserAddress['country_code'],
-                    $newUserAddress['address_reference_id'],
-                    password_hash($password, PASSWORD_DEFAULT),
-                    $selectedNewRoleId,
-                    $currentUser['id'],
-                ]
-            );
+            try {
+                $result = db_query_params(
+                    'users.create',
+                    "INSERT INTO users (
+                        email, display_name, name_first, name_last, street, house_number, box_number,
+                        postal_code, city, country_code, address_reference_id, password_hash, role_id, is_active,
+                        approval_status, approved_at, approved_by
+                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, 'approved', now(), $14)
+                     ON CONFLICT DO NOTHING RETURNING id",
+                    [
+                        $newUserEmail,
+                        $newUserName,
+                        $newUserFirstName,
+                        $newUserLastName,
+                        $newUserAddress['street'],
+                        $newUserAddress['house_number'],
+                        $newUserAddress['box_number'],
+                        $newUserAddress['postal_code'],
+                        $newUserAddress['city'],
+                        $newUserAddress['country_code'],
+                        $newUserAddress['address_reference_id'],
+                        password_hash($password, PASSWORD_DEFAULT),
+                        $selectedNewRoleId,
+                        $currentUser['id'],
+                    ]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $result = false;
+            }
             $created = $result ? pg_fetch_assoc($result) : false;
             if ($created) {
                 $messageKey = 'user_add_success';
@@ -118,49 +126,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageKey = 'user_self_error';
     } elseif ($action === 'approve') {
         $staffRoleId = (int) ($_POST['role_id'] ?? 0);
-        $result = pg_query_params(
-            db(),
-            "UPDATE users
-             SET role_id = $1, approval_status = 'approved', is_active = TRUE,
-                 approved_at = now(), approved_by = $2, updated_at = now()
-             WHERE id = $3 AND company_id IS NULL AND approval_status = 'pending'
-               AND EXISTS (SELECT 1 FROM roles WHERE id = $1 AND level > 100 AND level < 200)",
-            [$staffRoleId, $currentUser['id'], $userId]
-        );
+        try {
+            $result = db_query_params(
+                'users.approve',
+                "UPDATE users
+                 SET role_id = $1, approval_status = 'approved', is_active = TRUE,
+                     approved_at = now(), approved_by = $2, updated_at = now()
+                 WHERE id = $3 AND company_id IS NULL AND approval_status = 'pending'
+                   AND EXISTS (SELECT 1 FROM roles WHERE id = $1 AND level > 100 AND level < 200)",
+                [$staffRoleId, $currentUser['id'], $userId]
+            );
+        } catch (GrompilDatabaseQueryException) {
+            $result = false;
+        }
         $messageKey = $result && pg_affected_rows($result) === 1
             ? 'approval_success' : 'approval_role_required';
     } elseif ($action === 'reject') {
-        $result = pg_query_params(
-            db(),
-            "UPDATE users SET approval_status = 'rejected', is_active = FALSE,
-                 updated_at = now() WHERE id = $1 AND company_id IS NULL AND approval_status = 'pending'",
-            [$userId]
-        );
+        try {
+            $result = db_query_params(
+                'users.reject',
+                "UPDATE users SET approval_status = 'rejected', is_active = FALSE,
+                     updated_at = now() WHERE id = $1 AND company_id IS NULL AND approval_status = 'pending'",
+                [$userId]
+            );
+        } catch (GrompilDatabaseQueryException) {
+            $result = false;
+        }
         $messageKey = $result && pg_affected_rows($result) === 1
             ? 'approval_success' : 'user_update_failed';
     } else {
         $roleId = (int) ($_POST['role_id'] ?? 0);
         $isActive = isset($_POST['is_active']) ? 'true' : 'false';
-        $result = pg_query_params(
-            db(),
-            "UPDATE users SET role_id = $1, is_active = $2, updated_at = now()
-             WHERE id = $3 AND company_id IS NULL AND approval_status = 'approved'",
-            [$roleId, $isActive, $userId]
-        );
+        try {
+            $result = db_query_params(
+                'users.update',
+                "UPDATE users SET role_id = $1, is_active = $2, updated_at = now()
+                 WHERE id = $3 AND company_id IS NULL AND approval_status = 'approved'",
+                [$roleId, $isActive, $userId]
+            );
+        } catch (GrompilDatabaseQueryException) {
+            $result = false;
+        }
         $messageKey = $result && pg_affected_rows($result) === 1
             ? 'user_update_success' : 'user_update_failed';
     }
 }
 
-$usersResult = pg_query(
-    db(),
-    'SELECT u.id, u.email, u.display_name, u.role_id, u.is_active,
-            u.approval_status, r.name AS role_name, u.last_login_at
-     FROM users AS u JOIN roles AS r ON r.id = u.role_id
-     WHERE u.company_id IS NULL
-     ORDER BY CASE u.approval_status WHEN \'pending\' THEN 0 ELSE 1 END,
-              u.display_name'
-);
+try {
+    $usersResult = db_query_params(
+        'users.list',
+        'SELECT u.id, u.email, u.display_name, u.role_id, u.is_active,
+                u.approval_status, r.name AS role_name, u.last_login_at
+         FROM users AS u JOIN roles AS r ON r.id = u.role_id
+         WHERE u.company_id IS NULL
+         ORDER BY CASE u.approval_status WHEN \'pending\' THEN 0 ELSE 1 END,
+                  u.display_name'
+    );
+} catch (GrompilDatabaseQueryException) {
+    $usersResult = false;
+}
 
 $rows = '';
 while ($usersResult && $user = pg_fetch_assoc($usersResult)) {

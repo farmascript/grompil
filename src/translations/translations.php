@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:45:46
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -31,7 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $action = (string) ($_POST['action'] ?? '');
     if ($action === 'import') {
-        $transaction = pg_query(db(), 'BEGIN');
+        try {
+            $transaction = db_query_params('translations.import.begin', 'BEGIN');
+        } catch (GrompilDatabaseQueryException) {
+            $transaction = false;
+        }
         $ok = (bool) $transaction;
         foreach ($languages as $importLanguage) {
             if (!$ok) {
@@ -39,7 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $arrSubst = fn_translationSeed($importLanguage);
             foreach ($arrSubst as $key => $value) {
-                $insert = pg_query_params(db(), 'INSERT INTO substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO NOTHING', [(string) $key, (string) $value, $importLanguage]);
+                try {
+                    $insert = db_query_params(
+                        'translations.import_value',
+                        'INSERT INTO substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO NOTHING',
+                        [(string) $key, (string) $value, $importLanguage]
+                    );
+                } catch (GrompilDatabaseQueryException) {
+                    $insert = false;
+                }
                 if (!$insert) {
                     $ok = false;
                     break;
@@ -47,7 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         if ($ok) {
-            pg_query(db(), 'COMMIT');
+            try {
+                db_query_params('translations.import.commit', 'COMMIT');
+            } catch (GrompilDatabaseQueryException) {
+                $ok = false;
+            }
+        }
+        if ($ok) {
             $messageKey = 'translations_imported';
             foreach ($languages as $exportLanguage) {
                 $ok = $ok && fn_exportLanguageFile($exportLanguage);
@@ -57,29 +75,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'danger';
             }
         } else {
-            pg_query(db(), 'ROLLBACK');
+            try {
+                db_query_params('translations.import.rollback', 'ROLLBACK');
+            } catch (GrompilDatabaseQueryException) {
+                // The helper already logged the rollback failure.
+            }
             $messageKey = 'translations_import_failed';
             $messageType = 'danger';
         }
     } elseif ($action === 'save') {
-        $ok = (bool) pg_query(db(), 'BEGIN');
+        try {
+            $ok = (bool) db_query_params('translations.save.begin', 'BEGIN');
+        } catch (GrompilDatabaseQueryException) {
+            $ok = false;
+        }
         foreach ((array) ($_POST['translations'] ?? []) as $key => $value) {
             $key = (string) $key;
             if (!preg_match('/^[a-zA-Z0-9_.-]{1,120}$/', $key) || !is_scalar($value)) {
                 $ok = false;
                 break;
             }
-            $result = pg_query_params(db(), 'INSERT INTO substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO UPDATE SET "value" = EXCLUDED."value", updated_at = now()', [$key, (string) $value, $language]);
+            try {
+                $result = db_query_params(
+                    'translations.save_value',
+                    'INSERT INTO substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO UPDATE SET "value" = EXCLUDED."value", updated_at = now()',
+                    [$key, (string) $value, $language]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $result = false;
+            }
             if (!$result) {
                 $ok = false;
                 break;
             }
         }
         if ($ok) {
-            pg_query(db(), 'COMMIT');
+            try {
+                db_query_params('translations.save.commit', 'COMMIT');
+            } catch (GrompilDatabaseQueryException) {
+                $ok = false;
+            }
+        }
+        if ($ok) {
             $ok = fn_exportLanguageFile($language);
         } else {
-            pg_query(db(), 'ROLLBACK');
+            try {
+                db_query_params('translations.save.rollback', 'ROLLBACK');
+            } catch (GrompilDatabaseQueryException) {
+                // The helper already logged the rollback failure.
+            }
         }
         $messageKey = $ok ? 'translations_saved' : 'translations_publish_failed';
         $messageType = $ok ? 'success' : 'danger';
@@ -93,7 +137,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$result = pg_query_params(db(), 'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"', [$language]);
+try {
+    $result = db_query_params(
+        'translations.list',
+        'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
+        [$language]
+    );
+} catch (GrompilDatabaseQueryException) {
+    $result = false;
+}
 $rows = '';
 while ($result && $row = pg_fetch_assoc($result)) {
     $rows .= fn_templateRender('translations_row.html', [

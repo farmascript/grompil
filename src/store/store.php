@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:17:21
- * @date_mut: Wed 2026-10-21 10:00:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -23,10 +23,14 @@ if ($company === null) {
         grompil_show_error(404, 12544, 'Deze bedrijfswebsite is niet beschikbaar. Controleer de link of neem contact op met het bedrijf.', 'Website niet beschikbaar');
     }
 
-    $directoryResult = pg_query(
-        db(),
-        'SELECT name, slug, city FROM companies WHERE is_active AND is_public ORDER BY name'
-    );
+    try {
+        $directoryResult = db_query_params(
+            'store.directory',
+            'SELECT name, slug, city FROM companies WHERE is_active AND is_public ORDER BY name'
+        );
+    } catch (GrompilDatabaseQueryException) {
+        $directoryResult = false;
+    }
     $companyCards = '';
     while ($directoryResult && $directoryCompany = pg_fetch_assoc($directoryResult)) {
         $companyCards .= fn_templateRender('store_directory_company.html', [

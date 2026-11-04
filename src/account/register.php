@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:15:50
- * @date_mut: Wed 2026-11-04 16:15:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -17,6 +17,13 @@
 declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+$registerQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
 
 $signedInUser = current_user();
 if ($signedInUser !== null) {
@@ -50,14 +57,14 @@ $accountType = (string) ($_POST['account_type'] ?? 'customer');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $ipAddress = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-    $rateResult = pg_query_params(
-        db(),
+    $rateResult = $registerQuery(
+        'register.check_rate_limit',
         "SELECT count(*) AS total FROM registration_attempts
          WHERE ip_address = $1 AND attempted_at > now() - interval '1 hour'",
         [$ipAddress]
     );
     $rate = $rateResult ? pg_fetch_assoc($rateResult) : false;
-    pg_query_params(db(), 'INSERT INTO registration_attempts (ip_address) VALUES ($1)', [$ipAddress]);
+    $registerQuery('register.record_attempt', 'INSERT INTO registration_attempts (ip_address) VALUES ($1)', [$ipAddress]);
     $valid = in_array($accountType, ['customer', 'staff'], true)
         && $firstName !== '' && $lastName !== ''
         && (function_exists('mb_strlen') ? mb_strlen($firstName) : strlen($firstName)) <= 120
@@ -81,8 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!$valid) {
         $messageKey = 'register_invalid';
     } else {
-        $conflictResult = pg_query_params(
-            db(),
+        $conflictResult = $registerQuery(
+            'register.check_conflict',
             'SELECT id FROM users
              WHERE company_id = $1
                AND (($2 <> \'\' AND (lower(acronym) = lower($2) OR lower(email) = lower($2)))
@@ -91,20 +98,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             [(int) $registrationCompany['id'], $acronym, $email]
         );
         $acronymConflict = $conflictResult && pg_num_rows($conflictResult) > 0;
-        $globalRoleResult = pg_query(db(), "SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1");
+        $globalRoleResult = $registerQuery('register.find_global_role', "SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1");
         $globalRole = $globalRoleResult ? pg_fetch_assoc($globalRoleResult) : false;
         $companyRoleName = $accountType === 'customer' ? 'Publiek' : 'Medewerker';
-        $companyRoleResult = pg_query_params(
-            db(),
+        $companyRoleResult = $registerQuery(
+            'register.find_company_role',
             'SELECT id FROM company_roles WHERE company_id = $1 AND lower(name) = lower($2) ORDER BY id LIMIT 1',
             [(int) $registrationCompany['id'], $companyRoleName]
         );
         $companyRole = $companyRoleResult ? pg_fetch_assoc($companyRoleResult) : false;
         if ($acronymConflict) {
             $messageKey = 'register_exists';
-        } elseif ($globalRole && $companyRole && pg_query(db(), 'BEGIN')) {
-            $insertResult = pg_query_params(
-                db(),
+        } elseif ($globalRole && $companyRole && $registerQuery('register.begin', 'BEGIN')) {
+            $insertResult = $registerQuery(
+                'register.insert_user',
                 "INSERT INTO users (email, display_name, name_first, name_last, street, house_number, box_number, postal_code, city, country_code, address_reference_id, acronym, password_hash, role_id, is_active, approval_status, company_id)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULLIF($12, ''), $13, $14, TRUE, $15, $16)
                  ON CONFLICT DO NOTHING RETURNING id",
@@ -113,8 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $createdUser = $insertResult ? pg_fetch_assoc($insertResult) : false;
             if ($createdUser) {
                 $customer = $accountType === 'customer';
-                $membershipResult = pg_query_params(
-                    db(),
+                $membershipResult = $registerQuery(
+                    'register.insert_membership',
                     "INSERT INTO company_users (
                         company_id, user_id, company_role_id, is_active,
                         approval_status, approved_at
@@ -127,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $customer ? 'approved' : 'pending',
                     ]
                 );
-                if ($membershipResult && pg_query(db(), 'COMMIT')) {
+                if ($membershipResult && $registerQuery('register.commit', 'COMMIT')) {
                     $messageKey = $customer ? 'register_success_customer' : 'register_success_staff';
                     $messageType = 'success';
                     if ($customer) {
@@ -165,11 +172,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                 } else {
-                    pg_query(db(), 'ROLLBACK');
+                    $registerQuery('register.rollback_membership_failure', 'ROLLBACK');
                     grompil_show_error(500, 50631, 'Registratie is tijdelijk niet beschikbaar. Probeer het later opnieuw.', 'Registratie niet beschikbaar');
                 }
             } else {
-                pg_query(db(), 'ROLLBACK');
+                $registerQuery('register.rollback_user_failure', 'ROLLBACK');
                 $messageKey = 'register_exists';
             }
         } else {

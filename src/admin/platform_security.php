@@ -22,36 +22,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_security_invalid_ip')) . '</div>';
         } else {
             $network = $ip . '/' . $prefix;
-            $saved = pg_query_params(
-                db(),
-                "INSERT INTO access_ip_allowlist (company_id, scope, network, description, is_active)
-                 VALUES (NULL, 'admin', $1::inet, 'Platform administration', TRUE)
-                 ON CONFLICT (scope, network) WHERE company_id IS NULL DO UPDATE
-                    SET is_active = TRUE, description = EXCLUDED.description",
-                [$network]
-            );
+            try {
+                $saved = db_query_params(
+                    'platform_security.add_network',
+                    "INSERT INTO access_ip_allowlist (company_id, scope, network, description, is_active)
+                     VALUES (NULL, 'admin', $1::inet, 'Platform administration', TRUE)
+                     ON CONFLICT (scope, network) WHERE company_id IS NULL DO UPDATE
+                        SET is_active = TRUE, description = EXCLUDED.description",
+                    [$network]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $saved = false;
+            }
             $message = $saved
                 ? '<div class="alert alert-success" role="status">' . e(fn_t('platform_security_saved')) . '</div>'
                 : '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_security_save_failed')) . '</div>';
         }
     } elseif ($action === 'remove_network') {
         $ruleId = filter_var($_POST['rule_id'] ?? null, FILTER_VALIDATE_INT);
-        $removed = is_int($ruleId) && $ruleId > 0
-            ? pg_query_params(db(), "DELETE FROM access_ip_allowlist WHERE id = $1 AND company_id IS NULL AND scope = 'admin'", [$ruleId])
-            : false;
+        try {
+            $removed = is_int($ruleId) && $ruleId > 0
+                ? db_query_params(
+                    'platform_security.remove_network',
+                    "DELETE FROM access_ip_allowlist WHERE id = $1 AND company_id IS NULL AND scope = 'admin'",
+                    [$ruleId]
+                )
+                : false;
+        } catch (GrompilDatabaseQueryException) {
+            $removed = false;
+        }
         $message = $removed && pg_affected_rows($removed) === 1
             ? '<div class="alert alert-success" role="status">' . e(fn_t('platform_security_removed')) . '</div>'
             : '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_security_save_failed')) . '</div>';
     }
 }
 
-$rulesResult = pg_query(
-    db(),
-    "SELECT id, network::text AS network
-     FROM access_ip_allowlist
-     WHERE company_id IS NULL AND scope = 'admin' AND is_active
-     ORDER BY id"
-);
+try {
+    $rulesResult = db_query_params(
+        'platform_security.list_networks',
+        "SELECT id, network::text AS network
+         FROM access_ip_allowlist
+         WHERE company_id IS NULL AND scope = 'admin' AND is_active
+         ORDER BY id"
+    );
+} catch (GrompilDatabaseQueryException) {
+    $rulesResult = false;
+}
 $rules = [];
 while ($rulesResult && $row = pg_fetch_assoc($rulesResult)) {
     $rules[] = $row;

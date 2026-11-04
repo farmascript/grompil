@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -17,6 +17,13 @@
 declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+$loginQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
 
 $signedInUser = current_user();
 if ($signedInUser !== null) {
@@ -49,15 +56,15 @@ if ($loginCompany !== null) {
         'DE' => ['Willkommen bei ' . $loginCompany['name'], 'Willkommen auf der Website von ' . $loginCompany['name'] . '. Hier finden Sie Informationen zu unseren Dienstleistungen und Kontaktdaten.'],
     ];
     [$companyTitle, $companyBody] = $homeDefaults[$language];
-    $pageResult = pg_query_params(
-        db(),
+    $pageResult = $loginQuery(
+        'login.company_home',
         'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
         [(int) $loginCompany['id'], 'home', $language]
     );
     $companyPage = $pageResult ? pg_fetch_assoc($pageResult) : false;
     if (!$companyPage && $language !== $loginCompany['default_language']) {
-        $pageResult = pg_query_params(
-            db(),
+        $pageResult = $loginQuery(
+            'login.company_home_default_language',
             'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
             [(int) $loginCompany['id'], 'home', (string) $loginCompany['default_language']]
         );
@@ -84,8 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = (string) ($_POST['password'] ?? '');
     $ipAddress = grompil_client_ip_address() ?: 'unknown';
     $attemptCompanyId = $loginCompany ? (int) $loginCompany['id'] : 0;
-    $attemptResult = pg_query_params(
-        db(),
+    $attemptResult = $loginQuery(
+        'login.check_attempt_limit',
         "SELECT count(*) AS total, max(attempted_at) AS latest
          FROM login_attempts
          WHERE company_id = $1 AND email = $2 AND ip_address = $3
@@ -99,8 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userResult = false;
     if (!$isLocked) {
         $userResult = $loginCompany
-            ? pg_query_params(db(), 'SELECT id, password_hash, is_active, company_id, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
-            : pg_query_params(db(), 'SELECT u.id, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM users AS u JOIN roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
+            ? $loginQuery('login.find_company_user', 'SELECT id, password_hash, is_active, company_id, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
+            : $loginQuery('login.find_platform_user', 'SELECT u.id, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM users AS u JOIN roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
     }
     $user = $userResult && pg_num_rows($userResult) === 1 ? pg_fetch_assoc($userResult) : false;
 
@@ -139,8 +146,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($loginCompany !== null) {
             set_database_tenant_context((int) $loginCompany['id'], (int) $user['id'], false);
-            $membershipResult = pg_query_params(
-                db(),
+            $membershipResult = $loginQuery(
+                'login.check_company_membership',
                 'SELECT cr.level
                  FROM company_users AS cu
                  JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
@@ -156,8 +163,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($ipAllowed) {
-            pg_query_params(
-                db(),
+            $loginQuery(
+                'login.clear_attempts',
                 'DELETE FROM login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3',
                 [$attemptCompanyId, $email, $ipAddress]
             );
@@ -172,8 +179,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $signedInUser = current_user();
             if ($signedInUser !== null) {
-                $lastLoginResult = pg_query_params(
-                    db(),
+                $lastLoginResult = $loginQuery(
+                    'login.update_last_login',
                     'UPDATE users SET last_login_at = now() WHERE id = $1',
                     [(int) $signedInUser['id']]
                 );
@@ -185,8 +192,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if (!$isLocked) {
-        pg_query_params(
-            db(),
+        $loginQuery(
+            'login.record_attempt',
             'INSERT INTO login_attempts (company_id, email, ip_address) VALUES ($1, $2, $3)',
             [$attemptCompanyId, $email, $ipAddress]
         );

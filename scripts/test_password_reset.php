@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -64,11 +64,21 @@ try {
     $migration = file_get_contents(dirname(__DIR__) . '/migrations/20261021-183938_password_reset.sql');
     $migration = preg_replace('/GRANT SELECT, INSERT, UPDATE, DELETE ON password_reset_tokens, password_reset_attempts TO grompil_app;/', '', $migration);
     $migration = str_replace('CREATE TABLE IF NOT EXISTS', 'CREATE TEMP TABLE IF NOT EXISTS', $migration);
-    reset_test_expect((bool) @pg_query($connection, $migration), 'migration applies to temporary fixtures');
-    reset_test_expect((bool) @pg_query($connection, $migration), 'migration can be repeated');
+    try {
+        $migrationApplied = db_query_raw('password_reset_test.apply_migration', $migration, $connection);
+    } catch (GrompilDatabaseQueryException) {
+        $migrationApplied = false;
+    }
+    reset_test_expect((bool) $migrationApplied, 'migration applies to temporary fixtures');
+    try {
+        $migrationRepeated = db_query_raw('password_reset_test.repeat_migration', $migration, $connection);
+    } catch (GrompilDatabaseQueryException) {
+        $migrationRepeated = false;
+    }
+    reset_test_expect((bool) $migrationRepeated, 'migration can be repeated');
     password_reset_query($connection,
         "CREATE TEMP TABLE platform_system_settings (
-            "key" text PRIMARY KEY, value_integer integer NOT NULL, updated_at timestamptz DEFAULT now()
+            \"key\" text PRIMARY KEY, value_integer integer NOT NULL, updated_at timestamptz DEFAULT now()
         )"
     );
     password_reset_query($connection,

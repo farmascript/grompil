@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-23
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -30,6 +30,7 @@ try {
         define('GROMPIL_ROOT', dirname(__DIR__));
     }
     require_once dirname(__DIR__) . '/includes/database_config.php';
+    require_once dirname(__DIR__) . '/includes/database_queries.php';
     $database = grompil_database_config();
     $password = (string) ($database['password'] ?? '');
     $connectionString = grompil_database_connection_string();
@@ -41,9 +42,10 @@ try {
     if ($connection === false) {
         throw new RuntimeException(error_get_last()['message'] ?? 'The database connection failed.');
     }
-    $result = @pg_query($connection, 'SELECT 1');
-    if ($result === false) {
-        throw new RuntimeException('Connected, but the test query failed: ' . pg_last_error($connection));
+    try {
+        $result = db_query_params('database_connection.probe', 'SELECT 1', [], $connection);
+    } catch (GrompilDatabaseQueryException $error) {
+        throw new RuntimeException('Connected, but the test query failed: ' . pg_last_error($connection), 0, $error);
     }
     pg_free_result($result);
     pg_close($connection);

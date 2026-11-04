@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:49
- * @date_mut: Wed 2026-10-21 16:50:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -54,14 +54,15 @@ if (!preg_match('/^[a-z0-9][a-z0-9._-]{0,79}$/', $application)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result = @pg_query_params(
-        db(),
-        'SELECT configuration, updated_at
-         FROM company_navigation_preferences
-         WHERE company_id = $1 AND application = $2',
-        [(int) $company['id'], $application]
-    );
-    if (!$result) {
+    try {
+        $result = db_query_params(
+            'navigation_preferences.load',
+            'SELECT configuration, updated_at
+             FROM company_navigation_preferences
+             WHERE company_id = $1 AND application = $2',
+            [(int) $company['id'], $application]
+        );
+    } catch (GrompilDatabaseQueryException) {
         navigation_preferences_response(503, ['error' => 'preferences_unavailable']);
     }
     $row = pg_fetch_assoc($result);
@@ -109,16 +110,17 @@ foreach (['overrides', 'assignments', 'settings'] as $key) {
 }
 
 $json = json_encode($configuration, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-$result = @pg_query_params(
-    db(),
-    'INSERT INTO company_navigation_preferences (company_id, application, configuration, updated_at)
-     VALUES ($1, $2, $3::jsonb, now())
-     ON CONFLICT (company_id, application) DO UPDATE
-        SET configuration = EXCLUDED.configuration, updated_at = now()
-     RETURNING updated_at',
-    [(int) $company['id'], $application, $json]
-);
-if (!$result) {
+try {
+    $result = db_query_params(
+        'navigation_preferences.save',
+        'INSERT INTO company_navigation_preferences (company_id, application, configuration, updated_at)
+         VALUES ($1, $2, $3::jsonb, now())
+         ON CONFLICT (company_id, application) DO UPDATE
+            SET configuration = EXCLUDED.configuration, updated_at = now()
+         RETURNING updated_at',
+        [(int) $company['id'], $application, $json]
+    );
+} catch (GrompilDatabaseQueryException) {
     navigation_preferences_response(503, ['error' => 'preferences_unavailable']);
 }
 $saved = pg_fetch_assoc($result);

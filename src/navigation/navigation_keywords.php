@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -66,11 +66,15 @@ $candidateKeys = array_keys($candidateKeys);
 sort($candidateKeys, SORT_NATURAL | SORT_FLAG_CASE);
 $missingByKey = [];
 foreach ($candidateKeys as $key) {
-    $result = pg_query_params(
-        db(),
-        'SELECT code FROM substitutions WHERE company_id = 0 AND "key" = $1',
-        [$key]
-    );
+    try {
+        $result = db_query_params(
+            'navigation_keywords.find_existing',
+            'SELECT code FROM substitutions WHERE company_id = 0 AND "key" = $1',
+            [$key]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        grompil_show_error(500, 61724, 'De bestaande vertalingen konden niet worden gecontroleerd. Probeer het later opnieuw.', 'Controle mislukt');
+    }
     if (!$result) {
         grompil_show_error(500, 61724, 'De bestaande vertalingen konden niet worden gecontroleerd. Probeer het later opnieuw.', 'Controle mislukt');
     }
@@ -86,17 +90,25 @@ foreach ($candidateKeys as $key) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
-    $ok = (bool) pg_query(db(), 'BEGIN');
+    try {
+        $ok = (bool) db_query_params('navigation_keywords.add_missing.begin', 'BEGIN');
+    } catch (GrompilDatabaseQueryException) {
+        $ok = false;
+    }
     $inserted = 0;
     foreach ($ok ? $missingByKey : [] as $key => $missingLanguages) {
         foreach ($missingLanguages as $language) {
-            $result = pg_query_params(
-                db(),
-                'INSERT INTO substitutions (company_id, "key", "value", code)
-                 VALUES (0, $1, $2, $3)
-                 ON CONFLICT (company_id, "key", code) DO NOTHING',
-                [$key, '!' . $key . '!', $language]
-            );
+            try {
+                $result = db_query_params(
+                    'navigation_keywords.add_missing',
+                    'INSERT INTO substitutions (company_id, "key", "value", code)
+                     VALUES (0, $1, $2, $3)
+                     ON CONFLICT (company_id, "key", code) DO NOTHING',
+                    [$key, '!' . $key . '!', $language]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $result = false;
+            }
             if (!$result) {
                 $ok = false;
                 break 2;
@@ -105,7 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($ok && pg_query(db(), 'COMMIT')) {
+    try {
+        $committed = $ok && (bool) db_query_params('navigation_keywords.add_missing.commit', 'COMMIT');
+    } catch (GrompilDatabaseQueryException) {
+        $committed = false;
+    }
+    if ($committed) {
         $published = true;
         foreach ($languages as $language) {
             $published = fn_exportLanguageFile($language) && $published;
@@ -121,7 +138,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $missingByKey = [];
     } else {
-        pg_query(db(), 'ROLLBACK');
+        try {
+            db_query_params('navigation_keywords.add_missing.rollback', 'ROLLBACK');
+        } catch (GrompilDatabaseQueryException) {
+            // The helper already logged the rollback failure.
+        }
         $message = 'The update failed; no changes were saved.';
         $messageType = 'danger';
     }

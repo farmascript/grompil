@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -40,39 +40,51 @@ function create_initial_company_administrator(
         return false;
     }
 
-    $roles = pg_query_params(
-        db(),
-        "SELECT
-            (SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1) AS base_role_id,
-            (SELECT id FROM company_roles WHERE company_id = $1 AND lower(name) = 'beheerder' ORDER BY id LIMIT 1) AS company_role_id",
-        [$companyId]
-    );
+    try {
+        $roles = db_query_params(
+            'company_admin.initial_roles',
+            "SELECT
+                (SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1) AS base_role_id,
+                (SELECT id FROM company_roles WHERE company_id = $1 AND lower(name) = 'beheerder' ORDER BY id LIMIT 1) AS company_role_id",
+            [$companyId]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
     $role = $roles ? pg_fetch_assoc($roles) : false;
     if (!$role || empty($role['base_role_id']) || empty($role['company_role_id'])) {
         return false;
     }
 
     $temporaryPassword = bin2hex(random_bytes(16));
-    $userResult = pg_query_params(
-        db(),
-        'INSERT INTO users (
-            company_id, email, display_name, password_hash, role_id, must_change_password
-         ) VALUES ($1, $2, $3, $4, $5, TRUE) RETURNING id',
-        [$companyId, $email, 'Beheerder', password_hash($temporaryPassword, PASSWORD_DEFAULT), (int) $role['base_role_id']]
-    );
+    try {
+        $userResult = db_query_params(
+            'company_admin.initial_user',
+            'INSERT INTO users (
+                company_id, email, display_name, password_hash, role_id, must_change_password
+             ) VALUES ($1, $2, $3, $4, $5, TRUE) RETURNING id',
+            [$companyId, $email, 'Beheerder', password_hash($temporaryPassword, PASSWORD_DEFAULT), (int) $role['base_role_id']]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
     $user = $userResult ? pg_fetch_assoc($userResult) : false;
     if (!$user) {
         return false;
     }
 
-    $membership = pg_query_params(
-        db(),
-        "INSERT INTO company_users (
-            company_id, user_id, company_role_id, is_active,
-            approval_status, approved_at
-         ) VALUES ($1, $2, $3, TRUE, 'approved', now())",
-        [$companyId, (int) $user['id'], (int) $role['company_role_id']]
-    );
+    try {
+        $membership = db_query_params(
+            'company_admin.initial_membership',
+            "INSERT INTO company_users (
+                company_id, user_id, company_role_id, is_active,
+                approval_status, approved_at
+             ) VALUES ($1, $2, $3, TRUE, 'approved', now())",
+            [$companyId, (int) $user['id'], (int) $role['company_role_id']]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
     if (!$membership) {
         return false;
     }

@@ -80,6 +80,16 @@ function db(): PgSql\Connection
 
 require_once __DIR__ . '/database_queries.php';
 
+/** Preserve bootstrap's existing false-based query handling with central logging. */
+function grompil_bootstrap_query(string $operation, string $sql, array $params = []): PgSql\Result|false
+{
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+}
+
 /**
  * Escapes text for safe insertion into HTML.
  *
@@ -124,8 +134,8 @@ function current_user(): ?array
         false
     );
 
-    $result = pg_query_params(
-        db(),
+    $result = grompil_bootstrap_query(
+        'bootstrap.current_user',
         'SELECT
             u.id,
             u.display_name,
@@ -190,8 +200,8 @@ function current_user(): ?array
  */
 function set_database_tenant_context(int $companyId, int $userId, bool $platformOperator): void
 {
-    pg_query_params(
-        db(),
+    grompil_bootstrap_query(
+        'bootstrap.set_tenant_context',
         'SELECT set_config($1, $2, false), set_config($3, $4, false), set_config($5, $6, false), set_config($7, $8, false)',
         [
             'grompil.user_id', (string) $userId,
@@ -286,8 +296,8 @@ function company_management_ip_allowed(int $companyId, ?string $address = null):
     if ($companyId < 1 || filter_var($address, FILTER_VALIDATE_IP) === false) {
         return false;
     }
-    $result = @pg_query_params(
-        db(),
+    $result = grompil_bootstrap_query(
+        'bootstrap.company_management_ip_allowed',
         "SELECT count(*) AS rule_count,
                 COALESCE(bool_or(network >>= $2::inet), FALSE) AS address_allowed
          FROM access_ip_allowlist
@@ -353,10 +363,10 @@ function is_platform_operator(?array $user = null): bool
 function available_companies(array $user): array
 {
     if (is_platform_operator($user)) {
-        $result = pg_query(db(), 'SELECT id, name, slug FROM companies WHERE is_active ORDER BY name');
+        $result = grompil_bootstrap_query('bootstrap.available_companies_platform', 'SELECT id, name, slug FROM companies WHERE is_active ORDER BY name');
     } else {
-        $result = pg_query_params(
-            db(),
+        $result = grompil_bootstrap_query(
+            'bootstrap.available_companies_member',
             'SELECT c.id, c.name, c.slug
              FROM companies AS c
              JOIN company_users AS cu ON cu.company_id = c.id
@@ -386,8 +396,8 @@ function available_companies(array $user): array
  */
 function seed_company_roles(int $companyId): bool
 {
-    $result = pg_query_params(
-        db(),
+    $result = grompil_bootstrap_query(
+        'bootstrap.seed_company_roles',
         "INSERT INTO company_roles (company_id, name, description, level, permissions, is_system)
          SELECT $1, r.name, r.description, r.level,
                 CASE WHEN lower(r.name) = 'beheerder'
@@ -412,14 +422,14 @@ function seed_company_roles(int $companyId): bool
 function set_active_company(int $companyId, array $user): bool
 {
     if (is_platform_operator($user)) {
-        $result = pg_query_params(
-            db(),
+        $result = grompil_bootstrap_query(
+            'bootstrap.set_active_company_platform',
             'SELECT id FROM companies WHERE id = $1 AND is_active',
             [$companyId]
         );
     } else {
-        $result = pg_query_params(
-            db(),
+        $result = grompil_bootstrap_query(
+            'bootstrap.set_active_company_member',
             'SELECT c.id
              FROM companies AS c
              JOIN company_users AS cu ON cu.company_id = c.id
@@ -455,8 +465,8 @@ function current_company_context(?array $user = null): ?array
     }
     set_database_tenant_context($companyId, (int) $user['id'], is_platform_operator($user));
 
-    $result = pg_query_params(
-        db(),
+    $result = grompil_bootstrap_query(
+        'bootstrap.current_company_context',
         'SELECT c.id, c.name, c.slug, c.default_language, c.is_public,
                 cu.is_active AS membership_active, cu.approval_status,
                 cr.id AS company_role_id, cr.name AS company_role_name,
@@ -525,7 +535,7 @@ function redirect_after_login(array $user): never
     }
 
     if (($user['company_id'] ?? null) !== null) {
-        $result = pg_query_params(db(), 'SELECT id FROM companies WHERE id = $1 AND is_active', [$user['company_id']]);
+        $result = grompil_bootstrap_query('bootstrap.resolve_user_company', 'SELECT id FROM companies WHERE id = $1 AND is_active', [$user['company_id']]);
         $company = $result ? pg_fetch_assoc($result) : false;
         if ($company) {
             $_SESSION['active_company_id'] = (int) $user['company_id'];
@@ -572,8 +582,8 @@ function resolve_public_company(): ?array
 {
     $host = strtolower((string) (parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? ''), PHP_URL_HOST) ?: ''));
     if ($host !== '') {
-        $domainResult = pg_query_params(
-            db(),
+        $domainResult = grompil_bootstrap_query(
+            'bootstrap.resolve_company_domain',
             'SELECT c.id, c.name, c.slug, c.city, c.default_language,
                     c.store_theme, c.store_logo_file, c.store_hero_image_file
              FROM company_domains AS d
@@ -594,8 +604,8 @@ function resolve_public_company(): ?array
         return null;
     }
     if ($isLocalHost && preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
-        $result = pg_query_params(
-            db(),
+        $result = grompil_bootstrap_query(
+            'bootstrap.resolve_local_company',
             'SELECT id, name, slug, city, default_language,
                     store_theme, store_logo_file, store_hero_image_file
              FROM companies WHERE slug = $1 AND is_active AND is_public',
@@ -624,17 +634,17 @@ function resolve_company_slug(string $slug, bool $requirePublic = true): ?array
         return null;
     }
     if (!$requirePublic) {
-        pg_query(db(), "SELECT set_config('grompil.company_login_lookup', 'true', false)");
+        grompil_bootstrap_query('bootstrap.company_login_lookup.enable', "SELECT set_config('grompil.company_login_lookup', 'true', false)");
     }
-    $result = pg_query_params(
-        db(),
+    $result = grompil_bootstrap_query(
+        'bootstrap.resolve_company_slug',
         'SELECT id, name, slug, city, default_language, store_theme FROM companies
          WHERE slug = $1 AND is_active AND ($2::boolean = FALSE OR is_public)',
         [$slug, $requirePublic ? 'true' : 'false']
     );
     $company = $result ? pg_fetch_assoc($result) : false;
     if (!$requirePublic) {
-        pg_query(db(), "SELECT set_config('grompil.company_login_lookup', 'false', false)");
+        grompil_bootstrap_query('bootstrap.company_login_lookup.disable', "SELECT set_config('grompil.company_login_lookup', 'false', false)");
     }
     return $company ?: null;
 }

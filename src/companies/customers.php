@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24 00:00:00
- * @date_mut: Sat 2026-10-24 00:00:00
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -39,21 +39,25 @@ if (($_GET['ajax'] ?? '') === 'search') {
         : strtolower($query);
     $prefix = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $normalizedQuery) . '%';
     $digits = ctype_digit($query) ? $query : '';
-    $result = pg_query_params(
-        db(),
-        "SELECT u.id, u.display_name, u.email, u.acronym
-         FROM users AS u
-         JOIN roles AS r ON r.id = u.role_id
-         JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_id = u.id
-         JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
-         WHERE u.company_id = $1 AND cu.company_id = $1
-           AND r.level >= 200 AND cr.level >= 200
-           AND (lower(u.display_name) LIKE $2 OR lower(u.email) LIKE $2
-                OR lower(u.acronym) LIKE $2 OR u.id = NULLIF($3, '')::bigint)
-         ORDER BY lower(u.display_name), u.id
-         LIMIT 20",
-        [$companyId, $prefix, $digits]
-    );
+    try {
+        $result = db_query_params(
+            'customers.search',
+            "SELECT u.id, u.display_name, u.email, u.acronym
+             FROM users AS u
+             JOIN roles AS r ON r.id = u.role_id
+             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_id = u.id
+             JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
+             WHERE u.company_id = $1 AND cu.company_id = $1
+               AND r.level >= 200 AND cr.level >= 200
+               AND (lower(u.display_name) LIKE $2 OR lower(u.email) LIKE $2
+                    OR lower(u.acronym) LIKE $2 OR u.id = NULLIF($3, '')::bigint)
+             ORDER BY lower(u.display_name), u.id
+             LIMIT 20",
+            [$companyId, $prefix, $digits]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        $result = false;
+    }
     if (!$result) {
         http_response_code(503);
         echo json_encode(['results' => [], 'error' => 'search_unavailable']);
@@ -76,20 +80,24 @@ $selectedCustomer = null;
 $rawCustomerId = $_GET['customer_id'] ?? null;
 $customerId = is_scalar($rawCustomerId) ? filter_var($rawCustomerId, FILTER_VALIDATE_INT) : false;
 if ($customerId !== false && $customerId !== null && $customerId > 0) {
-    $result = pg_query_params(
-        db(),
-        "SELECT u.id, u.display_name, u.email, u.acronym, u.is_active,
-                u.approval_status, u.created_at, u.last_login_at,
-                cu.is_active AS company_active, cu.approval_status AS company_approval_status,
-                cr.name AS company_role
-         FROM users AS u
-         JOIN roles AS r ON r.id = u.role_id
-         JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_id = u.id
-         JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
-         WHERE u.company_id = $1 AND cu.company_id = $1 AND u.id = $2
-           AND r.level >= 200 AND cr.level >= 200",
-        [$companyId, $customerId]
-    );
+    try {
+        $result = db_query_params(
+            'customers.load_details',
+            "SELECT u.id, u.display_name, u.email, u.acronym, u.is_active,
+                    u.approval_status, u.created_at, u.last_login_at,
+                    cu.is_active AS company_active, cu.approval_status AS company_approval_status,
+                    cr.name AS company_role
+             FROM users AS u
+             JOIN roles AS r ON r.id = u.role_id
+             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_id = u.id
+             JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
+             WHERE u.company_id = $1 AND cu.company_id = $1 AND u.id = $2
+               AND r.level >= 200 AND cr.level >= 200",
+            [$companyId, $customerId]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        $result = false;
+    }
     $selectedCustomer = $result ? pg_fetch_assoc($result) : false;
     if ($selectedCustomer === false) {
         $selectedCustomer = null;

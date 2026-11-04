@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:18:51
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -22,6 +22,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once dirname(__DIR__) . '/includes/database_config.php';
+require_once dirname(__DIR__) . '/includes/database_queries.php';
 
 $connectionString = grompil_database_connection_string();
 if ($connectionString === null) {
@@ -33,7 +34,14 @@ if (!$connection) {
     fwrite(STDERR, "Could not connect to PostgreSQL.\n");
     exit(1);
 }
-pg_query($connection, "SELECT set_config('grompil.platform_operator', 'true', false)");
+$fillTranslationQuery = static function (string $operation, string $sql, array $params = []) use ($connection): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params, $connection);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
+$fillTranslationQuery('fill_translations.set_platform_context', "SELECT set_config('grompil.platform_operator', 'true', false)");
 
 // Translation arrays follow the alphabetical key order in lang_nl.php.
 $fr = [
@@ -155,7 +163,7 @@ if (count($keys) !== count($fr) || count($keys) !== count($de)) {
     }
     exit(1);
 }
-if (!pg_query($connection, 'BEGIN')) {
+if (!$fillTranslationQuery('fill_translations.begin', 'BEGIN')) {
     fwrite(STDERR, "Failed to start the transaction.\n");
     exit(1);
 }
@@ -165,20 +173,20 @@ foreach (['FR' => $fr, 'DE' => $de] as $code => $values) {
         if ($key === 'html_language') {
             $value = strtolower($code);
         }
-        $result = pg_query_params(
-            $connection,
+        $result = $fillTranslationQuery(
+            'fill_translations.update_value',
             'UPDATE substitutions SET "value" = $1 WHERE company_id = 0 AND "key" = $2 AND code = $3 AND trim("value") = $4',
             [$value, $key, $code, '']
         );
         if (!$result) {
-            pg_query($connection, 'ROLLBACK');
+            $fillTranslationQuery('fill_translations.rollback_update', 'ROLLBACK');
             fwrite(STDERR, "Update failed; transaction rolled back.\n");
             exit(1);
         }
     }
 }
-if (!pg_query($connection, 'COMMIT')) {
-    pg_query($connection, 'ROLLBACK');
+if (!$fillTranslationQuery('fill_translations.commit', 'COMMIT')) {
+    $fillTranslationQuery('fill_translations.rollback_commit', 'ROLLBACK');
     fwrite(STDERR, "Commit failed; transaction rolled back.\n");
     exit(1);
 }

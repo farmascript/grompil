@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -43,12 +43,13 @@ if (!preg_match('/^[a-z0-9][a-z0-9._-]{0,79}$/', $application)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $result = @pg_query_params(
-        db(),
-        'SELECT configuration, updated_at FROM platform_navigation_preferences WHERE application = $1',
-        [$application]
-    );
-    if (!$result) {
+    try {
+        $result = db_query_params(
+            'platform_navigation_preferences.load',
+            'SELECT configuration, updated_at FROM platform_navigation_preferences WHERE application = $1',
+            [$application]
+        );
+    } catch (GrompilDatabaseQueryException) {
         platform_navigation_response(503, ['error' => 'preferences_unavailable']);
     }
     $row = pg_fetch_assoc($result);
@@ -162,16 +163,17 @@ foreach ($configuration['groupOrder'] ?? [] as $groupId) {
 }
 
 $json = json_encode($configuration, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-$result = @pg_query_params(
-    db(),
-    'INSERT INTO platform_navigation_preferences (application, configuration, updated_at)
-     VALUES ($1, $2::jsonb, now())
-     ON CONFLICT (application) DO UPDATE
-        SET configuration = EXCLUDED.configuration, updated_at = now()
-     RETURNING updated_at',
-    [$application, $json]
-);
-if (!$result) {
+try {
+    $result = db_query_params(
+        'platform_navigation_preferences.save',
+        'INSERT INTO platform_navigation_preferences (application, configuration, updated_at)
+         VALUES ($1, $2::jsonb, now())
+         ON CONFLICT (application) DO UPDATE
+            SET configuration = EXCLUDED.configuration, updated_at = now()
+         RETURNING updated_at',
+        [$application, $json]
+    );
+} catch (GrompilDatabaseQueryException) {
     platform_navigation_response(503, ['error' => 'preferences_unavailable']);
 }
 $saved = pg_fetch_assoc($result);

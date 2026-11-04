@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-11-04 18:34:10
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -28,6 +28,13 @@ if (!defined('GROMPIL_ROOT')) {
 
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+$selectCompanyQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
 require_once GROMPIL_ROOT . '/includes/kbo.php';
 require_once GROMPIL_ROOT . '/includes/company_admin.php';
 $user = require_login();
@@ -59,8 +66,8 @@ if ($ajaxAction === 'pharmacy_search') {
     }
 
     $pattern = '%' . $query . '%';
-    $matches = pg_query_params(
-        db(),
+    $matches = $selectCompanyQuery(
+        'select_company.pharmacy_search_api',
         'SELECT "Vergunningsnummer", "Naam", "Adres", "Postcode", "Gemeente"
          FROM pharmacies
          WHERE "Naam" ILIKE $1 OR "Adres" ILIKE $1 OR "Postcode" ILIKE $1 OR "Gemeente" ILIKE $1
@@ -110,12 +117,16 @@ $selectedEnterpriseNumber = !$faggRegistryOnly
  */
 function company_registry_entry_by_permit(string $permit): ?array
 {
-    $result = pg_query_params(
-        db(),
-        'SELECT "Vergunningsnummer", "Naam", "Adres", "Postcode", "Gemeente", "Status", "Vergunninghouder", "Uitbater"
-         FROM pharmacies WHERE "Vergunningsnummer" = $1',
-        [$permit]
-    );
+    try {
+        $result = db_query_params(
+            'select_company.registry_entry',
+            'SELECT "Vergunningsnummer", "Naam", "Adres", "Postcode", "Gemeente", "Status", "Vergunninghouder", "Uitbater"
+             FROM pharmacies WHERE "Vergunningsnummer" = $1',
+            [$permit]
+        );
+    } catch (GrompilDatabaseQueryException) {
+        return null;
+    }
     $row = $result ? pg_fetch_assoc($result) : false;
     return $row ?: null;
 }
@@ -240,8 +251,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!filter_var($initialAdminEmail, FILTER_VALIDATE_EMAIL)) {
                 $message = '<div class="alert alert-warning" role="alert">' . e(fn_t('company_admin_email_invalid')) . '</div>';
             } else {
-                $existingResult = pg_query_params(
-                    db(),
+                $existingResult = $selectCompanyQuery(
+                    'select_company.find_existing_enterprise',
                     'SELECT id FROM companies WHERE enterprise_number = $1 AND company_permit_number = \'\' ORDER BY id LIMIT 1',
                     [$number]
                 );
@@ -260,9 +271,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $slug = $slugBase . '-' . $suffix;
                     $street = trim((string) ($details['street'] ?? ''));
                     $houseNumber = trim((string) ($details['house_number'] ?? ''));
-                    $begun = (bool) pg_query(db(), 'BEGIN');
-                    $insert = $begun ? pg_query_params(
-                        db(),
+                    $begun = (bool) $selectCompanyQuery('select_company.create_enterprise.begin', 'BEGIN');
+                    $insert = $begun ? $selectCompanyQuery(
+                        'select_company.create_enterprise.insert',
                         'INSERT INTO companies (
                             slug, name, legal_name, enterprise_number, enterprise_number_status,
                             billing_email, phone, street, house_number, postal_code, city,
@@ -285,9 +296,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'NL'
                             );
                     }
-                    $saved = $saved && (bool) pg_query(db(), 'COMMIT');
+                    $saved = $saved && (bool) $selectCompanyQuery('select_company.create_enterprise.commit', 'COMMIT');
                     if (!$saved && $begun) {
-                        pg_query(db(), 'ROLLBACK');
+                        $selectCompanyQuery('select_company.create_enterprise.rollback', 'ROLLBACK');
                     }
                     if ($saved && set_active_company((int) $created['id'], $user)) {
                         unset($_SESSION['company_kbo_lookups'][$number]);
@@ -338,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '<div class="alert alert-warning" role="alert">' . e(fn_t('company_admin_email_invalid')) . '</div>';
         } else {
             $initialAdminEmail = strtolower(trim((string) ($_POST['initial_admin_email'] ?? ($cached['details']['email'] ?? ''))));
-                $existingPermit = pg_query_params(db(), 'SELECT id FROM companies WHERE company_permit_number = $1', [$selectedPermit]);
+                $existingPermit = $selectCompanyQuery('select_company.find_existing_permit', 'SELECT id FROM companies WHERE company_permit_number = $1', [$selectedPermit]);
             $existing = $existingPermit ? pg_fetch_assoc($existingPermit) : false;
             if ($existing) {
                 if (set_active_company((int) $existing['id'], $user)) {
@@ -360,9 +371,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $houseNumber = trim($addressMatch[2]);
                 }
                 $details = $cached['details'];
-                $begun = (bool) pg_query(db(), 'BEGIN');
-                $insert = $begun ? pg_query_params(
-                    db(),
+                $begun = (bool) $selectCompanyQuery('select_company.create_permit.begin', 'BEGIN');
+                $insert = $begun ? $selectCompanyQuery(
+                    'select_company.create_permit.insert',
                     'INSERT INTO companies (
                         slug, name, legal_name, enterprise_number, enterprise_number_status,
                         billing_email, phone, street, house_number, postal_code, city,
@@ -385,9 +396,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'NL'
                         );
                 }
-                $saved = $saved && (bool) pg_query(db(), 'COMMIT');
+                $saved = $saved && (bool) $selectCompanyQuery('select_company.create_permit.commit', 'COMMIT');
                 if (!$saved && $begun) {
-                    pg_query(db(), 'ROLLBACK');
+                    $selectCompanyQuery('select_company.create_permit.rollback', 'ROLLBACK');
                 }
                 if ($saved && set_active_company((int) $created['id'], $user)) {
                     unset($_SESSION['pharmacy_kbo_lookup']);
@@ -409,7 +420,7 @@ $companies = available_companies($user);
 $activeCompanyId = (int) ($_SESSION['active_company_id'] ?? 0);
 $activeCompanyName = '';
 if ($activeCompanyId > 0) {
-    $activeCompanyResult = pg_query_params(db(), 'SELECT name FROM companies WHERE id = $1', [$activeCompanyId]);
+    $activeCompanyResult = $selectCompanyQuery('select_company.active_company_name', 'SELECT name FROM companies WHERE id = $1', [$activeCompanyId]);
     $activeCompanyRow = $activeCompanyResult ? pg_fetch_assoc($activeCompanyResult) : false;
     $activeCompanyName = (string) ($activeCompanyRow['name'] ?? '');
 }
@@ -484,12 +495,12 @@ if ($platformOperator) {
             $params[] = '%' . $search . '%';
             $where = ' WHERE "Naam" ILIKE $1 OR "Adres" ILIKE $1 OR "Postcode" ILIKE $1 OR "Gemeente" ILIKE $1 OR "Vergunninghouder" ILIKE $1 OR "Vergunningsnummer" ILIKE $1';
         }
-        $countResult = pg_query_params(db(), 'SELECT count(*) AS total FROM pharmacies' . $where, $params);
+        $countResult = $selectCompanyQuery('select_company.pharmacy_count', 'SELECT count(*) AS total FROM pharmacies' . $where, $params);
         $total = $countResult ? (int) pg_fetch_result($countResult, 0, 'total') : 0;
         $limitParameter = count($params) + 1;
         $offsetParameter = count($params) + 2;
-        $result = pg_query_params(
-            db(),
+        $result = $selectCompanyQuery(
+            'select_company.pharmacy_list',
             'SELECT "Vergunningsnummer", "Naam", "Adres", "Postcode", "Gemeente", "Vergunninghouder"
              FROM pharmacies' . $where . ' ORDER BY "Naam", "Gemeente" LIMIT $' . $limitParameter . ' OFFSET $' . $offsetParameter,
             [...$params, $pageSize, $offset]

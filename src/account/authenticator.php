@@ -4,6 +4,13 @@
 declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+$authenticatorQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
 
 if (current_user() !== null) {
     redirect('admin.php');
@@ -21,8 +28,8 @@ if ($userId < 1 || $email === '' || $attemptEmail === '' || $loginIp === '' || $
 }
 
 set_database_tenant_context(0, $userId, true);
-$accountResult = pg_query_params(
-    db(),
+$accountResult = $authenticatorQuery(
+    'account_authenticator.load_platform_account',
     'SELECT u.is_active, u.approval_status,
             COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version,
             r.name AS role_name, r.level AS role_level, r.permissions
@@ -75,8 +82,8 @@ try {
 }
 
 $attemptCount = static function () use ($attemptEmail, $loginIp): int {
-    $result = pg_query_params(
-        db(),
+    $result = $authenticatorQuery(
+        'account_authenticator.count_attempts',
         "SELECT count(*) AS total FROM login_attempts
          WHERE company_id = 0 AND email = $1 AND ip_address = $2
            AND attempted_at > now() - interval '15 minutes'",
@@ -87,7 +94,7 @@ $attemptCount = static function () use ($attemptEmail, $loginIp): int {
 };
 
 $completeLogin = static function () use ($userId, $authVersion, $attemptEmail, $loginIp): never {
-    pg_query_params(db(), 'DELETE FROM login_attempts WHERE company_id = 0 AND email = $1 AND ip_address = $2', [$attemptEmail, $loginIp]);
+    $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM login_attempts WHERE company_id = 0 AND email = $1 AND ip_address = $2', [$attemptEmail, $loginIp]);
     session_regenerate_id(true);
     unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     unset($_SESSION['active_company_id']);
@@ -98,7 +105,7 @@ $completeLogin = static function () use ($userId, $authVersion, $attemptEmail, $
     if ($signedInUser === null) {
         redirect('login.php');
     }
-    $saved = pg_query_params(db(), 'UPDATE users SET last_login_at = now() WHERE id = $1', [$userId]);
+    $saved = $authenticatorQuery('account_authenticator.update_last_login', 'UPDATE users SET last_login_at = now() WHERE id = $1', [$userId]);
     if (!$saved) {
         error_log('Successful platform login timestamp could not be saved.');
     }
@@ -131,10 +138,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($validCode && $encryptedSecret === null) {
-            $started = (bool) pg_query(db(), 'BEGIN');
+            $started = (bool) $authenticatorQuery('account_authenticator.enroll.begin', 'BEGIN');
             try {
-                $stored = $started ? pg_query_params(
-                    db(),
+                $stored = $started ? $authenticatorQuery(
+                    'account_authenticator.enroll.store',
                     'INSERT INTO platform_totp_credentials (user_id, secret_ciphertext, enabled_at)
                      VALUES ($1, $2, now())
                      ON CONFLICT (user_id) DO UPDATE
@@ -145,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new RuntimeException('Authenticator credentials could not be stored.');
                 }
                 $recoveryCodes = grompil_create_totp_recovery_codes($userId);
-                if (!pg_query(db(), 'COMMIT')) {
+                if (!$authenticatorQuery('account_authenticator.enroll.commit', 'COMMIT')) {
                     throw new RuntimeException('Authenticator enrollment could not be committed.');
                 }
                 $_SESSION['mfa_pending_verified'] = true;
@@ -154,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $isVerifiedSetup = true;
             } catch (Throwable $error) {
                 if ($started) {
-                    pg_query(db(), 'ROLLBACK');
+                    $authenticatorQuery('account_authenticator.enroll.rollback', 'ROLLBACK');
                 }
                 error_log('Platform authenticator enrollment failed: ' . $error->getMessage());
                 $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_unavailable')) . '</div>';
@@ -162,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($validCode) {
             $completeLogin();
         } else {
-            pg_query_params(db(), 'INSERT INTO login_attempts (company_id, email, ip_address) VALUES (0, $1, $2)', [$attemptEmail, $loginIp]);
+            $authenticatorQuery('account_authenticator.record_attempt', 'INSERT INTO login_attempts (company_id, email, ip_address) VALUES (0, $1, $2)', [$attemptEmail, $loginIp]);
             $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_invalid')) . '</div>';
         }
     }

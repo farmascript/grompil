@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -17,6 +17,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
+require_once __DIR__ . '/database_queries.php';
 
 /**
  *  Runs a reset query without exposing SQL parameters in the application log.
@@ -24,15 +25,31 @@ require_once __DIR__ . '/credentials_config.php';
  * @param PgSql\Connection $connection The PostgreSQL connection.
  * @param string $sql The parameterized SQL statement.
  * @param array $parameters The values to bind to the SQL placeholders.
+ * @param string $operation Stable operation identifier for server-side diagnostics.
  * @return PgSql\Result
  */
-function password_reset_query(PgSql\Connection $connection, string $sql, array $parameters = []): PgSql\Result
+function password_reset_query(
+    PgSql\Connection $connection,
+    string $sql,
+    array $parameters = [],
+    string $operation = 'password_reset.query'
+): PgSql\Result
 {
-    $result = @pg_query_params($connection, $sql, $parameters);
-    if (!$result) {
-        throw new RuntimeException('Password reset database operation failed.');
+    try {
+        return db_query_params($operation, $sql, $parameters, $connection);
+    } catch (GrompilDatabaseQueryException $exception) {
+        throw new RuntimeException('Password reset database operation failed.', 0, $exception);
     }
-    return $result;
+}
+
+/** Preserve the old best-effort rollback behavior while logging failures centrally. */
+function password_reset_rollback(PgSql\Connection $connection, string $operation): void
+{
+    try {
+        db_query_params($operation, 'ROLLBACK', [], $connection);
+    } catch (GrompilDatabaseQueryException) {
+        // The original operation is already failing; rollback remains best-effort.
+    }
 }
 
 /**
@@ -45,7 +62,9 @@ function password_reset_request_limits(PgSql\Connection $connection): array
 {
     $result = password_reset_query($connection,
         'SELECT "key", value_integer FROM platform_system_settings
-         WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')'
+         WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')',
+        [],
+        'password_reset.request_limits'
     );
     $limits = ['max_requests' => 3, 'window_minutes' => 15];
     while ($row = pg_fetch_assoc($result)) {
@@ -86,7 +105,8 @@ function password_reset_attempt_status(
          FROM password_reset_attempts
          WHERE (ip_address = $1 AND attempted_at > now() - interval '1 hour')
             OR (company_id = $2 AND identifier_hash = $3 AND attempted_at > now() - make_interval(mins => $4))",
-        [$ip, $scope, $identifier, $windowMinutes]
+        [$ip, $scope, $identifier, $windowMinutes],
+        'password_reset.attempt_status'
     ));
     $ipTotal = (int) ($row['ip_total'] ?? 0);
     $emailTotal = (int) ($row['email_total'] ?? 0);
@@ -129,11 +149,11 @@ function password_reset_issue(
     $limits = password_reset_request_limits($connection);
     $requestStatus['max_requests'] = $limits['max_requests'];
     $requestStatus['window_minutes'] = $limits['window_minutes'];
-    password_reset_query($connection, 'BEGIN');
+    password_reset_query($connection, 'BEGIN', [], 'password_reset.issue.begin');
     try {
         // Serialize both limits so concurrent requests cannot exceed them.
-        password_reset_query($connection, 'SELECT pg_advisory_xact_lock(hashtext($1))', ['reset-ip:' . $ip]);
-        password_reset_query($connection, 'SELECT pg_advisory_xact_lock(hashtext($1))', ['reset-email:' . $scope . ':' . $identifier]);
+        password_reset_query($connection, 'SELECT pg_advisory_xact_lock(hashtext($1))', ['reset-ip:' . $ip], 'password_reset.issue.lock_ip');
+        password_reset_query($connection, 'SELECT pg_advisory_xact_lock(hashtext($1))', ['reset-email:' . $scope . ':' . $identifier], 'password_reset.issue.lock_email');
         $requestStatus = password_reset_attempt_status(
             $connection,
             $scope,
@@ -143,12 +163,13 @@ function password_reset_issue(
             $limits['max_requests']
         );
         if ($requestStatus['remaining'] === 0) {
-            password_reset_query($connection, 'COMMIT');
+            password_reset_query($connection, 'COMMIT', [], 'password_reset.issue.commit_limited');
             return null;
         }
         password_reset_query($connection,
             'INSERT INTO password_reset_attempts (company_id, identifier_hash, ip_address) VALUES ($1, $2, $3)',
-            [$scope, $identifier, $ip]
+            [$scope, $identifier, $ip],
+            'password_reset.issue.record_attempt'
         );
         $requestStatus = password_reset_attempt_status(
             $connection,
@@ -163,25 +184,27 @@ function password_reset_issue(
              WHERE company_id IS NOT DISTINCT FROM $1::bigint AND lower(email) = $2
                AND is_active AND approval_status = 'approved'
              FOR UPDATE",
-            [$companyId, $email]
+            [$companyId, $email],
+            'password_reset.issue.find_account'
         ));
         $delivery = null;
         if ($user) {
             $token = bin2hex(random_bytes(32));
-            password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_id = $1', [$user['id']]);
+            password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_id = $1', [$user['id']], 'password_reset.issue.revoke_old_token');
             password_reset_query($connection,
                 "INSERT INTO password_reset_tokens (token_hash, user_id, company_id, password_hash_at_issue, expires_at)
                  VALUES ($1, $2, $3, $4, now() + interval '30 minutes')",
-                [hash('sha256', $token), $user['id'], $companyId, $user['password_hash']]
+                [hash('sha256', $token), $user['id'], $companyId, $user['password_hash']],
+                'password_reset.issue.create_token'
             );
             $delivery = ['email' => $user['email'], 'token' => $token];
         }
-        password_reset_query($connection, "DELETE FROM password_reset_tokens WHERE expires_at <= now()");
-        password_reset_query($connection, "DELETE FROM password_reset_attempts WHERE attempted_at < now() - interval '1 day'");
-        password_reset_query($connection, 'COMMIT');
+        password_reset_query($connection, "DELETE FROM password_reset_tokens WHERE expires_at <= now()", [], 'password_reset.issue.cleanup_tokens');
+        password_reset_query($connection, "DELETE FROM password_reset_attempts WHERE attempted_at < now() - interval '1 day'", [], 'password_reset.issue.cleanup_attempts');
+        password_reset_query($connection, 'COMMIT', [], 'password_reset.issue.commit');
         return $delivery;
     } catch (Throwable $exception) {
-        @pg_query($connection, 'ROLLBACK');
+        password_reset_rollback($connection, 'password_reset.issue.rollback');
         throw $exception;
     }
 }
@@ -205,7 +228,8 @@ function password_reset_valid(PgSql\Connection $connection, ?int $companyId, str
            AND u.company_id IS NOT DISTINCT FROM $2::bigint
            AND t.expires_at > now() AND t.password_hash_at_issue = u.password_hash
            AND u.is_active AND u.approval_status = 'approved'",
-        [$tokenHash, $companyId]
+        [$tokenHash, $companyId],
+        'password_reset.validate_token'
     );
     return pg_num_rows($result) === 1;
 }
@@ -225,28 +249,30 @@ function password_reset_consume(PgSql\Connection $connection, ?int $companyId, s
         return false;
     }
     $newHash = password_hash($password, PASSWORD_DEFAULT);
-    password_reset_query($connection, 'BEGIN');
+    password_reset_query($connection, 'BEGIN', [], 'password_reset.consume.begin');
     try {
         // Lock the account first, as issuance does, to avoid lock-order inversions.
         $user = pg_fetch_assoc(password_reset_query($connection,
             'SELECT u.id FROM users AS u JOIN password_reset_tokens AS t ON t.user_id = u.id
              WHERE t.token_hash = $1 AND u.company_id IS NOT DISTINCT FROM $2::bigint
-             FOR UPDATE OF u', [$tokenHash, $companyId]
+             FOR UPDATE OF u', [$tokenHash, $companyId],
+            'password_reset.consume.lock_account'
         ));
         if (!$user || !password_reset_valid($connection, $companyId, $tokenHash)) {
-            password_reset_query($connection, 'ROLLBACK');
+            password_reset_query($connection, 'ROLLBACK', [], 'password_reset.consume.invalid_rollback');
             return false;
         }
         password_reset_query($connection,
             'UPDATE users SET password_hash = $1, must_change_password = FALSE,
                 auth_version = auth_version + 1, updated_at = now() WHERE id = $2',
-            [$newHash, $user['id']]
+            [$newHash, $user['id']],
+            'password_reset.consume.change_password'
         );
-        password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_id = $1', [$user['id']]);
-        password_reset_query($connection, 'COMMIT');
+        password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_id = $1', [$user['id']], 'password_reset.consume.revoke_tokens');
+        password_reset_query($connection, 'COMMIT', [], 'password_reset.consume.commit');
         return true;
     } catch (Throwable $exception) {
-        @pg_query($connection, 'ROLLBACK');
+        password_reset_rollback($connection, 'password_reset.consume.rollback');
         throw $exception;
     }
 }

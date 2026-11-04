@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Wed 2026-10-21 10:22:30
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -39,46 +39,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '<div class="alert alert-danger" role="alert">The IP address of this connection could not be determined.</div>';
         } else {
             $network = str_contains($currentIp, ':') ? $currentIp . '/128' : $currentIp . '/32';
-            $started = (bool) pg_query(db(), 'BEGIN');
-            $deleted = $started ? pg_query_params(
-                db(),
-                "DELETE FROM access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
-                [$companyId]
-            ) : false;
-            $inserted = $deleted ? pg_query_params(
-                db(),
-                "INSERT INTO access_ip_allowlist (company_id, scope, network, description, is_active)
-                 VALUES ($1, 'admin', $2::inet, 'Company administration', TRUE)",
-                [$companyId, $network]
-            ) : false;
-            $saved = $inserted && (bool) pg_query(db(), 'COMMIT');
+            try {
+                $started = (bool) db_query_params('company_security.restrict.begin', 'BEGIN');
+            } catch (GrompilDatabaseQueryException) {
+                $started = false;
+            }
+            try {
+                $deleted = $started ? db_query_params(
+                    'company_security.restrict.clear_existing',
+                    "DELETE FROM access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
+                    [$companyId]
+                ) : false;
+            } catch (GrompilDatabaseQueryException) {
+                $deleted = false;
+            }
+            try {
+                $inserted = $deleted ? db_query_params(
+                    'company_security.restrict.add_current',
+                    "INSERT INTO access_ip_allowlist (company_id, scope, network, description, is_active)
+                     VALUES ($1, 'admin', $2::inet, 'Company administration', TRUE)",
+                    [$companyId, $network]
+                ) : false;
+            } catch (GrompilDatabaseQueryException) {
+                $inserted = false;
+            }
+            try {
+                $saved = $inserted && (bool) db_query_params('company_security.restrict.commit', 'COMMIT');
+            } catch (GrompilDatabaseQueryException) {
+                $saved = false;
+            }
             if (!$saved && $started) {
-                pg_query(db(), 'ROLLBACK');
+                try {
+                    db_query_params('company_security.restrict.rollback', 'ROLLBACK');
+                } catch (GrompilDatabaseQueryException) {
+                    // The helper already logged the rollback failure.
+                }
             }
             $message = $saved
                 ? '<div class="alert alert-success" role="status">Company administration is now restricted to this connection\'s IP address.</div>'
                 : '<div class="alert alert-danger" role="alert">The IP restriction could not be saved.</div>';
         }
     } elseif ($action === 'remove_restriction') {
-        $deleted = pg_query_params(
-            db(),
-            "DELETE FROM access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
-            [$companyId]
-        );
+        try {
+            $deleted = db_query_params(
+                'company_security.remove_restriction',
+                "DELETE FROM access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
+                [$companyId]
+            );
+        } catch (GrompilDatabaseQueryException) {
+            $deleted = false;
+        }
         $message = $deleted
             ? '<div class="alert alert-warning" role="status">The IP restriction for company administration has been disabled.</div>'
             : '<div class="alert alert-danger" role="alert">The IP restriction could not be changed.</div>';
     }
 }
 
-$rulesResult = pg_query_params(
-    db(),
-    "SELECT host(network) AS address
-     FROM access_ip_allowlist
-     WHERE company_id = $1 AND scope = 'admin' AND is_active
-     ORDER BY id",
-    [$companyId]
-);
+try {
+    $rulesResult = db_query_params(
+        'company_security.list_restrictions',
+        "SELECT host(network) AS address
+         FROM access_ip_allowlist
+         WHERE company_id = $1 AND scope = 'admin' AND is_active
+         ORDER BY id",
+        [$companyId]
+    );
+} catch (GrompilDatabaseQueryException) {
+    $rulesResult = false;
+}
 $allowedIps = [];
 while ($rulesResult && $row = pg_fetch_assoc($rulesResult)) {
     $allowedIps[] = (string) $row['address'];

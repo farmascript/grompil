@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:45:51
- * @date_mut: Wed 2026-11-04 18:34:10
+ * @date_mut: Wed 2026-11-04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -19,6 +19,13 @@ declare(strict_types=1);
 
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+$companiesQuery = static function (string $operation, string $sql, array $params = []): PgSql\Result|false {
+    try {
+        return db_query_params($operation, $sql, $params);
+    } catch (GrompilDatabaseQueryException) {
+        return false;
+    }
+};
 require_once GROMPIL_ROOT . '/includes/company_admin.php';
 $currentUser = grompil_require_module_access('companies.php');
 $messageKey = '';
@@ -30,8 +37,8 @@ $allNumberStatusOptions = dd_varia_get_options('company_number_status', '_root',
 $activeNumberStatusKeys = array_column($numberStatusOptions, 'key');
 $existingNumberStatuses = [];
 if ($companyId > 0) {
-    $statusResult = pg_query_params(
-        db(),
+    $statusResult = $companiesQuery(
+        'companies.load_number_status',
         'SELECT enterprise_number_status, vat_number_status FROM companies WHERE id = $1',
         [$companyId]
     );
@@ -69,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'toggle_public') {
         $companyId = (int) ($_POST['id'] ?? 0);
         $isPublic = ($_POST['is_public'] ?? '') === '1';
-        $result = pg_query_params(
-            db(),
+        $result = $companiesQuery(
+            'companies.toggle_public',
             'UPDATE companies SET is_public=$1, updated_at=now() WHERE id=$2',
             [$isPublic ? 'true' : 'false', $companyId]
         );
@@ -114,8 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $values[] = $isActive;
                 $values[] = $isPublic;
                 $values[] = $companyId;
-                $result = pg_query_params(
-                    db(),
+                $result = $companiesQuery(
+                    'companies.update',
                     'UPDATE companies SET slug=$1, name=$2, enterprise_number=$3, enterprise_number_status=$4,
                         vat_number=$5, vat_number_status=$6, billing_email=$7, phone=$8, street=$9,
                         house_number=$10, box_number=$11, postal_code=$12, city=$13, address_reference_id=$14,
@@ -125,9 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $values
                 );
             } else {
-                $transaction = (bool) pg_query(db(), 'BEGIN');
-                $insert = $transaction ? pg_query_params(
-                    db(),
+                $transaction = (bool) $companiesQuery('companies.create.begin', 'BEGIN');
+                $insert = $transaction ? $companiesQuery(
+                    'companies.create.insert',
                     'INSERT INTO companies (
                         slug, name, enterprise_number, enterprise_number_status, vat_number, vat_number_status,
                         billing_email, phone,
@@ -150,9 +157,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $fields['default_language']
                         );
                 }
-                $result = $result && (bool) pg_query(db(), 'COMMIT');
+                $result = $result && (bool) $companiesQuery('companies.create.commit', 'COMMIT');
                 if (!$result && $transaction) {
-                    pg_query(db(), 'ROLLBACK');
+                    $companiesQuery('companies.create.rollback', 'ROLLBACK');
                 }
             }
             $messageKey = $result ? 'company_saved' : 'company_save_failed';
@@ -172,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $editing = null;
 if (isset($_GET['edit'])) {
-    $editResult = pg_query_params(db(), 'SELECT * FROM companies WHERE id = $1', [(int) $_GET['edit']]);
+    $editResult = $companiesQuery('companies.load_edit', 'SELECT * FROM companies WHERE id = $1', [(int) $_GET['edit']]);
     $editing = $editResult ? pg_fetch_assoc($editResult) : null;
     if ($editing) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -186,8 +193,8 @@ if (isset($_GET['edit'])) {
     }
 }
 
-$companyResult = pg_query(
-    db(),
+$companyResult = $companiesQuery(
+    'companies.list',
     'SELECT c.*, count(cu.user_id) AS users_count
      FROM companies AS c LEFT JOIN company_users AS cu ON cu.company_id = c.id
      GROUP BY c.id ORDER BY c.name'
