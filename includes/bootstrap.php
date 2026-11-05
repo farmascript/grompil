@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Wed 2026-11-04
+ * @date_mut: Thu 2026-11-05
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -18,28 +18,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/database_config.php';
 require_once __DIR__ . '/error_page.php';
-
-$https = (
-    !empty($_SERVER['HTTPS'])
-    && $_SERVER['HTTPS'] !== 'off'
-) || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-$sessionLifetime = 60 * 60 * 24 * 30;
-
-ini_set('session.use_strict_mode', '1');
-ini_set('session.use_only_cookies', '1');
-ini_set('session.cookie_httponly', '1');
-ini_set('session.cookie_samesite', 'Lax');
-
-session_name('grompil_session');
-ini_set('session.gc_maxlifetime', (string) $sessionLifetime);
-session_set_cookie_params([
-    'lifetime' => $sessionLifetime,
-    'path' => '/',
-    'secure' => $https,
-    'httponly' => true,
-    'samesite' => 'Lax',
-]);
-session_start();
+require_once __DIR__ . '/session.php';
+grompil_start_session();
 
 /**
  * Returns the shared PostgreSQL connection.
@@ -124,6 +104,11 @@ function redirect(string $path): never
  */
 function current_user(): ?array
 {
+    if (!isset($_SESSION['user_id'])) {
+        return null;
+    }
+
+    grompil_enforce_session_idle_timeout();
     if (!isset($_SESSION['user_id'])) {
         return null;
     }

@@ -307,6 +307,7 @@ $arrSubst = array (
   'inactive' => 'Inactief',
   'invalid_request' => 'Ongeldige aanvraag.',
   'login_error' => 'Inloggen is niet gelukt. Controleer je gegevens of probeer het later opnieuw.',
+  'session_expired' => 'Je bent uitgelogd omdat je sessie te lang inactief was. Log opnieuw in.',
   'login_eyebrow' => 'Software voor apotheken',
   'login_headline' => 'Meer aandacht voor zorg.',
   'login_headline_second' => 'Meer overzicht in je dag.',

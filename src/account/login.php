@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Wed 2026-11-04
+ * @date_mut: Thu 2026-11-05
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -83,6 +83,10 @@ if ($loginCompany !== null) {
 
 $errorHtml = '';
 $loginErrorKey = 'login_error';
+if (!empty($_SESSION['session_expired'])) {
+    $errorHtml = '<div class="alert alert-warning" role="alert">' . e(fn_t('session_expired')) . '</div>';
+    unset($_SESSION['session_expired']);
+}
 $email = (string) ($_POST['email'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -174,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
             $_SESSION['user_id'] = (int) $user['id'];
             $_SESSION['auth_version'] = (int) $user['auth_version'];
+            $_SESSION['last_activity_at'] = time();
             if ($loginCompany) {
                 $_SESSION['active_company_id'] = (int) $loginCompany['id'];
             }

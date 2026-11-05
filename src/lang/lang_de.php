@@ -307,6 +307,7 @@ $arrSubst = array (
   'inactive' => 'Inaktiv',
   'invalid_request' => 'Ungültige Anfrage.',
   'login_error' => 'Anmeldung fehlgeschlagen. Prüfen Sie Ihre Daten oder versuchen Sie es später erneut.',
+  'session_expired' => 'Sie wurden nach längerer Inaktivität abgemeldet. Bitte melden Sie sich erneut an.',
   'login_eyebrow' => 'Software für Unternehmen',
   'login_headline' => 'Mehr Zeit für die Beratung.',
   'login_headline_second' => 'Mehr Überblick im Alltag.',

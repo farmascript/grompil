@@ -307,6 +307,7 @@ $arrSubst = array (
   'inactive' => 'Inactive',
   'invalid_request' => 'Invalid request.',
   'login_error' => 'Sign-in failed. Check your details or try again later.',
+  'session_expired' => 'You were signed out after a period of inactivity. Please sign in again.',
   'login_eyebrow' => 'Software for pharmacies',
   'login_headline' => 'More time for care.',
   'login_headline_second' => 'More clarity in your day.',

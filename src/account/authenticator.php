@@ -101,6 +101,7 @@ $completeLogin = static function () use ($authenticatorQuery, $userId, $authVers
     $_SESSION['user_id'] = $userId;
     $_SESSION['auth_version'] = $authVersion;
     $_SESSION['platform_mfa_verified'] = true;
+    $_SESSION['last_activity_at'] = time();
     $signedInUser = current_user();
     if ($signedInUser === null) {
         redirect('login.php');

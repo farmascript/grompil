@@ -8,6 +8,7 @@
 - Platformbeheer kan onder **Beheeromgeving → IP-toegang platformbeheer** tot IPv4- of IPv6-adressen/netwerken worden beperkt. Een lege lijst betekent dat er geen IP-filter is.
 - De bestaande company-IP-regels gelden voor companybeheerders en medewerkers. Klantrollen (level 200 of hoger) vallen buiten dit filter.
 - Een gebruikte herstelcode wordt ongeldig. Bewaar de getoonde codes buiten de server.
+- De time-out na inactiviteit wordt per installatie ingesteld met `session_idle_timeout_minutes` in `settings_local.php`. De standaardwaarde is 30 minuten. Na een time-out vraagt Grompil opnieuw om in te loggen.
 
 ## Voorbereiding per installatie
 

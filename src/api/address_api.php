@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Wed 2026-10-21 09:10:00
+ * @date_mut: Thu 2026-11-05
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
+require_once dirname(__DIR__, 2) . '/includes/session.php';
 
 /**
  * Return a JSON error response from the address lookup endpoint.
@@ -75,17 +76,7 @@ function address_api_http(string $url, array $headers): array
     return $json;
 }
 
-ini_set('session.use_strict_mode', '1');
-ini_set('session.use_only_cookies', '1');
-ini_set('session.cookie_httponly', '1');
-ini_set('session.cookie_samesite', 'Lax');
-$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-$sessionLifetime = 60 * 60 * 24 * 30;
-ini_set('session.gc_maxlifetime', (string) $sessionLifetime);
-session_set_cookie_params(['lifetime' => $sessionLifetime, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
-session_name('grompil_session');
-session_start();
+grompil_start_session();
 $type = (string) ($_GET['type'] ?? '');
 $query = trim((string) ($_GET['q'] ?? ''));
 $postCode = trim((string) ($_GET['postal_code'] ?? ''));
