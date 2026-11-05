@@ -27,9 +27,9 @@ de numerieke DokuWiki-pagina-ID:
 <h1>@page_title@ @_page_help_html_extern_511300@</h1>
 ```
 
-De ondersteunde levels zijn `users`, `dev`, `testers` en `extern`. Voor NL wordt
-`<basisurl>/doku.php?id=doc:grompil:<level>:<id>` gebruikt. Voor FR, EN en DE
-wordt de taalnamespace voor het pagina-ID geplaatst, bijvoorbeeld
+De ondersteunde levels zijn `users`, `dev`, `testers` en `extern`. De taalnamespace
+wordt voor alle vier talen vóór het pagina-ID geplaatst, bijvoorbeeld
+`<basisurl>/doku.php?id=nl:doc:grompil:<level>:<id>` of
 `<basisurl>/doku.php?id=en:doc:grompil:<level>:<id>`. ID's zijn vaste numerieke strings;
 zowel bestaande NAV-ID's als zes willekeurige cijfers zijn bruikbaar. Controleer
 een nieuwe ID op duplicaten en hergebruik de ID niet voor een ander onderwerp.
@@ -55,7 +55,7 @@ Open een publieke homepagina waarvan de actieve thematemplate de placeholder
 bevat. Naast de titel hoort een rond informatie-icoon te staan. De link opent
 in een nieuw tabblad:
 
-`https://dw.grompil.com/!saas/doku.php?id=doc:grompil:extern:511300` in NL, of
+`https://dw.grompil.com/!saas/doku.php?id=nl:doc:grompil:extern:511300` in NL, of
 `https://dw.grompil.com/!saas/doku.php?id=en:doc:grompil:extern:511300` in EN.
 
 Ontbreekt het icoon, controleer dan eerst de `dokuwiki`-instelling in
