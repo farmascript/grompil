@@ -81,7 +81,7 @@ try {
     $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_unavailable')) . '</div>';
 }
 
-$attemptCount = static function () use ($attemptEmail, $loginIp): int {
+$attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $loginIp): int {
     $result = $authenticatorQuery(
         'account_authenticator.count_attempts',
         "SELECT count(*) AS total FROM login_attempts
@@ -93,7 +93,7 @@ $attemptCount = static function () use ($attemptEmail, $loginIp): int {
     return $row ? (int) $row['total'] : 0;
 };
 
-$completeLogin = static function () use ($userId, $authVersion, $attemptEmail, $loginIp): never {
+$completeLogin = static function () use ($authenticatorQuery, $userId, $authVersion, $attemptEmail, $loginIp): never {
     $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM login_attempts WHERE company_id = 0 AND email = $1 AND ip_address = $2', [$attemptEmail, $loginIp]);
     session_regenerate_id(true);
     unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
