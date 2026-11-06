@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Create starter DokuWiki pages for the tracked Grompil PHP source files.
 # The destination is the filesystem directory for the DokuWiki `src:` namespace.
+# Keep FILES in sync whenever a Grompil PHP source file is added.
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 DESTINATION="${1:-/home/grompilc/dwan/saas/data/pages/src}"
 
