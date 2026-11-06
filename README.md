@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:46:31
- * @date_mut: Wed 2026-10-21 18:39:38
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -71,6 +71,8 @@ De algemene app- en beheertemplates staan in `tmpl/core/`; publieke companypagin
 De projectroot-bestanden zijn publieke URL-entrypoints en stellen `GROMPIL_ROOT` in voordat ze een interne module laden. Bestanden in `src/` zijn intern en horen niet rechtstreeks via een URL gestart te worden. `src/.htaccess` is bedoeld om die map in Apache af te schermen; controleer per Apache-installatie dat `.htaccess`-regels met `AllowOverride` zijn toegestaan. Als extra PHP-bescherming gebruiken interne modules voortaan een gedeelde guard-include die via een pad onafhankelijk van `GROMPIL_ROOT` wordt geladen. Dupliceer de volledige guard niet in elk modulebestand. De gedeelde include staat in `includes/module_guard.php` en wordt gebruikt door de managerlabels-module. Bestaande modules moeten nog op deze include worden aangesloten; `src/account/select_company.php` heeft voorlopig een eigen guard.
 
 Nieuwe modules krijgen consequent het projectbrede beginblokcommentaar met aanmaak- en wijzigingsdatum, credits, copyright, contactadres en een korte Engelstalige `@description`. De omschrijving staat na `@description: `; vervolgregels gebruiken dezelfde commentaarinspringing.
+
+Elk bijgehouden Grompil-PHP-bestand krijgt als laatste regel van het bovenste commentaarblok een link naar de bijbehorende broncodepagina in DokuWiki. De vaste basis is `https://dw.grompil.com/!saas/doku.php?id=src:`; voeg daarna het projectrelatieve bestandspad zonder `.php` toe en vervang `/` door `:`. Bijvoorbeeld: `includes/database_config.php` wordt `https://dw.grompil.com/!saas/doku.php?id=src:includes:database_config`. Maak voor een nieuw PHP-bestand zo nodig eerst het commentaarblok aan. Deze afspraak geldt voor Grompil-bronbestanden, niet voor `vendor/` of de lokale, genegeerde `settings_local.php`.
 
 Hardcoded technische foutmeldingen en CLI-diagnostiek die niet via de vertaalroutine lopen, worden in het Engels geschreven. Bewust getoonde meldingen blijven zichtbaar; normale interface- en bedrijfsgerichte teksten gebruiken vertaalkeys of expliciete taalvarianten.
 

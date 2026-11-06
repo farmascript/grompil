@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Thu 2026-11-05
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Provides official address suggestions to forms through the address service.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:src:api:address_api
  */
 
 declare(strict_types=1);

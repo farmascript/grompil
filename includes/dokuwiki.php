@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-11-01
- * @date_mut: Thu 2026-11-05
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Builds contextual documentation links and accessible information icons.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:dokuwiki
  */
 
 declare(strict_types=1);

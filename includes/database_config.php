@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:47:17
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Loads PostgreSQL settings from the selected private credentials file.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:database_config
  */
 
 declare(strict_types=1);

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:49
- * @date_mut: Wed 2026-11-04
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Manages the company-specific URL manager layout.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:src:navigation:navigation_preferences
  */
 
 declare(strict_types=1);

@@ -1,6 +1,7 @@
 <?php
 /**
  * Platform-operator page for testing SAM catalog lookups.
+ * https://dw.grompil.com/!saas/doku.php?id=src:sam-products-test
  */
 
 declare(strict_types=1);

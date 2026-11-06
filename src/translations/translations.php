@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:45:46
- * @date_mut: Wed 2026-11-04
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Manages translation text and publishes the general language files.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:src:translations:translations
  */
 
 declare(strict_types=1);

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:56
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Loads the public home page and company website router.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:index
  */
 
 declare(strict_types=1);

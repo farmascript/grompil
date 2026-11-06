@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:00:00
- * @date_mut: Wed 2026-10-21 17:07:00
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Loads the published URL manager labels module.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:navigation_labels
  */
 
 declare(strict_types=1);

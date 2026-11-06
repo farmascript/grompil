@@ -1,5 +1,8 @@
 <?php
-/** Loads the platform administrator IP access module. */
+/**
+ * Loads the platform administrator IP access module.
+ * https://dw.grompil.com/!saas/doku.php?id=src:platform-security
+ */
 
 declare(strict_types=1);
 

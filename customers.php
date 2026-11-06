@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24 00:00:00
- * @date_mut: Sat 2026-10-24 00:00:00
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Loads the company customer monitoring page.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:customers
  */
 
 declare(strict_types=1);

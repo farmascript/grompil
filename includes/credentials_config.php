@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-23
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Selects the deployment-specific private credentials for database, KBO and mail.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:credentials_config
  */
 
 declare(strict_types=1);

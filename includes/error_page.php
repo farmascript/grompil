@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Wed 2026-11-04 16:15:00
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -35,6 +35,9 @@ function grompil_show_error(int $status, int $code, string $message, string $tit
         $language = 'NL';
     }
     $translations = $GLOBALS['grompilTranslations'] ?? fn_readLanguageFile($language);
+/**
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:error_page
+ */
     $title = (string) ($translations['err_' . $code . '_title'] ?? $title);
     $message = (string) ($translations['err_' . $code] ?? $message);
     $labels = [

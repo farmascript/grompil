@@ -5,6 +5,7 @@
  * Examples:
  *   /sam-products.php?q=0046128
  *   /sam-products.php?q=Haldol%205%20mg%2Fml
+ * https://dw.grompil.com/!saas/doku.php?id=src:sam-products
  */
 
 declare(strict_types=1);

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-10-25 21:36:11
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Sends system messages through the configured mail service.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:mailer
  */
 
 declare(strict_types=1);

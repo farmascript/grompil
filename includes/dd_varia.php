@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Wed 2026-11-04
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Provides localized access to platform-managed lookup values.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:dd_varia
  */
 
 declare(strict_types=1);

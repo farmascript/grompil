@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-05
- * @date_mut: Thu 2026-11-05
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Starts the shared PHP session and enforces its configured inactivity timeout.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:session
  */
 
 declare(strict_types=1);

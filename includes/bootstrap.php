@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Thu 2026-11-05
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Initializes sessions, database access, authentication, and access checks.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:includes:bootstrap
  */
 
 declare(strict_types=1);

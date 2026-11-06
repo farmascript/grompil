@@ -1,4 +1,7 @@
 <?php
+/**
+ * https://dw.grompil.com/!saas/doku.php?id=src:src:lang:lang_en
+ */
 
 $arrSubst = array (
   'access_denied' => 'Access denied.',

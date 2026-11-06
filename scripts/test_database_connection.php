@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-23
- * @date_mut: Wed 2026-11-04
+ * @date_mut: Fri 2026-11-06
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,7 @@
  *
  * @description: Tests PostgreSQL using the credentials selected for this installation.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=src:scripts:test_database_connection
  */
 
 declare(strict_types=1);
