@@ -12,7 +12,7 @@
  *
  * @description: Manages company members, requests, approvals, and company roles.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:companies:company_members
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:company_members
  */
 
 declare(strict_types=1);

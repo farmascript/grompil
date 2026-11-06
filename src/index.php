@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to application source files.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:index
  */
 
 /**

@@ -12,7 +12,7 @@
  *
  * @description: Provides official address suggestions to forms through the address service.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:api:address_api
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:api:address_api
  */
 
 declare(strict_types=1);

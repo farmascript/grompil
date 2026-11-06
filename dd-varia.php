@@ -12,7 +12,7 @@
  *
  * @description: Loads platform-wide hierarchical lookup management.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:dd-varia
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:dd-varia
  */
 
 declare(strict_types=1);

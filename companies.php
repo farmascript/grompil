@@ -12,7 +12,7 @@
  *
  * @description: Loads the company administration module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:companies
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:companies
  */
 
 declare(strict_types=1);

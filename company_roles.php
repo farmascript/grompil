@@ -12,7 +12,7 @@
  *
  * @description: Loads the company role administration module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:company_roles
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:company_roles
  */
 
 declare(strict_types=1);

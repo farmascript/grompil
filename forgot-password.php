@@ -12,7 +12,7 @@
  *
  * @description: Loads the password reset request module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:forgot-password
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:forgot-password
  */
 
 declare(strict_types=1);

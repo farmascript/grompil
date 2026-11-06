@@ -1,6 +1,6 @@
 <?php
 /**
- * https://dw.grompil.com/!saas/doku.php?id=src:src:lang:lang_fr
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:lang:lang_fr
  */
 
 $arrSubst = array (

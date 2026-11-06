@@ -12,7 +12,7 @@
  *
  * @description: Loads the platform user management module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:users
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:users
  */
 
 declare(strict_types=1);

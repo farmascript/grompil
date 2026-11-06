@@ -12,7 +12,7 @@
  *
  * @description: Tests password recovery against isolated PostgreSQL temporary tables without sending email.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:test_password_reset
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:test_password_reset
  */
 
 declare(strict_types=1);

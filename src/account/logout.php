@@ -12,7 +12,7 @@
  *
  * @description: Ends the session and removes the sign-in cookie.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:logout
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:logout
  */
 
 declare(strict_types=1);

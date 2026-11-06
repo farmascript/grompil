@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to core templates.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:tmpl:core:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:tmpl:core:index
  */
 
 /**

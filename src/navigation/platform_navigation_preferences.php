@@ -12,7 +12,7 @@
  *
  * @description: Manages the platform-wide URL manager layout.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:navigation:platform_navigation_preferences
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:navigation:platform_navigation_preferences
  */
 
 declare(strict_types=1);

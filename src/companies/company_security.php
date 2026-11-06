@@ -12,7 +12,7 @@
  *
  * @description: Manages IP access rules for company administration.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:companies:company_security
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:company_security
  */
 
 declare(strict_types=1);

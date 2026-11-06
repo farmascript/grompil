@@ -12,7 +12,7 @@
  *
  * @description: Manages global user roles and their permissions.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:users:roles
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:users:roles
  */
 
 declare(strict_types=1);

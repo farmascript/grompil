@@ -12,7 +12,7 @@
  *
  * @description: Loads the URL manager module access endpoint.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:navigation_access
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:navigation_access
  */
 
 declare(strict_types=1);

@@ -1,7 +1,7 @@
 <?php
 /**
  * Platform-only test screen for the read-only SAM product search helper.
- * https://dw.grompil.com/!saas/doku.php?id=src:src:admin:sam_products_test
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:sam_products_test
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Loads the public home page and company website router.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:index
  */
 
 declare(strict_types=1);

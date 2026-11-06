@@ -12,7 +12,7 @@
  *
  * @description: Provides shared authorization checks for company administration modules.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:company_admin
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:company_admin
  */
 
 declare(strict_types=1);

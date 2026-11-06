@@ -12,7 +12,7 @@
  *
  * @description: Loads the company customer monitoring page.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:customers
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:customers
  */
 
 declare(strict_types=1);

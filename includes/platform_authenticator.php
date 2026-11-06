@@ -1,7 +1,7 @@
 <?php
 /**
  * Platform administrator TOTP helpers.
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:platform_authenticator
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:platform_authenticator
  */
 
 declare(strict_types=1);

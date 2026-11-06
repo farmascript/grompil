@@ -12,7 +12,7 @@
  *
  * @description: Generates the multilingual navigation catalog from module metadata.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:generate_navigation
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:generate_navigation
  */
 
 declare(strict_types=1);

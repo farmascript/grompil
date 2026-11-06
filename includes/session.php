@@ -12,7 +12,7 @@
  *
  * @description: Starts the shared PHP session and enforces its configured inactivity timeout.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:session
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:session
  */
 
 declare(strict_types=1);

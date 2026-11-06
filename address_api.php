@@ -12,7 +12,7 @@
  *
  * @description: Loads the server-side address lookup endpoint.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:address_api
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:address_api
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Loads the public company storefront module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:store
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:store
  */
 
 declare(strict_types=1);

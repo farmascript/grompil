@@ -12,7 +12,7 @@
  *
  * @description: Loads the public registration module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:register
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:register
  */
 
 declare(strict_types=1);

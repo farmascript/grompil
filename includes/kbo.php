@@ -12,7 +12,7 @@
  *
  * @description: Connects to the Belgian company register service and handles lookups.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:kbo
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:kbo
  */
 
 declare(strict_types=1);

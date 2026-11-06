@@ -12,7 +12,7 @@
  *
  * @description: Loads the company translation management module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:company_translations
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:company_translations
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Provides localized access to platform-managed lookup values.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:dd_varia
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:dd_varia
  */
 
 declare(strict_types=1);

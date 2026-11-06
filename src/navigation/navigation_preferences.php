@@ -12,7 +12,7 @@
  *
  * @description: Manages the company-specific URL manager layout.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:navigation:navigation_preferences
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:navigation:navigation_preferences
  */
 
 declare(strict_types=1);

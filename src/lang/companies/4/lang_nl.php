@@ -12,7 +12,7 @@
  *
  * @description: Contains Dutch text overrides for company 4.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:lang:companies:4:lang_nl
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:lang:companies:4:lang_nl
  */
 
 $arrSubst = array (

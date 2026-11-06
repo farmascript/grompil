@@ -12,7 +12,7 @@
  *
  * @description: Loads HTML templates and fills their placeholders with page data.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:templates
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:templates
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Searches companies and supports platform administrators with selection and creation.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:select_company
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:select_company
  */
 
 declare(strict_types=1);

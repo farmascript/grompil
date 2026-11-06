@@ -1,7 +1,7 @@
 <?php
 /**
  * Loads the platform administrator authenticator challenge.
- * https://dw.grompil.com/!saas/doku.php?id=src:authenticator
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:authenticator
  */
 
 declare(strict_types=1);

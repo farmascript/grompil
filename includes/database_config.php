@@ -12,7 +12,7 @@
  *
  * @description: Loads PostgreSQL settings from the selected private credentials file.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:database_config
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:database_config
  */
 
 declare(strict_types=1);

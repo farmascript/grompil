@@ -12,7 +12,7 @@
  *
  * @description: Fills French and German translations from the Dutch source text.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:fill_fr_de_translations
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:fill_fr_de_translations
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Selects the deployment-specific private credentials for database, KBO and mail.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:credentials_config
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:credentials_config
  */
 
 declare(strict_types=1);

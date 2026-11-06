@@ -12,7 +12,7 @@
  *
  * @description: Processes public customer registrations and staff requests.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:register
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:register
  */
 
 declare(strict_types=1);

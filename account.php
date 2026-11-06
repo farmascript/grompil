@@ -12,7 +12,7 @@
  *
  * @description: Loads the account module for its existing public URL.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:account
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:account
  */
 
 declare(strict_types=1);

@@ -8,7 +8,7 @@
  * This is an exploratory, read-only extractor. It does not connect to a
  * database. Current AMP/AMPP/DMPP Data slices are retained as JSON columns so
  * fields not yet mapped into the proposed catalog schema are not discarded.
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:sam_public_catalog_export
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_public_catalog_export
  */
 
 declare(strict_types=1);

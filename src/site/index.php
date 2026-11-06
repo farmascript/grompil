@@ -12,7 +12,7 @@
  *
  * @description: Routes the public Grompil home page and company websites.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:site:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:site:index
  */
 
 declare(strict_types=1);

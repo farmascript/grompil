@@ -12,7 +12,7 @@
  *
  * @description: Creates the first platform administrator through the PHP CLI.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:admin:setup_admin
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:setup_admin
  */
 
 declare(strict_types=1);

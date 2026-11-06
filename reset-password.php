@@ -12,7 +12,7 @@
  *
  * @description: Loads the new password module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:reset-password
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:reset-password
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Loads the platform navigation preferences module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:platform_navigation_preferences
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:platform_navigation_preferences
  */
 
 declare(strict_types=1);

@@ -1,7 +1,7 @@
 <?php
 /**
  * Read-only lookup helpers for the imported public SAM product catalog.
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:sam_products
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:sam_products
  */
 
 declare(strict_types=1);

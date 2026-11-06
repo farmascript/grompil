@@ -12,7 +12,7 @@
  *
  * @description: Loads the platform administration dashboard module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:admin
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:admin
  */
 
 declare(strict_types=1);

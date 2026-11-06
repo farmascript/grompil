@@ -12,7 +12,7 @@
  *
  * @description: Routes and displays the public company website.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:companies:company
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:company
  */
 
 declare(strict_types=1);

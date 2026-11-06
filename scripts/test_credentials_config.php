@@ -12,7 +12,7 @@
  *
  * @description: Tests private configuration loading without database or external connections.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:test_credentials_config
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:test_credentials_config
  */
 
 declare(strict_types=1);

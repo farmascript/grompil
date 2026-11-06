@@ -12,7 +12,7 @@
  *
  * @description: Loads the CLI setup module for the first platform administrator.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:setup-admin
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:setup-admin
  */
 
 declare(strict_types=1);

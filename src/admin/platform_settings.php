@@ -12,7 +12,7 @@
  *
  * @description: Allows platform administrators to change global system parameters.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:admin:platform_settings
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:platform_settings
  */
 
 declare(strict_types=1);

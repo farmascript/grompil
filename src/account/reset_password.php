@@ -12,7 +12,7 @@
  *
  * @description: Validates reset links and accepts a new account password.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:reset_password
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:reset_password
  */
 
 declare(strict_types=1);

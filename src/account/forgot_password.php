@@ -12,7 +12,7 @@
  *
  * @description: Requests scoped password recovery emails without revealing account existence.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:forgot_password
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:forgot_password
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Rejects direct requests to internal modules without a public entrypoint.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:module_guard
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:module_guard
  */
 
 declare(strict_types=1);

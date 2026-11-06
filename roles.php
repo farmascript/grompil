@@ -12,7 +12,7 @@
  *
  * @description: Loads the platform role management module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:roles
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:roles
  */
 
 declare(strict_types=1);

@@ -1,7 +1,7 @@
 <?php
 /**
  * Completes the platform administrator password plus TOTP login.
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:authenticator
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:authenticator
  */
 
 declare(strict_types=1);

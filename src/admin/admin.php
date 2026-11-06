@@ -12,7 +12,7 @@
  *
  * @description: Displays the administration landing page and available modules.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:admin:admin
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:admin
  */
 
 declare(strict_types=1);

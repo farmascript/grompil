@@ -12,7 +12,7 @@
  *
  * @description: Checks templates for missing or unused placeholders.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:check_templates
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:check_templates
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Checks shared module authorization without changing users or connecting to the database.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:test_navigation_access
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:test_navigation_access
  */
 
 declare(strict_types=1);

@@ -12,7 +12,7 @@
  *
  * @description: Issues and consumes scoped, expiring, single-use password reset tokens.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:password_reset
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:password_reset
  */
 
 declare(strict_types=1);

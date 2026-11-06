@@ -12,7 +12,7 @@
  *
  * @description: Returns published general URL manager labels for browser clients.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:navigation:navigation_labels
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:navigation:navigation_labels
  */
 
 declare(strict_types=1);

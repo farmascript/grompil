@@ -7,7 +7,7 @@
  * @dateCreated Sat 2018-12-29 21:08:13
  * @dateLastMod Fri 2026-10-23 10:37:47
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:not_allowed
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:not_allowed
  */
 
 $theEpoch = time();

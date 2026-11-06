@@ -4,7 +4,7 @@
  *
  * Usage:
  *   php sam_atc_classifications_export.php <REF-export.xml> [output.csv]
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:sam_atc_classifications_export
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_atc_classifications_export
  */
 
 declare(strict_types=1);

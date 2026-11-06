@@ -1,7 +1,7 @@
 <?php
 /**
  * Manage global platform administrator IP restrictions.
- * https://dw.grompil.com/!saas/doku.php?id=src:src:admin:platform_security
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:platform_security
  */
 
 declare(strict_types=1);

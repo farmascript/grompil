@@ -12,7 +12,7 @@
  *
  * @description: Loads the fixed navigation label management module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:navigation_keywords
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:navigation_keywords
  */
 
 declare(strict_types=1);

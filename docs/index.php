@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to documentation files.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:docs:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:docs:index
  */
 
 /**

@@ -12,7 +12,7 @@
  *
  * @description: Processes sign-in and checks account and company context.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:login
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:login
  */
 
 declare(strict_types=1);

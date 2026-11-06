@@ -12,7 +12,7 @@
  *
  * @description: Manages user accounts through platform administration.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:users:users
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:users:users
  */
 
 declare(strict_types=1);

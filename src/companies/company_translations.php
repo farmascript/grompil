@@ -12,7 +12,7 @@
  *
  * @description: Manages company-specific translations and text overrides.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:companies:company_translations
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:company_translations
  */
 
 declare(strict_types=1);

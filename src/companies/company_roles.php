@@ -12,7 +12,7 @@
  *
  * @description: Manages roles and permissions within a company.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:companies:company_roles
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:company_roles
  */
 
 declare(strict_types=1);

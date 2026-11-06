@@ -12,7 +12,7 @@
  *
  * @description: Provides translated labels for the fixed Grompil navigation.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:navigation:navigation_keywords
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:navigation:navigation_keywords
  */
 
 declare(strict_types=1);

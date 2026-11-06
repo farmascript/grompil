@@ -12,7 +12,7 @@
  *
  * @description: Loads the company membership administration module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:company_members
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:company_members
  */
 
 declare(strict_types=1);

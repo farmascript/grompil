@@ -12,7 +12,7 @@
  *
  * @description: Loads the published URL manager labels module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:navigation_labels
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:navigation_labels
  */
 
 declare(strict_types=1);

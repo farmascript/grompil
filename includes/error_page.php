@@ -36,7 +36,7 @@ function grompil_show_error(int $status, int $code, string $message, string $tit
     }
     $translations = $GLOBALS['grompilTranslations'] ?? fn_readLanguageFile($language);
 /**
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:error_page
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:error_page
  */
     $title = (string) ($translations['err_' . $code . '_title'] ?? $title);
     $message = (string) ($translations['err_' . $code] ?? $message);

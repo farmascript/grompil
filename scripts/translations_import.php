@@ -12,7 +12,7 @@
  *
  * @description: Imports missing translation keys into the PostgreSQL table.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:translations_import
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:translations_import
  */
 
 declare(strict_types=1);

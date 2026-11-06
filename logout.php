@@ -12,7 +12,7 @@
  *
  * @description: Loads the sign-out module for its existing public URL.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:logout
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:logout
  */
 
 declare(strict_types=1);

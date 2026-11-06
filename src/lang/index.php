@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to language files.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:lang:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:lang:index
  */
 
 /**

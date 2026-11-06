@@ -12,7 +12,7 @@
  *
  * @description: Loads the signed-in user dashboard module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:dashboard
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:dashboard
  */
 
 declare(strict_types=1);

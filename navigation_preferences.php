@@ -12,7 +12,7 @@
  *
  * @description: Loads the personal navigation preferences module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:navigation_preferences
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:navigation_preferences
  */
 
 declare(strict_types=1);

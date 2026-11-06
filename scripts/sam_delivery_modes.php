@@ -9,7 +9,7 @@
  * The script streams the large XML file one AMP record at a time and writes
  * a compact text report in the current working directory. It does not modify
  * the source XML or connect to a database.
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:sam_delivery_modes
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_delivery_modes
  */
 
 declare(strict_types=1);

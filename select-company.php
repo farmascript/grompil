@@ -12,7 +12,7 @@
  *
  * @description: Loads the company selection module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:select-company
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:select-company
  */
 
 declare(strict_types=1);

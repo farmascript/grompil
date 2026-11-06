@@ -12,7 +12,7 @@
  *
  * @description: Builds contextual documentation links and accessible information icons.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:dokuwiki
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:dokuwiki
  */
 
 declare(strict_types=1);

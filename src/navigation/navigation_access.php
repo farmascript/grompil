@@ -12,7 +12,7 @@
  *
  * @description: Returns modules accessible to the current session and company.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:navigation:navigation_access
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:navigation:navigation_access
  */
 
 declare(strict_types=1);

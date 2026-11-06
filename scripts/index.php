@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to administration scripts.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:index
  */
 
 /**

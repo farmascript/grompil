@@ -12,7 +12,7 @@
  *
  * @description: Shares module access rules between page guards and the URL manager.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:module_access
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:module_access
  */
 
 declare(strict_types=1);

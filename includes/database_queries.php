@@ -12,7 +12,7 @@
  *
  * @description: Runs parameterized PostgreSQL queries with consistent failure handling.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:database_queries
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:database_queries
  */
 
 declare(strict_types=1);

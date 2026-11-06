@@ -12,7 +12,7 @@
  *
  * @description: Manages translation text and publishes the general language files.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:translations:translations
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:translations:translations
  */
 
 declare(strict_types=1);

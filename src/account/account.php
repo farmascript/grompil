@@ -12,7 +12,7 @@
  *
  * @description: Manages profile details and account settings for the signed-in user.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:account:account
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:account
  */
 
 declare(strict_types=1);

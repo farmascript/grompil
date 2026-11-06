@@ -12,7 +12,7 @@
  *
  * @description: Loads the sign-in module for its existing public URL.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:login
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:login
  */
 
 declare(strict_types=1);

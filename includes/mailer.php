@@ -12,7 +12,7 @@
  *
  * @description: Sends system messages through the configured mail service.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:mailer
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:mailer
  */
 
 declare(strict_types=1);

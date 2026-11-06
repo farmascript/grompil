@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to templates.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:tmpl:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:tmpl:index
  */
 
 /**

@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to asset directory contents.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:assets:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:assets:index
  */
 
 /**

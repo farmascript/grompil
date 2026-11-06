@@ -12,7 +12,7 @@
  *
  * @description: Manages platform-wide hierarchical dropdown values and translations.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:admin:dd_varia
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:dd_varia
  */
 
 declare(strict_types=1);

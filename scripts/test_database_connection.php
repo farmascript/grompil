@@ -12,7 +12,7 @@
  *
  * @description: Tests PostgreSQL using the credentials selected for this installation.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:test_database_connection
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:test_database_connection
  */
 
 declare(strict_types=1);

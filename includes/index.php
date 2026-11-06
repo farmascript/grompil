@@ -12,7 +12,7 @@
  *
  * @description: Blocks direct HTTP access to include files.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:index
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:index
  */
 
 /**

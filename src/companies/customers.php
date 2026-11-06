@@ -12,7 +12,7 @@
  *
  * @description: Lets company administrators find and monitor their customers.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:companies:customers
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:customers
  */
 
 declare(strict_types=1);

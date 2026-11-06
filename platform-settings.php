@@ -12,7 +12,7 @@
  *
  * @description: Loads platform-wide system parameters.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:platform-settings
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:platform-settings
  */
 
 declare(strict_types=1);

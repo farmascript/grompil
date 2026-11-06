@@ -12,7 +12,7 @@
  *
  * @description: Exports translations from PostgreSQL to PHP language files.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:scripts:translations_export
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:translations_export
  */
 
 declare(strict_types=1);

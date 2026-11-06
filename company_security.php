@@ -12,7 +12,7 @@
  *
  * @description: Loads the company access control module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:company_security
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:company_security
  */
 
 declare(strict_types=1);

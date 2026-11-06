@@ -12,7 +12,7 @@
  *
  * @description: Initializes sessions, database access, authentication, and access checks.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:includes:bootstrap
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:bootstrap
  */
 
 declare(strict_types=1);

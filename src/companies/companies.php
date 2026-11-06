@@ -12,7 +12,7 @@
  *
  * @description: Manages SaaS companies and their settings.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:src:companies:companies
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:companies
  */
 
 declare(strict_types=1);

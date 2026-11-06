@@ -12,7 +12,7 @@
  *
  * @description: Loads the public company website module.
  *
- * https://dw.grompil.com/!saas/doku.php?id=src:company
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:company
  */
 
 declare(strict_types=1);
