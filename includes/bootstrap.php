@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -172,8 +172,8 @@ function current_user(): ?array
             r.name AS role_name,
             r.level AS role_level,
             r.permissions
-         FROM users AS u
-         JOIN roles AS r ON r.id = u.role_id
+         FROM bt_users AS u
+         JOIN ft_roles AS r ON r.id = u.role_id
          WHERE u.user_code = $1',
         [(string) $_SESSION['user_code']]
     );
@@ -323,7 +323,7 @@ function company_management_ip_allowed(int $companyId, ?string $address = null):
         'bootstrap.company_management_ip_allowed',
         "SELECT count(*) AS rule_count,
                 COALESCE(bool_or(network >>= $2::inet), FALSE) AS address_allowed
-         FROM access_ip_allowlist
+         FROM ft_access_ip_allowlist
          WHERE company_id = $1 AND scope = 'admin' AND is_active",
         [$companyId, $address]
     );
@@ -386,15 +386,15 @@ function is_platform_operator(?array $user = null): bool
 function available_companies(array $user): array
 {
     if (is_platform_operator($user)) {
-        $result = grompil_bootstrap_query('bootstrap.available_companies_platform', 'SELECT id, name, slug FROM companies WHERE is_active ORDER BY name');
+        $result = grompil_bootstrap_query('bootstrap.available_companies_platform', 'SELECT id, name, slug FROM bt_companies WHERE is_active ORDER BY name');
     } else {
         $result = grompil_bootstrap_query(
             'bootstrap.available_companies_member',
             'SELECT c.id, c.name, c.slug
-             FROM companies AS c
-             JOIN company_users AS cu ON cu.company_id = c.id
-             JOIN users AS u ON u.user_code = cu.user_code AND u.company_id = c.id
-             JOIN company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
+             FROM bt_companies AS c
+             JOIN ct_company_users AS cu ON cu.company_id = c.id
+             JOIN bt_users AS u ON u.user_code = cu.user_code AND u.company_id = c.id
+             JOIN ct_company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
              WHERE cu.user_code = $1 AND cu.is_active
                AND cu.approval_status = \'approved\' AND c.is_active
                AND cr.level > 0 AND cr.level < 200
@@ -421,14 +421,14 @@ function seed_company_roles(int $companyId): bool
 {
     $result = grompil_bootstrap_query(
         'bootstrap.seed_company_roles',
-        "INSERT INTO company_roles (company_id, name, description, level, permissions, is_system)
+        "INSERT INTO ct_company_roles (company_id, name, description, level, permissions, is_system)
          SELECT $1, r.name, r.description, r.level,
                 CASE WHEN lower(r.name) = 'beheerder'
                      THEN '[\"company.users.manage\", \"company.roles.manage\", \"company.settings.manage\", \"company.translations.manage\"]'::jsonb
                      ELSE '[]'::jsonb
                 END,
                 r.is_system
-         FROM roles AS r
+         FROM ft_roles AS r
          ON CONFLICT (company_id, name) DO NOTHING",
         [$companyId]
     );
@@ -447,18 +447,18 @@ function set_active_company(int $companyId, array $user): bool
     if (is_platform_operator($user)) {
         $result = grompil_bootstrap_query(
             'bootstrap.set_active_company_platform',
-            'SELECT id FROM companies WHERE id = $1 AND is_active',
+            'SELECT id FROM bt_companies WHERE id = $1 AND is_active',
             [$companyId]
         );
     } else {
         $result = grompil_bootstrap_query(
             'bootstrap.set_active_company_member',
             'SELECT c.id
-             FROM companies AS c
-             JOIN company_users AS cu ON cu.company_id = c.id
-             JOIN company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
+             FROM bt_companies AS c
+             JOIN ct_company_users AS cu ON cu.company_id = c.id
+             JOIN ct_company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
              WHERE c.id = $1 AND c.is_active AND cu.user_code = $2
-               AND EXISTS (SELECT 1 FROM users AS u WHERE u.user_code = cu.user_code AND u.company_id = c.id)
+               AND EXISTS (SELECT 1 FROM bt_users AS u WHERE u.user_code = cu.user_code AND u.company_id = c.id)
                AND cu.is_active AND cu.approval_status = \'approved\'
                AND cr.level > 0 AND cr.level < 200',
             [$companyId, $user['user_code']]
@@ -494,9 +494,9 @@ function current_company_context(?array $user = null): ?array
                 cu.is_active AS membership_active, cu.approval_status,
                 cr.id AS company_role_id, cr.name AS company_role_name,
                 cr.level AS company_role_level, cr.permissions AS company_permissions
-         FROM companies AS c
-         LEFT JOIN company_users AS cu ON cu.company_id = c.id AND cu.user_code = $2
-         LEFT JOIN company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
+         FROM bt_companies AS c
+         LEFT JOIN ct_company_users AS cu ON cu.company_id = c.id AND cu.user_code = $2
+         LEFT JOIN ct_company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
          WHERE c.id = $1 AND c.is_active',
         [$companyId, $user['user_code']]
     );
@@ -558,7 +558,7 @@ function redirect_after_login(array $user): never
     }
 
     if (($user['company_id'] ?? null) !== null) {
-        $result = grompil_bootstrap_query('bootstrap.resolve_user_company', 'SELECT id FROM companies WHERE id = $1 AND is_active', [$user['company_id']]);
+        $result = grompil_bootstrap_query('bootstrap.resolve_user_company', 'SELECT id FROM bt_companies WHERE id = $1 AND is_active', [$user['company_id']]);
         $company = $result ? pg_fetch_assoc($result) : false;
         if ($company) {
             $_SESSION['active_company_id'] = (int) $user['company_id'];
@@ -609,8 +609,8 @@ function resolve_public_company(): ?array
             'bootstrap.resolve_company_domain',
             'SELECT c.id, c.name, c.slug, c.city, c.default_language,
                     c.store_theme, c.store_logo_file, c.store_hero_image_file
-             FROM company_domains AS d
-             JOIN companies AS c ON c.id = d.company_id
+             FROM ct_company_domains AS d
+             JOIN bt_companies AS c ON c.id = d.company_id
              WHERE d.domain = $1 AND d.is_active AND d.is_verified
                AND c.is_active AND c.is_public',
             [$host]
@@ -631,7 +631,7 @@ function resolve_public_company(): ?array
             'bootstrap.resolve_local_company',
             'SELECT id, name, slug, city, default_language,
                     store_theme, store_logo_file, store_hero_image_file
-             FROM companies WHERE slug = $1 AND is_active AND is_public',
+             FROM bt_companies WHERE slug = $1 AND is_active AND is_public',
             [$slug]
         );
         $company = $result ? pg_fetch_assoc($result) : false;
@@ -661,7 +661,7 @@ function resolve_company_slug(string $slug, bool $requirePublic = true): ?array
     }
     $result = grompil_bootstrap_query(
         'bootstrap.resolve_company_slug',
-        'SELECT id, name, slug, city, default_language, store_theme FROM companies
+        'SELECT id, name, slug, city, default_language, store_theme FROM bt_companies
          WHERE slug = $1 AND is_active AND ($2::boolean = FALSE OR is_public)',
         [$slug, $requirePublic ? 'true' : 'false']
     );

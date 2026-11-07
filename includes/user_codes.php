@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-11-07
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -67,7 +67,7 @@ function grompil_insert_user_with_unique_code(callable $insertAttempt, int $maxi
         try {
             $collision = db_query_params(
                 'users.user_code_collision_check',
-                'SELECT 1 FROM users WHERE user_code = $1 LIMIT 1',
+                'SELECT 1 FROM bt_users WHERE user_code = $1 LIMIT 1',
                 [$candidate]
             );
         } catch (GrompilDatabaseQueryException) {

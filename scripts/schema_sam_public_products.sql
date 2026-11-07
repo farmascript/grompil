@@ -3,7 +3,7 @@
 -- to more than one AMP/AMPP registration, so the source identity is composite.
 -- This file defines the structure only; it does not import data.
 
-CREATE TABLE IF NOT EXISTS public.sam_public_products (
+CREATE TABLE IF NOT EXISTS public.xt_sam_public_products (
     sam_export_version              VARCHAR(20) NOT NULL,
     sam_id                           VARCHAR(40) NOT NULL,
     validity_date                    DATE NOT NULL,
@@ -35,15 +35,15 @@ CREATE TABLE IF NOT EXISTS public.sam_public_products (
 );
 
 CREATE INDEX IF NOT EXISTS sam_public_products_amp_code_idx
-    ON public.sam_public_products (amp_code);
+    ON public.xt_sam_public_products (amp_code);
 
 CREATE INDEX IF NOT EXISTS sam_public_products_status_idx
-    ON public.sam_public_products (amp_status, ampp_status);
+    ON public.xt_sam_public_products (amp_status, ampp_status);
 
 CREATE INDEX IF NOT EXISTS sam_public_products_cnk_idx
-    ON public.sam_public_products (cnk);
+    ON public.xt_sam_public_products (cnk);
 
-COMMENT ON TABLE public.sam_public_products IS
+COMMENT ON TABLE public.xt_sam_public_products IS
     'Current SAM public-pharmacy catalog snapshot; one row per current public DMPP/CNK registration.';
 
 COMMENT ON COLUMN public.sam_public_products.cnk IS

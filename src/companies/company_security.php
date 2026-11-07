@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $deleted = $started ? db_query_params(
                     'company_security.restrict.clear_existing',
-                    "DELETE FROM access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
+                    "DELETE FROM ft_access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
                     [$companyId]
                 ) : false;
             } catch (GrompilDatabaseQueryException) {
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $inserted = $deleted ? db_query_params(
                     'company_security.restrict.add_current',
-                    "INSERT INTO access_ip_allowlist (company_id, scope, network, description, is_active)
+                    "INSERT INTO ft_access_ip_allowlist (company_id, scope, network, description, is_active)
                      VALUES ($1, 'admin', $2::inet, 'Company administration', TRUE)",
                     [$companyId, $network]
                 ) : false;
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $deleted = db_query_params(
                 'company_security.remove_restriction',
-                "DELETE FROM access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
+                "DELETE FROM ft_access_ip_allowlist WHERE company_id = $1 AND scope = 'admin'",
                 [$companyId]
             );
         } catch (GrompilDatabaseQueryException) {
@@ -100,7 +100,7 @@ try {
     $rulesResult = db_query_params(
         'company_security.list_restrictions',
         "SELECT host(network) AS address
-         FROM access_ip_allowlist
+         FROM ft_access_ip_allowlist
          WHERE company_id = $1 AND scope = 'admin' AND is_active
          ORDER BY id",
         [$companyId]

@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $saved = db_query_params(
                     'platform_security.add_network',
-                    "INSERT INTO access_ip_allowlist (company_id, scope, network, description, is_active)
+                    "INSERT INTO ft_access_ip_allowlist (company_id, scope, network, description, is_active)
                      VALUES (NULL, 'admin', $1::inet, 'Platform administration', TRUE)
                      ON CONFLICT (scope, network) WHERE company_id IS NULL DO UPDATE
                         SET is_active = TRUE, description = EXCLUDED.description",
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $removed = is_int($ruleId) && $ruleId > 0
                 ? db_query_params(
                     'platform_security.remove_network',
-                    "DELETE FROM access_ip_allowlist WHERE id = $1 AND company_id IS NULL AND scope = 'admin'",
+                    "DELETE FROM ft_access_ip_allowlist WHERE id = $1 AND company_id IS NULL AND scope = 'admin'",
                     [$ruleId]
                 )
                 : false;
@@ -64,7 +64,7 @@ try {
     $rulesResult = db_query_params(
         'platform_security.list_networks',
         "SELECT id, network::text AS network
-         FROM access_ip_allowlist
+         FROM ft_access_ip_allowlist
          WHERE company_id IS NULL AND scope = 'admin' AND is_active
          ORDER BY id"
     );

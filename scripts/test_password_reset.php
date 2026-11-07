@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -47,23 +47,29 @@ if (!$connection) {
 }
 try {
     $readiness = pg_fetch_assoc(password_reset_query($connection,
-        "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'auth_version') AS migrated,
+        "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'bt_users' AND column_name = 'auth_version') AS migrated,
                 current_user = pg_get_userbyid(c.relowner) AS owns_users
          FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-         WHERE n.nspname = 'public' AND c.relname = 'users'"
+         WHERE n.nspname = 'public' AND c.relname = 'bt_users'"
     ));
     // Temporary tables shadow public names only for this connection. No real
     // account or stored reset link is modified, and SMTP is never called.
-    password_reset_query($connection, 'CREATE TEMP TABLE companies (id bigint PRIMARY KEY)');
+    password_reset_query($connection, 'CREATE TEMP TABLE bt_companies (id bigint PRIMARY KEY)');
     password_reset_query($connection,
-        "CREATE TEMP TABLE users (
+        "CREATE TEMP TABLE bt_users (
             id bigint PRIMARY KEY, user_code varchar(6) UNIQUE NOT NULL, company_id bigint, email text, password_hash varchar(255),
             is_active boolean DEFAULT TRUE, approval_status text DEFAULT 'approved',
             must_change_password boolean DEFAULT TRUE, updated_at timestamptz DEFAULT now()
         )"
     );
     $migration = file_get_contents(dirname(__DIR__) . '/migrations/20261021-183938_password_reset.sql');
-    $migration = preg_replace('/GRANT SELECT, INSERT, UPDATE, DELETE ON password_reset_tokens, password_reset_attempts TO grompil_app;/', '', $migration);
+    $migration = strtr($migration, [
+        'password_reset_tokens' => 'st_password_reset_tokens',
+        'password_reset_attempts' => 'st_password_reset_attempts',
+        'companies' => 'bt_companies',
+        'users' => 'bt_users',
+    ]);
+    $migration = preg_replace('/GRANT SELECT, INSERT, UPDATE, DELETE ON st_password_reset_tokens, st_password_reset_attempts TO grompil_app;/', '', $migration);
     $migration = str_replace('CREATE TABLE IF NOT EXISTS', 'CREATE TEMP TABLE IF NOT EXISTS', $migration);
     try {
         $migrationApplied = db_query_raw('password_reset_test.apply_migration', $migration, $connection);
@@ -78,21 +84,21 @@ try {
     }
     reset_test_expect((bool) $migrationRepeated, 'migration can be repeated');
     password_reset_query($connection,
-        "CREATE TEMP TABLE platform_system_settings (
+        "CREATE TEMP TABLE ft_platform_system_settings (
             \"key\" text PRIMARY KEY, value_integer integer NOT NULL, updated_at timestamptz DEFAULT now()
         )"
     );
     password_reset_query($connection,
-        "INSERT INTO platform_system_settings (\"key\", value_integer)
+        "INSERT INTO ft_platform_system_settings (\"key\", value_integer)
          VALUES ('password_reset_max_requests', 3), ('password_reset_window_minutes', 15)"
     );
-    password_reset_query($connection, 'INSERT INTO companies VALUES (11), (12)');
+    password_reset_query($connection, 'INSERT INTO bt_companies VALUES (11), (12)');
     $original = password_hash('Original-Password-123', PASSWORD_DEFAULT);
     foreach ([[1, 'AAA001', null, 'shared@example.test', true, 'approved'], [2, 'AAA002', 11, 'shared@example.test', true, 'approved'],
               [3, 'AAA003', 12, 'shared@example.test', true, 'approved'], [4, 'AAA004', 11, 'inactive@example.test', false, 'approved'],
               [5, 'AAA005', 11, 'pending@example.test', true, 'pending'], [6, 'AAA006', 11, 'expiry@example.test', true, 'approved']] as $fixture) {
         password_reset_query($connection,
-            'INSERT INTO users (id, user_code, company_id, email, is_active, approval_status, password_hash) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            'INSERT INTO bt_users (id, user_code, company_id, email, is_active, approval_status, password_hash) VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [$fixture[0], $fixture[1], $fixture[2], $fixture[3], $fixture[4] ? 'true' : 'false', $fixture[5], $original]
         );
     }
@@ -101,7 +107,7 @@ try {
     reset_test_expect(password_reset_valid($connection, 11, $hash), 'issued company token works');
     reset_test_expect(!password_reset_valid($connection, 12, $hash) && !password_reset_valid($connection, null, $hash), 'token cannot cross company or platform scope');
     reset_test_expect(!password_reset_consume($connection, 12, $hash, 'Replacement-Password-456'), 'wrong company cannot reset the account');
-    $stored = pg_fetch_assoc(password_reset_query($connection, "SELECT token_hash FROM password_reset_tokens WHERE user_code = 'AAA002'"));
+    $stored = pg_fetch_assoc(password_reset_query($connection, "SELECT token_hash FROM st_password_reset_tokens WHERE user_code = 'AAA002'"));
     reset_test_expect($stored['token_hash'] === $hash && $stored['token_hash'] !== $delivery['token'], 'only a token hash is stored');
     $replacement = password_reset_issue($connection, 11, 'shared@example.test', '192.0.2.1');
     reset_test_expect(!password_reset_valid($connection, 11, $hash), 'a new request revokes the earlier link');
@@ -109,9 +115,9 @@ try {
     reset_test_expect(!password_reset_consume($connection, 11, $hash, 'short'), 'short password is refused');
     reset_test_expect(password_reset_consume($connection, 11, $hash, 'Replacement-Password-456'), 'valid token changes the password');
     reset_test_expect(!password_reset_consume($connection, 11, $hash, 'Another-Password-789'), 'token replay fails');
-    $user = pg_fetch_assoc(password_reset_query($connection, 'SELECT * FROM users WHERE id = 2'));
+    $user = pg_fetch_assoc(password_reset_query($connection, 'SELECT * FROM bt_users WHERE id = 2'));
     reset_test_expect(password_verify('Replacement-Password-456', $user['password_hash']) && $user['must_change_password'] === 'f' && (int) $user['auth_version'] === 1, 'password changes and existing sessions are revoked');
-    $others = password_reset_query($connection, 'SELECT password_hash FROM users WHERE id IN (1, 3)');
+    $others = password_reset_query($connection, 'SELECT password_hash FROM bt_users WHERE id IN (1, 3)');
     while ($other = pg_fetch_assoc($others)) {
         reset_test_expect(password_verify('Original-Password-123', $other['password_hash']), 'same email in other scopes is unchanged');
     }
@@ -120,19 +126,19 @@ try {
         reset_test_expect(password_reset_valid($connection, $scope, hash('sha256', $other['token'])), 'global and second company accounts have their own valid tokens');
     }
     $expiry = password_reset_issue($connection, 11, 'expiry@example.test', '192.0.2.3');
-    password_reset_query($connection, "UPDATE password_reset_tokens SET expires_at = now() - interval '1 second' WHERE user_code = 'AAA006'");
+    password_reset_query($connection, "UPDATE st_password_reset_tokens SET expires_at = now() - interval '1 second' WHERE user_code = 'AAA006'");
     reset_test_expect(!password_reset_valid($connection, 11, hash('sha256', $expiry['token'])), 'expired link fails');
     $changed = password_reset_issue($connection, 11, 'expiry@example.test', '192.0.2.3');
-    password_reset_query($connection, 'UPDATE users SET password_hash = $1 WHERE id = 6', [password_hash('Changed-Elsewhere-123', PASSWORD_DEFAULT)]);
+    password_reset_query($connection, 'UPDATE bt_users SET password_hash = $1 WHERE id = 6', [password_hash('Changed-Elsewhere-123', PASSWORD_DEFAULT)]);
     reset_test_expect(!password_reset_valid($connection, 11, hash('sha256', $changed['token'])), 'changing the password elsewhere revokes the link');
     reset_test_expect(password_reset_issue($connection, 11, 'inactive@example.test', '192.0.2.4') === null, 'inactive account gets no token');
     reset_test_expect(password_reset_issue($connection, 11, 'pending@example.test', '192.0.2.4') === null, 'pending account gets no token');
     for ($attempt = 0; $attempt < 4; $attempt++) {
         reset_test_expect(password_reset_issue($connection, 11, 'missing@example.test', '192.0.2.5') === null, 'unknown email gets no token');
     }
-    $count = pg_fetch_assoc(password_reset_query($connection, "SELECT count(*) AS total FROM password_reset_attempts WHERE ip_address = '192.0.2.5'"));
+    $count = pg_fetch_assoc(password_reset_query($connection, "SELECT count(*) AS total FROM st_password_reset_attempts WHERE ip_address = '192.0.2.5'"));
     reset_test_expect((int) $count['total'] === 3, 'email request limit is enforced');
-    password_reset_query($connection, "INSERT INTO password_reset_attempts (company_id, identifier_hash, ip_address) SELECT 0, repeat('a', 64), '192.0.2.6' FROM generate_series(1, 20)");
+    password_reset_query($connection, "INSERT INTO st_password_reset_attempts (company_id, identifier_hash, ip_address) SELECT 0, repeat('a', 64), '192.0.2.6' FROM generate_series(1, 20)");
     reset_test_expect(password_reset_issue($connection, null, 'shared@example.test', '192.0.2.6') === null, 'IP request limit is enforced');
 
     $previousUrl = getenv('GROMPIL_PUBLIC_URL');

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:02:56
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -52,14 +52,14 @@ if (!$translationImportQuery('translations_import.begin', 'BEGIN')) {
 
 $normalizeCodes = $translationImportQuery(
     'translations_import.normalize_codes',
-    'INSERT INTO substitutions (company_id, "key", "value", code, updated_at)
+    'INSERT INTO ft_substitutions (company_id, "key", "value", code, updated_at)
      SELECT company_id, "key", "value", upper(code), updated_at
-     FROM substitutions
+     FROM ft_substitutions
      WHERE code <> upper(code)
      ON CONFLICT (company_id, "key", code) DO UPDATE
      SET "value" = EXCLUDED."value", updated_at = EXCLUDED.updated_at'
 );
-if (!$normalizeCodes || !$translationImportQuery('translations_import.delete_old_codes', 'DELETE FROM substitutions WHERE code <> upper(code)')) {
+if (!$normalizeCodes || !$translationImportQuery('translations_import.delete_old_codes', 'DELETE FROM ft_substitutions WHERE code <> upper(code)')) {
     $translationImportQuery('translations_import.rollback_normalize', 'ROLLBACK');
     fwrite(STDERR, "Failed to normalize language codes.\n");
     exit(1);
@@ -70,7 +70,7 @@ foreach (['NL', 'FR', 'EN', 'DE'] as $language) {
     foreach ($arrSubst as $key => $value) {
         $result = $translationImportQuery(
             'translations_import.insert_missing',
-            'INSERT INTO substitutions (company_id, "key", "value", code)
+            'INSERT INTO ft_substitutions (company_id, "key", "value", code)
              VALUES (0, $1, $2, $3)
              ON CONFLICT (company_id, "key", code) DO NOTHING',
             [(string) $key, (string) $value, $language]

@@ -36,14 +36,14 @@ pharmacological subgroup. For example, `N05AD01` displays
 the final substance-level label (`Haloperidol`) is omitted. These descriptions
 are English-only in the supplied SAM REF export.
 
-To populate the reference descriptions, create `sam_atc_classifications` with
+To populate the reference descriptions, create `xt_sam_atc_classifications` with
 `scripts/schema_sam_atc_classifications.sql`, then export the REF file:
 
 ```powershell
 php scripts/sam_atc_classifications_export.php "C:\path\to\REF-export.xml"
 ```
 
-Import the generated CSV into `public.sam_atc_classifications` with columns
+Import the generated CSV into `public.xt_sam_atc_classifications` with columns
 `atc_code, description` (for example using Adminer or psql `\\copy`). Then
 run the matching `schema_grant_local.sql`, `schema_grant_test.sql`, or
 `schema_grant_production.sql` so the application role can read the table.

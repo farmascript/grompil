@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -30,7 +30,7 @@ $user = require_login();
 $message = '';
 $acronym = '';
 $displayName = (string) ($user['display_name'] ?? '');
-$result = $accountQuery('account.load', 'SELECT display_name, acronym, street, house_number, box_number, postal_code, city, country_code, address_reference_id, password_hash, must_change_password FROM users WHERE user_code = $1', [$user['user_code']]);
+$result = $accountQuery('account.load', 'SELECT display_name, acronym, street, house_number, box_number, postal_code, city, country_code, address_reference_id, password_hash, must_change_password FROM bt_users WHERE user_code = $1', [$user['user_code']]);
 $account = $result ? pg_fetch_assoc($result) : false;
 $address = [
     'street' => (string) ($user['street'] ?? ''),
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $scopeResult = $user['company_id'] === null
                         ? $accountQuery(
                             'account.check_acronym_platform',
-                            'SELECT user_code FROM users
+                            'SELECT user_code FROM bt_users
                              WHERE company_id IS NULL AND user_code <> $1
                                AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
                                     OR lower(acronym) = lower($3))
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         )
                         : $accountQuery(
                             'account.check_acronym_company',
-                            'SELECT user_code FROM users
+                            'SELECT user_code FROM bt_users
                              WHERE company_id = $1 AND user_code <> $2
                                AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
                                     OR lower(acronym) = lower($4))
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($profileSubmitted) {
                     $saved = $accountQuery(
                         'account.change_password_and_profile',
-                        'UPDATE users SET password_hash = $1, must_change_password = FALSE,
+                        'UPDATE bt_users SET password_hash = $1, must_change_password = FALSE,
                             display_name = $2, acronym = NULLIF($3, \'\'), street = $4, house_number = $5,
                             box_number = $6, postal_code = $7, city = $8, country_code = $9,
                             address_reference_id = $10, updated_at = now() WHERE user_code = $11',
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $saved = $accountQuery(
                         'account.change_password',
-                        'UPDATE users SET password_hash = $1, must_change_password = FALSE, updated_at = now() WHERE user_code = $2',
+                        'UPDATE bt_users SET password_hash = $1, must_change_password = FALSE, updated_at = now() WHERE user_code = $2',
                         [password_hash($newPassword, PASSWORD_DEFAULT), $user['user_code']]
                     );
                 }
@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $scopeResult = $user['company_id'] === null
                 ? $accountQuery(
                     'account.check_acronym_platform',
-                    'SELECT user_code FROM users
+                    'SELECT user_code FROM bt_users
                      WHERE company_id IS NULL AND user_code <> $1
                        AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
                             OR lower(acronym) = lower($3))
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 )
                 : $accountQuery(
                     'account.check_acronym_company',
-                    'SELECT user_code FROM users
+                    'SELECT user_code FROM bt_users
                      WHERE company_id = $1 AND user_code <> $2
                        AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
                             OR lower(acronym) = lower($4))
@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $saved = $accountQuery(
                     'account.save_profile',
-                    "UPDATE users SET display_name = $1, acronym = NULLIF($2, ''), street = $3,
+                    "UPDATE bt_users SET display_name = $1, acronym = NULLIF($2, ''), street = $3,
                         house_number = $4, box_number = $5, postal_code = $6, city = $7,
                         country_code = $8, address_reference_id = $9, updated_at = now() WHERE user_code = $10",
                     [$displayName, $acronym, $address['street'], $address['house_number'], $address['box_number'], $address['postal_code'], $address['city'], $address['country_code'], $address['address_reference_id'], $user['user_code']]

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -62,7 +62,7 @@ function password_reset_rollback(PgSql\Connection $connection, string $operation
 function password_reset_request_limits(PgSql\Connection $connection): array
 {
     $result = password_reset_query($connection,
-        'SELECT "key", value_integer FROM platform_system_settings
+        'SELECT "key", value_integer FROM ft_platform_system_settings
          WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')',
         [],
         'password_reset.request_limits'
@@ -103,7 +103,7 @@ function password_reset_attempt_status(
             count(*) FILTER (WHERE company_id = $2 AND identifier_hash = $3) AS email_total,
             COALESCE(CEIL(EXTRACT(EPOCH FROM (MIN(attempted_at) FILTER (WHERE ip_address = $1) + interval '1 hour' - now()))), 0)::integer AS ip_wait,
             COALESCE(CEIL(EXTRACT(EPOCH FROM (MIN(attempted_at) FILTER (WHERE company_id = $2 AND identifier_hash = $3) + make_interval(mins => $4) - now()))), 0)::integer AS email_wait
-         FROM password_reset_attempts
+         FROM st_password_reset_attempts
          WHERE (ip_address = $1 AND attempted_at > now() - interval '1 hour')
             OR (company_id = $2 AND identifier_hash = $3 AND attempted_at > now() - make_interval(mins => $4))",
         [$ip, $scope, $identifier, $windowMinutes],
@@ -168,7 +168,7 @@ function password_reset_issue(
             return null;
         }
         password_reset_query($connection,
-            'INSERT INTO password_reset_attempts (company_id, identifier_hash, ip_address) VALUES ($1, $2, $3)',
+            'INSERT INTO st_password_reset_attempts (company_id, identifier_hash, ip_address) VALUES ($1, $2, $3)',
             [$scope, $identifier, $ip],
             'password_reset.issue.record_attempt'
         );
@@ -181,7 +181,7 @@ function password_reset_issue(
             $limits['max_requests']
         );
         $user = pg_fetch_assoc(password_reset_query($connection,
-            "SELECT user_code, email, password_hash FROM users
+            "SELECT user_code, email, password_hash FROM bt_users
              WHERE company_id IS NOT DISTINCT FROM $1::bigint AND lower(email) = $2
                AND is_active AND approval_status = 'approved'
              FOR UPDATE",
@@ -191,17 +191,17 @@ function password_reset_issue(
         $delivery = null;
         if ($user) {
             $token = bin2hex(random_bytes(32));
-            password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_code = $1', [$user['user_code']], 'password_reset.issue.revoke_old_token');
+            password_reset_query($connection, 'DELETE FROM st_password_reset_tokens WHERE user_code = $1', [$user['user_code']], 'password_reset.issue.revoke_old_token');
             password_reset_query($connection,
-                "INSERT INTO password_reset_tokens (token_hash, user_code, company_id, password_hash_at_issue, expires_at)
+                "INSERT INTO st_password_reset_tokens (token_hash, user_code, company_id, password_hash_at_issue, expires_at)
                  VALUES ($1, $2, $3, $4, now() + interval '30 minutes')",
                 [hash('sha256', $token), $user['user_code'], $companyId, $user['password_hash']],
                 'password_reset.issue.create_token'
             );
             $delivery = ['email' => $user['email'], 'token' => $token];
         }
-        password_reset_query($connection, "DELETE FROM password_reset_tokens WHERE expires_at <= now()", [], 'password_reset.issue.cleanup_tokens');
-        password_reset_query($connection, "DELETE FROM password_reset_attempts WHERE attempted_at < now() - interval '1 day'", [], 'password_reset.issue.cleanup_attempts');
+        password_reset_query($connection, "DELETE FROM st_password_reset_tokens WHERE expires_at <= now()", [], 'password_reset.issue.cleanup_tokens');
+        password_reset_query($connection, "DELETE FROM st_password_reset_attempts WHERE attempted_at < now() - interval '1 day'", [], 'password_reset.issue.cleanup_attempts');
         password_reset_query($connection, 'COMMIT', [], 'password_reset.issue.commit');
         return $delivery;
     } catch (Throwable $exception) {
@@ -224,7 +224,7 @@ function password_reset_valid(PgSql\Connection $connection, ?int $companyId, str
         return false;
     }
     $result = password_reset_query($connection,
-        "SELECT 1 FROM password_reset_tokens AS t JOIN users AS u ON u.user_code = t.user_code
+        "SELECT 1 FROM st_password_reset_tokens AS t JOIN bt_users AS u ON u.user_code = t.user_code
          WHERE t.token_hash = $1 AND t.company_id IS NOT DISTINCT FROM $2::bigint
            AND u.company_id IS NOT DISTINCT FROM $2::bigint
            AND t.expires_at > now() AND t.password_hash_at_issue = u.password_hash
@@ -254,7 +254,7 @@ function password_reset_consume(PgSql\Connection $connection, ?int $companyId, s
     try {
         // Lock the account first, as issuance does, to avoid lock-order inversions.
         $user = pg_fetch_assoc(password_reset_query($connection,
-            'SELECT u.user_code FROM users AS u JOIN password_reset_tokens AS t ON t.user_code = u.user_code
+            'SELECT u.user_code FROM bt_users AS u JOIN st_password_reset_tokens AS t ON t.user_code = u.user_code
              WHERE t.token_hash = $1 AND u.company_id IS NOT DISTINCT FROM $2::bigint
              FOR UPDATE OF u', [$tokenHash, $companyId],
             'password_reset.consume.lock_account'
@@ -264,12 +264,12 @@ function password_reset_consume(PgSql\Connection $connection, ?int $companyId, s
             return false;
         }
         password_reset_query($connection,
-            'UPDATE users SET password_hash = $1, must_change_password = FALSE,
+            'UPDATE bt_users SET password_hash = $1, must_change_password = FALSE,
                 auth_version = auth_version + 1, updated_at = now() WHERE user_code = $2',
             [$newHash, $user['user_code']],
             'password_reset.consume.change_password'
         );
-        password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_code = $1', [$user['user_code']], 'password_reset.consume.revoke_tokens');
+        password_reset_query($connection, 'DELETE FROM st_password_reset_tokens WHERE user_code = $1', [$user['user_code']], 'password_reset.consume.revoke_tokens');
         password_reset_query($connection, 'COMMIT', [], 'password_reset.consume.commit');
         return true;
     } catch (Throwable $exception) {

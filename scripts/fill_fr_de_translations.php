@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:18:51
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -176,7 +176,7 @@ foreach (['FR' => $fr, 'DE' => $de] as $code => $values) {
         }
         $result = $fillTranslationQuery(
             'fill_translations.update_value',
-            'UPDATE substitutions SET "value" = $1 WHERE company_id = 0 AND "key" = $2 AND code = $3 AND trim("value") = $4',
+            'UPDATE ft_substitutions SET "value" = $1 WHERE company_id = 0 AND "key" = $2 AND code = $3 AND trim("value") = $4',
             [$value, $key, $code, '']
         );
         if (!$result) {

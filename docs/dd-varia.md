@@ -1,14 +1,14 @@
-# Platform lookup lists (`dd_varia`)
+# Platform lookup lists (`ft_dd_varia`)
 
-`dd_varia` stores platform-wide hierarchical values for dropdowns and other lookup controls. Only a platform administrator can add, change, or deactivate rows. Companies cannot maintain their own versions.
+`ft_dd_varia` stores platform-wide hierarchical values for dropdowns and other lookup controls. Only a platform administrator can add, change, or deactivate rows. Companies cannot maintain their own versions.
 
 ## Database setup
 
-For an existing database, run `migrations/20261030-120000_dd_varia.sql`, then run the matching `schema_grant_local.sql`, `schema_grant_test.sql`, or `schema_grant_production.sql` as the database owner. For a newly created database, the table and row-level security policies are also included in `schema.sql`.
+For an existing pre-prefix database, the historical `migrations/20261030-120000_dd_varia.sql` created the former `dd_varia` table. The current name is `ft_dd_varia`; apply `migrations/20261107-120000_table_prefixes.sql` to rename it in place, then run the matching grant file. For a newly created database, `schema.sql` creates `ft_dd_varia` directly.
 
-For an existing `dd_varia` table whose values have no `_root` row, run `migrations/20261104-211155_dd_varia_roots.sql` as the database owner. It creates one root for each existing list and attaches previously root-level values to it without deleting their labels or IDs.
+For an existing `ft_dd_varia` table whose values have no `_root` row, run `migrations/20261104-211155_dd_varia_roots.sql` as the database owner. It creates one root for each existing list and attaches previously root-level values to it without deleting their labels or IDs.
 
-After the root migration, run `migrations/20261104-213519_dd_varia_content_keys.sql`. It gives each list root a distinct token such as `@dd_varia_root_media@` and normalizes item tokens to underscore-separated names such as `@ddv_address_mevr@`. It moves existing translation values in `substitutions` to the new keys. Then use the normal translation import/export workflow for that database so the new root labels and item tokens are available in the language files.
+On a legacy database, apply the root and content-key migrations before the table-prefix migration if they have not already been run. The content-key migration gives each list root a distinct token such as `@dd_varia_root_media@` and normalizes item tokens to underscore-separated names such as `@ddv_address_mevr@`; it also moves translation values to the new keys. Then use the normal translation import/export workflow so the new labels and tokens are available in the language files.
 
 ## Lists and hierarchy
 
@@ -26,6 +26,6 @@ Use each returned `key` as the stable application value and `label` for display.
 
 ## Company number statuses
 
-The `company_number_status` list contains the platform-managed choices for enterprise-number and VAT-number status. `schema.sql` creates the root and the initial choices (`known`, `pending`, `not_applicable`, and `unknown`) when they are absent. For an existing database, run `migrations/20261104-183410_company_number_status.sql` after the `dd_varia` table migration. The `companies` table stores the selected stable key separately in `enterprise_number_status` and `vat_number_status`.
+The `company_number_status` list contains the platform-managed choices for enterprise-number and VAT-number status. `schema.sql` creates the root and the initial choices (`known`, `pending`, `not_applicable`, and `unknown`) when they are absent. For an existing database, run `migrations/20261104-183410_company_number_status.sql` after the `ft_dd_varia` table migration. The `bt_companies` table stores the selected stable key separately in `enterprise_number_status` and `vat_number_status`.
 
 To add a choice, add a child under `_root` in the `company_number_status` list and provide its translated label in NL, FR, EN, and DE. No PHP change is needed for a new status choice. The key `known` has one special validation rule: the corresponding number field must contain a number. Other statuses can be saved with or without a number. Deactivating a status hides it from new selections; an existing company can retain its inactive value until an administrator chooses an active status.

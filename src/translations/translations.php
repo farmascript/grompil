@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:45:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $insert = db_query_params(
                         'translations.import_value',
-                        'INSERT INTO substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO NOTHING',
+                        'INSERT INTO ft_substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO NOTHING',
                         [(string) $key, (string) $value, $importLanguage]
                     );
                 } catch (GrompilDatabaseQueryException) {
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $result = db_query_params(
                     'translations.save_value',
-                    'INSERT INTO substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO UPDATE SET "value" = EXCLUDED."value", updated_at = now()',
+                    'INSERT INTO ft_substitutions (company_id, "key", "value", code) VALUES (0, $1, $2, $3) ON CONFLICT (company_id, "key", code) DO UPDATE SET "value" = EXCLUDED."value", updated_at = now()',
                     [$key, (string) $value, $language]
                 );
             } catch (GrompilDatabaseQueryException) {
@@ -141,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $result = db_query_params(
         'translations.list',
-        'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
+        'SELECT "key", "value" FROM ft_substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
         [$language]
     );
 } catch (GrompilDatabaseQueryException) {

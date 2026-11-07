@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:45:51
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -40,7 +40,7 @@ $existingNumberStatuses = [];
 if ($companyId > 0) {
     $statusResult = $companiesQuery(
         'companies.load_number_status',
-        'SELECT enterprise_number_status, vat_number_status FROM companies WHERE id = $1',
+        'SELECT enterprise_number_status, vat_number_status FROM bt_companies WHERE id = $1',
         [$companyId]
     );
     $statusRow = $statusResult ? pg_fetch_assoc($statusResult) : false;
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isPublic = ($_POST['is_public'] ?? '') === '1';
         $result = $companiesQuery(
             'companies.toggle_public',
-            'UPDATE companies SET is_public=$1, updated_at=now() WHERE id=$2',
+            'UPDATE bt_companies SET is_public=$1, updated_at=now() WHERE id=$2',
             [$isPublic ? 'true' : 'false', $companyId]
         );
         $messageKey = $result && pg_affected_rows($result) === 1
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $values[] = $companyId;
                 $result = $companiesQuery(
                     'companies.update',
-                    'UPDATE companies SET slug=$1, name=$2, enterprise_number=$3, enterprise_number_status=$4,
+                    'UPDATE bt_companies SET slug=$1, name=$2, enterprise_number=$3, enterprise_number_status=$4,
                         vat_number=$5, vat_number_status=$6, billing_email=$7, phone=$8, street=$9,
                         house_number=$10, box_number=$11, postal_code=$12, city=$13, address_reference_id=$14,
                         country_code=$15, default_language=$16, store_theme=$17, store_logo_file=$18,
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $transaction = (bool) $companiesQuery('companies.create.begin', 'BEGIN');
                 $insert = $transaction ? $companiesQuery(
                     'companies.create.insert',
-                    'INSERT INTO companies (
+                    'INSERT INTO bt_companies (
                         slug, name, enterprise_number, enterprise_number_status, vat_number, vat_number_status,
                         billing_email, phone,
                         street, house_number, box_number, postal_code, city, address_reference_id,
@@ -180,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $editing = null;
 if (isset($_GET['edit'])) {
-    $editResult = $companiesQuery('companies.load_edit', 'SELECT * FROM companies WHERE id = $1', [(int) $_GET['edit']]);
+    $editResult = $companiesQuery('companies.load_edit', 'SELECT * FROM bt_companies WHERE id = $1', [(int) $_GET['edit']]);
     $editing = $editResult ? pg_fetch_assoc($editResult) : null;
     if ($editing) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -197,7 +197,7 @@ if (isset($_GET['edit'])) {
 $companyResult = $companiesQuery(
     'companies.list',
     'SELECT c.*, count(cu.user_code) AS users_count
-     FROM companies AS c LEFT JOIN company_users AS cu ON cu.company_id = c.id
+     FROM bt_companies AS c LEFT JOIN ct_company_users AS cu ON cu.company_id = c.id
      GROUP BY c.id ORDER BY c.name'
 );
 $rows = '';

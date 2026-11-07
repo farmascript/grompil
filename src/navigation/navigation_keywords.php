@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -70,7 +70,7 @@ foreach ($candidateKeys as $key) {
     try {
         $result = db_query_params(
             'navigation_keywords.find_existing',
-            'SELECT code FROM substitutions WHERE company_id = 0 AND "key" = $1',
+            'SELECT code FROM ft_substitutions WHERE company_id = 0 AND "key" = $1',
             [$key]
         );
     } catch (GrompilDatabaseQueryException) {
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $result = db_query_params(
                     'navigation_keywords.add_missing',
-                    'INSERT INTO substitutions (company_id, "key", "value", code)
+                    'INSERT INTO ft_substitutions (company_id, "key", "value", code)
                      VALUES (0, $1, $2, $3)
                      ON CONFLICT (company_id, "key", code) DO NOTHING',
                     [$key, '!' . $key . '!', $language]

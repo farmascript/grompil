@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -46,7 +46,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 12) {
 try {
     $roleResult = db_query_params(
         'setup_admin.find_role',
-        'SELECT id FROM roles WHERE lower(name) = lower($1) ORDER BY id LIMIT 1',
+        'SELECT id FROM ft_roles WHERE lower(name) = lower($1) ORDER BY id LIMIT 1',
         ['Beheerder']
     );
 } catch (GrompilDatabaseQueryException) {
@@ -65,7 +65,7 @@ if (!$adminRole) {
 try {
     $existingUserResult = db_query_params(
         'setup_admin.check_existing',
-        'SELECT id FROM users WHERE lower(email) = lower($1) AND company_id IS NULL',
+        'SELECT id FROM bt_users WHERE lower(email) = lower($1) AND company_id IS NULL',
         [$email]
     );
 } catch (GrompilDatabaseQueryException) {
@@ -93,7 +93,7 @@ try {
     $createUserResult = grompil_insert_user_with_unique_code(
         static fn (string $userCode): PgSql\Result|false => db_query_params(
             'setup_admin.create',
-            'INSERT INTO users (
+            'INSERT INTO bt_users (
                 user_code, email, display_name, name_first, name_last, password_hash, role_id
              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
              ON CONFLICT (user_code) DO NOTHING RETURNING id',

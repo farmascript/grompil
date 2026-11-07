@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:15:50
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -60,12 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ipAddress = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
     $rateResult = $registerQuery(
         'register.check_rate_limit',
-        "SELECT count(*) AS total FROM registration_attempts
+        "SELECT count(*) AS total FROM st_registration_attempts
          WHERE ip_address = $1 AND attempted_at > now() - interval '1 hour'",
         [$ipAddress]
     );
     $rate = $rateResult ? pg_fetch_assoc($rateResult) : false;
-    $registerQuery('register.record_attempt', 'INSERT INTO registration_attempts (ip_address) VALUES ($1)', [$ipAddress]);
+    $registerQuery('register.record_attempt', 'INSERT INTO st_registration_attempts (ip_address) VALUES ($1)', [$ipAddress]);
     $valid = in_array($accountType, ['customer', 'staff'], true)
         && $firstName !== '' && $lastName !== ''
         && (function_exists('mb_strlen') ? mb_strlen($firstName) : strlen($firstName)) <= 120
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $conflictResult = $registerQuery(
             'register.check_conflict',
-            'SELECT id FROM users
+            'SELECT id FROM bt_users
              WHERE company_id = $1
                AND (($2 <> \'\' AND (lower(acronym) = lower($2) OR lower(email) = lower($2)))
                     OR lower(acronym) = lower($3))
@@ -99,12 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             [(int) $registrationCompany['id'], $acronym, $email]
         );
         $acronymConflict = $conflictResult && pg_num_rows($conflictResult) > 0;
-        $globalRoleResult = $registerQuery('register.find_global_role', "SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1");
+        $globalRoleResult = $registerQuery('register.find_global_role', "SELECT id FROM ft_roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1");
         $globalRole = $globalRoleResult ? pg_fetch_assoc($globalRoleResult) : false;
         $companyRoleName = $accountType === 'customer' ? 'Publiek' : 'Medewerker';
         $companyRoleResult = $registerQuery(
             'register.find_company_role',
-            'SELECT id FROM company_roles WHERE company_id = $1 AND lower(name) = lower($2) ORDER BY id LIMIT 1',
+            'SELECT id FROM ct_company_roles WHERE company_id = $1 AND lower(name) = lower($2) ORDER BY id LIMIT 1',
             [(int) $registrationCompany['id'], $companyRoleName]
         );
         $companyRole = $companyRoleResult ? pg_fetch_assoc($companyRoleResult) : false;
@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insertResult = grompil_insert_user_with_unique_code(
                 static fn (string $userCode): PgSql\Result|false => $registerQuery(
                     'register.insert_user',
-                    "INSERT INTO users (email, display_name, name_first, name_last, street, house_number, box_number, postal_code, city, country_code, address_reference_id, acronym, password_hash, role_id, is_active, approval_status, company_id, user_code)
+                    "INSERT INTO bt_users (email, display_name, name_first, name_last, street, house_number, box_number, postal_code, city, country_code, address_reference_id, acronym, password_hash, role_id, is_active, approval_status, company_id, user_code)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULLIF($12, ''), $13, $14, TRUE, $15, $16, $17)
                      ON CONFLICT DO NOTHING RETURNING user_code",
                     [...$insertUserParams, $userCode]
@@ -143,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $customer = $accountType === 'customer';
                 $membershipResult = $registerQuery(
                     'register.insert_membership',
-                    "INSERT INTO company_users (
+                    "INSERT INTO ct_company_users (
                         company_id, user_code, company_role_id, is_active,
                         approval_status, approved_at
                      ) VALUES ($1, $2, $3, $4, $5, CASE WHEN $4 THEN now() ELSE NULL END)",

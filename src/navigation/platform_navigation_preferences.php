@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
         $result = db_query_params(
             'platform_navigation_preferences.load',
-            'SELECT configuration, updated_at FROM platform_navigation_preferences WHERE application = $1',
+            'SELECT configuration, updated_at FROM ft_platform_navigation_preferences WHERE application = $1',
             [$application]
         );
     } catch (GrompilDatabaseQueryException) {
@@ -167,7 +167,7 @@ $json = json_encode($configuration, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_S
 try {
     $result = db_query_params(
         'platform_navigation_preferences.save',
-        'INSERT INTO platform_navigation_preferences (application, configuration, updated_at)
+        'INSERT INTO ft_platform_navigation_preferences (application, configuration, updated_at)
          VALUES ($1, $2::jsonb, now())
          ON CONFLICT (application) DO UPDATE
             SET configuration = EXCLUDED.configuration, updated_at = now()

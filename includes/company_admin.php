@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -45,8 +45,8 @@ function create_initial_company_administrator(
         $roles = db_query_params(
             'company_admin.initial_roles',
             "SELECT
-                (SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1) AS base_role_id,
-                (SELECT id FROM company_roles WHERE company_id = $1 AND lower(name) = 'beheerder' ORDER BY id LIMIT 1) AS company_role_id",
+                (SELECT id FROM ft_roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1) AS base_role_id,
+                (SELECT id FROM ct_company_roles WHERE company_id = $1 AND lower(name) = 'beheerder' ORDER BY id LIMIT 1) AS company_role_id",
             [$companyId]
         );
     } catch (GrompilDatabaseQueryException) {
@@ -69,7 +69,7 @@ function create_initial_company_administrator(
         $userResult = grompil_insert_user_with_unique_code(
             static fn (string $userCode): PgSql\Result|false => db_query_params(
                 'company_admin.initial_user',
-                'INSERT INTO users (
+                'INSERT INTO bt_users (
                     user_code, company_id, email, display_name, password_hash, role_id, must_change_password
                  ) VALUES ($1, $2, $3, $4, $5, $6, TRUE)
                  ON CONFLICT (user_code) DO NOTHING RETURNING user_code',
@@ -87,7 +87,7 @@ function create_initial_company_administrator(
     try {
         $membership = db_query_params(
             'company_admin.initial_membership',
-            "INSERT INTO company_users (
+            "INSERT INTO ct_company_users (
                 company_id, user_code, company_role_id, is_active,
                 approval_status, approved_at
              ) VALUES ($1, $2, $3, TRUE, 'approved', now())",

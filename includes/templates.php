@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -229,7 +229,7 @@ function fn_exportLanguageFile(string $language): bool
     try {
         $result = db_query_params(
             'translations.export_general',
-            'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
+            'SELECT "key", "value" FROM ft_substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
             [$language]
         );
     } catch (GrompilDatabaseQueryException) {
@@ -266,7 +266,7 @@ function fn_exportCompanyLanguageFile(int $companyId, string $language): bool
     try {
         $result = db_query_params(
             'translations.export_company',
-            'SELECT "key", "value" FROM substitutions WHERE company_id = $1 AND code = $2 ORDER BY "key"',
+            'SELECT "key", "value" FROM ft_substitutions WHERE company_id = $1 AND code = $2 ORDER BY "key"',
             [$companyId, strtoupper($language)]
         );
     } catch (GrompilDatabaseQueryException) {

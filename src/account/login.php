@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -59,14 +59,14 @@ if ($loginCompany !== null) {
     [$companyTitle, $companyBody] = $homeDefaults[$language];
     $pageResult = $loginQuery(
         'login.company_home',
-        'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
+        'SELECT title, body FROM ct_company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
         [(int) $loginCompany['id'], 'home', $language]
     );
     $companyPage = $pageResult ? pg_fetch_assoc($pageResult) : false;
     if (!$companyPage && $language !== $loginCompany['default_language']) {
         $pageResult = $loginQuery(
             'login.company_home_default_language',
-            'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
+            'SELECT title, body FROM ct_company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
             [(int) $loginCompany['id'], 'home', (string) $loginCompany['default_language']]
         );
         $companyPage = $pageResult ? pg_fetch_assoc($pageResult) : false;
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $attemptResult = $loginQuery(
         'login.check_attempt_limit',
         "SELECT count(*) AS total, max(attempted_at) AS latest
-         FROM login_attempts
+         FROM st_login_attempts
          WHERE company_id = $1 AND email = $2 AND ip_address = $3
            AND attempted_at > now() - interval '15 minutes'",
         [$attemptCompanyId, $email, $ipAddress]
@@ -111,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userResult = false;
     if (!$isLocked) {
         $userResult = $loginCompany
-            ? $loginQuery('login.find_company_user', 'SELECT user_code, password_hash, is_active, company_id, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
-            : $loginQuery('login.find_platform_user', 'SELECT u.user_code, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM users AS u JOIN roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
+            ? $loginQuery('login.find_company_user', 'SELECT user_code, password_hash, is_active, company_id, COALESCE((to_jsonb(bt_users)->>\'auth_version\')::bigint, 0) AS auth_version FROM bt_users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
+            : $loginQuery('login.find_platform_user', 'SELECT u.user_code, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
     }
     $user = $userResult && pg_num_rows($userResult) === 1 ? pg_fetch_assoc($userResult) : false;
 
@@ -154,8 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $membershipResult = $loginQuery(
                 'login.check_company_membership',
                 'SELECT cr.level
-                 FROM company_users AS cu
-                 JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
+                 FROM ct_company_users AS cu
+                 JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
                  WHERE cu.company_id = $1 AND cu.user_code = $2
                    AND cu.is_active AND cu.approval_status = \'approved\'',
                 [(int) $loginCompany['id'], (string) $user['user_code']]
@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ipAllowed) {
             $loginQuery(
                 'login.clear_attempts',
-                'DELETE FROM login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3',
+                'DELETE FROM st_login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3',
                 [$attemptCompanyId, $email, $ipAddress]
             );
             session_regenerate_id(true);
@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($signedInUser !== null) {
                 $lastLoginResult = $loginQuery(
                     'login.update_last_login',
-                    'UPDATE users SET last_login_at = now() WHERE user_code = $1',
+                    'UPDATE bt_users SET last_login_at = now() WHERE user_code = $1',
                     [(string) $signedInUser['user_code']]
                 );
                 if (!$lastLoginResult) {
@@ -200,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$isLocked) {
         $loginQuery(
             'login.record_attempt',
-            'INSERT INTO login_attempts (company_id, email, ip_address) VALUES ($1, $2, $3)',
+            'INSERT INTO st_login_attempts (company_id, email, ip_address) VALUES ($1, $2, $3)',
             [$attemptCompanyId, $email, $ipAddress]
         );
     }

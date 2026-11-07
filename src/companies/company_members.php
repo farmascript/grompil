@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -32,7 +32,7 @@ $isPlatformOperator = is_platform_operator($actor);
 $tenant = null;
 
 if ($isPlatformOperator) {
-    $companiesResult = $companyMemberQuery('company_members.company_options', 'SELECT id, name FROM companies ORDER BY name');
+    $companiesResult = $companyMemberQuery('company_members.company_options', 'SELECT id, name FROM bt_companies ORDER BY name');
     $companies = [];
     while ($companiesResult && $companyRow = pg_fetch_assoc($companiesResult)) {
         $companies[] = $companyRow;
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $roleId = (int) ($_POST['company_role_id'] ?? 0);
         $selectedRoleResult = $roleId > 0 ? $companyMemberQuery(
             'company_members.add.validate_role',
-            'SELECT id, name FROM company_roles WHERE company_id = $1 AND id = $2 AND level > 0 AND level < 200',
+            'SELECT id, name FROM ct_company_roles WHERE company_id = $1 AND id = $2 AND level > 0 AND level < 200',
             [$companyId, $roleId]
         ) : false;
         $selectedRole = $selectedRoleResult ? pg_fetch_assoc($selectedRoleResult) : false;
@@ -82,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $collisionResult = $companyMemberQuery(
             'company_members.add.check_collision',
             "SELECT 1
-             FROM users AS target
-             JOIN users AS existing ON existing.company_id = $1 AND existing.user_code <> target.user_code
+             FROM bt_users AS target
+             JOIN bt_users AS existing ON existing.company_id = $1 AND existing.user_code <> target.user_code
              WHERE target.user_code = $2 AND (
                 lower(existing.email) = lower(target.email)
                 OR lower(existing.acronym) = lower(target.email)
@@ -101,14 +101,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $companyMemberQuery('company_members.add.begin', 'BEGIN');
             $claimResult = $companyMemberQuery(
                 'company_members.add.claim_user',
-                "UPDATE users AS u SET company_id = $2, updated_at = now()
-                 FROM roles AS r
+                "UPDATE bt_users AS u SET company_id = $2, updated_at = now()
+                 FROM ft_roles AS r
                  WHERE u.user_code = $1 AND u.company_id IS NULL AND u.role_id = r.id
                    AND u.is_active AND u.approval_status = 'approved'
                    AND r.level > 0 AND r.level < 200 AND NOT (r.permissions ? 'companies.manage')
-                   AND NOT EXISTS (SELECT 1 FROM company_users AS existing WHERE existing.user_code = u.user_code)
+                   AND NOT EXISTS (SELECT 1 FROM ct_company_users AS existing WHERE existing.user_code = u.user_code)
                    AND NOT EXISTS (
-                        SELECT 1 FROM users AS existing
+                        SELECT 1 FROM bt_users AS existing
                         WHERE existing.company_id = $2 AND (
                             lower(existing.email) = lower(u.email)
                             OR lower(existing.acronym) = lower(u.email)
@@ -122,14 +122,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $result = $claimResult && pg_affected_rows($claimResult) === 1 ? $companyMemberQuery(
                 'company_members.add.membership',
-                "INSERT INTO company_users (
+                "INSERT INTO ct_company_users (
                     company_id, user_code, company_role_id, is_active,
                     approval_status, approved_at, approved_by_user_code
                  )
                  SELECT $1, u.user_code, cr.id, TRUE, 'approved', now(), $4
-                 FROM users AS u
-                 JOIN roles AS ur ON ur.id = u.role_id
-                 JOIN company_roles AS cr ON cr.company_id = $1 AND cr.id = $3
+                 FROM bt_users AS u
+                 JOIN ft_roles AS ur ON ur.id = u.role_id
+                 JOIN ct_company_roles AS cr ON cr.company_id = $1 AND cr.id = $3
                  WHERE u.user_code = $2 AND u.company_id = $1 AND u.is_active AND u.approval_status = 'approved'
                    AND ur.level > 0 AND ur.level < 200 AND cr.level > 0 AND cr.level < 200
                  ON CONFLICT (company_id, user_code) DO UPDATE SET
@@ -152,8 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $roleId = (int) ($_POST['company_role_id'] ?? 0);
         $roleResult = $roleId > 0 ? $companyMemberQuery(
             'company_members.change_role',
-            'UPDATE company_users AS cu SET company_role_id = cr.id, updated_at = now()
-             FROM company_roles AS cr
+            'UPDATE ct_company_users AS cu SET company_role_id = cr.id, updated_at = now()
+             FROM ct_company_roles AS cr
              WHERE cu.company_id = $1 AND cu.user_code = $2
                AND cu.approval_status = \'approved\'
                AND cr.company_id = cu.company_id AND cr.id = $3
@@ -168,10 +168,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $companyMemberQuery('company_members.approve.begin', 'BEGIN');
         $result = $companyMemberQuery(
             'company_members.approve.membership',
-            "UPDATE company_users AS cu SET company_role_id = cr.id,
+            "UPDATE ct_company_users AS cu SET company_role_id = cr.id,
                     is_active = TRUE, approval_status = 'approved',
                     approved_at = now(), approved_by_user_code = $4, updated_at = now()
-             FROM company_roles AS cr
+             FROM ct_company_roles AS cr
              WHERE cu.company_id = $1 AND cu.user_code = $2
                AND cu.approval_status = 'pending'
                AND cr.company_id = cu.company_id AND cr.id = $3
@@ -181,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result && pg_affected_rows($result) === 1) {
             $companyMemberQuery(
                 'company_members.approve.user',
-                "UPDATE users SET is_active = TRUE, approval_status = 'approved',
+                "UPDATE bt_users SET is_active = TRUE, approval_status = 'approved',
                     approved_at = COALESCE(approved_at, now()),
                     approved_by_user_code = COALESCE(approved_by_user_code, $2), updated_at = now()
                  WHERE user_code = $1",
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $companyMemberQuery('company_members.reject.begin', 'BEGIN');
         $result = $companyMemberQuery(
             'company_members.reject.membership',
-            "UPDATE company_users SET is_active = FALSE, approval_status = 'rejected',
+            "UPDATE ct_company_users SET is_active = FALSE, approval_status = 'rejected',
                 approved_by_user_code = $3, updated_at = now()
              WHERE company_id = $1 AND user_code = $2 AND approval_status = 'pending'",
             [$companyId, $targetUserCode, $actor['user_code']]
@@ -207,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result && pg_affected_rows($result) === 1) {
             $companyMemberQuery(
                 'company_members.reject.user',
-                "UPDATE users SET is_active = FALSE, approval_status = 'rejected', updated_at = now()
+                "UPDATE bt_users SET is_active = FALSE, approval_status = 'rejected', updated_at = now()
                  WHERE user_code = $1 AND company_id = $2 AND approval_status = 'pending'",
                 [$targetUserCode, $companyId]
             );
@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $active = (($_POST['is_active'] ?? '') === '1');
         $result = $companyMemberQuery(
             'company_members.change_status',
-            "UPDATE company_users SET is_active = $1, updated_at = now()
+            "UPDATE ct_company_users SET is_active = $1, updated_at = now()
              WHERE company_id = $2 AND user_code = $3 AND approval_status = 'approved'",
             [$active ? 'true' : 'false', $companyId, $targetUserCode]
         );
@@ -262,7 +262,7 @@ $memberRows = '';
 if ($company !== null) {
     $roleResult = $companyMemberQuery(
         'company_members.list_roles',
-        'SELECT id, name FROM company_roles WHERE company_id = $1 AND level > 0 AND level < 200 ORDER BY level, name',
+        'SELECT id, name FROM ct_company_roles WHERE company_id = $1 AND level > 0 AND level < 200 ORDER BY level, name',
         [$companyId]
     );
     while ($roleResult && $roleRow = pg_fetch_assoc($roleResult)) {
@@ -273,11 +273,11 @@ if ($company !== null) {
         $userResult = $companyMemberQuery(
             'company_members.list_unassigned_users',
             "SELECT u.user_code, u.display_name, u.email
-             FROM users AS u JOIN roles AS r ON r.id = u.role_id
+             FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id
              WHERE u.company_id IS NULL AND u.is_active AND u.approval_status = 'approved'
                AND r.level > 0 AND r.level < 200 AND NOT (r.permissions ? 'companies.manage')
                AND NOT EXISTS (
-                    SELECT 1 FROM users AS existing
+                    SELECT 1 FROM bt_users AS existing
                     WHERE existing.company_id = $1 AND (
                         lower(existing.email) = lower(u.email)
                         OR lower(existing.acronym) = lower(u.email)
@@ -299,9 +299,9 @@ if ($company !== null) {
         'company_members.list_members',
         'SELECT u.user_code, u.display_name, u.email, cu.is_active, cu.approval_status,
                 cu.company_role_id, cr.name AS role_name
-         FROM company_users AS cu
-         JOIN users AS u ON u.user_code = cu.user_code
-         JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
+         FROM ct_company_users AS cu
+         JOIN bt_users AS u ON u.user_code = cu.user_code
+         JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
          WHERE cu.company_id = $1 AND cr.level > 0 AND cr.level < 200
          ORDER BY CASE cu.approval_status WHEN \'pending\' THEN 0 WHEN \'approved\' THEN 1 ELSE 2 END,
                   u.display_name',

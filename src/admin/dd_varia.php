@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -112,7 +112,7 @@ function dd_varia_admin_save_translations(string $translationKey, array $values)
     foreach (['NL', 'FR', 'EN', 'DE'] as $language) {
         $result = dd_varia_admin_query(
             'dd_varia.save_translation',
-            'INSERT INTO substitutions (company_id, "key", "value", code)
+            'INSERT INTO ft_substitutions (company_id, "key", "value", code)
              VALUES (0, $1, $2, $3)
              ON CONFLICT (company_id, "key", code) DO UPDATE
              SET "value" = EXCLUDED."value", updated_at = now()',
@@ -150,10 +150,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $id !== false && $id !== null
             ? dd_varia_admin_query(
                 'dd_varia.deactivate',
-                'UPDATE dd_varia AS item SET is_active = FALSE, updated_at = now()
+                'UPDATE ft_dd_varia AS item SET is_active = FALSE, updated_at = now()
                  WHERE item.id = $1 AND item.list_key = $2
                    AND NOT EXISTS (
-                       SELECT 1 FROM dd_varia AS child
+                       SELECT 1 FROM ft_dd_varia AS child
                        WHERE child.parent_id = item.id AND child.is_active
                    )',
                 [$id, $listKey]
@@ -204,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($valid && $editingId > 0) {
         $existingResult = dd_varia_admin_query(
             'dd_varia.load_existing',
-            'SELECT id, list_key, "key", content FROM dd_varia WHERE id = $1',
+            'SELECT id, list_key, "key", content FROM ft_dd_varia WHERE id = $1',
             [$editingId]
         );
         $existing = $existingResult ? pg_fetch_assoc($existingResult) : false;
@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($valid && $editingId === 0) {
         $duplicateResult = dd_varia_admin_query(
             'dd_varia.check_duplicate',
-            'SELECT 1 FROM dd_varia WHERE list_key = $1 AND "key" = $2',
+            'SELECT 1 FROM ft_dd_varia WHERE list_key = $1 AND "key" = $2',
             [$listKey, $key]
         );
         $valid = (bool) $duplicateResult && pg_num_rows($duplicateResult) === 0;
@@ -227,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($valid && $parentId !== null) {
         $parentResult = dd_varia_admin_query(
             'dd_varia.check_parent',
-            'SELECT id FROM dd_varia
+            'SELECT id FROM ft_dd_varia
              WHERE id = $1 AND list_key = $2 AND (is_active OR $3::BOOLEAN = false)',
             [$parentId, $listKey, $isActive ? 'true' : 'false']
         );
@@ -238,9 +238,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cycleResult = dd_varia_admin_query(
             'dd_varia.check_cycle',
             'WITH RECURSIVE descendants(id) AS (
-                 SELECT id FROM dd_varia WHERE id = $1
+                 SELECT id FROM ft_dd_varia WHERE id = $1
                  UNION
-                 SELECT child.id FROM dd_varia AS child
+                 SELECT child.id FROM ft_dd_varia AS child
                  JOIN descendants AS tree ON child.parent_id = tree.id
              )
              SELECT EXISTS (SELECT 1 FROM descendants WHERE id = $2) AS creates_cycle',
@@ -254,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $activeChildResult = dd_varia_admin_query(
             'dd_varia.check_active_children',
             'SELECT EXISTS (
-                SELECT 1 FROM dd_varia WHERE parent_id = $1 AND is_active
+                SELECT 1 FROM ft_dd_varia WHERE parent_id = $1 AND is_active
              )',
             [$editingId]
         );
@@ -274,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($started && $editingId > 0) {
             $saved = dd_varia_admin_query(
                 'dd_varia.update',
-                'UPDATE dd_varia
+                'UPDATE ft_dd_varia
                  SET parent_id = $1::BIGINT, info = $2, sort_order = $3,
                      is_active = $4, updated_at = now()
                  WHERE id = $5 AND list_key = $6',
@@ -284,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($started) {
             $saved = dd_varia_admin_query(
                 'dd_varia.insert',
-                'INSERT INTO dd_varia (list_key, "key", content, parent_id, info, sort_order, is_active)
+                'INSERT INTO ft_dd_varia (list_key, "key", content, parent_id, info, sort_order, is_active)
                  VALUES ($1, $2, $3, $4::BIGINT, $5, $6, $7)
                  RETURNING id',
                 [$listKey, $key, $contentToken, $parentId, $info, $sortOrder, $isActive ? 'true' : 'false']
@@ -319,7 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $selectedList = strtolower(trim((string) ($formValues['list_key'] ?: ($_GET['list'] ?? ''))));
 $listResult = dd_varia_admin_query(
     'dd_varia.list_keys',
-    'SELECT DISTINCT list_key FROM dd_varia ORDER BY list_key'
+    'SELECT DISTINCT list_key FROM ft_dd_varia ORDER BY list_key'
 );
 $listKeys = [];
 while ($listResult && $listRow = pg_fetch_assoc($listResult)) {
@@ -336,7 +336,7 @@ if ($selectedList !== '' && preg_match('/^[a-z][a-z0-9_-]{0,79}$/', $selectedLis
     $listResult = dd_varia_admin_query(
         'dd_varia.list_rows',
         'SELECT id, list_key, "key", content, parent_id, info, sort_order, is_active, updated_at
-         FROM dd_varia WHERE list_key = $1 ORDER BY sort_order, "key", id',
+         FROM ft_dd_varia WHERE list_key = $1 ORDER BY sort_order, "key", id',
         [$selectedList]
     );
     while ($listResult && $row = pg_fetch_assoc($listResult)) {
@@ -362,7 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     if ($editId !== false && $editId !== null && (int) $editId > 0) {
         $editResult = dd_varia_admin_query(
             'dd_varia.load_for_edit',
-            'SELECT * FROM dd_varia WHERE id = $1',
+            'SELECT * FROM ft_dd_varia WHERE id = $1',
             [(int) $editId]
         );
         $editRow = $editResult ? pg_fetch_assoc($editResult) : false;
@@ -377,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $translationKey = dd_varia_admin_translation_key_from_content((string) $editRow['content']);
             $translationResult = dd_varia_admin_query(
                 'dd_varia.load_translations',
-                'SELECT code, "value" FROM substitutions
+                'SELECT code, "value" FROM ft_substitutions
                  WHERE company_id = 0 AND "key" = $1 AND code IN (\'NL\', \'FR\', \'EN\', \'DE\')',
                 [$translationKey]
             );

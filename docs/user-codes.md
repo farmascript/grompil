@@ -1,8 +1,8 @@
 # Unieke gebruikerscodes
 
-Elke gebruikersrij heeft naast de interne `users.id` een unieke `users.user_code` van zes tekens. De code wordt gemaakt door een onafhankelijke random integer om te zetten met `getalNaarCode()`. De database bewaakt de uniciteit; bij een botsing probeert Grompil opnieuw.
+Elke gebruikersrij heeft naast de interne `bt_users.id` een unieke `bt_users.user_code` van zes tekens. De code wordt gemaakt door een onafhankelijke random integer om te zetten met `getalNaarCode()`. De database bewaakt de uniciteit; bij een botsing probeert Grompil opnieuw.
 
-`users.id` is de primaire sleutel van de tabel `users` zelf. Relaties vanuit andere tabellen, sessies, formulieren en app-aanroepen gebruiken `user_code`; queries mogen `users.id` niet gebruiken om een gebruiker op te zoeken of te koppelen. De code is geen geheim en verleent geen toegang.
+`bt_users.id` is de primaire sleutel van de tabel `bt_users` zelf. Relaties vanuit andere tabellen, sessies, formulieren en app-aanroepen gebruiken `user_code`; queries mogen `bt_users.id` niet gebruiken om een gebruiker op te zoeken of te koppelen. De code is geen geheim en verleent geen toegang.
 
 Na de initiële aanmaak is `user_code` onveranderlijk en mag een account niet fysiek worden verwijderd. PostgreSQL-triggers blokkeren beide handelingen, ook wanneer er momenteel geen andere tabel naar de gebruiker verwijst. Zet een account op `is_active = false` om toegang te beëindigen en de relaties en historie te bewaren.
 

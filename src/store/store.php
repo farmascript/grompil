@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:17:21
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -27,7 +27,7 @@ if ($company === null) {
     try {
         $directoryResult = db_query_params(
             'store.directory',
-            'SELECT name, slug, city FROM companies WHERE is_active AND is_public ORDER BY name'
+            'SELECT name, slug, city FROM bt_companies WHERE is_active AND is_public ORDER BY name'
         );
     } catch (GrompilDatabaseQueryException) {
         $directoryResult = false;

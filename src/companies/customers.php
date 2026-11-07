@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24 00:00:00
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -44,10 +44,10 @@ if (($_GET['ajax'] ?? '') === 'search') {
         $result = db_query_params(
             'customers.search',
             "SELECT u.user_code, u.display_name, u.email, u.acronym
-             FROM users AS u
-             JOIN roles AS r ON r.id = u.role_id
-             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
-             JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
+             FROM bt_users AS u
+             JOIN ft_roles AS r ON r.id = u.role_id
+             JOIN ct_company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
+             JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
              WHERE u.company_id = $1 AND cu.company_id = $1
                AND r.level >= 200 AND cr.level >= 200
                AND (lower(u.display_name) LIKE $2 OR lower(u.email) LIKE $2
@@ -89,10 +89,10 @@ if ($customerCodeValid) {
                     u.approval_status, u.created_at, u.last_login_at,
                     cu.is_active AS company_active, cu.approval_status AS company_approval_status,
                     cr.name AS company_role
-             FROM users AS u
-             JOIN roles AS r ON r.id = u.role_id
-             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
-             JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
+             FROM bt_users AS u
+             JOIN ft_roles AS r ON r.id = u.role_id
+             JOIN ct_company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
+             JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
              WHERE u.company_id = $1 AND cu.company_id = $1 AND u.user_code = $2
                AND r.level >= 200 AND cr.level >= 200",
             [$companyId, $customerCode]

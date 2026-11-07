@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -181,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($missingLanguages as $language) {
             $result = $templateCheckQuery(
                 'template_check.insert_missing_translation',
-                'INSERT INTO substitutions (company_id, "key", "value", code)
+                'INSERT INTO ft_substitutions (company_id, "key", "value", code)
                  VALUES (0, $1, $2, $3)
                  ON CONFLICT (company_id, "key", code) DO NOTHING',
                 [$key, '!' . $key . '!', strtoupper($language)]

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24 00:00:00
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $saved = db_query_params(
                 'platform_settings.save',
-                "INSERT INTO platform_system_settings (\"key\", value_integer, updated_at)
+                "INSERT INTO ft_platform_system_settings (\"key\", value_integer, updated_at)
                  VALUES ('password_reset_max_requests', $1, now()), ('password_reset_window_minutes', $2, now())
                  ON CONFLICT (\"key\") DO UPDATE
                     SET value_integer = EXCLUDED.value_integer, updated_at = now()",
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $message === '') {
     try {
         $result = db_query_params(
             'platform_settings.load',
-            'SELECT "key", value_integer FROM platform_system_settings
+            'SELECT "key", value_integer FROM ft_platform_system_settings
              WHERE "key" IN (\'password_reset_max_requests\', \'password_reset_window_minutes\')'
         );
     } catch (GrompilDatabaseQueryException) {

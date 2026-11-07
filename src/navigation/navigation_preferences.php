@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:49
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $result = db_query_params(
             'navigation_preferences.load',
             'SELECT configuration, updated_at
-             FROM company_navigation_preferences
+             FROM ct_company_navigation_preferences
              WHERE company_id = $1 AND application = $2',
             [(int) $company['id'], $application]
         );
@@ -114,7 +114,7 @@ $json = json_encode($configuration, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_S
 try {
     $result = db_query_params(
         'navigation_preferences.save',
-        'INSERT INTO company_navigation_preferences (company_id, application, configuration, updated_at)
+        'INSERT INTO ct_company_navigation_preferences (company_id, application, configuration, updated_at)
          VALUES ($1, $2, $3::jsonb, now())
          ON CONFLICT (company_id, application) DO UPDATE
             SET configuration = EXCLUDED.configuration, updated_at = now()

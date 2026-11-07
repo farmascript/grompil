@@ -36,7 +36,7 @@ $accountResult = $authenticatorQuery(
     'SELECT u.is_active, u.approval_status,
             COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version,
             r.name AS role_name, r.level AS role_level, r.permissions
-     FROM users AS u JOIN roles AS r ON r.id = u.role_id
+     FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id
      WHERE u.user_code = $1 AND u.company_id IS NULL',
     [$userCode]
 );
@@ -87,7 +87,7 @@ try {
 $attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $loginIp): int {
     $result = $authenticatorQuery(
         'account_authenticator.count_attempts',
-        "SELECT count(*) AS total FROM login_attempts
+        "SELECT count(*) AS total FROM st_login_attempts
          WHERE company_id = 0 AND email = $1 AND ip_address = $2
            AND attempted_at > now() - interval '15 minutes'",
         [$attemptEmail, $loginIp]
@@ -97,7 +97,7 @@ $attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $log
 };
 
 $completeLogin = static function () use ($authenticatorQuery, $userCode, $authVersion, $attemptEmail, $loginIp): never {
-    $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM login_attempts WHERE company_id = 0 AND email = $1 AND ip_address = $2', [$attemptEmail, $loginIp]);
+    $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM st_login_attempts WHERE company_id = 0 AND email = $1 AND ip_address = $2', [$attemptEmail, $loginIp]);
     session_regenerate_id(true);
     unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     unset($_SESSION['active_company_id']);
@@ -109,7 +109,7 @@ $completeLogin = static function () use ($authenticatorQuery, $userCode, $authVe
     if ($signedInUser === null) {
         redirect('login.php');
     }
-    $saved = $authenticatorQuery('account_authenticator.update_last_login', 'UPDATE users SET last_login_at = now() WHERE user_code = $1', [$userCode]);
+    $saved = $authenticatorQuery('account_authenticator.update_last_login', 'UPDATE bt_users SET last_login_at = now() WHERE user_code = $1', [$userCode]);
     if (!$saved) {
         error_log('Successful platform login timestamp could not be saved.');
     }
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stored = $started ? $authenticatorQuery(
                     'account_authenticator.enroll.store',
-                    'INSERT INTO platform_totp_credentials (user_code, secret_ciphertext, enabled_at)
+                    'INSERT INTO st_platform_totp_credentials (user_code, secret_ciphertext, enabled_at)
                      VALUES ($1, $2, now())
                      ON CONFLICT (user_code) DO UPDATE
                      SET secret_ciphertext = EXCLUDED.secret_ciphertext, enabled_at = now(), created_at = now()',
@@ -173,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($validCode) {
             $completeLogin();
         } else {
-            $authenticatorQuery('account_authenticator.record_attempt', 'INSERT INTO login_attempts (company_id, email, ip_address) VALUES (0, $1, $2)', [$attemptEmail, $loginIp]);
+            $authenticatorQuery('account_authenticator.record_attempt', 'INSERT INTO st_login_attempts (company_id, email, ip_address) VALUES (0, $1, $2)', [$attemptEmail, $loginIp]);
             $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_invalid')) . '</div>';
         }
     }

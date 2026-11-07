@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-11-07
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -29,7 +29,7 @@ require_once GROMPIL_ROOT . '/includes/user_codes.php';
 try {
     $usersResult = db_query_params(
         'users.user_code_backfill_list',
-        "SELECT id FROM users
+        "SELECT id FROM bt_users
          WHERE user_code IS NULL
             OR user_code !~ '^[A-Z0-9]{6}$'
             OR length(regexp_replace(user_code, '[A-Z]', '', 'g')) <> 3
@@ -52,7 +52,7 @@ while ($usersResult && $user = pg_fetch_assoc($usersResult)) {
         try {
             $updateResult = db_query_params(
                 'users.user_code_backfill_update',
-                "UPDATE users SET user_code = $1
+                "UPDATE bt_users SET user_code = $1
                  WHERE id = $2
                    AND (user_code IS NULL
                         OR user_code !~ '^[A-Z0-9]{6}$'
@@ -64,7 +64,7 @@ while ($usersResult && $user = pg_fetch_assoc($usersResult)) {
             try {
                 $collisionResult = db_query_params(
                     'users.user_code_backfill_collision_check',
-                    'SELECT 1 FROM users WHERE user_code = $1 LIMIT 1',
+                    'SELECT 1 FROM bt_users WHERE user_code = $1 LIMIT 1',
                     [$candidate]
                 );
             } catch (GrompilDatabaseQueryException) {
@@ -103,7 +103,7 @@ pg_free_result($usersResult);
 try {
     $remainingResult = db_query_params(
         'users.user_code_backfill_remaining',
-        "SELECT count(*) AS remaining FROM users
+        "SELECT count(*) AS remaining FROM bt_users
          WHERE user_code IS NULL
             OR user_code !~ '^[A-Z0-9]{6}$'
             OR length(regexp_replace(user_code, '[A-Z]', '', 'g')) <> 3

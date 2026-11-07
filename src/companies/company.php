@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -69,7 +69,7 @@ $content = $defaults[$language][$page];
 try {
     $result = db_query_params(
         'company_page.load',
-        'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
+        'SELECT title, body FROM ct_company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
         [(int) $company['id'], $page, $language]
     );
 } catch (GrompilDatabaseQueryException) {
@@ -80,7 +80,7 @@ if (!$custom && $language !== $company['default_language']) {
     try {
         $result = db_query_params(
             'company_page.load_default_language',
-            'SELECT title, body FROM company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
+            'SELECT title, body FROM ct_company_pages WHERE company_id = $1 AND page_key = $2 AND language_code = $3 AND is_published',
             [(int) $company['id'], $page, (string) $company['default_language']]
         );
     } catch (GrompilDatabaseQueryException) {

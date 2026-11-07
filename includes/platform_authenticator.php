@@ -100,7 +100,7 @@ function platform_management_ip_allowed(?string $address = null, string $context
         'platform_authenticator.ip_rules',
         "SELECT count(*) AS rule_count,
                 COALESCE(bool_or(network >>= $1::inet), FALSE) AS address_allowed
-         FROM access_ip_allowlist
+         FROM ft_access_ip_allowlist
          WHERE company_id IS NULL AND scope = 'admin' AND is_active",
         [$address]
     );
@@ -115,7 +115,7 @@ function grompil_platform_totp_ciphertext(string $userCode): ?string
     set_database_tenant_context(0, $userCode, true);
     $result = grompil_platform_authenticator_query(
         'platform_authenticator.read_secret',
-        'SELECT secret_ciphertext FROM platform_totp_credentials WHERE user_code = $1 AND enabled_at IS NOT NULL',
+        'SELECT secret_ciphertext FROM st_platform_totp_credentials WHERE user_code = $1 AND enabled_at IS NOT NULL',
         [$userCode]
     );
     if (!$result) {
@@ -133,14 +133,14 @@ function grompil_create_totp_recovery_codes(string $userCode): array
     for ($index = 0; $index < 10; $index++) {
         $codes[] = strtoupper(bin2hex(random_bytes(8)));
     }
-    $deleted = grompil_platform_authenticator_query('platform_authenticator.delete_recovery_codes', 'DELETE FROM platform_totp_recovery_codes WHERE user_code = $1', [$userCode]);
+    $deleted = grompil_platform_authenticator_query('platform_authenticator.delete_recovery_codes', 'DELETE FROM st_platform_totp_recovery_codes WHERE user_code = $1', [$userCode]);
     if (!$deleted) {
         throw new RuntimeException('Recovery codes could not be prepared.');
     }
     foreach ($codes as $code) {
         $inserted = grompil_platform_authenticator_query(
             'platform_authenticator.insert_recovery_code',
-            'INSERT INTO platform_totp_recovery_codes (user_code, code_hash) VALUES ($1, $2)',
+            'INSERT INTO st_platform_totp_recovery_codes (user_code, code_hash) VALUES ($1, $2)',
             [$userCode, password_hash($code, PASSWORD_DEFAULT)]
         );
         if (!$inserted) {
@@ -159,7 +159,7 @@ function grompil_consume_totp_recovery_code(string $userCode, string $code): boo
     set_database_tenant_context(0, $userCode, true);
     $result = grompil_platform_authenticator_query(
         'platform_authenticator.list_recovery_codes',
-        'SELECT code_hash FROM platform_totp_recovery_codes WHERE user_code = $1 AND used_at IS NULL',
+        'SELECT code_hash FROM st_platform_totp_recovery_codes WHERE user_code = $1 AND used_at IS NULL',
         [$userCode]
     );
     while ($result && $row = pg_fetch_assoc($result)) {
@@ -168,7 +168,7 @@ function grompil_consume_totp_recovery_code(string $userCode, string $code): boo
         }
         $consumed = grompil_platform_authenticator_query(
             'platform_authenticator.consume_recovery_code',
-            'UPDATE platform_totp_recovery_codes SET used_at = now() WHERE user_code = $1 AND code_hash = $2 AND used_at IS NULL',
+            'UPDATE st_platform_totp_recovery_codes SET used_at = now() WHERE user_code = $1 AND code_hash = $2 AND used_at IS NULL',
             [$userCode, $row['code_hash']]
         );
         return $consumed && pg_affected_rows($consumed) === 1;

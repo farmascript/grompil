@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:02:45
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -47,7 +47,7 @@ foreach ($languages as $language) {
     try {
         $result = db_query_params(
             'translations_export.read_language',
-            'SELECT "key", "value" FROM substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
+            'SELECT "key", "value" FROM ft_substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
             [$language],
             $connection
         );

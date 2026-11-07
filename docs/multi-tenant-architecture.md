@@ -19,7 +19,7 @@
 
 ## Implemented foundation (October 2026)
 
-The first multi-tenant foundation is now in the application. The database uses `companies` as tenants, `company_users` for tenant memberships, `company_roles` for company-specific permissions, and `company_domains` for verified host mappings. A composite foreign key prevents a membership from pointing at a role belonging to another company. Existing company memberships are mapped from their old global role names when the schema is applied.
+The first multi-tenant foundation is now in the application. The database uses `bt_companies` as tenants, `ct_company_users` for tenant memberships, `ct_company_roles` for company-specific permissions, and `ct_company_domains` for verified host mappings. A composite foreign key prevents a membership from pointing at a role belonging to another company. Existing company memberships are mapped from their old global role names when the schema is applied.
 
 After login, a tenant-scoped account can enter only its own company. Platform operators can choose any active company. `company_members.php` manages tenant membership and approval; `company_roles.php` manages company roles. Platform identities remain global. A user must have an approved active membership to enter the company workspace.
 
@@ -45,7 +45,7 @@ Role levels are tenant-configurable classifications. SS is exact equality; SL is
 
 An active hostname resolves to exactly one company tenant. Support both a Grompil subdomain and a verified company-owned domain. Unknown, duplicate, unverified, or suspended domains fail closed. Product catalogues, prices, branding, copy, inventory, carts, and orders are tenant-scoped. A person joining multiple companies receives separate login identities; memberships, addresses, consent, carts, and orders remain scoped to the relevant company.
 
-System UI translations use the existing DB-to-PHP export workflow. General substitutions use `company_id = 0`; a company can override an existing key with a row scoped to its company ID. Runtime loading merges the company array over the general language array. Company override files are exported under `src/lang/companies/<company_id>/`. Company-specific page copy belongs in `company_pages`, keyed by company, page and language. Templates and fallback copy remain in source files.
+System UI translations use the existing DB-to-PHP export workflow. General substitutions use `company_id = 0`; a company can override an existing key with a row scoped to its company ID. Runtime loading merges the company array over the general language array. Company override files are exported under `src/lang/companies/<company_id>/`. Company-specific page copy belongs in `ct_company_pages`, keyed by company, page and language. Templates and fallback copy remain in source files.
 
 General application templates live in `tmpl/core/`. Public company-site layouts and per-page bodies live in `tmpl/themes/<theme>/site/`; storefront templates live in the same theme folder as `store.html`. A company can override a layout or page under `tmpl/companies/<company_id>/` using the same relative path. Resolution checks the company override, then its selected theme, then `themes/default`. The theme resolver only accepts known page keys and template paths.
 

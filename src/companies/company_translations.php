@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $result = db_query_params(
                     'company_translations.add',
-                    'INSERT INTO substitutions (company_id, "key", "value", code)
+                    'INSERT INTO ft_substitutions (company_id, "key", "value", code)
                      VALUES ($1, $2, $3, $4)
                      ON CONFLICT (company_id, "key", code) DO UPDATE
                      SET "value" = EXCLUDED."value", updated_at = now()',
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $result = db_query_params(
                     'company_translations.delete',
-                    'DELETE FROM substitutions WHERE company_id = $1 AND "key" = $2 AND code = $3',
+                    'DELETE FROM ft_substitutions WHERE company_id = $1 AND "key" = $2 AND code = $3',
                     [(int) $company['id'], $deleteKey, $language]
                 );
             } catch (GrompilDatabaseQueryException) {
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $result = db_query_params(
                         'company_translations.save_value',
-                        'UPDATE substitutions SET "value" = $1, updated_at = now()
+                        'UPDATE ft_substitutions SET "value" = $1, updated_at = now()
                          WHERE company_id = $2 AND "key" = $3 AND code = $4',
                         [(string) $value, (int) $company['id'], $key, $language]
                     );
@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $result = db_query_params(
         'company_translations.list',
-        'SELECT "key", "value" FROM substitutions
+        'SELECT "key", "value" FROM ft_substitutions
          WHERE company_id = $1 AND code = $2 ORDER BY "key"',
         [(int) $company['id'], $language]
     );

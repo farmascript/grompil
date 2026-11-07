@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Fri 2026-10-30
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -81,8 +81,8 @@ function dd_varia_get_options(string $listKey, ?string $parentKey = null, bool $
             'SELECT item.id, item.list_key, item."key", item.content, item.parent_id,
                     parent."key" AS parent_key, item.info, item.sort_order, item.is_active,
                     item.updated_at
-             FROM dd_varia AS item
-             LEFT JOIN dd_varia AS parent
+             FROM ft_dd_varia AS item
+             LEFT JOIN ft_dd_varia AS parent
                ON parent.list_key = item.list_key AND parent.id = item.parent_id
              WHERE item.list_key = $1
                AND (($2::VARCHAR IS NULL AND item.parent_id IS NULL) OR parent."key" = $2)

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -40,7 +40,7 @@ $addFormOpen = false;
 
 $roles = [];
 try {
-    $roleResult = db_query_params('users.role_options', 'SELECT id, name, level FROM roles ORDER BY name');
+    $roleResult = db_query_params('users.role_options', 'SELECT id, name, level FROM ft_roles ORDER BY name');
 } catch (GrompilDatabaseQueryException) {
     $roleResult = false;
 }
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = grompil_insert_user_with_unique_code(
                     static fn (string $userCode): PgSql\Result|false => db_query_params(
                         'users.create',
-                        "INSERT INTO users (
+                        "INSERT INTO bt_users (
                             email, display_name, name_first, name_last, street, house_number, box_number,
                             postal_code, city, country_code, address_reference_id, password_hash, role_id, is_active,
                             approval_status, approved_at, approved_by_user_code, user_code
@@ -133,11 +133,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $result = db_query_params(
                 'users.approve',
-                "UPDATE users
+                "UPDATE bt_users
                  SET role_id = $1, approval_status = 'approved', is_active = TRUE,
                      approved_at = now(), approved_by_user_code = $2, updated_at = now()
                  WHERE user_code = $3 AND company_id IS NULL AND approval_status = 'pending'
-                   AND EXISTS (SELECT 1 FROM roles WHERE id = $1 AND level > 100 AND level < 200)",
+                   AND EXISTS (SELECT 1 FROM ft_roles WHERE id = $1 AND level > 100 AND level < 200)",
                 [$staffRoleId, $currentUser['user_code'], $userCode]
             );
         } catch (GrompilDatabaseQueryException) {
@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $result = db_query_params(
                 'users.reject',
-                "UPDATE users SET approval_status = 'rejected', is_active = FALSE,
+                "UPDATE bt_users SET approval_status = 'rejected', is_active = FALSE,
                      updated_at = now() WHERE user_code = $1 AND company_id IS NULL AND approval_status = 'pending'",
                 [$userCode]
             );
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $result = db_query_params(
                 'users.update',
-                "UPDATE users SET role_id = $1, is_active = $2, updated_at = now()
+                "UPDATE bt_users SET role_id = $1, is_active = $2, updated_at = now()
                  WHERE user_code = $3 AND company_id IS NULL AND approval_status = 'approved'",
                 [$roleId, $isActive, $userCode]
             );
@@ -181,7 +181,7 @@ try {
         'users.list',
         'SELECT u.user_code, u.email, u.display_name, u.role_id, u.is_active,
                 u.approval_status, r.name AS role_name, u.last_login_at
-         FROM users AS u JOIN roles AS r ON r.id = u.role_id
+         FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id
          WHERE u.company_id IS NULL
          ORDER BY CASE u.approval_status WHEN \'pending\' THEN 0 ELSE 1 END,
                   u.display_name'

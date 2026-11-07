@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -52,7 +52,7 @@ function grompil_kbo_weekly_usage(): int
     $result = grompil_kbo_query(
         'kbo.weekly_usage',
         "SELECT count(*) AS request_count
-         FROM kbo_lookup_attempts
+         FROM st_kbo_lookup_attempts
          WHERE requested_at >= now() - interval '7 days'"
     );
     $row = $result ? pg_fetch_assoc($result) : false;
@@ -96,7 +96,7 @@ function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
         $countResult = grompil_kbo_query(
             'kbo.reserve.count',
             "SELECT count(*) AS request_count
-             FROM kbo_lookup_attempts
+             FROM st_kbo_lookup_attempts
              WHERE requested_at >= now() - interval '7 days'"
         );
         $count = $countResult ? pg_fetch_result($countResult, 0, 'request_count') : false;
@@ -110,7 +110,7 @@ function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
         foreach ($requestTypes as $requestType) {
             $inserted = grompil_kbo_query(
                 'kbo.reserve.insert',
-                'INSERT INTO kbo_lookup_attempts (enterprise_number, request_type, requested_by_user_code)
+                'INSERT INTO st_kbo_lookup_attempts (enterprise_number, request_type, requested_by_user_code)
                  VALUES ($1, $2, $3)',
                 [$requestType === 'read_enterprise' ? $term : '', $requestType, $userCode]
             );

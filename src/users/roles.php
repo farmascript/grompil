@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:16:49
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -33,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $deleteResult = db_query_params(
                 'roles.delete',
-                'DELETE FROM roles WHERE id = $1 AND is_system = FALSE
-                 AND NOT EXISTS (SELECT 1 FROM users WHERE role_id = $1)',
+                'DELETE FROM ft_roles WHERE id = $1 AND is_system = FALSE
+                 AND NOT EXISTS (SELECT 1 FROM bt_users WHERE role_id = $1)',
                 [(int) ($_POST['id'] ?? 0)]
             );
         } catch (GrompilDatabaseQueryException) {
@@ -59,12 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $saveResult = $roleId > 0
                     ? db_query_params(
                         'roles.update',
-                        'UPDATE roles SET name = $1, description = $2, level = $3, permissions = $4::jsonb, updated_at = now() WHERE id = $5',
+                        'UPDATE ft_roles SET name = $1, description = $2, level = $3, permissions = $4::jsonb, updated_at = now() WHERE id = $5',
                         [$name, $description, $level, $permissionsJson, $roleId]
                     )
                     : db_query_params(
                         'roles.create',
-                        'INSERT INTO roles (name, description, level, permissions) VALUES ($1, $2, $3, $4::jsonb)',
+                        'INSERT INTO ft_roles (name, description, level, permissions) VALUES ($1, $2, $3, $4::jsonb)',
                         [$name, $description, $level, $permissionsJson]
                     );
             } catch (GrompilDatabaseQueryException) {
@@ -80,7 +80,7 @@ if (isset($_GET['edit'])) {
     try {
         $roleResult = db_query_params(
             'roles.load_for_edit',
-            'SELECT * FROM roles WHERE id = $1',
+            'SELECT * FROM ft_roles WHERE id = $1',
             [(int) $_GET['edit']]
         );
     } catch (GrompilDatabaseQueryException) {
@@ -91,8 +91,8 @@ if (isset($_GET['edit'])) {
 try {
     $rolesResult = db_query_params(
         'roles.list',
-        'SELECT r.*, count(u.user_code) AS users_count FROM roles AS r
-         LEFT JOIN users AS u ON u.role_id = r.id GROUP BY r.id ORDER BY r.id'
+        'SELECT r.*, count(u.user_code) AS users_count FROM ft_roles AS r
+         LEFT JOIN bt_users AS u ON u.role_id = r.id GROUP BY r.id ORDER BY r.id'
     );
 } catch (GrompilDatabaseQueryException) {
     $rolesResult = false;

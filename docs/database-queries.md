@@ -10,7 +10,7 @@ Voorbeeld:
 try {
     $result = db_query_params(
         'dd_varia.options',
-        'SELECT id FROM dd_varia WHERE list_key = $1',
+        'SELECT id FROM ft_dd_varia WHERE list_key = $1',
         [$listKey]
     );
 } catch (GrompilDatabaseQueryException) {

@@ -2,11 +2,11 @@
 -- into explicit searchable/displayable fields on existing catalog rows.
 -- Run once as the owner of public.sam_public_products.
 
-ALTER TABLE public.sam_public_products
+ALTER TABLE public.xt_sam_public_products
     ADD COLUMN IF NOT EXISTS pack_display_nl TEXT,
     ADD COLUMN IF NOT EXISTS pack_display_fr TEXT;
 
-UPDATE public.sam_public_products
+UPDATE public.xt_sam_public_products
 SET pack_display_nl = ampp_data_json -> 'PackDisplayValue' ->> 'Nl',
     pack_display_fr = ampp_data_json -> 'PackDisplayValue' ->> 'Fr'
 WHERE pack_display_nl IS NULL OR pack_display_fr IS NULL;

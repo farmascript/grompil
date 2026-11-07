@@ -53,7 +53,7 @@ sequence_number: 1
 
 Group titles used by modules sharing a group must resolve to the same text in every language. Missing or blank translations fall back in this order: requested language, English, Dutch. If a token has no nonempty value in any language array, the generator uses `!keyword!` for that language and reports a warning. Add the actual values to the general translations and export the language files to replace these placeholders. Existing `!keyword!` values are treated as intentional translations and remain visible for that language.
 
-When adding a NAV keyword, first check whether it already exists in the general translations. Add missing terms to the general `substitutions` (`company_id = 0`) and export the language files before running the navigation generator. Provide NL, FR, EN and DE values. If a meaningful translation cannot be found for a language, use the keyword wrapped in exclamation marks, for example `@moeilijk_keyword@` becomes `!moeilijk_keyword!`.
+When adding a NAV keyword, first check whether it already exists in the general translations. Add missing terms to the general `ft_substitutions` (`company_id = 0`) and export the language files before running the navigation generator. Provide NL, FR, EN and DE values. If a meaningful translation cannot be found for a language, use the keyword wrapped in exclamation marks, for example `@moeilijk_keyword@` becomes `!moeilijk_keyword!`.
 
 The module path in JSON is calculated from the file's path relative to the webroot and uses `/` separators. Set `--webroot` when PHP sources are stored separately from the public document root. The URL-manager supplies the environment-specific base URL and joins it to this relative module path.
 

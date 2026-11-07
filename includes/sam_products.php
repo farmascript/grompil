@@ -80,7 +80,7 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                 amp_data_json, ampp_data_json, dmpp_data_json,
                 1.0::real AS match_score,
                 'cnk'::text AS match_type
-             FROM public.sam_public_products
+             FROM public.xt_sam_public_products
              WHERE cnk = $1
                AND {$statusFilter}
              ORDER BY
@@ -243,7 +243,7 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                 amp_data_json, ampp_data_json, dmpp_data_json,
                 {$similaritySelect} AS match_score,
                 CASE WHEN {$allTermsMatch} THEN 'terms' ELSE 'fuzzy' END::text AS match_type
-             FROM public.sam_public_products
+             FROM public.xt_sam_public_products
              WHERE (
                     {$allTermsMatch}
                     {$fuzzyConditions}
@@ -304,7 +304,7 @@ function samAtcClassPathSql(): string
             (3, left({$atcCode}, 4)),
             (4, left({$atcCode}, 5))
         ) AS atc_level(level_no, code)
-        JOIN public.sam_atc_classifications AS classification
+        JOIN public.xt_sam_atc_classifications AS classification
           ON classification.atc_code = atc_level.code
     ), '')";
 }
