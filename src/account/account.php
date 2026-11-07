@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 18:05:50
+ * @date_mut: Sat 2026-11-07 18:08:55
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -60,6 +60,13 @@ $loadUserAddresses = static function () use ($accountQuery, $userCode): array {
     return $rows;
 };
 $addressRows = $loadUserAddresses();
+$nextAddressSortOrder = static function (array $rows): int {
+    $highestSortOrder = 0;
+    foreach ($rows as $row) {
+        $highestSortOrder = max($highestSortOrder, (int) $row['sort_order']);
+    }
+    return $highestSortOrder + 10;
+};
 $addressModalOpen = false;
 $addressFormOpen = false;
 $addressFormMessage = '';
@@ -84,7 +91,7 @@ if ($editAddressId !== false && $editAddressId !== null && $editAddressId > 0) {
 if (isset($_GET['add_address'])) {
     $addressModalOpen = true;
     $addressFormOpen = true;
-    $addressFormValues['sort_order'] = (count($addressRows) + 1) * 10;
+    $addressFormValues['sort_order'] = $nextAddressSortOrder($addressRows);
 }
 $selectedAddressId = filter_var($_GET['address_id'] ?? null, FILTER_VALIDATE_INT);
 $selectedAddress = null;
@@ -142,11 +149,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'city' => trim((string) ($_POST['city'] ?? '')),
                 'country_code' => strtoupper(trim((string) ($_POST['country_code'] ?? 'BE'))),
                 'address_reference_id' => trim((string) ($_POST['address_reference_id'] ?? '')),
-                'sort_order' => filter_var($_POST['sort_order'] ?? 0, FILTER_VALIDATE_INT),
+                'sort_order' => filter_var($_POST['sort_order'] ?? '', FILTER_VALIDATE_INT),
                 'is_primary' => isset($_POST['is_primary']),
             ];
-            $addressFormValues['sort_order'] = $addressFormValues['sort_order'] === false
-                ? 0 : (int) $addressFormValues['sort_order'];
+            if ($addressFormValues['sort_order'] === false) {
+                $addressFormValues['sort_order'] = $addressId === 0
+                    && trim((string) ($_POST['sort_order'] ?? '')) === ''
+                    ? $nextAddressSortOrder($addressRows)
+                    : 0;
+            } else {
+                $addressFormValues['sort_order'] = (int) $addressFormValues['sort_order'];
+            }
             $streetLength = function_exists('mb_strlen')
                 ? mb_strlen($addressFormValues['street']) : strlen($addressFormValues['street']);
             $cityLength = function_exists('mb_strlen')

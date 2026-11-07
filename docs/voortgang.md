@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 18:05:50
+ * @date_mut: Sat 2026-11-07 18:08:55
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -570,4 +570,9 @@
 
 - Herkenningsnamen in het adressenoverzicht krijgen een `#1`, `#2` enzovoort op basis van de ingestelde adresvolgorde.
 - Softwareversie verhoogd naar 0.16.10. Geen databasemigratie nodig.
+
+### Aanvulling: standaardvolgorde bij een nieuw adres
+
+- Een nieuw adres krijgt standaard het hoogste bestaande volgordenummer plus 10. Dit geldt zowel voor de vooraf ingevulde waarde als wanneer het veld bij opslaan leeg is.
+- Softwareversie verhoogd naar 0.16.11. Geen databasemigratie nodig.
 
