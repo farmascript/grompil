@@ -529,3 +529,8 @@
 - Een handmatig ingevulde gemeente wordt niet door een later antwoord overschreven. De adreszoeker gebruikt een nieuwe cacheversie op account- en registratiepagina's.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.3.
 
+### Aanvulling: standaardadres tonen na opslaan
+
+- Na het toevoegen of aanpassen van een adres keert Mijn account terug zonder tijdelijke adresselectie in de URL. Daardoor toont de pagina weer het standaardadres (of de eerste adresregel als nog geen standaard is ingesteld).
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.4.
+

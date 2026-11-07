@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 16:06:44
+ * @date_mut: Sat 2026-11-07 16:45:35
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -236,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $accountQuery('account.address_save.rollback', 'ROLLBACK');
                 }
                 if ($saved) {
-                    redirect('account.php?address_id=' . $savedId . '#addresses');
+                    redirect('account.php#addresses');
                 }
                 $addressFormMessage = '<div class="alert alert-danger" role="alert">'
                     . e(fn_t('account_address_save_failed')) . '</div>';
