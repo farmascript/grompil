@@ -19,6 +19,42 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/database_config.php';
 require_once __DIR__ . '/error_page.php';
+
+// A maintenance flag in settings_local.php blocks web requests before the app
+// starts a session or attempts a database connection. CLI migration scripts
+// remain available while maintenance mode is enabled.
+if (PHP_SAPI !== 'cli') {
+    try {
+        $localSettings = grompil_deployment_settings(dirname(__DIR__));
+        $maintenanceEnabled = ($localSettings['maintenance_mode'] ?? false) === true;
+    } catch (Throwable $exception) {
+        error_log('Could not read Grompil maintenance setting: ' . $exception->getMessage());
+        $maintenanceEnabled = false;
+    }
+
+    if ($maintenanceEnabled) {
+        http_response_code(503);
+        header('Retry-After: 300');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('X-Robots-Tag: noindex, nofollow');
+        $language = strtolower(substr((string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'nl'), 0, 2));
+        $maintenanceText = [
+            'nl' => ['Gepland onderhoud', 'Grompil is tijdelijk niet beschikbaar wegens gepland onderhoud. Probeer het later opnieuw.'],
+            'fr' => ['Maintenance planifiée', 'Grompil est temporairement indisponible en raison d’une maintenance planifiée. Veuillez réessayer plus tard.'],
+            'en' => ['Scheduled maintenance', 'Grompil is temporarily unavailable due to scheduled maintenance. Please try again later.'],
+            'de' => ['Geplante Wartung', 'Grompil ist wegen geplanter Wartungsarbeiten vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.'],
+        ][$language] ?? ['Gepland onderhoud', 'Grompil is tijdelijk niet beschikbaar wegens gepland onderhoud. Probeer het later opnieuw.'];
+        $htmlLanguage = in_array($language, ['nl', 'fr', 'en', 'de'], true) ? $language : 'nl';
+        echo '<!doctype html><html lang="' . $htmlLanguage . '"><meta charset="utf-8">'
+            . '<meta name="viewport" content="width=device-width, initial-scale=1"><title>' . $maintenanceText[0]
+            . ' · Grompil</title><body style="margin:0;background:#f5f7f2;color:#173d36;font:16px/1.6 system-ui,sans-serif">'
+            . '<main style="max-width:640px;margin:12vh auto;padding:2rem;background:#fff;border:1px solid #dce5dd;border-radius:16px">'
+            . '<strong>gromPil</strong><h1>' . $maintenanceText[0] . '</h1><p>' . $maintenanceText[1]
+            . '</p></main></body></html>';
+        exit;
+    }
+}
+
 require_once __DIR__ . '/session.php';
 grompil_start_session();
 
