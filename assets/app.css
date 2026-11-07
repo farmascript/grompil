@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:31:13
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Sat 2026-11-07 17:55:24
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -25,6 +25,10 @@ body {
     background: var(--paper);
     color: var(--ink);
     font-family: system-ui, sans-serif;
+}
+
+.account-address-card {
+    background-color: #f0f3ed;
 }
 
 .login-intro {

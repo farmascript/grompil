@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 17:28:50
+ * @date_mut: Sat 2026-11-07 17:55:24
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -503,7 +503,13 @@ foreach ($addressTypes as $addressType) {
         . e((string) $addressType['label']) . '</option>';
 }
 $addressListHtml = '';
+$editingAddressId = $addressFormOpen && (int) $addressFormValues['id'] > 0
+    ? (int) $addressFormValues['id']
+    : 0;
 foreach ($addressRows as $index => $addressRow) {
+    if ($editingAddressId > 0 && (int) $addressRow['id'] !== $editingAddressId) {
+        continue;
+    }
     $addressText = implode(', ', array_filter([
         trim((string) $addressRow['street'] . ' ' . (string) $addressRow['house_number']
             . ($addressRow['box_number'] !== '' ? ' ' . fn_t('address_box_number') . ' ' . $addressRow['box_number'] : '')),
@@ -513,7 +519,7 @@ foreach ($addressRows as $index => $addressRow) {
     $typeLabel = $addressTypeLabels[(string) $addressRow['address_type_key']]
         ?? (string) $addressRow['address_type_key'];
     $isSelected = $selectedAddress !== null && $selectedAddress['id'] === $addressRow['id'];
-    $addressListHtml .= '<article class="border rounded p-3 mb-2">'
+    $addressListHtml .= '<article class="account-address-card border rounded p-3 mb-2">'
         . '<div class="d-flex flex-wrap justify-content-between gap-2">'
         . '<div><strong>' . e($addressRow['label'] !== '' ? (string) $addressRow['label'] : $typeLabel) . '</strong>'
         . ' <span class="text-secondary">(' . e($typeLabel) . ')</span>'
@@ -521,7 +527,7 @@ foreach ($addressRows as $index => $addressRow) {
         . ($isSelected ? ' <span class="badge text-bg-secondary">' . e(fn_t('account_address_displayed')) . '</span>' : '')
         . '<div>' . e($addressText) . '</div><div class="small text-secondary">'
         . e(fn_t('account_address_order')) . ': ' . (int) $addressRow['sort_order'] . '</div></div>'
-        . '<div class="d-flex flex-wrap align-items-start gap-2">'
+        . '<div class="account-address-actions d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">'
         . '<a class="btn btn-sm btn-outline-secondary" href="account.php?address_id=' . (int) $addressRow['id'] . '#addresses">'
         . e(fn_t('account_address_show')) . '</a>'
         . '<a class="btn btn-sm btn-outline-secondary" href="account.php?edit_address=' . (int) $addressRow['id'] . '#addresses">'
@@ -534,7 +540,7 @@ foreach ($addressRows as $index => $addressRow) {
         . '<input type="hidden" name="action" value="address_deactivate">'
         . '<input type="hidden" name="address_id" value="' . (int) $addressRow['id'] . '">'
         . '<button class="btn btn-sm btn-outline-danger" type="submit">' . e(fn_t('account_address_remove')) . '</button></form>'
-        . '</div></div></article>';
+        . '</div></article>';
 }
 if ($addressListHtml === '') {
     $addressListHtml = '<p class="text-secondary">' . e(fn_t('account_address_none')) . '</p>';

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-11-04 18:10:00
+ * @date_mut: Sat 2026-11-07 17:55:24
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -554,4 +554,10 @@
 - De adreskeuzelijst ondersteunt nu pijltjestoetsen, Enter en Escape, met ARIA-comboboxsemantiek.
 - Scrollen in de suggestielijst sluit de lijst niet meer doordat het invoerveld focus verliest. De lijst houdt het scrollen binnen zichzelf.
 - Cacheversie van de adreszoeker verhoogd; softwareversie verhoogd naar 0.16.7. Geen databasemigratie nodig.
+
+### Aanvulling: overzichtelijker adresbeheer
+
+- Adreskaarten hebben nu een subtiel donkerdere achtergrond en hun acties staan consequent in een aparte rij onder de adresgegevens.
+- Tijdens het aanpassen blijft alleen de kaart van het adres dat wordt bewerkt zichtbaar; andere adreskaarten worden verborgen tot het bewerken is afgerond.
+- Softwareversie verhoogd naar 0.16.8. Geen databasemigratie nodig.
 
