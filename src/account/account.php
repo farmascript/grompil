@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 17:55:24
+ * @date_mut: Sat 2026-11-07 18:00:02
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -526,7 +526,7 @@ foreach ($addressRows as $index => $addressRow) {
         . ($addressRow['is_primary'] ? ' <span class="badge text-bg-success">' . e(fn_t('account_address_default')) . '</span>' : '')
         . ($isSelected ? ' <span class="badge text-bg-secondary">' . e(fn_t('account_address_displayed')) . '</span>' : '')
         . '<div>' . e($addressText) . '</div><div class="small text-secondary">'
-        . e(fn_t('account_address_order')) . ': ' . (int) $addressRow['sort_order'] . '</div></div>'
+        . e(fn_t('account_address_order')) . ': ' . (int) $addressRow['sort_order'] . '</div></div></div>'
         . '<div class="account-address-actions d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">'
         . '<a class="btn btn-sm btn-outline-secondary" href="account.php?address_id=' . (int) $addressRow['id'] . '#addresses">'
         . e(fn_t('account_address_show')) . '</a>'

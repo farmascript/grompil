@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 17:55:24
+ * @date_mut: Sat 2026-11-07 18:00:02
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -560,4 +560,9 @@
 - Adreskaarten hebben nu een subtiel donkerdere achtergrond en hun acties staan consequent in een aparte rij onder de adresgegevens.
 - Tijdens het aanpassen blijft alleen de kaart van het adres dat wordt bewerkt zichtbaar; andere adreskaarten worden verborgen tot het bewerken is afgerond.
 - Softwareversie verhoogd naar 0.16.8. Geen databasemigratie nodig.
+
+### Aanvulling: vaste breedte voor de adresacties
+
+- De adresgegevens-container sluit nu vóór de actierij. Daardoor loopt de scheidingslijn en de rij met knoppen over de volledige breedte van de adreskaart.
+- Softwareversie verhoogd naar 0.16.9. Geen databasemigratie nodig.
 
