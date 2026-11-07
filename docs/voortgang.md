@@ -516,3 +516,10 @@
 - Adreskeuzes gebruiken de vertaalde opties uit `ft_dd_varia`; er is geen databaseschemawijziging nodig.
 - Softwareversie verhoogd naar 0.16.1.
 
+### Aanvulling: labels voor adressoorten en beheerrechten
+
+- De zeven bestaande adressoort-sleutels hebben nu NL/FR/EN/DE-bronvertalingen, zodat een ontbrekende gepubliceerde vertaling niet meer als ruwe sleutel in het keuzemenu verschijnt.
+- Het beheer van `dd_varia` is al uitsluitend toegankelijk voor de platformbeheerder; de modulecontrole en expliciete rolcontrole blokkeren ook rechtstreekse URL-toegang voor anderen.
+- `address_type_list_key` blijft staan als discriminator voor de samengestelde foreign key naar `ft_dd_varia(list_key, key)`. Daardoor kan een adressoort niet per ongeluk verwijzen naar een contactsoort.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.2.
+
