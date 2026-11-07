@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 18:00:02
+ * @date_mut: Sat 2026-11-07 18:05:50
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -565,4 +565,9 @@
 
 - De adresgegevens-container sluit nu vóór de actierij. Daardoor loopt de scheidingslijn en de rij met knoppen over de volledige breedte van de adreskaart.
 - Softwareversie verhoogd naar 0.16.9. Geen databasemigratie nodig.
+
+### Aanvulling: adresvolgnummer in het overzicht
+
+- Herkenningsnamen in het adressenoverzicht krijgen een `#1`, `#2` enzovoort op basis van de ingestelde adresvolgorde.
+- Softwareversie verhoogd naar 0.16.10. Geen databasemigratie nodig.
 

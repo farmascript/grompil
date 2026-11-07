@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 18:00:02
+ * @date_mut: Sat 2026-11-07 18:05:50
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -521,7 +521,8 @@ foreach ($addressRows as $index => $addressRow) {
     $isSelected = $selectedAddress !== null && $selectedAddress['id'] === $addressRow['id'];
     $addressListHtml .= '<article class="account-address-card border rounded p-3 mb-2">'
         . '<div class="d-flex flex-wrap justify-content-between gap-2">'
-        . '<div><strong>' . e($addressRow['label'] !== '' ? (string) $addressRow['label'] : $typeLabel) . '</strong>'
+        . '<div><span class="text-secondary me-1">#' . ($index + 1) . '</span><strong>'
+        . e($addressRow['label'] !== '' ? (string) $addressRow['label'] : $typeLabel) . '</strong>'
         . ' <span class="text-secondary">(' . e($typeLabel) . ')</span>'
         . ($addressRow['is_primary'] ? ' <span class="badge text-bg-success">' . e(fn_t('account_address_default')) . '</span>' : '')
         . ($isSelected ? ' <span class="badge text-bg-secondary">' . e(fn_t('account_address_displayed')) . '</span>' : '')
