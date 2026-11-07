@@ -54,7 +54,12 @@ CREATE TABLE IF NOT EXISTS users (
     approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT users_user_code_format_check CHECK (
+        user_code ~ '^[A-Z0-9]{6}$'
+        AND length(regexp_replace(user_code, '[A-Z]', '', 'g')) = 3
+        AND length(regexp_replace(user_code, '[0-9]', '', 'g')) = 3
+    )
 );
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -130,6 +135,20 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS user_code VARCHAR(6);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
 CREATE UNIQUE INDEX IF NOT EXISTS users_user_code_uidx ON users (user_code);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'users'::regclass AND conname = 'users_user_code_format_check'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT users_user_code_format_check CHECK (
+            user_code ~ '^[A-Z0-9]{6}$'
+            AND length(regexp_replace(user_code, '[A-Z]', '', 'g')) = 3
+            AND length(regexp_replace(user_code, '[0-9]', '', 'g')) = 3
+        ) NOT VALID;
+    END IF;
+END;
+$$;
 CREATE UNIQUE INDEX IF NOT EXISTS users_company_id_id_unique_idx
     ON users (company_id, id);
 
@@ -773,6 +792,15 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM users WHERE user_code IS NULL) THEN
         ALTER TABLE users ALTER COLUMN user_code SET NOT NULL;
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM users
+        WHERE user_code IS NOT NULL
+          AND (user_code !~ '^[A-Z0-9]{6}$'
+               OR length(regexp_replace(user_code, '[A-Z]', '', 'g')) <> 3
+               OR length(regexp_replace(user_code, '[0-9]', '', 'g')) <> 3)
+    ) THEN
+        ALTER TABLE users VALIDATE CONSTRAINT users_user_code_format_check;
     END IF;
 END;
 $$;

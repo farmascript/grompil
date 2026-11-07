@@ -22,7 +22,20 @@ require_once __DIR__ . '/do_6_char_code.php';
 /** Generate a six-character code from an independent random integer. */
 function grompil_generate_user_code(): string
 {
-    return getalNaarCode(random_int(0, 351519999));
+    $code = getalNaarCode(random_int(0, 351519999));
+    if (!grompil_is_valid_user_code($code)) {
+        throw new LogicException('The user code generator returned an invalid code.');
+    }
+
+    return $code;
+}
+
+/** Check the required six-character, three-letter and three-digit format. */
+function grompil_is_valid_user_code(string $code): bool
+{
+    return preg_match('/^[A-Z0-9]{6}$/D', $code) === 1
+        && preg_match_all('/[A-Z]/', $code) === 3
+        && preg_match_all('/[0-9]/', $code) === 3;
 }
 
 /**

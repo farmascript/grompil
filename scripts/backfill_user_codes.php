@@ -29,7 +29,12 @@ require_once GROMPIL_ROOT . '/includes/user_codes.php';
 try {
     $usersResult = db_query_params(
         'users.user_code_backfill_list',
-        'SELECT id FROM users WHERE user_code IS NULL ORDER BY id'
+        "SELECT id FROM users
+         WHERE user_code IS NULL
+            OR user_code !~ '^[A-Z0-9]{6}$'
+            OR length(regexp_replace(user_code, '[A-Z]', '', 'g')) <> 3
+            OR length(regexp_replace(user_code, '[0-9]', '', 'g')) <> 3
+         ORDER BY id"
     );
 } catch (GrompilDatabaseQueryException) {
     fwrite(STDERR, "Could not list users that need codes.\n");
@@ -47,7 +52,12 @@ while ($usersResult && $user = pg_fetch_assoc($usersResult)) {
         try {
             $updateResult = db_query_params(
                 'users.user_code_backfill_update',
-                'UPDATE users SET user_code = $1 WHERE id = $2 AND user_code IS NULL',
+                "UPDATE users SET user_code = $1
+                 WHERE id = $2
+                   AND (user_code IS NULL
+                        OR user_code !~ '^[A-Z0-9]{6}$'
+                        OR length(regexp_replace(user_code, '[A-Z]', '', 'g')) <> 3
+                        OR length(regexp_replace(user_code, '[0-9]', '', 'g')) <> 3)",
                 [$candidate, $userId]
             );
         } catch (GrompilDatabaseQueryException) {
@@ -93,7 +103,11 @@ pg_free_result($usersResult);
 try {
     $remainingResult = db_query_params(
         'users.user_code_backfill_remaining',
-        'SELECT count(*) AS remaining FROM users WHERE user_code IS NULL'
+        "SELECT count(*) AS remaining FROM users
+         WHERE user_code IS NULL
+            OR user_code !~ '^[A-Z0-9]{6}$'
+            OR length(regexp_replace(user_code, '[A-Z]', '', 'g')) <> 3
+            OR length(regexp_replace(user_code, '[0-9]', '', 'g')) <> 3"
     );
 } catch (GrompilDatabaseQueryException) {
     fwrite(STDERR, "Could not verify that all user codes are assigned.\n");
@@ -105,4 +119,4 @@ if ($remaining !== 0) {
     exit(1);
 }
 
-fwrite(STDOUT, sprintf("User code backfill complete. Assigned: %d; already assigned concurrently: %d.\n", $updated, $skipped));
+fwrite(STDOUT, sprintf("User code backfill complete. Assigned or repaired: %d; already valid concurrently: %d.\n", $updated, $skipped));
