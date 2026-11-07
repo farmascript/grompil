@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 16:39:01
+ * @date_mut: Sat 2026-11-07 16:47:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -23,6 +23,13 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     const requestSequence = new Map();
 
     const clearReference = () => { if (referenceId) referenceId.value = ''; };
+    const clearStreetAndHouse = () => {
+        ['street', 'house', 'box'].forEach((role) => {
+            if (fields[role]) fields[role].value = '';
+        });
+        if (streetId) streetId.value = '';
+        clearReference();
+    };
     Object.values(fields).forEach((input) => input.addEventListener('input', clearReference));
 
     const getValue = (role) => fields[role]?.value.trim() ?? '';
@@ -106,13 +113,13 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     if (fields.postal && fields.city) {
         fields.postal.addEventListener('input', () => {
             fields.city.value = '';
+            clearStreetAndHouse();
         });
     }
     schedule('postal', 'postal', 2, () => ({}), (item) => {
         fields.postal.value = item.postal_code;
         if (item.city && fields.city) fields.city.value = item.city;
-        if (streetId) streetId.value = '';
-        clearReference();
+        clearStreetAndHouse();
     }, (items, query) => {
         if (!fields.city || fields.postal.value.trim() !== query || fields.city.value.trim() !== '') return;
         const cities = [...new Set(items.map((item) => item.city?.trim()).filter(Boolean))];
@@ -120,8 +127,14 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     });
     schedule('city', 'municipality', 2, () => ({}), (item) => {
         fields.city.value = item.city;
-        if (streetId) streetId.value = '';
-        clearReference();
+        // A municipality can contain several postal codes. Drop any old
+        // postcode so it cannot incorrectly filter the street/address search.
+        if (fields.postal) {
+            cancelSearch(fields.postal);
+            fields.postal.value = '';
+            lists.get(fields.postal)?.replaceChildren();
+        }
+        clearStreetAndHouse();
     });
     schedule('street', 'street', 2, () => ({ postal_code: getValue('postal'), city: getValue('city') }), (item) => {
         fields.street.value = item.street;

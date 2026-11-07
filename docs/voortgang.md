@@ -534,3 +534,8 @@
 - Na het toevoegen of aanpassen van een adres keert Mijn account terug zonder tijdelijke adresselectie in de URL. Daardoor toont de pagina weer het standaardadres (of de eerste adresregel als nog geen standaard is ingesteld).
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.4.
 
+### Aanvulling: postcode verversen bij gemeente als startpunt
+
+- Een gekozen gemeente wist nu een eventueel eerder ingevulde postcode en oude straat/huisnummerkeuze. Zo beperkt een postcode uit een andere gemeente de adreszoekopdracht niet; de geselecteerde volledige adressuggestie zet de juiste postcode terug.
+- De adreszoeker gebruikt cacheversie 4. Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.5.
+
