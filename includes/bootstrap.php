@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -60,6 +60,7 @@ function db(): PgSql\Connection
 }
 
 require_once __DIR__ . '/database_queries.php';
+require_once __DIR__ . '/user_codes.php';
 
 /** Preserve bootstrap's existing false-based query handling with central logging. */
 function grompil_bootstrap_query(string $operation, string $sql, array $params = []): PgSql\Result|false

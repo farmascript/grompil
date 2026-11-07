@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -59,12 +59,22 @@ function create_initial_company_administrator(
 
     $temporaryPassword = bin2hex(random_bytes(16));
     try {
-        $userResult = db_query_params(
-            'company_admin.initial_user',
-            'INSERT INTO users (
-                company_id, email, display_name, password_hash, role_id, must_change_password
-             ) VALUES ($1, $2, $3, $4, $5, TRUE) RETURNING id',
-            [$companyId, $email, 'Beheerder', password_hash($temporaryPassword, PASSWORD_DEFAULT), (int) $role['base_role_id']]
+        $userParams = [
+            $companyId,
+            $email,
+            'Beheerder',
+            password_hash($temporaryPassword, PASSWORD_DEFAULT),
+            (int) $role['base_role_id'],
+        ];
+        $userResult = grompil_insert_user_with_unique_code(
+            static fn (string $userCode): PgSql\Result|false => db_query_params(
+                'company_admin.initial_user',
+                'INSERT INTO users (
+                    user_code, company_id, email, display_name, password_hash, role_id, must_change_password
+                 ) VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+                 ON CONFLICT (user_code) DO NOTHING RETURNING id',
+                [$userCode, ...$userParams]
+            )
         );
     } catch (GrompilDatabaseQueryException) {
         return false;

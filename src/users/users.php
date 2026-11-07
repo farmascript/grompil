@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -80,30 +80,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageKey = 'user_add_invalid';
         } else {
             try {
-                $result = db_query_params(
-                    'users.create',
-                    "INSERT INTO users (
-                        email, display_name, name_first, name_last, street, house_number, box_number,
-                        postal_code, city, country_code, address_reference_id, password_hash, role_id, is_active,
-                        approval_status, approved_at, approved_by
-                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, 'approved', now(), $14)
-                     ON CONFLICT DO NOTHING RETURNING id",
-                    [
-                        $newUserEmail,
-                        $newUserName,
-                        $newUserFirstName,
-                        $newUserLastName,
-                        $newUserAddress['street'],
-                        $newUserAddress['house_number'],
-                        $newUserAddress['box_number'],
-                        $newUserAddress['postal_code'],
-                        $newUserAddress['city'],
-                        $newUserAddress['country_code'],
-                        $newUserAddress['address_reference_id'],
-                        password_hash($password, PASSWORD_DEFAULT),
-                        $selectedNewRoleId,
-                        $currentUser['id'],
-                    ]
+                $userParams = [
+                    $newUserEmail,
+                    $newUserName,
+                    $newUserFirstName,
+                    $newUserLastName,
+                    $newUserAddress['street'],
+                    $newUserAddress['house_number'],
+                    $newUserAddress['box_number'],
+                    $newUserAddress['postal_code'],
+                    $newUserAddress['city'],
+                    $newUserAddress['country_code'],
+                    $newUserAddress['address_reference_id'],
+                    password_hash($password, PASSWORD_DEFAULT),
+                    $selectedNewRoleId,
+                    $currentUser['id'],
+                ];
+                $result = grompil_insert_user_with_unique_code(
+                    static fn (string $userCode): PgSql\Result|false => db_query_params(
+                        'users.create',
+                        "INSERT INTO users (
+                            email, display_name, name_first, name_last, street, house_number, box_number,
+                            postal_code, city, country_code, address_reference_id, password_hash, role_id, is_active,
+                            approval_status, approved_at, approved_by, user_code
+                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, 'approved', now(), $14, $15)
+                         ON CONFLICT DO NOTHING RETURNING id",
+                        [...$userParams, $userCode]
+                    )
                 );
             } catch (GrompilDatabaseQueryException) {
                 $result = false;

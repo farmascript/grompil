@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:27:16
- * @date_mut: Wed 2026-11-04 21:36:02
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS roles (
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    -- Nullable during schema migration so legacy membership copies can be backfilled.
+    user_code VARCHAR(6),
     email VARCHAR(254) NOT NULL,
     display_name VARCHAR(255) NOT NULL,
     name_first VARCHAR(120) NOT NULL DEFAULT '',
@@ -124,8 +126,10 @@ ALTER TABLE companies ADD COLUMN IF NOT EXISTS store_hero_image_file VARCHAR(128
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS company_id BIGINT
     REFERENCES companies(id) ON DELETE RESTRICT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS user_code VARCHAR(6);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
+CREATE UNIQUE INDEX IF NOT EXISTS users_user_code_uidx ON users (user_code);
 CREATE UNIQUE INDEX IF NOT EXISTS users_company_id_id_unique_idx
     ON users (company_id, id);
 
@@ -764,5 +768,13 @@ CREATE TABLE IF NOT EXISTS password_reset_attempts (
 );
 CREATE INDEX IF NOT EXISTS password_reset_attempts_ip_idx ON password_reset_attempts (ip_address, attempted_at);
 CREATE INDEX IF NOT EXISTS password_reset_attempts_identifier_idx ON password_reset_attempts (company_id, identifier_hash, attempted_at);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM users WHERE user_code IS NULL) THEN
+        ALTER TABLE users ALTER COLUMN user_code SET NOT NULL;
+    END IF;
+END;
+$$;
 
 COMMIT;

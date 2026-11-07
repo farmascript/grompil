@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:46:31
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -73,6 +73,8 @@ De projectroot-bestanden zijn publieke URL-entrypoints en stellen `GROMPIL_ROOT`
 Nieuwe modules krijgen consequent het projectbrede beginblokcommentaar met aanmaak- en wijzigingsdatum, credits, copyright, contactadres en een korte Engelstalige `@description`. De omschrijving staat na `@description: `; vervolgregels gebruiken dezelfde commentaarinspringing.
 
 Elk bijgehouden Grompil-PHP-bestand krijgt als laatste regel van het bovenste commentaarblok een link naar de bijbehorende broncodepagina in DokuWiki. De vaste basis is `https://dw.grompil.com/!saas/doku.php?id=broncode:`; voeg daarna het projectrelatieve bestandspad zonder `.php` toe en vervang `/` door `:`. Bijvoorbeeld: `includes/database_config.php` wordt `https://dw.grompil.com/!saas/doku.php?id=broncode:includes:database_config`. Maak voor een nieuw PHP-bestand zo nodig eerst het commentaarblok aan. Werk bij het toevoegen van een PHP-bronbestand ook de bestandslijst in `scripts/create_dokuwiki_source_pages.sh` bij. Deze afspraken gelden voor Grompil-bronbestanden, niet voor `vendor/` of de lokale, genegeerde `settings_local.php`.
+
+Gebruikers hebben naast de interne numerieke `users.id` een unieke `users.user_code`. Die code is een publieke, blijvende alternatieve identifier; interne relaties en foreign keys blijven `users.id` gebruiken. De migratie- en backfillstappen voor bestaande databases staan in [Unieke gebruikerscodes](docs/user-codes.md).
 
 Hardcoded technische foutmeldingen en CLI-diagnostiek die niet via de vertaalroutine lopen, worden in het Engels geschreven. Bewust getoonde meldingen blijven zichtbaar; normale interface- en bedrijfsgerichte teksten gebruiken vertaalkeys of expliciete taalvarianten.
 

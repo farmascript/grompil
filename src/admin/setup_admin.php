@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -82,24 +82,23 @@ if (
 }
 
 try {
-    $createUserResult = db_query_params(
-        'setup_admin.create',
-        'INSERT INTO users (
-            email,
-            display_name,
-            name_first,
-            name_last,
-            password_hash,
-            role_id
-         ) VALUES ($1, $2, $3, $4, $5, $6)',
-        [
-            $email,
-            $displayName,
-            $firstName,
-            $lastName,
-            password_hash($password, PASSWORD_DEFAULT),
-            (int) $adminRole['id'],
-        ]
+    $userParams = [
+        $email,
+        $displayName,
+        $firstName,
+        $lastName,
+        password_hash($password, PASSWORD_DEFAULT),
+        (int) $adminRole['id'],
+    ];
+    $createUserResult = grompil_insert_user_with_unique_code(
+        static fn (string $userCode): PgSql\Result|false => db_query_params(
+            'setup_admin.create',
+            'INSERT INTO users (
+                user_code, email, display_name, name_first, name_last, password_hash, role_id
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (user_code) DO NOTHING RETURNING id',
+            [$userCode, ...$userParams]
+        )
     );
 } catch (GrompilDatabaseQueryException) {
     $createUserResult = false;
