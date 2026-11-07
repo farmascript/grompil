@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:15:50
- * @date_mut: Sat 2026-11-07 14:54:17
+ * @date_mut: Sat 2026-11-07 17:28:50
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -228,6 +228,8 @@ echo fn_templateRender('registration.html', [
     '_cookie_footer_html' => fn_templateRender('cookie_footer.html'),
     '_address_fields_html' => fn_templateRender('address_fields.html', [
         'address_prefix' => 'register-address',
+        'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
+        'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_country_code_value' => $address['country_code'],
         'address_reference_id_value' => $address['address_reference_id'],
         'street_reference_id_value' => '',

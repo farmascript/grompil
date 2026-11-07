@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 16:47:00
+ * @date_mut: Sat 2026-11-07 17:28:50
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -18,11 +18,18 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     const fields = Object.fromEntries([...group.querySelectorAll('[data-address-role]')].map((input) => [input.dataset.addressRole, input]));
     const streetId = group.querySelector('[data-address-street-id]');
     const referenceId = group.querySelector('[data-address-reference-id]');
+    const municipalityNis = group.querySelector('[data-address-nis-code]');
+    const status = group.querySelector('[data-address-status]');
     const lists = new Map();
     const timers = new Map();
     const requestSequence = new Map();
 
     const clearReference = () => { if (referenceId) referenceId.value = ''; };
+    const setStatus = (message = '') => {
+        if (!status) return;
+        status.textContent = message;
+        status.classList.toggle('d-none', message === '');
+    };
     const clearStreetAndHouse = () => {
         ['street', 'house', 'box'].forEach((role) => {
             if (fields[role]) fields[role].value = '';
@@ -77,6 +84,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             button.addEventListener('click', () => {
                 cancelSearch(input);
                 onSelect(item);
+                setStatus('');
                 list.replaceChildren();
             });
             list.append(button);
@@ -90,6 +98,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             cancelSearch(input);
             const sequence = requestSequence.get(input);
             const query = input.value.trim();
+            setStatus('');
             if (query.length < minimum) { ensureList(input).replaceChildren(); return; }
             timers.set(input, setTimeout(async () => {
                 try {
@@ -97,9 +106,15 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
                     if (sequence === requestSequence.get(input)) {
                         if (onResults) onResults(items, query);
                         show(input, items, onSelect);
+                        if (!items.length && input.value.trim() === query && status) {
+                            setStatus(status.dataset.noResults || '');
+                        }
                     }
                 } catch (error) {
-                    if (sequence === requestSequence.get(input)) show(input, [{ label: error.message }], () => {});
+                    if (sequence === requestSequence.get(input)) {
+                        ensureList(input).replaceChildren();
+                        setStatus(error.message);
+                    }
                 }
             }, 350));
         });
@@ -113,36 +128,47 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     if (fields.postal && fields.city) {
         fields.postal.addEventListener('input', () => {
             fields.city.value = '';
+            if (municipalityNis) municipalityNis.value = '';
+            clearStreetAndHouse();
+        });
+        fields.city.addEventListener('input', () => {
+            fields.postal.value = '';
+            if (municipalityNis) municipalityNis.value = '';
             clearStreetAndHouse();
         });
     }
     schedule('postal', 'postal', 2, () => ({}), (item) => {
         fields.postal.value = item.postal_code;
         if (item.city && fields.city) fields.city.value = item.city;
+        if (municipalityNis) municipalityNis.value = '';
         clearStreetAndHouse();
     }, (items, query) => {
         if (!fields.city || fields.postal.value.trim() !== query || fields.city.value.trim() !== '') return;
         const cities = [...new Set(items.map((item) => item.city?.trim()).filter(Boolean))];
         if (cities.length === 1) fields.city.value = cities[0];
     });
-    schedule('city', 'municipality', 2, () => ({}), (item) => {
+    schedule('city', 'locality', 2, () => ({}), (item) => {
         fields.city.value = item.city;
-        // A municipality can contain several postal codes. Drop any old
-        // postcode so it cannot incorrectly filter the street/address search.
+        if (fields.postal) fields.postal.value = item.postal_code || '';
+        if (municipalityNis) municipalityNis.value = item.nis_code || '';
         if (fields.postal) {
             cancelSearch(fields.postal);
-            fields.postal.value = '';
             lists.get(fields.postal)?.replaceChildren();
         }
         clearStreetAndHouse();
     });
-    schedule('street', 'street', 2, () => ({ postal_code: getValue('postal'), city: getValue('city') }), (item) => {
+    schedule('street', 'street', 2, () => ({
+        postal_code: getValue('postal'),
+        nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
+    }), (item) => {
         fields.street.value = item.street;
+        if (item.city && fields.city) fields.city.value = item.city;
         if (streetId) streetId.value = item.id;
         clearReference();
     });
     schedule('house', 'address', 1, () => ({
-        postal_code: getValue('postal'), city: getValue('city'), street: getValue('street'),
+        postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
+        nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
         street_id: streetId?.value ?? '', house_number: getValue('house'),
     }), (item) => {
         fields.street.value = item.street;
@@ -151,6 +177,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         fields.postal.value = item.postal_code;
         fields.city.value = item.city;
         if (referenceId) referenceId.value = item.id;
+        setStatus('');
     });
 });
 

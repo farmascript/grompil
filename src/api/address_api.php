@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07 17:28:50
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -82,10 +82,12 @@ $type = (string) ($_GET['type'] ?? '');
 $query = trim((string) ($_GET['q'] ?? ''));
 $postCode = trim((string) ($_GET['postal_code'] ?? ''));
 $city = trim((string) ($_GET['city'] ?? ''));
+$nisCode = trim((string) ($_GET['nis_code'] ?? ''));
 $streetId = trim((string) ($_GET['street_id'] ?? ''));
 $street = trim((string) ($_GET['street'] ?? ''));
 $houseNumber = trim((string) ($_GET['house_number'] ?? ''));
-if (strlen($query) > 100 || strlen($postCode) > 20 || strlen($city) > 100 || strlen($street) > 160 || strlen($houseNumber) > 32) {
+if (strlen($query) > 100 || strlen($postCode) > 20 || strlen($city) > 100 || strlen($nisCode) > 10
+    || ($nisCode !== '' && !ctype_digit($nisCode)) || strlen($street) > 160 || strlen($houseNumber) > 32) {
     address_api_error(400, 'The search term is too long.');
 }
 
@@ -97,25 +99,34 @@ switch ($type) {
         $path = '/postalInfos';
         $parameters['postCode'] = ctype_digit($query) && strlen($query) < 4 ? $query . '*' : $query;
         break;
+    case 'locality':
+        if (strlen($query) < 2) address_api_error(400, 'Enter at least two characters.');
+        // Flanders publishes named postal areas (including districts such as Ekeren).
+        // Search those first so selecting a place can immediately provide its postcode.
+        $path = '/postalInfos';
+        $parameters['name'] = '*' . $query . '*';
+        break;
     case 'municipality':
         if (strlen($query) < 2) address_api_error(400, 'Enter at least two characters.');
         $path = '/municipalities';
         $parameters['name'] = '*' . $query . '*';
         break;
     case 'street':
-        if (strlen($query) < 2 || ($postCode === '' && $city === '')) address_api_error(400, 'Select a postal code or municipality first.');
+        if (strlen($query) < 2) address_api_error(400, 'Enter at least two characters.');
         $path = '/streets';
         $parameters['name'] = '*' . $query . '*';
+        $parameters['embed'] = 'municipalities';
+        $parameters['pageSize'] = $postCode === '' && $nisCode === '' ? 100 : 20;
         if ($postCode !== '') $parameters['postCode'] = $postCode;
-        if ($city !== '') $parameters['municipalityName'] = $city;
+        elseif ($nisCode !== '') $parameters['nisCode'] = $nisCode;
         break;
     case 'address':
-        if ($houseNumber === '' || ($postCode === '' && ($city === '' || $street === ''))) address_api_error(400, 'Enter a postal code or municipality and street first.');
+        if ($houseNumber === '' || ($postCode === '' && $streetId === '' && ($city === '' || $street === ''))) address_api_error(400, 'Enter a postal code or municipality and street first.');
         $path = '/addresses';
         $parameters['houseNumber'] = $houseNumber;
         $parameters['embed'] = 'true';
         if ($postCode !== '') $parameters['postCode'] = $postCode;
-        if ($city !== '') $parameters['municipalityName'] = $city;
+        elseif ($nisCode !== '') $parameters['nisCode'] = $nisCode;
         if ($streetId !== '') $parameters['streetId'] = $streetId;
         elseif ($street !== '') $parameters['streetName'] = $street;
         break;
@@ -126,6 +137,14 @@ switch ($type) {
 $url = $baseUrl . $path . '?' . http_build_query($parameters);
 $traceId = bin2hex(random_bytes(16));
 $data = address_api_http($url, ['Accept: application/json', 'BelGov-Trace-Id: ' . $traceId]);
+if ($type === 'locality' && empty($data['items'])) {
+    // Postal-area names are only supplied for Flanders. Fall back to official
+    // municipality names elsewhere, where the user can continue with streets.
+    $fallbackUrl = $baseUrl . '/municipalities?' . http_build_query([
+        'status' => 'current', 'pageSize' => 10, 'name' => '*' . $query . '*',
+    ]);
+    $data = address_api_http($fallbackUrl, ['Accept: application/json', 'BelGov-Trace-Id: ' . $traceId]);
+}
 $items = [];
 $language = strtolower((string) ($_SESSION['language'] ?? 'NL'));
 $name = static function (mixed $value) use ($language): string {
@@ -137,10 +156,32 @@ foreach (array_slice($data['items'] ?? [], 0, 10) as $item) {
     if (!is_array($item)) continue;
     if ($type === 'postal') {
         $items[] = ['id' => (string) ($item['id'] ?? ''), 'label' => trim((string) ($item['postCode'] ?? '') . ' ' . $name($item['name'] ?? null)), 'postal_code' => (string) ($item['postCode'] ?? ''), 'city' => $name($item['name'] ?? null)];
-    } elseif ($type === 'municipality') {
-        $items[] = ['id' => (string) ($item['id'] ?? ''), 'label' => $name($item['name'] ?? null), 'city' => $name($item['name'] ?? null)];
+    } elseif ($type === 'municipality' || ($type === 'locality' && empty($item['postCode']))) {
+        $items[] = [
+            'id' => (string) ($item['id'] ?? ''),
+            'label' => $name($item['name'] ?? null),
+            'city' => $name($item['name'] ?? null),
+            'nis_code' => (string) ($item['nisCode'] ?? ''),
+        ];
+    } elseif ($type === 'locality') {
+        $postalCode = (string) ($item['postCode'] ?? '');
+        $localityName = $name($item['name'] ?? null);
+        $items[] = [
+            'id' => (string) ($item['id'] ?? ''),
+            'label' => trim($postalCode . ' — ' . $localityName),
+            'postal_code' => $postalCode,
+            'city' => $localityName,
+        ];
     } elseif ($type === 'street') {
-        $items[] = ['id' => (string) ($item['id'] ?? ''), 'label' => $name($item['name'] ?? null), 'street' => $name($item['name'] ?? null)];
+        $streetName = $name($item['name'] ?? null);
+        $assignedBy = $item['isAssignedBy'] ?? $item['isAssignedByMunicipality'] ?? [];
+        $assignedMunicipality = $name($assignedBy['name'] ?? null);
+        $items[] = [
+            'id' => (string) ($item['id'] ?? ''),
+            'label' => $streetName . ($assignedMunicipality !== '' ? ' — ' . $assignedMunicipality : ''),
+            'street' => $streetName,
+            'city' => $assignedMunicipality,
+        ];
     } else {
         $streetData = $item['hasStreetName'] ?? [];
         $municipalityData = $item['hasMunicipality'] ?? [];

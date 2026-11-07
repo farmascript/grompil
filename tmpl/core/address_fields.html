@@ -2,9 +2,11 @@
 
 <div class="col-12" data-address-fields data-address-country="@address_country_code_value@">
     <p class="form-label mb-1">@address_title@</p>
-    <div class="form-text mb-2">@address_lookup_help@</div>
+    <div class="form-text mb-2">@address_lookup_flow_help@</div>
+    <div class="form-text mb-2 d-none" data-address-status data-no-results="@address_lookup_no_results@" aria-live="polite"></div>
     <input type="hidden" name="address_reference_id" data-address-reference-id value="@address_reference_id_value@">
     <input type="hidden" data-address-street-id value="@street_reference_id_value@">
+    <input type="hidden" data-address-nis-code value="">
     <div class="row g-3">
         <div class="col-md-4">
             <label class="form-label" for="@address_prefix@-postal">@company_postal_code@</label>

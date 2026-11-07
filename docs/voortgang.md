@@ -539,3 +539,12 @@
 - Een gekozen gemeente wist nu een eventueel eerder ingevulde postcode en oude straat/huisnummerkeuze. Zo beperkt een postcode uit een andere gemeente de adreszoekopdracht niet; de geselecteerde volledige adressuggestie zet de juiste postcode terug.
 - De adreszoeker gebruikt cacheversie 4. Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.5.
 
+### Aanvulling: plaatsnaam- en postcodegestuurde adreskeuze
+
+- Het plaatsveld zoekt nu eerst in de BeSt-postale gebieden. Een plaats zoals Ekeren kan daardoor als `2180 — Ekeren` worden gekozen en meteen de postcode invullen.
+- Als de bron voor een regio geen benoemde postale gebieden aanbiedt, valt de zoekfunctie terug op officiële gemeenten; de bijbehorende NIS-code wordt gebruikt om straten te filteren.
+- Postcodekeuze zoekt straten uitsluitend op postcode. Straatsuggesties tonen ook de officiële gemeente; het selecteren van een volledig adres vult postcode en gemeente vanuit de officiële adresbron.
+- Bij geen resultaat verschijnt een duidelijke melding; vrije invoer blijft beschikbaar en wordt niet als een gekozen officieel adres voorgesteld.
+- De nieuwe hulp- en geen-resultaatteksten zijn toegevoegd voor NL, FR, EN en DE. Importeer de nieuwe vertalingen via Vertalingen beheren en exporteer ze daarna naar de taalbestanden.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.6.
+

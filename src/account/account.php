@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 16:45:35
+ * @date_mut: Sat 2026-11-07 17:28:50
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -483,6 +483,8 @@ $forcedProfileFieldsHtml = $mustChangePassword
         . '<div class="form-text">' . e(fn_t('acronym_help')) . '</div></div>'
         . fn_templateRender('address_fields.html', [
             'address_prefix' => 'account-setup-address',
+            'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
+            'address_lookup_no_results' => fn_t('address_lookup_no_results'),
             'address_country_code_value' => $address['country_code'],
             'address_reference_id_value' => $address['address_reference_id'],
             'street_reference_id_value' => '',
@@ -572,6 +574,8 @@ $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex
     . e((string) $addressFormValues['label']) . '"></div></div>'
     . fn_templateRender('address_fields.html', [
         'address_prefix' => 'account-address-manager',
+        'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
+        'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_country_code_value' => $addressFormValues['country_code'],
         'address_reference_id_value' => $addressFormValues['address_reference_id'],
         'street_reference_id_value' => '', 'street_value' => $addressFormValues['street'],
