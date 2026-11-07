@@ -5,6 +5,7 @@ Table prefixes describe a table's data family. They do not encode its dependency
 | Prefix | Meaning | Typical contents |
 |---|---|---|
 | `bt_` | Basic business entities | Companies, user identities, and future Grompil-owned product records |
+| `dt_` | Detail records owned by a basic entity | User/company contacts and addresses |
 | `xt_` | External source data | SAM catalog and classification imports |
 | `ft_` | Shared facilities and platform reference/configuration data | Lookup lists, roles, shared settings, and translation overrides |
 | `ct_` | Company-scoped records and configuration | Company memberships, roles, pages, domains, and preferences |
@@ -30,6 +31,10 @@ The prefix and level answer different questions. For example, `ct_company_users`
 |---|---|---:|
 | `companies` | `bt_companies` | 0 |
 | `users` | `bt_users` | 1 |
+| user contact channels | `dt_user_contacts` | 1 |
+| company contact channels | `dt_company_contacts` | 1 |
+| user addresses | `dt_user_locations` | 1 |
+| company addresses | `dt_company_locations` | 1 |
 | `roles` | `ft_roles` | 0 |
 | `company_roles` | `ct_company_roles` | 1 |
 | `company_users` | `ct_company_users` | 1 |

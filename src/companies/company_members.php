@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -83,12 +83,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'company_members.add.check_collision',
             "SELECT 1
              FROM bt_users AS target
+             LEFT JOIN dt_user_contacts AS target_contact
+               ON target_contact.user_code = target.user_code AND target_contact.is_login_email AND target_contact.is_active
              JOIN bt_users AS existing ON existing.company_id = $1 AND existing.user_code <> target.user_code
+             LEFT JOIN dt_user_contacts AS existing_contact
+               ON existing_contact.user_code = existing.user_code AND existing_contact.is_login_email AND existing_contact.is_active
              WHERE target.user_code = $2 AND (
-                lower(existing.email) = lower(target.email)
-                OR lower(existing.acronym) = lower(target.email)
+                lower(existing_contact.contact_value) = lower(target_contact.contact_value)
+                OR lower(existing.acronym) = lower(target_contact.contact_value)
                 OR (target.acronym IS NOT NULL AND (
-                    lower(existing.email) = lower(target.acronym)
+                    lower(existing_contact.contact_value) = lower(target.acronym)
                     OR lower(existing.acronym) = lower(target.acronym)
                 ))
              ) LIMIT 1",
@@ -109,18 +113,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    AND NOT EXISTS (SELECT 1 FROM ct_company_users AS existing WHERE existing.user_code = u.user_code)
                    AND NOT EXISTS (
                         SELECT 1 FROM bt_users AS existing
+                        JOIN dt_user_contacts AS existing_contact
+                          ON existing_contact.user_code = existing.user_code
+                         AND existing_contact.is_login_email AND existing_contact.is_active
+                        JOIN dt_user_contacts AS target_contact
+                          ON target_contact.user_code = u.user_code
+                         AND target_contact.is_login_email AND target_contact.is_active
                         WHERE existing.company_id = $2 AND (
-                            lower(existing.email) = lower(u.email)
-                            OR lower(existing.acronym) = lower(u.email)
+                            lower(existing_contact.contact_value) = lower(target_contact.contact_value)
+                            OR lower(existing.acronym) = lower(target_contact.contact_value)
                             OR (u.acronym IS NOT NULL AND (
-                                lower(existing.email) = lower(u.acronym)
+                                lower(existing_contact.contact_value) = lower(u.acronym)
                                 OR lower(existing.acronym) = lower(u.acronym)
                             ))
                         )
                    )",
                 [$targetUserCode, $companyId]
             );
-            $result = $claimResult && pg_affected_rows($claimResult) === 1 ? $companyMemberQuery(
+            $contactScopeUpdated = $claimResult && pg_affected_rows($claimResult) === 1
+                ? $companyMemberQuery(
+                    'company_members.add.update_contact_scope',
+                    'UPDATE dt_user_contacts SET company_id = $1, updated_at = now() WHERE user_code = $2',
+                    [$companyId, $targetUserCode]
+                ) : false;
+            $locationScopeUpdated = $contactScopeUpdated
+                ? $companyMemberQuery(
+                    'company_members.add.update_location_scope',
+                    'UPDATE dt_user_locations SET company_id = $1, updated_at = now() WHERE user_code = $2',
+                    [$companyId, $targetUserCode]
+                ) : false;
+            $result = $locationScopeUpdated ? $companyMemberQuery(
                 'company_members.add.membership',
                 "INSERT INTO ct_company_users (
                     company_id, user_code, company_role_id, is_active,
@@ -272,17 +294,22 @@ if ($company !== null) {
     if ($isPlatformOperator) {
         $userResult = $companyMemberQuery(
             'company_members.list_unassigned_users',
-            "SELECT u.user_code, u.display_name, u.email
+             "SELECT u.user_code, u.display_name, contact.contact_value AS email
              FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id
+             JOIN dt_user_contacts AS contact
+               ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
              WHERE u.company_id IS NULL AND u.is_active AND u.approval_status = 'approved'
                AND r.level > 0 AND r.level < 200 AND NOT (r.permissions ? 'companies.manage')
                AND NOT EXISTS (
                     SELECT 1 FROM bt_users AS existing
+                    JOIN dt_user_contacts AS existing_contact
+                      ON existing_contact.user_code = existing.user_code
+                     AND existing_contact.is_login_email AND existing_contact.is_active
                     WHERE existing.company_id = $1 AND (
-                        lower(existing.email) = lower(u.email)
-                        OR lower(existing.acronym) = lower(u.email)
+                        lower(existing_contact.contact_value) = lower(contact.contact_value)
+                        OR lower(existing.acronym) = lower(contact.contact_value)
                         OR (u.acronym IS NOT NULL AND (
-                            lower(existing.email) = lower(u.acronym)
+                            lower(existing_contact.contact_value) = lower(u.acronym)
                             OR lower(existing.acronym) = lower(u.acronym)
                         ))
                     )
@@ -297,10 +324,12 @@ if ($company !== null) {
 
     $membersResult = $companyMemberQuery(
         'company_members.list_members',
-        'SELECT u.user_code, u.display_name, u.email, cu.is_active, cu.approval_status,
+        'SELECT u.user_code, u.display_name, contact.contact_value AS email, cu.is_active, cu.approval_status,
                 cu.company_role_id, cr.name AS role_name
          FROM ct_company_users AS cu
          JOIN bt_users AS u ON u.user_code = cu.user_code
+         JOIN dt_user_contacts AS contact
+           ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
          JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
          WHERE cu.company_id = $1 AND cr.level > 0 AND cr.level < 200
          ORDER BY CASE cu.approval_status WHEN \'pending\' THEN 0 WHEN \'approved\' THEN 1 ELSE 2 END,

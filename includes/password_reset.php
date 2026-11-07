@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -181,9 +181,11 @@ function password_reset_issue(
             $limits['max_requests']
         );
         $user = pg_fetch_assoc(password_reset_query($connection,
-            "SELECT user_code, email, password_hash FROM bt_users
-             WHERE company_id IS NOT DISTINCT FROM $1::bigint AND lower(email) = $2
-               AND is_active AND approval_status = 'approved'
+            "SELECT u.user_code, contact.contact_value AS email, u.password_hash FROM bt_users AS u
+             JOIN dt_user_contacts AS contact
+               ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
+             WHERE u.company_id IS NOT DISTINCT FROM $1::bigint AND lower(contact.contact_value) = $2
+               AND u.is_active AND u.approval_status = 'approved'
              FOR UPDATE",
             [$companyId, $email],
             'password_reset.issue.find_account'

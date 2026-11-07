@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:27:16
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Sat 2026-11-07 14:57:26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -33,17 +33,9 @@ CREATE TABLE IF NOT EXISTS bt_users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     -- Nullable during schema migration so legacy membership copies can be backfilled.
     user_code VARCHAR(6),
-    email VARCHAR(254) NOT NULL,
     display_name VARCHAR(255) NOT NULL,
     name_first VARCHAR(120) NOT NULL DEFAULT '',
     name_last VARCHAR(120) NOT NULL DEFAULT '',
-    street VARCHAR(160) NOT NULL DEFAULT '',
-    house_number VARCHAR(32) NOT NULL DEFAULT '',
-    box_number VARCHAR(32) NOT NULL DEFAULT '',
-    postal_code VARCHAR(20) NOT NULL DEFAULT '',
-    city VARCHAR(100) NOT NULL DEFAULT '',
-    country_code CHAR(2) NOT NULL DEFAULT 'BE' CHECK (country_code ~ '^[A-Z]{2}$'),
-    address_reference_id TEXT NOT NULL DEFAULT '',
     acronym VARCHAR(80),
     password_hash VARCHAR(255) NOT NULL,
     role_id BIGINT NOT NULL REFERENCES ft_roles(id) ON DELETE RESTRICT,
@@ -70,16 +62,6 @@ CREATE TABLE IF NOT EXISTS bt_companies (
     legal_name VARCHAR(255) NOT NULL DEFAULT '',
     enterprise_number VARCHAR(32) NOT NULL DEFAULT '',
     vat_number VARCHAR(32) NOT NULL DEFAULT '',
-    billing_email VARCHAR(254) NOT NULL DEFAULT '',
-    phone VARCHAR(40) NOT NULL DEFAULT '',
-    street VARCHAR(160) NOT NULL DEFAULT '',
-    house_number VARCHAR(32) NOT NULL DEFAULT '',
-    box_number VARCHAR(32) NOT NULL DEFAULT '',
-    postal_code VARCHAR(20) NOT NULL DEFAULT '',
-    city VARCHAR(100) NOT NULL DEFAULT '',
-    address_reference_id TEXT NOT NULL DEFAULT '',
-    country_code CHAR(2) NOT NULL DEFAULT 'BE'
-        CHECK (country_code ~ '^[A-Z]{2}$'),
     default_language VARCHAR(2) NOT NULL DEFAULT 'NL'
         CHECK (default_language IN ('NL', 'FR', 'EN', 'DE')),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -134,6 +116,16 @@ ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS company_id BIGINT
 ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS user_code VARCHAR(6);
 ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE bt_users DROP CONSTRAINT IF EXISTS users_email_key;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'bt_users' AND column_name = 'email'
+    ) THEN
+        ALTER TABLE bt_users ALTER COLUMN email DROP NOT NULL;
+    END IF;
+END;
+$$;
 CREATE UNIQUE INDEX IF NOT EXISTS users_user_code_uidx ON bt_users (user_code);
 ALTER TABLE bt_users DROP CONSTRAINT IF EXISTS users_approved_by_user_code_fkey;
 ALTER TABLE bt_users ADD CONSTRAINT users_approved_by_user_code_fkey
@@ -232,18 +224,6 @@ ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
 ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS approved_by_user_code VARCHAR(6) REFERENCES bt_users(user_code) ON DELETE SET NULL;
 ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS name_first VARCHAR(120) NOT NULL DEFAULT '';
 ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS name_last VARCHAR(120) NOT NULL DEFAULT '';
-ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS street VARCHAR(160) NOT NULL DEFAULT '';
-ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS house_number VARCHAR(32) NOT NULL DEFAULT '';
-ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS box_number VARCHAR(32) NOT NULL DEFAULT '';
-ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS postal_code VARCHAR(20) NOT NULL DEFAULT '';
-ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS city VARCHAR(100) NOT NULL DEFAULT '';
-ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS country_code CHAR(2) NOT NULL DEFAULT 'BE';
-ALTER TABLE bt_users DROP CONSTRAINT IF EXISTS users_country_code_check;
-ALTER TABLE bt_users ADD CONSTRAINT users_country_code_check CHECK (country_code ~ '^[A-Z]{2}$');
-ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS address_reference_id TEXT NOT NULL DEFAULT '';
-ALTER TABLE bt_companies ADD COLUMN IF NOT EXISTS house_number VARCHAR(32) NOT NULL DEFAULT '';
-ALTER TABLE bt_companies ADD COLUMN IF NOT EXISTS box_number VARCHAR(32) NOT NULL DEFAULT '';
-ALTER TABLE bt_companies ADD COLUMN IF NOT EXISTS address_reference_id TEXT NOT NULL DEFAULT '';
 ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS acronym VARCHAR(80);
 ALTER TABLE bt_users ALTER COLUMN display_name TYPE VARCHAR(255);
 
@@ -337,6 +317,153 @@ CROSS JOIN (VALUES
     ('unknown', 'company_number_status_unknown', 40)
 ) AS item(status_key, translation_key, sort_order)
 ON CONFLICT (list_key, "key") DO NOTHING;
+
+INSERT INTO ft_dd_varia (list_key, "key", content, parent_id, info, sort_order)
+VALUES
+    ('contact_types', '_root', '@dd_varia_root_contact_types@', NULL, 'Root for contact channels.', 0),
+    ('address_types', '_root', '@dd_varia_root_address_types@', NULL, 'Root for address purposes.', 0)
+ON CONFLICT (list_key, "key") DO NOTHING;
+WITH root AS (
+    SELECT list_key, id FROM ft_dd_varia
+    WHERE list_key IN ('contact_types', 'address_types') AND "key" = '_root'
+)
+INSERT INTO ft_dd_varia (list_key, "key", content, parent_id, info, sort_order)
+SELECT seed.list_key, seed.item_key, '@' || seed.translation_key || '@', root.id,
+       seed.info, seed.sort_order
+FROM (VALUES
+    ('contact_types', 'email', 'contact_type_email', 'Email address', 10),
+    ('contact_types', 'phone', 'contact_type_phone', 'Telephone number', 20),
+    ('contact_types', 'mobile', 'contact_type_mobile', 'Mobile telephone number', 30),
+    ('contact_types', 'fax', 'contact_type_fax', 'Fax number', 40),
+    ('contact_types', 'website', 'contact_type_website', 'Website URL', 50),
+    ('contact_types', 'facebook', 'contact_type_facebook', 'Facebook profile URL', 60),
+    ('contact_types', 'linkedin', 'contact_type_linkedin', 'LinkedIn profile URL', 70),
+    ('contact_types', 'whatsapp', 'contact_type_whatsapp', 'WhatsApp contact', 80),
+    ('contact_types', 'other', 'contact_type_other', 'Other contact channel', 90),
+    ('address_types', 'residential', 'address_type_residential', 'Residential address', 10),
+    ('address_types', 'postal', 'address_type_postal', 'Postal address', 20),
+    ('address_types', 'headquarters', 'address_type_headquarters', 'Head office address', 30),
+    ('address_types', 'branch', 'address_type_branch', 'Branch address', 40),
+    ('address_types', 'delivery', 'address_type_delivery', 'Delivery address', 50),
+    ('address_types', 'billing', 'address_type_billing', 'Billing address', 60),
+    ('address_types', 'other', 'address_type_other', 'Other address', 90)
+) AS seed(list_key, item_key, translation_key, info, sort_order)
+JOIN root ON root.list_key = seed.list_key
+ON CONFLICT (list_key, "key") DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS dt_user_contacts (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE CASCADE,
+    company_id BIGINT,
+    contact_type_list_key VARCHAR(80) NOT NULL DEFAULT 'contact_types'
+        CHECK (contact_type_list_key = 'contact_types'),
+    contact_type_key VARCHAR(80) NOT NULL,
+    purpose_key VARCHAR(80) NOT NULL DEFAULT '',
+    contact_value VARCHAR(1024) NOT NULL,
+    label VARCHAR(160) NOT NULL DEFAULT '',
+    is_login_email BOOLEAN NOT NULL DEFAULT FALSE,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_public BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (company_id, user_code) REFERENCES bt_users(company_id, user_code)
+        ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (contact_type_list_key, contact_type_key)
+        REFERENCES ft_dd_varia(list_key, "key") ON DELETE RESTRICT,
+    CHECK (NOT is_login_email OR contact_type_key = 'email'),
+    UNIQUE (user_code, contact_type_key, purpose_key)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS dt_user_contacts_one_login_email_per_user_idx
+    ON dt_user_contacts(user_code) WHERE is_login_email;
+CREATE UNIQUE INDEX IF NOT EXISTS dt_user_contacts_global_login_email_idx
+    ON dt_user_contacts(lower(contact_value)) WHERE is_login_email AND company_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS dt_user_contacts_company_login_email_idx
+    ON dt_user_contacts(company_id, lower(contact_value)) WHERE is_login_email AND company_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS dt_user_contacts_user_lookup_idx
+    ON dt_user_contacts(user_code, is_active, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS dt_company_contacts (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES bt_companies(id) ON DELETE CASCADE,
+    contact_type_list_key VARCHAR(80) NOT NULL DEFAULT 'contact_types'
+        CHECK (contact_type_list_key = 'contact_types'),
+    contact_type_key VARCHAR(80) NOT NULL,
+    purpose_key VARCHAR(80) NOT NULL DEFAULT '',
+    contact_value VARCHAR(1024) NOT NULL,
+    label VARCHAR(160) NOT NULL DEFAULT '',
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_public BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (contact_type_list_key, contact_type_key)
+        REFERENCES ft_dd_varia(list_key, "key") ON DELETE RESTRICT,
+    UNIQUE (company_id, contact_type_key, purpose_key)
+);
+CREATE INDEX IF NOT EXISTS dt_company_contacts_lookup_idx
+    ON dt_company_contacts(company_id, is_active, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS dt_user_locations (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE CASCADE,
+    company_id BIGINT,
+    address_type_list_key VARCHAR(80) NOT NULL DEFAULT 'address_types'
+        CHECK (address_type_list_key = 'address_types'),
+    address_type_key VARCHAR(80) NOT NULL,
+    label VARCHAR(160) NOT NULL DEFAULT '',
+    street VARCHAR(160) NOT NULL DEFAULT '',
+    house_number VARCHAR(32) NOT NULL DEFAULT '',
+    box_number VARCHAR(32) NOT NULL DEFAULT '',
+    postal_code VARCHAR(20) NOT NULL DEFAULT '',
+    city VARCHAR(100) NOT NULL DEFAULT '',
+    country_code CHAR(2) NOT NULL DEFAULT 'BE' CHECK (country_code ~ '^[A-Z]{2}$'),
+    address_reference_id TEXT NOT NULL DEFAULT '',
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (company_id, user_code) REFERENCES bt_users(company_id, user_code)
+        ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (address_type_list_key, address_type_key)
+        REFERENCES ft_dd_varia(list_key, "key") ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS dt_user_locations_one_primary_per_type_idx
+    ON dt_user_locations(user_code, address_type_key) WHERE is_primary AND is_active;
+CREATE INDEX IF NOT EXISTS dt_user_locations_lookup_idx
+    ON dt_user_locations(user_code, is_active, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS dt_company_locations (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES bt_companies(id) ON DELETE CASCADE,
+    address_type_list_key VARCHAR(80) NOT NULL DEFAULT 'address_types'
+        CHECK (address_type_list_key = 'address_types'),
+    address_type_key VARCHAR(80) NOT NULL,
+    label VARCHAR(160) NOT NULL DEFAULT '',
+    street VARCHAR(160) NOT NULL DEFAULT '',
+    house_number VARCHAR(32) NOT NULL DEFAULT '',
+    box_number VARCHAR(32) NOT NULL DEFAULT '',
+    postal_code VARCHAR(20) NOT NULL DEFAULT '',
+    city VARCHAR(100) NOT NULL DEFAULT '',
+    country_code CHAR(2) NOT NULL DEFAULT 'BE' CHECK (country_code ~ '^[A-Z]{2}$'),
+    address_reference_id TEXT NOT NULL DEFAULT '',
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_public BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (address_type_list_key, address_type_key)
+        REFERENCES ft_dd_varia(list_key, "key") ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS dt_company_locations_one_primary_per_type_idx
+    ON dt_company_locations(company_id, address_type_key) WHERE is_primary AND is_active;
+CREATE INDEX IF NOT EXISTS dt_company_locations_lookup_idx
+    ON dt_company_locations(company_id, is_active, sort_order, id);
+
 UPDATE ft_roles SET level = 10 WHERE lower(name) = 'beheerder' AND level = 200;
 UPDATE ft_roles SET level = 110 WHERE lower(name) = 'apotheker' AND level = 200;
 UPDATE ft_roles SET level = 120 WHERE lower(name) = 'medewerker' AND level = 200;
@@ -397,6 +524,83 @@ ALTER TABLE ft_substitutions DROP CONSTRAINT IF EXISTS substitutions_pkey;
 ALTER TABLE ft_substitutions ADD CONSTRAINT substitutions_pkey PRIMARY KEY (company_id, "key", code);
 ALTER TABLE ft_substitutions DROP CONSTRAINT IF EXISTS substitutions_company_id_check;
 ALTER TABLE ft_substitutions ADD CONSTRAINT substitutions_company_id_check CHECK (company_id >= 0);
+
+INSERT INTO ft_substitutions (company_id, "key", "value", code)
+VALUES
+    (0, 'dd_varia_root_contact_types', 'Contactkanalen', 'NL'),
+    (0, 'dd_varia_root_contact_types', 'Canaux de contact', 'FR'),
+    (0, 'dd_varia_root_contact_types', 'Contact channels', 'EN'),
+    (0, 'dd_varia_root_contact_types', 'Kontaktkanäle', 'DE'),
+    (0, 'dd_varia_root_address_types', 'Adressoorten', 'NL'),
+    (0, 'dd_varia_root_address_types', 'Types d’adresse', 'FR'),
+    (0, 'dd_varia_root_address_types', 'Address types', 'EN'),
+    (0, 'dd_varia_root_address_types', 'Adressarten', 'DE'),
+    (0, 'contact_type_email', 'E-mail', 'NL'),
+    (0, 'contact_type_email', 'E-mail', 'FR'),
+    (0, 'contact_type_email', 'Email', 'EN'),
+    (0, 'contact_type_email', 'E-Mail', 'DE'),
+    (0, 'contact_type_phone', 'Telefoon', 'NL'),
+    (0, 'contact_type_phone', 'Téléphone', 'FR'),
+    (0, 'contact_type_phone', 'Telephone', 'EN'),
+    (0, 'contact_type_phone', 'Telefon', 'DE'),
+    (0, 'contact_type_mobile', 'Gsm', 'NL'),
+    (0, 'contact_type_mobile', 'Mobile', 'FR'),
+    (0, 'contact_type_mobile', 'Mobile', 'EN'),
+    (0, 'contact_type_mobile', 'Mobiltelefon', 'DE'),
+    (0, 'contact_type_fax', 'Fax', 'NL'),
+    (0, 'contact_type_fax', 'Fax', 'FR'),
+    (0, 'contact_type_fax', 'Fax', 'EN'),
+    (0, 'contact_type_fax', 'Fax', 'DE'),
+    (0, 'contact_type_website', 'Website', 'NL'),
+    (0, 'contact_type_website', 'Site web', 'FR'),
+    (0, 'contact_type_website', 'Website', 'EN'),
+    (0, 'contact_type_website', 'Webseite', 'DE'),
+    (0, 'contact_type_facebook', 'Facebook', 'NL'),
+    (0, 'contact_type_facebook', 'Facebook', 'FR'),
+    (0, 'contact_type_facebook', 'Facebook', 'EN'),
+    (0, 'contact_type_facebook', 'Facebook', 'DE'),
+    (0, 'contact_type_linkedin', 'LinkedIn', 'NL'),
+    (0, 'contact_type_linkedin', 'LinkedIn', 'FR'),
+    (0, 'contact_type_linkedin', 'LinkedIn', 'EN'),
+    (0, 'contact_type_linkedin', 'LinkedIn', 'DE'),
+    (0, 'contact_type_whatsapp', 'WhatsApp', 'NL'),
+    (0, 'contact_type_whatsapp', 'WhatsApp', 'FR'),
+    (0, 'contact_type_whatsapp', 'WhatsApp', 'EN'),
+    (0, 'contact_type_whatsapp', 'WhatsApp', 'DE'),
+    (0, 'contact_type_other', 'Overig contact', 'NL'),
+    (0, 'contact_type_other', 'Autre contact', 'FR'),
+    (0, 'contact_type_other', 'Other contact', 'EN'),
+    (0, 'contact_type_other', 'Sonstiger Kontakt', 'DE'),
+    (0, 'address_type_residential', 'Woonadres', 'NL'),
+    (0, 'address_type_residential', 'Adresse résidentielle', 'FR'),
+    (0, 'address_type_residential', 'Residential address', 'EN'),
+    (0, 'address_type_residential', 'Wohnadresse', 'DE'),
+    (0, 'address_type_postal', 'Postadres', 'NL'),
+    (0, 'address_type_postal', 'Adresse postale', 'FR'),
+    (0, 'address_type_postal', 'Postal address', 'EN'),
+    (0, 'address_type_postal', 'Postanschrift', 'DE'),
+    (0, 'address_type_headquarters', 'Hoofdzetel', 'NL'),
+    (0, 'address_type_headquarters', 'Siège social', 'FR'),
+    (0, 'address_type_headquarters', 'Head office', 'EN'),
+    (0, 'address_type_headquarters', 'Hauptsitz', 'DE'),
+    (0, 'address_type_branch', 'Vestiging', 'NL'),
+    (0, 'address_type_branch', 'Établissement', 'FR'),
+    (0, 'address_type_branch', 'Branch', 'EN'),
+    (0, 'address_type_branch', 'Niederlassung', 'DE'),
+    (0, 'address_type_delivery', 'Afleveradres', 'NL'),
+    (0, 'address_type_delivery', 'Adresse de livraison', 'FR'),
+    (0, 'address_type_delivery', 'Delivery address', 'EN'),
+    (0, 'address_type_delivery', 'Lieferadresse', 'DE'),
+    (0, 'address_type_billing', 'Facturatieadres', 'NL'),
+    (0, 'address_type_billing', 'Adresse de facturation', 'FR'),
+    (0, 'address_type_billing', 'Billing address', 'EN'),
+    (0, 'address_type_billing', 'Rechnungsadresse', 'DE'),
+    (0, 'address_type_other', 'Ander adres', 'NL'),
+    (0, 'address_type_other', 'Autre adresse', 'FR'),
+    (0, 'address_type_other', 'Other address', 'EN'),
+    (0, 'address_type_other', 'Sonstige Adresse', 'DE')
+ON CONFLICT (company_id, "key", code) DO UPDATE
+SET "value" = EXCLUDED."value", updated_at = now();
 
 INSERT INTO ft_substitutions (company_id, "key", "value", code, updated_at)
 SELECT company_id, "key", "value", upper(code), updated_at
@@ -480,14 +684,8 @@ WHERE lower(name) IN ('beheerder', 'apotheker', 'medewerker', 'publiek')
 -- The one-time conversion of legacy global company memberships is handled by
 -- its historical migration before this user_code-based schema is applied.
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_global_email_unique_idx
-    ON bt_users (lower(email)) WHERE company_id IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS users_company_email_unique_idx
-    ON bt_users (company_id, lower(email)) WHERE company_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS users_customer_name_prefix_idx
     ON bt_users (company_id, lower(display_name) text_pattern_ops) WHERE company_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS users_customer_email_prefix_idx
-    ON bt_users (company_id, lower(email) text_pattern_ops) WHERE company_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS users_customer_acronym_prefix_idx
     ON bt_users (company_id, lower(acronym) text_pattern_ops)
     WHERE company_id IS NOT NULL AND acronym IS NOT NULL AND acronym <> '';
@@ -537,6 +735,8 @@ ALTER TABLE ct_company_navigation_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ft_platform_navigation_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ft_platform_system_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ft_dd_varia ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dt_company_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dt_company_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ft_access_ip_allowlist ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ct_company_pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ft_substitutions ENABLE ROW LEVEL SECURITY;
@@ -684,6 +884,30 @@ DROP POLICY IF EXISTS dd_varia_platform_write ON ft_dd_varia;
 CREATE POLICY dd_varia_platform_write ON ft_dd_varia
     FOR ALL USING (current_setting('grompil.platform_operator', true) = 'true')
     WITH CHECK (current_setting('grompil.platform_operator', true) = 'true');
+
+DROP POLICY IF EXISTS dt_company_contacts_scope ON dt_company_contacts;
+CREATE POLICY dt_company_contacts_scope ON dt_company_contacts
+    FOR ALL USING (
+        company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+        OR (is_public AND company_id IN (SELECT id FROM bt_companies WHERE is_active AND is_public))
+        OR current_setting('grompil.platform_operator', true) = 'true'
+    )
+    WITH CHECK (
+        company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+        OR current_setting('grompil.platform_operator', true) = 'true'
+    );
+
+DROP POLICY IF EXISTS dt_company_locations_scope ON dt_company_locations;
+CREATE POLICY dt_company_locations_scope ON dt_company_locations
+    FOR ALL USING (
+        company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+        OR (is_public AND company_id IN (SELECT id FROM bt_companies WHERE is_active AND is_public))
+        OR current_setting('grompil.platform_operator', true) = 'true'
+    )
+    WITH CHECK (
+        company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+        OR current_setting('grompil.platform_operator', true) = 'true'
+    );
 DROP POLICY IF EXISTS company_navigation_preferences_admin_write ON ct_company_navigation_preferences;
 CREATE POLICY company_navigation_preferences_admin_write ON ct_company_navigation_preferences
     FOR ALL USING (

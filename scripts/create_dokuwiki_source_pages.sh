@@ -26,6 +26,7 @@ FILES=(
     'forgot-password.php'
     'includes/bootstrap.php'
     'includes/company_admin.php'
+    'includes/contact_locations.php'
     'includes/credentials_config.php'
     'includes/database_config.php'
     'includes/database_queries.php'

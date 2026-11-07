@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24 00:00:00
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -43,14 +43,16 @@ if (($_GET['ajax'] ?? '') === 'search') {
     try {
         $result = db_query_params(
             'customers.search',
-            "SELECT u.user_code, u.display_name, u.email, u.acronym
+            "SELECT u.user_code, u.display_name, contact.contact_value AS email, u.acronym
              FROM bt_users AS u
+             JOIN dt_user_contacts AS contact
+               ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
              JOIN ft_roles AS r ON r.id = u.role_id
              JOIN ct_company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
              JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
              WHERE u.company_id = $1 AND cu.company_id = $1
                AND r.level >= 200 AND cr.level >= 200
-               AND (lower(u.display_name) LIKE $2 OR lower(u.email) LIKE $2
+               AND (lower(u.display_name) LIKE $2 OR lower(contact.contact_value) LIKE $2
                     OR lower(u.acronym) LIKE $2 OR u.user_code = NULLIF($3, ''))
              ORDER BY lower(u.display_name), u.user_code
              LIMIT 20",
@@ -85,11 +87,13 @@ if ($customerCodeValid) {
     try {
         $result = db_query_params(
             'customers.load_details',
-            "SELECT u.user_code, u.display_name, u.email, u.acronym, u.is_active,
+            "SELECT u.user_code, u.display_name, contact.contact_value AS email, u.acronym, u.is_active,
                     u.approval_status, u.created_at, u.last_login_at,
                     cu.is_active AS company_active, cu.approval_status AS company_approval_status,
                     cr.name AS company_role
              FROM bt_users AS u
+             JOIN dt_user_contacts AS contact
+               ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
              JOIN ft_roles AS r ON r.id = u.role_id
              JOIN ct_company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
              JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id

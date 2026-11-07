@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -65,7 +65,9 @@ if (!$adminRole) {
 try {
     $existingUserResult = db_query_params(
         'setup_admin.check_existing',
-        'SELECT id FROM bt_users WHERE lower(email) = lower($1) AND company_id IS NULL',
+        'SELECT u.id FROM bt_users AS u JOIN dt_user_contacts AS contact
+           ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
+         WHERE lower(contact.contact_value) = lower($1) AND u.company_id IS NULL',
         [$email]
     );
 } catch (GrompilDatabaseQueryException) {
@@ -82,22 +84,14 @@ if (
 }
 
 try {
-    $userParams = [
-        $email,
-        $displayName,
-        $firstName,
-        $lastName,
-        password_hash($password, PASSWORD_DEFAULT),
-        (int) $adminRole['id'],
-    ];
     $createUserResult = grompil_insert_user_with_unique_code(
         static fn (string $userCode): PgSql\Result|false => db_query_params(
             'setup_admin.create',
             'INSERT INTO bt_users (
-                user_code, email, display_name, name_first, name_last, password_hash, role_id
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-             ON CONFLICT (user_code) DO NOTHING RETURNING id',
-            [$userCode, ...$userParams]
+                user_code, display_name, name_first, name_last, password_hash, role_id
+             ) VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (user_code) DO NOTHING RETURNING user_code',
+            [$userCode, $displayName, $firstName, $lastName, password_hash($password, PASSWORD_DEFAULT), (int) $adminRole['id']]
         )
     );
 } catch (GrompilDatabaseQueryException) {
@@ -106,6 +100,12 @@ try {
 
 if (!$createUserResult) {
     fwrite(STDERR, "Account creation failed.\n");
+    exit(1);
+}
+
+$createdAdmin = pg_fetch_assoc($createUserResult);
+if (!$createdAdmin || !grompil_save_user_login_email((string) $createdAdmin['user_code'], null, $email)) {
+    fwrite(STDERR, "Account contact creation failed.\n");
     exit(1);
 }
 

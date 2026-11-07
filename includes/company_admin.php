@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:57:26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -59,21 +59,14 @@ function create_initial_company_administrator(
 
     $temporaryPassword = bin2hex(random_bytes(16));
     try {
-        $userParams = [
-            $companyId,
-            $email,
-            'Beheerder',
-            password_hash($temporaryPassword, PASSWORD_DEFAULT),
-            (int) $role['base_role_id'],
-        ];
         $userResult = grompil_insert_user_with_unique_code(
             static fn (string $userCode): PgSql\Result|false => db_query_params(
                 'company_admin.initial_user',
                 'INSERT INTO bt_users (
-                    user_code, company_id, email, display_name, password_hash, role_id, must_change_password
-                 ) VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+                    user_code, company_id, display_name, password_hash, role_id, must_change_password
+                 ) VALUES ($1, $2, $3, $4, $5, TRUE)
                  ON CONFLICT (user_code) DO NOTHING RETURNING user_code',
-                [$userCode, ...$userParams]
+                [$userCode, $companyId, 'Beheerder', password_hash($temporaryPassword, PASSWORD_DEFAULT), (int) $role['base_role_id']]
             )
         );
     } catch (GrompilDatabaseQueryException) {
@@ -81,6 +74,14 @@ function create_initial_company_administrator(
     }
     $user = $userResult ? pg_fetch_assoc($userResult) : false;
     if (!$user) {
+        return false;
+    }
+
+    try {
+        if (!grompil_save_user_login_email((string) $user['user_code'], $companyId, $email)) {
+            return false;
+        }
+    } catch (GrompilDatabaseQueryException) {
         return false;
     }
 

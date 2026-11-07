@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -277,20 +277,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'select_company.create_enterprise.insert',
                         'INSERT INTO bt_companies (
                             slug, name, legal_name, enterprise_number, enterprise_number_status,
-                            billing_email, phone, street, house_number, postal_code, city,
-                            country_code, default_language, is_active, is_public, company_permit_number, vat_number_status
-                         ) VALUES ($1,$2,$3,$4,\'known\',$5,$6,$7,$8,$9,$10,\'BE\',\'NL\',TRUE,FALSE,\'\',\'unknown\') RETURNING id',
-                        [$slug, $companyName, $companyName, $number, (string) ($details['email'] ?? ''),
-                            (string) ($details['phone'] ?? ''), $street, $houseNumber,
-                            (string) ($details['postal_code'] ?? ''), (string) ($details['city'] ?? '')]
+                            default_language, is_active, is_public, company_permit_number, vat_number_status
+                         ) VALUES ($1,$2,$3,$4,'known','NL',TRUE,FALSE,'','unknown') RETURNING id',
+                        [$slug, $companyName, $companyName, $number]
                     ) : false;
                     $created = $insert ? pg_fetch_assoc($insert) : false;
                     $saved = $created !== false;
                     if ($saved) {
                         set_database_tenant_context((int) $created['id'], (string) $user['user_code'], true);
-                        $saved = seed_company_roles((int) $created['id'])
+                        $companyId = (int) $created['id'];
+                        $saved = grompil_save_company_contact($companyId, 'email', 'billing', (string) ($details['email'] ?? ''))
+                            && grompil_save_company_contact($companyId, 'phone', 'main', (string) ($details['phone'] ?? ''))
+                            && grompil_save_company_head_office($companyId, [
+                                'street' => $street, 'house_number' => $houseNumber, 'box_number' => '',
+                                'postal_code' => (string) ($details['postal_code'] ?? ''),
+                                'city' => (string) ($details['city'] ?? ''), 'country_code' => 'BE',
+                                'address_reference_id' => '',
+                            ])
+                            && seed_company_roles($companyId)
                             && create_initial_company_administrator(
-                                (int) $created['id'],
+                                $companyId,
                                 $companyName,
                                 $slug,
                                 $initialAdminEmail,
@@ -377,20 +383,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'select_company.create_permit.insert',
                     'INSERT INTO bt_companies (
                         slug, name, legal_name, enterprise_number, enterprise_number_status,
-                        billing_email, phone, street, house_number, postal_code, city,
-                        country_code, default_language, is_active, is_public, company_permit_number, vat_number_status
-                     ) VALUES ($1,$2,$3,$4,\'known\',$5,$6,$7,$8,$9,$10,\'BE\',\'NL\',TRUE,FALSE,$11,\'unknown\') RETURNING id',
-                    [$slug, $companyName, (string) ($details['name'] ?? ''), $number,
-                        (string) ($details['email'] ?? ''), (string) ($details['phone'] ?? ''),
-                        $street, $houseNumber, trim((string) $selected['Postcode']), trim((string) $selected['Gemeente']), $selectedPermit]
+                        default_language, is_active, is_public, company_permit_number, vat_number_status
+                     ) VALUES ($1,$2,$3,$4,'known','NL',TRUE,FALSE,$5,'unknown') RETURNING id',
+                    [$slug, $companyName, (string) ($details['name'] ?? ''), $number, $selectedPermit]
                 ) : false;
                 $created = $insert ? pg_fetch_assoc($insert) : false;
                 $saved = $created !== false;
                 if ($saved) {
                         set_database_tenant_context((int) $created['id'], (string) $user['user_code'], true);
-                    $saved = seed_company_roles((int) $created['id'])
+                    $companyId = (int) $created['id'];
+                    $saved = grompil_save_company_contact($companyId, 'email', 'billing', (string) ($details['email'] ?? ''))
+                        && grompil_save_company_contact($companyId, 'phone', 'main', (string) ($details['phone'] ?? ''))
+                        && grompil_save_company_head_office($companyId, [
+                            'street' => $street, 'house_number' => $houseNumber, 'box_number' => '',
+                            'postal_code' => trim((string) $selected['Postcode']),
+                            'city' => trim((string) $selected['Gemeente']), 'country_code' => 'BE',
+                            'address_reference_id' => '',
+                        ])
+                        && seed_company_roles($companyId)
                         && create_initial_company_administrator(
-                            (int) $created['id'],
+                            $companyId,
                             $companyName,
                             $slug,
                             $initialAdminEmail,

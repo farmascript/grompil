@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -57,9 +57,15 @@ try {
     password_reset_query($connection, 'CREATE TEMP TABLE bt_companies (id bigint PRIMARY KEY)');
     password_reset_query($connection,
         "CREATE TEMP TABLE bt_users (
-            id bigint PRIMARY KEY, user_code varchar(6) UNIQUE NOT NULL, company_id bigint, email text, password_hash varchar(255),
+            id bigint PRIMARY KEY, user_code varchar(6) UNIQUE NOT NULL, company_id bigint, password_hash varchar(255),
             is_active boolean DEFAULT TRUE, approval_status text DEFAULT 'approved',
             must_change_password boolean DEFAULT TRUE, updated_at timestamptz DEFAULT now()
+        )"
+    );
+    password_reset_query($connection,
+        "CREATE TEMP TABLE dt_user_contacts (
+            user_code varchar(6) NOT NULL, company_id bigint, contact_value text NOT NULL,
+            is_login_email boolean NOT NULL DEFAULT FALSE, is_active boolean NOT NULL DEFAULT TRUE
         )"
     );
     $migration = file_get_contents(dirname(__DIR__) . '/migrations/20261021-183938_password_reset.sql');
@@ -98,8 +104,12 @@ try {
               [3, 'AAA003', 12, 'shared@example.test', true, 'approved'], [4, 'AAA004', 11, 'inactive@example.test', false, 'approved'],
               [5, 'AAA005', 11, 'pending@example.test', true, 'pending'], [6, 'AAA006', 11, 'expiry@example.test', true, 'approved']] as $fixture) {
         password_reset_query($connection,
-            'INSERT INTO bt_users (id, user_code, company_id, email, is_active, approval_status, password_hash) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [$fixture[0], $fixture[1], $fixture[2], $fixture[3], $fixture[4] ? 'true' : 'false', $fixture[5], $original]
+            'INSERT INTO bt_users (id, user_code, company_id, is_active, approval_status, password_hash) VALUES ($1, $2, $3, $4, $5, $6)',
+            [$fixture[0], $fixture[1], $fixture[2], $fixture[4] ? 'true' : 'false', $fixture[5], $original]
+        );
+        password_reset_query($connection,
+            'INSERT INTO dt_user_contacts (user_code, company_id, contact_value, is_login_email, is_active) VALUES ($1, $2, $3, TRUE, TRUE)',
+            [$fixture[1], $fixture[2], $fixture[3]]
         );
     }
     $delivery = password_reset_issue($connection, 11, 'SHARED@example.test', '192.0.2.1');

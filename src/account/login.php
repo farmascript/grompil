@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -38,6 +38,9 @@ if ($companySlug !== '' && $loginCompany === null) {
 }
 if ($loginCompany !== null) {
     set_database_tenant_context((int) $loginCompany['id'], '', false);
+} else {
+    set_database_tenant_context(0, '', false);
+    $loginQuery('login.platform_lookup.enable', "SELECT set_config('grompil.platform_login_lookup', 'true', false)");
 }
 
 $introHtml = '<span class="eyebrow">' . e(fn_t('login_eyebrow')) . '</span>'
@@ -111,8 +114,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userResult = false;
     if (!$isLocked) {
         $userResult = $loginCompany
-            ? $loginQuery('login.find_company_user', 'SELECT user_code, password_hash, is_active, company_id, COALESCE((to_jsonb(bt_users)->>\'auth_version\')::bigint, 0) AS auth_version FROM bt_users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
-            : $loginQuery('login.find_platform_user', 'SELECT u.user_code, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
+            ? $loginQuery(
+                'login.find_company_user',
+                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.company_id,
+                        COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version
+                 FROM bt_users AS u
+                 LEFT JOIN dt_user_contacts AS uc
+                   ON uc.user_code = u.user_code AND uc.is_login_email AND uc.is_active
+                 WHERE u.company_id = $2
+                   AND (lower(uc.contact_value) = lower($1) OR lower(u.acronym) = lower($1))
+                 LIMIT 2',
+                [$email, (int) $loginCompany['id']]
+            )
+            : $loginQuery(
+                'login.find_platform_user',
+                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.company_id,
+                        r.name AS role_name, r.level AS role_level, r.permissions,
+                        COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version
+                 FROM bt_users AS u
+                 JOIN dt_user_contacts AS uc
+                   ON uc.user_code = u.user_code AND uc.is_login_email AND uc.is_active
+                 JOIN ft_roles AS r ON r.id = u.role_id
+                 WHERE u.company_id IS NULL
+                   AND (lower(uc.contact_value) = lower($1) OR lower(u.acronym) = lower($1))
+                 LIMIT 2',
+                [$email]
+            );
+        if ($loginCompany === null) {
+            $loginQuery('login.platform_lookup.disable', "SELECT set_config('grompil.platform_login_lookup', 'false', false)");
+        }
     }
     $user = $userResult && pg_num_rows($userResult) === 1 ? pg_fetch_assoc($userResult) : false;
 

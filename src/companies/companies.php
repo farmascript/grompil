@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:45:51
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -119,37 +119,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $values = array_values($fields);
             if ($companyId > 0) {
-                $values[] = $isActive;
-                $values[] = $isPublic;
-                $values[] = $companyId;
-                $result = $companiesQuery(
+                $transaction = (bool) $companiesQuery('companies.update.begin', 'BEGIN');
+                $result = $transaction ? $companiesQuery(
                     'companies.update',
                     'UPDATE bt_companies SET slug=$1, name=$2, enterprise_number=$3, enterprise_number_status=$4,
-                        vat_number=$5, vat_number_status=$6, billing_email=$7, phone=$8, street=$9,
-                        house_number=$10, box_number=$11, postal_code=$12, city=$13, address_reference_id=$14,
-                        country_code=$15, default_language=$16, store_theme=$17, store_logo_file=$18,
-                        store_hero_image_file=$19, is_active=$20, is_public=$21, updated_at=now()
-                     WHERE id=$22',
-                    $values
-                );
+                        vat_number=$5, vat_number_status=$6, default_language=$7, store_theme=$8,
+                        store_logo_file=$9, store_hero_image_file=$10, is_active=$11, is_public=$12,
+                        updated_at=now() WHERE id=$13',
+                    [
+                        $fields['slug'], $fields['name'], $fields['enterprise_number'], $fields['enterprise_number_status'],
+                        $fields['vat_number'], $fields['vat_number_status'], $fields['default_language'],
+                        $fields['store_theme'], $fields['store_logo_file'], $fields['store_hero_image_file'],
+                        $isActive, $isPublic, $companyId,
+                    ]
+                ) : false;
+                if ($result) {
+                    set_database_tenant_context($companyId, (string) $currentUser['user_code'], true);
+                    $result = grompil_save_company_contact($companyId, 'email', 'billing', $fields['billing_email'])
+                        && grompil_save_company_contact($companyId, 'phone', 'main', $fields['phone'])
+                        && grompil_save_company_head_office($companyId, $fields);
+                }
+                $result = $result && (bool) $companiesQuery('companies.update.commit', 'COMMIT');
+                if (!$result && $transaction) {
+                    $companiesQuery('companies.update.rollback', 'ROLLBACK');
+                }
             } else {
                 $transaction = (bool) $companiesQuery('companies.create.begin', 'BEGIN');
                 $insert = $transaction ? $companiesQuery(
                     'companies.create.insert',
                     'INSERT INTO bt_companies (
                         slug, name, enterprise_number, enterprise_number_status, vat_number, vat_number_status,
-                        billing_email, phone,
-                        street, house_number, box_number, postal_code, city, address_reference_id,
-                        country_code, default_language, store_theme, store_logo_file, store_hero_image_file,
+                        default_language, store_theme, store_logo_file, store_hero_image_file,
                         is_active, is_public
-                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING id',
-                    [...$values, $isActive, $isPublic]
+                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id',
+                    [
+                        $fields['slug'], $fields['name'], $fields['enterprise_number'], $fields['enterprise_number_status'],
+                        $fields['vat_number'], $fields['vat_number_status'], $fields['default_language'],
+                        $fields['store_theme'], $fields['store_logo_file'], $fields['store_hero_image_file'],
+                        $isActive, $isPublic,
+                    ]
                 ) : false;
                 $createdCompany = $insert ? pg_fetch_assoc($insert) : false;
                 $result = $createdCompany !== false;
                 if ($result) {
                     set_database_tenant_context((int) $createdCompany['id'], (string) $currentUser['user_code'], true);
-                    $result = seed_company_roles((int) $createdCompany['id'])
+                    $result = grompil_save_company_contact((int) $createdCompany['id'], 'email', 'billing', $fields['billing_email'])
+                        && grompil_save_company_contact((int) $createdCompany['id'], 'phone', 'main', $fields['phone'])
+                        && grompil_save_company_head_office((int) $createdCompany['id'], $fields)
+                        && seed_company_roles((int) $createdCompany['id'])
                         && create_initial_company_administrator(
                             (int) $createdCompany['id'],
                             $fields['name'],
@@ -188,17 +205,42 @@ if (isset($_GET['edit'])) {
         }
         foreach ($fields as $key => $_value) {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                $fields[$key] = (string) $editing[$key];
+                if (array_key_exists($key, $editing)) {
+                    $fields[$key] = (string) $editing[$key];
+                }
             }
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            set_database_tenant_context((int) $editing['id'], (string) $currentUser['user_code'], true);
+            $contactResult = $companiesQuery(
+                'companies.load_contacts',
+                "SELECT contact_type_key, purpose_key, contact_value FROM dt_company_contacts
+                 WHERE company_id = $1 AND is_active",
+                [(int) $editing['id']]
+            );
+            while ($contactResult && $contact = pg_fetch_assoc($contactResult)) {
+                if ($contact['contact_type_key'] === 'email' && $contact['purpose_key'] === 'billing') {
+                    $fields['billing_email'] = (string) $contact['contact_value'];
+                } elseif ($contact['contact_type_key'] === 'phone' && $contact['purpose_key'] === 'main') {
+                    $fields['phone'] = (string) $contact['contact_value'];
+                }
+            }
+            $fields = array_replace($fields, grompil_company_head_office((int) $editing['id']));
         }
     }
 }
 
 $companyResult = $companiesQuery(
     'companies.list',
-    'SELECT c.*, count(cu.user_code) AS users_count
-     FROM bt_companies AS c LEFT JOIN ct_company_users AS cu ON cu.company_id = c.id
-     GROUP BY c.id ORDER BY c.name'
+    "SELECT c.*, location.postal_code, location.city, count(cu.user_code) AS users_count
+     FROM bt_companies AS c
+     LEFT JOIN LATERAL (
+        SELECT postal_code, city FROM dt_company_locations
+        WHERE company_id = c.id AND address_type_key = 'headquarters' AND is_active
+        LIMIT 1
+     ) AS location ON TRUE
+     LEFT JOIN ct_company_users AS cu ON cu.company_id = c.id
+     GROUP BY c.id, location.postal_code, location.city ORDER BY c.name"
 );
 $rows = '';
 while ($companyResult && $company = pg_fetch_assoc($companyResult)) {

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -81,39 +81,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $userParams = [
-                    $newUserEmail,
                     $newUserName,
                     $newUserFirstName,
                     $newUserLastName,
-                    $newUserAddress['street'],
-                    $newUserAddress['house_number'],
-                    $newUserAddress['box_number'],
-                    $newUserAddress['postal_code'],
-                    $newUserAddress['city'],
-                    $newUserAddress['country_code'],
-                    $newUserAddress['address_reference_id'],
                     password_hash($password, PASSWORD_DEFAULT),
                     $selectedNewRoleId,
                     $currentUser['user_code'],
                 ];
-                $result = grompil_insert_user_with_unique_code(
+                $transaction = (bool) db_query_params('users.create.begin', 'BEGIN');
+                $result = $transaction ? grompil_insert_user_with_unique_code(
                     static fn (string $userCode): PgSql\Result|false => db_query_params(
                         'users.create',
                         "INSERT INTO bt_users (
-                            email, display_name, name_first, name_last, street, house_number, box_number,
-                            postal_code, city, country_code, address_reference_id, password_hash, role_id, is_active,
+                            display_name, name_first, name_last, password_hash, role_id, is_active,
                             approval_status, approved_at, approved_by_user_code, user_code
-                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, 'approved', now(), $14, $15)
+                         ) VALUES ($1, $2, $3, $4, $5, TRUE, 'approved', now(), $6, $7)
                          ON CONFLICT DO NOTHING RETURNING user_code",
                         [...$userParams, $userCode]
                     )
-                );
+                ) : false;
             } catch (GrompilDatabaseQueryException) {
                 $result = false;
             }
             $created = $result ? pg_fetch_assoc($result) : false;
             if ($created) {
-                $messageKey = 'user_add_success';
+                try {
+                    $saved = grompil_save_user_login_email((string) $created['user_code'], null, $newUserEmail)
+                        && grompil_save_user_primary_address((string) $created['user_code'], null, $newUserAddress);
+                    $saved = $saved && (bool) db_query_params('users.create.commit', 'COMMIT');
+                } catch (GrompilDatabaseQueryException) {
+                    $saved = false;
+                }
+                if (!$saved && $transaction) {
+                    db_query_params('users.create.rollback', 'ROLLBACK');
+                }
+                $messageKey = $saved ? 'user_add_success' : 'user_add_failed';
+            } else {
+                if ($transaction) {
+                    db_query_params('users.create.rollback', 'ROLLBACK');
+                }
+                $messageKey = 'user_add_failed';
+            }
+            if ($messageKey === 'user_add_success') {
                 $newUserName = '';
                 $newUserFirstName = '';
                 $newUserLastName = '';
@@ -122,8 +131,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newUserAddress['country_code'] = 'BE';
                 $selectedNewRoleId = 0;
                 $addFormOpen = false;
-            } else {
-                $messageKey = 'user_add_failed';
             }
         }
     } elseif ($userCode === (string) $currentUser['user_code']) {
@@ -179,9 +186,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $usersResult = db_query_params(
         'users.list',
-        'SELECT u.user_code, u.email, u.display_name, u.role_id, u.is_active,
+        'SELECT u.user_code, contact.contact_value AS email, u.display_name, u.role_id, u.is_active,
                 u.approval_status, r.name AS role_name, u.last_login_at
          FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id
+         JOIN dt_user_contacts AS contact
+           ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
          WHERE u.company_id IS NULL
          ORDER BY CASE u.approval_status WHEN \'pending\' THEN 0 ELSE 1 END,
                   u.display_name'

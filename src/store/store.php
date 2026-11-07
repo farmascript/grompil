@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:17:21
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -27,7 +27,14 @@ if ($company === null) {
     try {
         $directoryResult = db_query_params(
             'store.directory',
-            'SELECT name, slug, city FROM bt_companies WHERE is_active AND is_public ORDER BY name'
+            "SELECT c.name, c.slug, location.city
+             FROM bt_companies AS c
+             LEFT JOIN LATERAL (
+                SELECT city FROM dt_company_locations
+                WHERE company_id = c.id AND address_type_key = 'headquarters' AND is_active
+                LIMIT 1
+             ) AS location ON TRUE
+             WHERE c.is_active AND c.is_public ORDER BY c.name"
         );
     } catch (GrompilDatabaseQueryException) {
         $directoryResult = false;

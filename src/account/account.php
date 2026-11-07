@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -30,17 +30,9 @@ $user = require_login();
 $message = '';
 $acronym = '';
 $displayName = (string) ($user['display_name'] ?? '');
-$result = $accountQuery('account.load', 'SELECT display_name, acronym, street, house_number, box_number, postal_code, city, country_code, address_reference_id, password_hash, must_change_password FROM bt_users WHERE user_code = $1', [$user['user_code']]);
+$result = $accountQuery('account.load', 'SELECT display_name, acronym, password_hash, must_change_password FROM bt_users WHERE user_code = $1', [$user['user_code']]);
 $account = $result ? pg_fetch_assoc($result) : false;
-$address = [
-    'street' => (string) ($user['street'] ?? ''),
-    'house_number' => (string) ($user['house_number'] ?? ''),
-    'box_number' => (string) ($user['box_number'] ?? ''),
-    'postal_code' => (string) ($user['postal_code'] ?? ''),
-    'city' => (string) ($user['city'] ?? ''),
-    'country_code' => (string) ($user['country_code'] ?? 'BE'),
-    'address_reference_id' => (string) ($user['address_reference_id'] ?? ''),
-];
+$address = grompil_user_primary_address((string) $user['user_code']);
 if ($account) {
     $displayName = (string) ($account['display_name'] ?? $displayName);
     $acronym = (string) ($account['acronym'] ?? '');
@@ -91,18 +83,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $scopeResult = $user['company_id'] === null
                         ? $accountQuery(
                             'account.check_acronym_platform',
-                            'SELECT user_code FROM bt_users
+                            'SELECT user_code FROM bt_users AS other
                              WHERE company_id IS NULL AND user_code <> $1
-                               AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
+                               AND (($2 <> \'\' AND (EXISTS (
+                                       SELECT 1 FROM dt_user_contacts contact
+                                       WHERE contact.user_code = other.user_code AND contact.is_login_email
+                                         AND contact.is_active AND lower(contact.contact_value) = lower($2)
+                                   ) OR lower(acronym) = lower($2)))
                                     OR lower(acronym) = lower($3))
                              LIMIT 1',
                             [$user['user_code'], $acronym, $user['email']]
                         )
                         : $accountQuery(
                             'account.check_acronym_company',
-                            'SELECT user_code FROM bt_users
+                            'SELECT user_code FROM bt_users AS other
                              WHERE company_id = $1 AND user_code <> $2
-                               AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
+                               AND (($3 <> \'\' AND (EXISTS (
+                                       SELECT 1 FROM dt_user_contacts contact
+                                       WHERE contact.user_code = other.user_code AND contact.is_login_email
+                                         AND contact.is_active AND lower(contact.contact_value) = lower($3)
+                                   ) OR lower(acronym) = lower($3)))
                                     OR lower(acronym) = lower($4))
                              LIMIT 1',
                             [$user['company_id'], $user['user_code'], $acronym, $user['email']]
@@ -115,17 +115,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if ($profileValid) {
                 if ($profileSubmitted) {
-                    $saved = $accountQuery(
+                    $transaction = $accountQuery('account.change_password_and_profile.begin', 'BEGIN');
+                    $saved = $transaction ? $accountQuery(
                         'account.change_password_and_profile',
                         'UPDATE bt_users SET password_hash = $1, must_change_password = FALSE,
-                            display_name = $2, acronym = NULLIF($3, \'\'), street = $4, house_number = $5,
-                            box_number = $6, postal_code = $7, city = $8, country_code = $9,
-                            address_reference_id = $10, updated_at = now() WHERE user_code = $11',
-                        [password_hash($newPassword, PASSWORD_DEFAULT), $displayName, $acronym,
-                            $address['street'], $address['house_number'], $address['box_number'],
-                            $address['postal_code'], $address['city'], $address['country_code'],
-                            $address['address_reference_id'], $user['user_code']]
+                            display_name = $2, acronym = NULLIF($3, \'\'), updated_at = now()
+                         WHERE user_code = $4',
+                        [password_hash($newPassword, PASSWORD_DEFAULT), $displayName, $acronym, $user['user_code']]
+                    ) : false;
+                    $saved = $saved && grompil_save_user_primary_address(
+                        (string) $user['user_code'], $user['company_id'] === null ? null : (int) $user['company_id'], $address
                     );
+                    $saved = $saved && $accountQuery('account.change_password_and_profile.commit', 'COMMIT');
+                    if (!$saved && $transaction) {
+                        $accountQuery('account.change_password_and_profile.rollback', 'ROLLBACK');
+                    }
                 } else {
                     $saved = $accountQuery(
                         'account.change_password',
@@ -156,18 +160,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $scopeResult = $user['company_id'] === null
                 ? $accountQuery(
                     'account.check_acronym_platform',
-                    'SELECT user_code FROM bt_users
+                            'SELECT user_code FROM bt_users AS other
                      WHERE company_id IS NULL AND user_code <> $1
-                       AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
+                               AND (($2 <> \'\' AND (EXISTS (
+                                       SELECT 1 FROM dt_user_contacts contact
+                                       WHERE contact.user_code = other.user_code AND contact.is_login_email
+                                         AND contact.is_active AND lower(contact.contact_value) = lower($2)
+                                   ) OR lower(acronym) = lower($2)))
                             OR lower(acronym) = lower($3))
                      LIMIT 1',
                     [$user['user_code'], $acronym, $user['email']]
                 )
                 : $accountQuery(
                     'account.check_acronym_company',
-                    'SELECT user_code FROM bt_users
+                        'SELECT user_code FROM bt_users AS other
                      WHERE company_id = $1 AND user_code <> $2
-                       AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
+                           AND (($3 <> \'\' AND (EXISTS (
+                                   SELECT 1 FROM dt_user_contacts contact
+                                   WHERE contact.user_code = other.user_code AND contact.is_login_email
+                                     AND contact.is_active AND lower(contact.contact_value) = lower($3)
+                               ) OR lower(acronym) = lower($3)))
                             OR lower(acronym) = lower($4))
                      LIMIT 1',
                     [$user['company_id'], $user['user_code'], $acronym, $user['email']]
@@ -175,13 +187,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$scopeResult || pg_num_rows($scopeResult) > 0) {
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_taken')) . '</div>';
             } else {
-                $saved = $accountQuery(
+                $transaction = $accountQuery('account.save_profile.begin', 'BEGIN');
+                $saved = $transaction ? $accountQuery(
                     'account.save_profile',
-                    "UPDATE bt_users SET display_name = $1, acronym = NULLIF($2, ''), street = $3,
-                        house_number = $4, box_number = $5, postal_code = $6, city = $7,
-                        country_code = $8, address_reference_id = $9, updated_at = now() WHERE user_code = $10",
-                    [$displayName, $acronym, $address['street'], $address['house_number'], $address['box_number'], $address['postal_code'], $address['city'], $address['country_code'], $address['address_reference_id'], $user['user_code']]
+                    "UPDATE bt_users SET display_name = $1, acronym = NULLIF($2, ''), updated_at = now()
+                     WHERE user_code = $3",
+                    [$displayName, $acronym, $user['user_code']]
+                ) : false;
+                $saved = $saved && grompil_save_user_primary_address(
+                    (string) $user['user_code'], $user['company_id'] === null ? null : (int) $user['company_id'], $address
                 );
+                $saved = $saved && $accountQuery('account.save_profile.commit', 'COMMIT');
+                if (!$saved && $transaction) {
+                    $accountQuery('account.save_profile.rollback', 'ROLLBACK');
+                }
                 if ($saved) {
                     $message = '<div class="alert alert-success" role="status">' . e(fn_t('acronym_saved')) . '</div>';
                 } else {

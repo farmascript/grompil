@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:15:50
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -91,10 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $conflictResult = $registerQuery(
             'register.check_conflict',
-            'SELECT id FROM bt_users
-             WHERE company_id = $1
-               AND (($2 <> \'\' AND (lower(acronym) = lower($2) OR lower(email) = lower($2)))
-                    OR lower(acronym) = lower($3))
+            'SELECT u.id FROM bt_users AS u
+             LEFT JOIN dt_user_contacts AS contact
+               ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
+             WHERE u.company_id = $1
+               AND (($2 <> \'\' AND (lower(u.acronym) = lower($2) OR lower(contact.contact_value) = lower($2)))
+                    OR lower(u.acronym) = lower($3))
              LIMIT 1',
             [(int) $registrationCompany['id'], $acronym, $email]
         );
@@ -112,17 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageKey = 'register_exists';
         } elseif ($globalRole && $companyRole && $registerQuery('register.begin', 'BEGIN')) {
             $insertUserParams = [
-                $email,
                 $name,
                 $firstName,
                 $lastName,
-                $address['street'],
-                $address['house_number'],
-                $address['box_number'],
-                $address['postal_code'],
-                $address['city'],
-                $address['country_code'],
-                $address['address_reference_id'],
                 $acronym,
                 password_hash((string) $_POST['password'], PASSWORD_DEFAULT),
                 (int) $globalRole['id'],
@@ -132,8 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insertResult = grompil_insert_user_with_unique_code(
                 static fn (string $userCode): PgSql\Result|false => $registerQuery(
                     'register.insert_user',
-                    "INSERT INTO bt_users (email, display_name, name_first, name_last, street, house_number, box_number, postal_code, city, country_code, address_reference_id, acronym, password_hash, role_id, is_active, approval_status, company_id, user_code)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULLIF($12, ''), $13, $14, TRUE, $15, $16, $17)
+                    "INSERT INTO bt_users (display_name, name_first, name_last, acronym, password_hash, role_id, is_active, approval_status, company_id, user_code)
+                     VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6, TRUE, $7, $8, $9)
                      ON CONFLICT DO NOTHING RETURNING user_code",
                     [...$insertUserParams, $userCode]
                 )
@@ -141,7 +135,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $createdUser = $insertResult ? pg_fetch_assoc($insertResult) : false;
             if ($createdUser) {
                 $customer = $accountType === 'customer';
-                $membershipResult = $registerQuery(
+                $contactSaved = grompil_save_user_login_email(
+                    (string) $createdUser['user_code'],
+                    (int) $registrationCompany['id'],
+                    $email
+                ) && grompil_save_user_primary_address(
+                    (string) $createdUser['user_code'],
+                    (int) $registrationCompany['id'],
+                    $address
+                );
+                $membershipResult = $contactSaved ? $registerQuery(
                     'register.insert_membership',
                     "INSERT INTO ct_company_users (
                         company_id, user_code, company_role_id, is_active,
@@ -154,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $customer ? 'true' : 'false',
                         $customer ? 'approved' : 'pending',
                     ]
-                );
+                ) : false;
                 if ($membershipResult && $registerQuery('register.commit', 'COMMIT')) {
                     $messageKey = $customer ? 'register_success_customer' : 'register_success_staff';
                     $messageType = 'success';

@@ -501,3 +501,11 @@
 - Contextuele DokuWiki-links behouden in het Nederlands hun bestaande pagina-ID. Bij FR, EN en DE wordt de taalnamespace vóór het bestaande ID geplaatst (`fr:`, `en:` of `de:`).
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.12.1.
 
+### Aanvulling: contact- en adresgegevens genormaliseerd
+
+- Login-e-mail, overige contactkanalen en adressen zijn verplaatst uit de basisrijen naar `dt_user_contacts`, `dt_company_contacts`, `dt_user_locations` en `dt_company_locations`.
+- De contact- en adressoorten komen uit de `contact_types`- en `address_types`-keuzelijsten in `ft_dd_varia`; adressen kunnen meerdere keren per soort voorkomen met maximaal één actief primair adres.
+- De login-, wachtwoordreset-, account-, gebruikers-, bedrijfs-, klanten- en winkelroutes gebruiken nu de detailtabellen. Bedrijfsgegevens zijn publiek leesbaar per rij gemarkeerd.
+- Bestaande gegevens worden eerst gekopieerd met `scripts/20261107-160000_migrate_contact_locations.sql`. Na uitrollen en controleren verwijdert `scripts/20261107-160100_cleanup_legacy_contact_columns.sql` de oude kolommen.
+- Softwareversie verhoogd naar 0.16.0.
+

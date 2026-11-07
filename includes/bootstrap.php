@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sat 2026-11-07 14:54:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/database_config.php';
 require_once __DIR__ . '/error_page.php';
+require_once __DIR__ . '/contact_locations.php';
 
 // A maintenance flag in settings_local.php blocks web requests before the app
 // starts a session or attempts a database connection. CLI migration scripts
@@ -162,7 +163,7 @@ function current_user(): ?array
         'SELECT
             u.user_code,
             u.display_name,
-            u.email,
+            login_contact.contact_value AS email,
             u.company_id,
             u.role_id,
             u.is_active,
@@ -173,6 +174,9 @@ function current_user(): ?array
             r.level AS role_level,
             r.permissions
          FROM bt_users AS u
+         LEFT JOIN dt_user_contacts AS login_contact
+           ON login_contact.user_code = u.user_code
+          AND login_contact.is_login_email AND login_contact.is_active
          JOIN ft_roles AS r ON r.id = u.role_id
          WHERE u.user_code = $1',
         [(string) $_SESSION['user_code']]
@@ -231,6 +235,7 @@ function set_database_tenant_context(int $companyId, string $userCode, bool $pla
             'grompil.company_id', $companyId > 0 ? (string) $companyId : '',
             'grompil.platform_operator', $platformOperator ? 'true' : 'false',
             'grompil.company_login_lookup', 'false',
+            'grompil.platform_login_lookup', 'false',
         ]
     );
 }
@@ -607,10 +612,15 @@ function resolve_public_company(): ?array
     if ($host !== '') {
         $domainResult = grompil_bootstrap_query(
             'bootstrap.resolve_company_domain',
-            'SELECT c.id, c.name, c.slug, c.city, c.default_language,
+            'SELECT c.id, c.name, c.slug, location.city, c.default_language,
                     c.store_theme, c.store_logo_file, c.store_hero_image_file
              FROM ct_company_domains AS d
              JOIN bt_companies AS c ON c.id = d.company_id
+             LEFT JOIN LATERAL (
+                SELECT city FROM dt_company_locations
+                WHERE company_id = c.id AND address_type_key = \'headquarters\' AND is_active
+                LIMIT 1
+             ) AS location ON TRUE
              WHERE d.domain = $1 AND d.is_active AND d.is_verified
                AND c.is_active AND c.is_public',
             [$host]
@@ -629,9 +639,15 @@ function resolve_public_company(): ?array
     if ($isLocalHost && preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
         $result = grompil_bootstrap_query(
             'bootstrap.resolve_local_company',
-            'SELECT id, name, slug, city, default_language,
+            'SELECT c.id, c.name, c.slug, location.city, c.default_language,
                     store_theme, store_logo_file, store_hero_image_file
-             FROM bt_companies WHERE slug = $1 AND is_active AND is_public',
+             FROM bt_companies AS c
+             LEFT JOIN LATERAL (
+                SELECT city FROM dt_company_locations
+                WHERE company_id = c.id AND address_type_key = \'headquarters\' AND is_active
+                LIMIT 1
+             ) AS location ON TRUE
+             WHERE c.slug = $1 AND c.is_active AND c.is_public',
             [$slug]
         );
         $company = $result ? pg_fetch_assoc($result) : false;
@@ -661,8 +677,13 @@ function resolve_company_slug(string $slug, bool $requirePublic = true): ?array
     }
     $result = grompil_bootstrap_query(
         'bootstrap.resolve_company_slug',
-        'SELECT id, name, slug, city, default_language, store_theme FROM bt_companies
-         WHERE slug = $1 AND is_active AND ($2::boolean = FALSE OR is_public)',
+        'SELECT c.id, c.name, c.slug, location.city, c.default_language, c.store_theme FROM bt_companies AS c
+         LEFT JOIN LATERAL (
+            SELECT city FROM dt_company_locations
+            WHERE company_id = c.id AND address_type_key = \'headquarters\' AND is_active
+            LIMIT 1
+         ) AS location ON TRUE
+         WHERE c.slug = $1 AND c.is_active AND ($2::boolean = FALSE OR c.is_public)',
         [$slug, $requirePublic ? 'true' : 'false']
     );
     $company = $result ? pg_fetch_assoc($result) : false;
