@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-11-07 14:57:26
- * @date_mut: Sat 2026-11-07 14:57:26
+ * @date_mut: Sat 2026-11-07 16:06:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -125,6 +125,18 @@ function grompil_empty_address(): array
  */
 function grompil_save_user_primary_address(string $userCode, ?int $companyId, array $address): bool
 {
+    $clearOtherPrimary = db_query_params(
+        'contacts.clear_user_other_primary_addresses',
+        "UPDATE dt_user_locations
+         SET is_primary = FALSE, updated_at = now()
+         WHERE user_code = $1 AND address_type_key <> 'residential'
+           AND is_primary AND is_active",
+        [$userCode]
+    );
+    if ($clearOtherPrimary === false) {
+        return false;
+    }
+
     $result = db_query_params(
         'contacts.save_user_primary_address',
         "INSERT INTO dt_user_locations (

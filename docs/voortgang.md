@@ -509,3 +509,10 @@
 - Bestaande gegevens worden eerst gekopieerd met `scripts/20261107-160000_migrate_contact_locations.sql`. Na uitrollen en controleren verwijdert `scripts/20261107-160100_cleanup_legacy_contact_columns.sql` de oude kolommen.
 - Softwareversie verhoogd naar 0.16.0.
 
+### Aanvulling: meerdere adressen beheren in Mijn account
+
+- De accountpagina toont het gekozen adres met positie en totaal, en opent een adresbeheer-pop-up.
+- Gebruikers kunnen adressen toevoegen, aanpassen, tonen, op volgorde zetten, een standaardadres kiezen en adressen deactiveren.
+- Adreskeuzes gebruiken de vertaalde opties uit `ft_dd_varia`; er is geen databaseschemawijziging nodig.
+- Softwareversie verhoogd naar 0.16.1.
+
