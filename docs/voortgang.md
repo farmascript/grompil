@@ -523,3 +523,9 @@
 - `address_type_list_key` blijft staan als discriminator voor de samengestelde foreign key naar `ft_dd_varia(list_key, key)`. Daardoor kan een adressoort niet per ongeluk verwijzen naar een contactsoort.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.2.
 
+### Aanvulling: gemeente automatisch invullen bij postcodezoeking
+
+- Als een postcode maar één gemeente oplevert, vult de adreszoeker die gemeente automatisch in zodra het antwoord binnenkomt. Zo blijft de gemeente ingevuld wanneer iemand direct met Tab naar straat en huisnummer gaat.
+- Een handmatig ingevulde gemeente wordt niet door een later antwoord overschreven. De adreszoeker gebruikt een nieuwe cacheversie op account- en registratiepagina's.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.3.
+

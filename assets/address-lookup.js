@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-10-23
+ * @date_mut: Sat 2026-11-07 16:39:01
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -76,7 +76,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         });
         if (!items.length) list.replaceChildren();
     };
-    const schedule = (role, type, minimum, params, onSelect) => {
+    const schedule = (role, type, minimum, params, onSelect, onResults = null) => {
         const input = fields[role];
         if (!input) return;
         input.addEventListener('input', () => {
@@ -87,7 +87,10 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             timers.set(input, setTimeout(async () => {
                 try {
                     const items = await search(type, { ...params(), q: query });
-                    if (sequence === requestSequence.get(input)) show(input, items, onSelect);
+                    if (sequence === requestSequence.get(input)) {
+                        if (onResults) onResults(items, query);
+                        show(input, items, onSelect);
+                    }
                 } catch (error) {
                     if (sequence === requestSequence.get(input)) show(input, [{ label: error.message }], () => {});
                 }
@@ -100,11 +103,20 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         });
     };
 
+    if (fields.postal && fields.city) {
+        fields.postal.addEventListener('input', () => {
+            fields.city.value = '';
+        });
+    }
     schedule('postal', 'postal', 2, () => ({}), (item) => {
         fields.postal.value = item.postal_code;
         if (item.city && fields.city) fields.city.value = item.city;
         if (streetId) streetId.value = '';
         clearReference();
+    }, (items, query) => {
+        if (!fields.city || fields.postal.value.trim() !== query || fields.city.value.trim() !== '') return;
+        const cities = [...new Set(items.map((item) => item.city?.trim()).filter(Boolean))];
+        if (cities.length === 1) fields.city.value = cities[0];
     });
     schedule('city', 'municipality', 2, () => ({}), (item) => {
         fields.city.value = item.city;
