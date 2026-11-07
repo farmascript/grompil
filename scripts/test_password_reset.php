@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -57,7 +57,7 @@ try {
     password_reset_query($connection, 'CREATE TEMP TABLE companies (id bigint PRIMARY KEY)');
     password_reset_query($connection,
         "CREATE TEMP TABLE users (
-            id bigint PRIMARY KEY, company_id bigint, email text, password_hash varchar(255),
+            id bigint PRIMARY KEY, user_code varchar(6) UNIQUE NOT NULL, company_id bigint, email text, password_hash varchar(255),
             is_active boolean DEFAULT TRUE, approval_status text DEFAULT 'approved',
             must_change_password boolean DEFAULT TRUE, updated_at timestamptz DEFAULT now()
         )"
@@ -88,12 +88,12 @@ try {
     );
     password_reset_query($connection, 'INSERT INTO companies VALUES (11), (12)');
     $original = password_hash('Original-Password-123', PASSWORD_DEFAULT);
-    foreach ([[1, null, 'shared@example.test', true, 'approved'], [2, 11, 'shared@example.test', true, 'approved'],
-              [3, 12, 'shared@example.test', true, 'approved'], [4, 11, 'inactive@example.test', false, 'approved'],
-              [5, 11, 'pending@example.test', true, 'pending'], [6, 11, 'expiry@example.test', true, 'approved']] as $fixture) {
+    foreach ([[1, 'AAA001', null, 'shared@example.test', true, 'approved'], [2, 'AAA002', 11, 'shared@example.test', true, 'approved'],
+              [3, 'AAA003', 12, 'shared@example.test', true, 'approved'], [4, 'AAA004', 11, 'inactive@example.test', false, 'approved'],
+              [5, 'AAA005', 11, 'pending@example.test', true, 'pending'], [6, 'AAA006', 11, 'expiry@example.test', true, 'approved']] as $fixture) {
         password_reset_query($connection,
-            'INSERT INTO users (id, company_id, email, is_active, approval_status, password_hash) VALUES ($1, $2, $3, $4, $5, $6)',
-            [$fixture[0], $fixture[1], $fixture[2], $fixture[3] ? 'true' : 'false', $fixture[4], $original]
+            'INSERT INTO users (id, user_code, company_id, email, is_active, approval_status, password_hash) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [$fixture[0], $fixture[1], $fixture[2], $fixture[3], $fixture[4] ? 'true' : 'false', $fixture[5], $original]
         );
     }
     $delivery = password_reset_issue($connection, 11, 'SHARED@example.test', '192.0.2.1');
@@ -101,7 +101,7 @@ try {
     reset_test_expect(password_reset_valid($connection, 11, $hash), 'issued company token works');
     reset_test_expect(!password_reset_valid($connection, 12, $hash) && !password_reset_valid($connection, null, $hash), 'token cannot cross company or platform scope');
     reset_test_expect(!password_reset_consume($connection, 12, $hash, 'Replacement-Password-456'), 'wrong company cannot reset the account');
-    $stored = pg_fetch_assoc(password_reset_query($connection, 'SELECT token_hash FROM password_reset_tokens WHERE user_id = 2'));
+    $stored = pg_fetch_assoc(password_reset_query($connection, "SELECT token_hash FROM password_reset_tokens WHERE user_code = 'AAA002'"));
     reset_test_expect($stored['token_hash'] === $hash && $stored['token_hash'] !== $delivery['token'], 'only a token hash is stored');
     $replacement = password_reset_issue($connection, 11, 'shared@example.test', '192.0.2.1');
     reset_test_expect(!password_reset_valid($connection, 11, $hash), 'a new request revokes the earlier link');
@@ -120,7 +120,7 @@ try {
         reset_test_expect(password_reset_valid($connection, $scope, hash('sha256', $other['token'])), 'global and second company accounts have their own valid tokens');
     }
     $expiry = password_reset_issue($connection, 11, 'expiry@example.test', '192.0.2.3');
-    password_reset_query($connection, "UPDATE password_reset_tokens SET expires_at = now() - interval '1 second' WHERE user_id = 6");
+    password_reset_query($connection, "UPDATE password_reset_tokens SET expires_at = now() - interval '1 second' WHERE user_code = 'AAA006'");
     reset_test_expect(!password_reset_valid($connection, 11, hash('sha256', $expiry['token'])), 'expired link fails');
     $changed = password_reset_issue($connection, 11, 'expiry@example.test', '192.0.2.3');
     password_reset_query($connection, 'UPDATE users SET password_hash = $1 WHERE id = 6', [password_hash('Changed-Elsewhere-123', PASSWORD_DEFAULT)]);

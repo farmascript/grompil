@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -181,7 +181,7 @@ function password_reset_issue(
             $limits['max_requests']
         );
         $user = pg_fetch_assoc(password_reset_query($connection,
-            "SELECT id, email, password_hash FROM users
+            "SELECT user_code, email, password_hash FROM users
              WHERE company_id IS NOT DISTINCT FROM $1::bigint AND lower(email) = $2
                AND is_active AND approval_status = 'approved'
              FOR UPDATE",
@@ -191,11 +191,11 @@ function password_reset_issue(
         $delivery = null;
         if ($user) {
             $token = bin2hex(random_bytes(32));
-            password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_id = $1', [$user['id']], 'password_reset.issue.revoke_old_token');
+            password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_code = $1', [$user['user_code']], 'password_reset.issue.revoke_old_token');
             password_reset_query($connection,
-                "INSERT INTO password_reset_tokens (token_hash, user_id, company_id, password_hash_at_issue, expires_at)
+                "INSERT INTO password_reset_tokens (token_hash, user_code, company_id, password_hash_at_issue, expires_at)
                  VALUES ($1, $2, $3, $4, now() + interval '30 minutes')",
-                [hash('sha256', $token), $user['id'], $companyId, $user['password_hash']],
+                [hash('sha256', $token), $user['user_code'], $companyId, $user['password_hash']],
                 'password_reset.issue.create_token'
             );
             $delivery = ['email' => $user['email'], 'token' => $token];
@@ -224,7 +224,7 @@ function password_reset_valid(PgSql\Connection $connection, ?int $companyId, str
         return false;
     }
     $result = password_reset_query($connection,
-        "SELECT 1 FROM password_reset_tokens AS t JOIN users AS u ON u.id = t.user_id
+        "SELECT 1 FROM password_reset_tokens AS t JOIN users AS u ON u.user_code = t.user_code
          WHERE t.token_hash = $1 AND t.company_id IS NOT DISTINCT FROM $2::bigint
            AND u.company_id IS NOT DISTINCT FROM $2::bigint
            AND t.expires_at > now() AND t.password_hash_at_issue = u.password_hash
@@ -254,7 +254,7 @@ function password_reset_consume(PgSql\Connection $connection, ?int $companyId, s
     try {
         // Lock the account first, as issuance does, to avoid lock-order inversions.
         $user = pg_fetch_assoc(password_reset_query($connection,
-            'SELECT u.id FROM users AS u JOIN password_reset_tokens AS t ON t.user_id = u.id
+            'SELECT u.user_code FROM users AS u JOIN password_reset_tokens AS t ON t.user_code = u.user_code
              WHERE t.token_hash = $1 AND u.company_id IS NOT DISTINCT FROM $2::bigint
              FOR UPDATE OF u', [$tokenHash, $companyId],
             'password_reset.consume.lock_account'
@@ -265,11 +265,11 @@ function password_reset_consume(PgSql\Connection $connection, ?int $companyId, s
         }
         password_reset_query($connection,
             'UPDATE users SET password_hash = $1, must_change_password = FALSE,
-                auth_version = auth_version + 1, updated_at = now() WHERE id = $2',
-            [$newHash, $user['id']],
+                auth_version = auth_version + 1, updated_at = now() WHERE user_code = $2',
+            [$newHash, $user['user_code']],
             'password_reset.consume.change_password'
         );
-        password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_id = $1', [$user['id']], 'password_reset.consume.revoke_tokens');
+        password_reset_query($connection, 'DELETE FROM password_reset_tokens WHERE user_code = $1', [$user['user_code']], 'password_reset.consume.revoke_tokens');
         password_reset_query($connection, 'COMMIT', [], 'password_reset.consume.commit');
         return true;
     } catch (Throwable $exception) {

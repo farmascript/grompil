@@ -20,7 +20,7 @@
     if (!form) return;
 
     const input = form.querySelector('#customer-search');
-    const customerId = form.querySelector('#customer-id');
+    const customerCode = form.querySelector('#customer-code');
     const results = form.querySelector('#customer-search-results');
     const status = form.querySelector('#customer-search-status');
     let timer = 0;
@@ -36,7 +36,7 @@
     }
 
     function selectCustomer(customer) {
-        customerId.value = String(customer.id);
+        customerCode.value = String(customer.user_code);
         input.value = `${customer.name} · ${customer.email}`;
         form.requestSubmit();
     }
@@ -53,7 +53,7 @@
             option.type = 'button';
             option.className = 'list-group-item list-group-item-action';
             option.setAttribute('role', 'option');
-            option.dataset.customerId = String(customer.id);
+            option.dataset.customerCode = String(customer.user_code);
             const name = document.createElement('strong');
             name.textContent = customer.name;
             const detail = document.createElement('span');
@@ -85,7 +85,7 @@
     }
 
     input.addEventListener('input', () => {
-        customerId.value = '';
+        customerCode.value = '';
         window.clearTimeout(timer);
         const query = input.value.trim();
         if (query.length < 2) {
@@ -109,14 +109,14 @@
     });
 
     results.addEventListener('click', (event) => {
-        const option = event.target.closest('button[data-customer-id]');
+        const option = event.target.closest('button[data-customer-code]');
         if (!option) return;
-        const customer = matches.find((match) => String(match.id) === option.dataset.customerId);
+        const customer = matches.find((match) => String(match.user_code) === option.dataset.customerCode);
         if (customer) selectCustomer(customer);
     });
 
     results.addEventListener('keydown', (event) => {
-        const options = [...results.querySelectorAll('button[data-customer-id]')];
+        const options = [...results.querySelectorAll('button[data-customer-code]')];
         const index = options.indexOf(event.target);
         if (event.key === 'ArrowDown') {
             event.preventDefault();

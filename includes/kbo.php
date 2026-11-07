@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -106,13 +106,13 @@ function grompil_kbo_reserve_requests(string $term, array $requestTypes): void
         if ((int) $count + count($requestTypes) > 100) {
             throw new RuntimeException('kbo_weekly_limit_reached');
         }
-        $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+        $userCode = isset($_SESSION['user_code']) ? (string) $_SESSION['user_code'] : null;
         foreach ($requestTypes as $requestType) {
             $inserted = grompil_kbo_query(
                 'kbo.reserve.insert',
-                'INSERT INTO kbo_lookup_attempts (enterprise_number, request_type, requested_by)
+                'INSERT INTO kbo_lookup_attempts (enterprise_number, request_type, requested_by_user_code)
                  VALUES ($1, $2, $3)',
-                [$requestType === 'read_enterprise' ? $term : '', $requestType, $userId]
+                [$requestType === 'read_enterprise' ? $term : '', $requestType, $userCode]
             );
             if (!$inserted) {
                 throw new RuntimeException('Unable to record KBO usage.');

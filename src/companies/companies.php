@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:45:51
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $createdCompany = $insert ? pg_fetch_assoc($insert) : false;
                 $result = $createdCompany !== false;
                 if ($result) {
-                    set_database_tenant_context((int) $createdCompany['id'], (int) $currentUser['id'], true);
+                    set_database_tenant_context((int) $createdCompany['id'], (string) $currentUser['user_code'], true);
                     $result = seed_company_roles((int) $createdCompany['id'])
                         && create_initial_company_administrator(
                             (int) $createdCompany['id'],
@@ -196,7 +196,7 @@ if (isset($_GET['edit'])) {
 
 $companyResult = $companiesQuery(
     'companies.list',
-    'SELECT c.*, count(cu.user_id) AS users_count
+    'SELECT c.*, count(cu.user_code) AS users_count
      FROM companies AS c LEFT JOIN company_users AS cu ON cu.company_id = c.id
      GROUP BY c.id ORDER BY c.name'
 );

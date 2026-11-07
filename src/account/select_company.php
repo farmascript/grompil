@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
         grompil_show_error(403, 40152, fn_t('access_denied'), 'Platform administrator required');
     }
     unset($_SESSION['active_company_id']);
-    set_database_tenant_context(0, (int) $user['id'], true);
+    set_database_tenant_context(0, (string) $user['user_code'], true);
     redirect('admin.php');
 }
 $faggRegistryOnly = (string) ($_GET['fagg_registry'] ?? $_POST['fagg_registry'] ?? '') === '1';
@@ -287,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $created = $insert ? pg_fetch_assoc($insert) : false;
                     $saved = $created !== false;
                     if ($saved) {
-                        set_database_tenant_context((int) $created['id'], (int) $user['id'], true);
+                        set_database_tenant_context((int) $created['id'], (string) $user['user_code'], true);
                         $saved = seed_company_roles((int) $created['id'])
                             && create_initial_company_administrator(
                                 (int) $created['id'],
@@ -387,7 +387,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $created = $insert ? pg_fetch_assoc($insert) : false;
                 $saved = $created !== false;
                 if ($saved) {
-                    set_database_tenant_context((int) $created['id'], (int) $user['id'], true);
+                        set_database_tenant_context((int) $created['id'], (string) $user['user_code'], true);
                     $saved = seed_company_roles((int) $created['id'])
                         && create_initial_company_administrator(
                             (int) $created['id'],

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -91,7 +91,7 @@ if (isset($_GET['edit'])) {
 try {
     $rolesResult = db_query_params(
         'roles.list',
-        'SELECT r.*, count(u.id) AS users_count FROM roles AS r
+        'SELECT r.*, count(u.user_code) AS users_count FROM roles AS r
          LEFT JOIN users AS u ON u.role_id = r.id GROUP BY r.id ORDER BY r.id'
     );
 } catch (GrompilDatabaseQueryException) {

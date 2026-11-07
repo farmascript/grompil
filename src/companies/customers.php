@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24 00:00:00
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -39,22 +39,22 @@ if (($_GET['ajax'] ?? '') === 'search') {
         ? mb_strtolower($query, 'UTF-8')
         : strtolower($query);
     $prefix = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $normalizedQuery) . '%';
-    $digits = ctype_digit($query) ? $query : '';
+    $exactUserCode = preg_match('/^[A-Z0-9]{6}$/i', $query) === 1 ? strtoupper($query) : '';
     try {
         $result = db_query_params(
             'customers.search',
-            "SELECT u.id, u.display_name, u.email, u.acronym
+            "SELECT u.user_code, u.display_name, u.email, u.acronym
              FROM users AS u
              JOIN roles AS r ON r.id = u.role_id
-             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_id = u.id
+             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
              JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
              WHERE u.company_id = $1 AND cu.company_id = $1
                AND r.level >= 200 AND cr.level >= 200
                AND (lower(u.display_name) LIKE $2 OR lower(u.email) LIKE $2
-                    OR lower(u.acronym) LIKE $2 OR u.id = NULLIF($3, '')::bigint)
-             ORDER BY lower(u.display_name), u.id
+                    OR lower(u.acronym) LIKE $2 OR u.user_code = NULLIF($3, ''))
+             ORDER BY lower(u.display_name), u.user_code
              LIMIT 20",
-            [$companyId, $prefix, $digits]
+            [$companyId, $prefix, $exactUserCode]
         );
     } catch (GrompilDatabaseQueryException) {
         $result = false;
@@ -67,7 +67,7 @@ if (($_GET['ajax'] ?? '') === 'search') {
     $matches = [];
     while ($row = pg_fetch_assoc($result)) {
         $matches[] = [
-            'id' => (int) $row['id'],
+            'user_code' => (string) $row['user_code'],
             'name' => (string) $row['display_name'],
             'email' => (string) $row['email'],
             'acronym' => (string) ($row['acronym'] ?? ''),
@@ -78,23 +78,24 @@ if (($_GET['ajax'] ?? '') === 'search') {
 }
 
 $selectedCustomer = null;
-$rawCustomerId = $_GET['customer_id'] ?? null;
-$customerId = is_scalar($rawCustomerId) ? filter_var($rawCustomerId, FILTER_VALIDATE_INT) : false;
-if ($customerId !== false && $customerId !== null && $customerId > 0) {
+$rawCustomerCode = $_GET['customer_code'] ?? null;
+$customerCode = is_scalar($rawCustomerCode) ? strtoupper(trim((string) $rawCustomerCode)) : '';
+$customerCodeValid = preg_match('/^[A-Z0-9]{6}$/', $customerCode) === 1;
+if ($customerCodeValid) {
     try {
         $result = db_query_params(
             'customers.load_details',
-            "SELECT u.id, u.display_name, u.email, u.acronym, u.is_active,
+            "SELECT u.user_code, u.display_name, u.email, u.acronym, u.is_active,
                     u.approval_status, u.created_at, u.last_login_at,
                     cu.is_active AS company_active, cu.approval_status AS company_approval_status,
                     cr.name AS company_role
              FROM users AS u
              JOIN roles AS r ON r.id = u.role_id
-             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_id = u.id
+             JOIN company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
              JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
-             WHERE u.company_id = $1 AND cu.company_id = $1 AND u.id = $2
+             WHERE u.company_id = $1 AND cu.company_id = $1 AND u.user_code = $2
                AND r.level >= 200 AND cr.level >= 200",
-            [$companyId, $customerId]
+            [$companyId, $customerCode]
         );
     } catch (GrompilDatabaseQueryException) {
         $result = false;
@@ -139,7 +140,7 @@ if ($selectedCustomer !== null) {
         'customers_created_at' => fn_t('created_at'),
         'customers_last_login' => fn_t('col_last_login'),
     ]);
-} elseif ($customerId !== false && $customerId !== null) {
+} elseif ($customerCode !== '') {
     $details = '<div class="alert alert-warning" role="status">' . e(fn_t('customers_not_found')) . '</div>';
 }
 

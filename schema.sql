@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS users (
     approval_status VARCHAR(12) NOT NULL DEFAULT 'approved'
         CHECK (approval_status IN ('pending', 'approved', 'rejected')),
     approved_at TIMESTAMPTZ,
-    approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    approved_by_user_code VARCHAR(6),
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -135,6 +135,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS user_code VARCHAR(6);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
 CREATE UNIQUE INDEX IF NOT EXISTS users_user_code_uidx ON users (user_code);
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_approved_by_user_code_fkey;
+ALTER TABLE users ADD CONSTRAINT users_approved_by_user_code_fkey
+    FOREIGN KEY (approved_by_user_code) REFERENCES users(user_code) ON DELETE SET NULL;
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -149,8 +152,8 @@ BEGIN
     END IF;
 END;
 $$;
-CREATE UNIQUE INDEX IF NOT EXISTS users_company_id_id_unique_idx
-    ON users (company_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS users_company_user_code_uidx
+    ON users (company_id, user_code);
 
 CREATE TABLE IF NOT EXISTS company_domains (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -201,19 +204,19 @@ CREATE TABLE IF NOT EXISTS company_roles (
 
 CREATE TABLE IF NOT EXISTS company_users (
     company_id BIGINT NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
-    user_id BIGINT NOT NULL,
+    user_code VARCHAR(6) NOT NULL,
     company_role_id BIGINT NOT NULL REFERENCES company_roles(id) ON DELETE RESTRICT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     approval_status VARCHAR(12) NOT NULL DEFAULT 'approved'
         CHECK (approval_status IN ('pending', 'approved', 'rejected')),
     approved_at TIMESTAMPTZ,
-    approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    approved_by_user_code VARCHAR(6) REFERENCES users(user_code) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (company_id, user_id)
+    PRIMARY KEY (company_id, user_code)
 );
 CREATE INDEX IF NOT EXISTS company_users_user_lookup_idx
-    ON company_users (user_id, company_id);
+    ON company_users (user_code, company_id);
 
 ALTER TABLE company_users ADD COLUMN IF NOT EXISTS company_role_id BIGINT
     REFERENCES company_roles(id) ON DELETE RESTRICT;
@@ -226,7 +229,7 @@ ALTER TABLE company_users ADD CONSTRAINT company_users_company_role_same_company
 ALTER TABLE roles ADD COLUMN IF NOT EXISTS level INTEGER NOT NULL DEFAULT 200;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_status VARCHAR(12) NOT NULL DEFAULT 'approved';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by_user_code VARCHAR(6) REFERENCES users(user_code) ON DELETE SET NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS name_first VARCHAR(120) NOT NULL DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS name_last VARCHAR(120) NOT NULL DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS street VARCHAR(160) NOT NULL DEFAULT '';
@@ -411,7 +414,7 @@ CREATE TABLE IF NOT EXISTS kbo_lookup_attempts (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     enterprise_number VARCHAR(16) NOT NULL,
     request_type VARCHAR(40) NOT NULL DEFAULT 'read_enterprise',
-    requested_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    requested_by_user_code VARCHAR(6) REFERENCES users(user_code) ON DELETE SET NULL,
     requested_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS kbo_lookup_attempts_requested_at_idx
@@ -474,43 +477,8 @@ SET is_system = TRUE, updated_at = now()
 WHERE lower(name) IN ('beheerder', 'apotheker', 'medewerker', 'publiek')
   AND is_system = FALSE;
 
--- Give every existing tenant membership its own login identity row. Keep global
--- platform identities separate; tenant logins are scoped by (company_id, email).
-CREATE TEMP TABLE grompil_legacy_tenant_users ON COMMIT DROP AS
-SELECT DISTINCT cu.user_id
-FROM company_users AS cu
-JOIN users AS u ON u.id = cu.user_id
-WHERE u.company_id IS NULL;
-
-INSERT INTO users (
-    email, display_name, name_first, name_last, street, house_number, box_number,
-    postal_code, city, country_code, address_reference_id, acronym, password_hash, role_id,
-    is_active, approval_status, approved_at, approved_by, last_login_at,
-    created_at, updated_at, company_id
-)
-SELECT u.email, u.display_name, u.name_first, u.name_last, u.street, u.house_number, u.box_number,
-       u.postal_code, u.city, u.country_code, u.address_reference_id, u.acronym, u.password_hash,
-       (SELECT id FROM roles WHERE lower(name) = 'publiek' ORDER BY id LIMIT 1),
-       u.is_active, u.approval_status, u.approved_at, u.approved_by, u.last_login_at,
-       u.created_at, u.updated_at, cu.company_id
-FROM company_users AS cu
-JOIN users AS u ON u.id = cu.user_id
-WHERE u.company_id IS NULL;
-
-UPDATE company_users AS cu
-SET user_id = tenant_user.id
-FROM users AS original_user, users AS tenant_user
-WHERE original_user.id = cu.user_id
-  AND original_user.company_id IS NULL
-  AND tenant_user.company_id = cu.company_id
-  AND lower(tenant_user.email) = lower(original_user.email);
-
-UPDATE users AS original_user
-SET is_active = FALSE, updated_at = now()
-FROM grompil_legacy_tenant_users AS legacy, roles AS r
-WHERE original_user.id = legacy.user_id
-  AND r.id = original_user.role_id
-  AND r.level >= 100;
+-- The one-time conversion of legacy global company memberships is handled by
+-- its historical migration before this user_code-based schema is applied.
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_global_email_unique_idx
     ON users (lower(email)) WHERE company_id IS NULL;
@@ -530,10 +498,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_global_acronym_unique_idx
     ON users (lower(acronym))
     WHERE company_id IS NULL AND acronym IS NOT NULL AND acronym <> '';
 
-ALTER TABLE company_users DROP CONSTRAINT IF EXISTS company_users_user_id_fkey;
 ALTER TABLE company_users DROP CONSTRAINT IF EXISTS company_users_user_same_company_fk;
 ALTER TABLE company_users ADD CONSTRAINT company_users_user_same_company_fk
-    FOREIGN KEY (company_id, user_id) REFERENCES users (company_id, id) ON DELETE CASCADE;
+    FOREIGN KEY (company_id, user_code) REFERENCES users (company_id, user_code) ON DELETE CASCADE;
 
 -- Migrate the previous global role link once, then remove that legacy column.
 DO $$
@@ -601,7 +568,7 @@ CREATE POLICY companies_visible_to_public_members_or_platform ON companies
         OR id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         OR id IN (
             SELECT cu.company_id FROM company_users AS cu
-            WHERE cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+            WHERE cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         )
         OR (is_active AND current_setting('grompil.company_login_lookup', true) = 'true')
@@ -647,7 +614,7 @@ CREATE POLICY company_roles_visible_to_member_or_platform ON company_roles
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         OR company_id IN (
             SELECT cu.company_id FROM company_users AS cu
-            WHERE cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+            WHERE cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         )
         OR current_setting('grompil.platform_operator', true) = 'true'
@@ -666,7 +633,7 @@ CREATE POLICY company_roles_member_or_platform_write ON company_roles
 DROP POLICY IF EXISTS company_users_self_read ON company_users;
 CREATE POLICY company_users_self_read ON company_users
     FOR SELECT USING (
-        user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+        user_code = NULLIF(current_setting('grompil.user_code', true), '')
     );
 DROP POLICY IF EXISTS company_users_tenant_or_platform ON company_users;
 CREATE POLICY company_users_tenant_or_platform ON company_users
@@ -688,7 +655,7 @@ CREATE POLICY company_navigation_preferences_read ON company_navigation_preferen
             OR EXISTS (
                 SELECT 1 FROM company_users AS cu
                 WHERE cu.company_id = company_navigation_preferences.company_id
-                  AND cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+                  AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
                   AND cu.is_active AND cu.approval_status = 'approved'
             )
         )
@@ -728,7 +695,7 @@ CREATE POLICY company_navigation_preferences_admin_write ON company_navigation_p
                 JOIN company_roles AS cr
                   ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
                 WHERE cu.company_id = company_navigation_preferences.company_id
-                  AND cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+                  AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
                   AND cu.is_active AND cu.approval_status = 'approved'
                   AND cr.level > 0 AND cr.level < 100
                   AND cr.permissions ? 'company.settings.manage'
@@ -744,7 +711,7 @@ CREATE POLICY company_navigation_preferences_admin_write ON company_navigation_p
                 JOIN company_roles AS cr
                   ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
                 WHERE cu.company_id = company_navigation_preferences.company_id
-                  AND cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+                  AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
                   AND cu.is_active AND cu.approval_status = 'approved'
                   AND cr.level > 0 AND cr.level < 100
                   AND cr.permissions ? 'company.settings.manage'
@@ -771,7 +738,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_version BIGINT NOT NULL DEFAULT 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
 ---    token_hash CHAR(64) PRIMARY KEY CHECK (token_hash ~ '^[a-f0-9]{64}),
 	token_hash CHAR(64) PRIMARY KEY CHECK (token_hash ~ '^[a-f0-9]{64}$'),
-    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    user_code VARCHAR(6) NOT NULL UNIQUE REFERENCES users(user_code) ON DELETE CASCADE,
     company_id BIGINT REFERENCES companies(id) ON DELETE CASCADE,
     password_hash_at_issue VARCHAR(255) NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,

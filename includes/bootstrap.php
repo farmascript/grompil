@@ -106,25 +106,25 @@ function redirect(string $path): never
  */
 function current_user(): ?array
 {
-    if (!isset($_SESSION['user_id'])) {
+    if (!isset($_SESSION['user_code'])) {
         return null;
     }
 
     grompil_enforce_session_idle_timeout();
-    if (!isset($_SESSION['user_id'])) {
+    if (!isset($_SESSION['user_code'])) {
         return null;
     }
 
     set_database_tenant_context(
         (int) ($_SESSION['active_company_id'] ?? 0),
-        (int) $_SESSION['user_id'],
+        (string) $_SESSION['user_code'],
         false
     );
 
     $result = grompil_bootstrap_query(
         'bootstrap.current_user',
         'SELECT
-            u.id,
+            u.user_code,
             u.display_name,
             u.email,
             u.company_id,
@@ -138,8 +138,8 @@ function current_user(): ?array
             r.permissions
          FROM users AS u
          JOIN roles AS r ON r.id = u.role_id
-         WHERE u.id = $1',
-        [(int) $_SESSION['user_id']]
+         WHERE u.user_code = $1',
+        [(string) $_SESSION['user_code']]
     );
 
     $user = $result ? pg_fetch_assoc($result) : false;
@@ -152,7 +152,7 @@ function current_user(): ?array
         return null;
     }
 
-    $user['id'] = (int) $user['id'];
+    $user['user_code'] = (string) $user['user_code'];
     $user['company_id'] = $user['company_id'] === null ? null : (int) $user['company_id'];
     $user['role_id'] = (int) $user['role_id'];
     $user['role_level'] = (int) $user['role_level'];
@@ -170,7 +170,7 @@ function current_user(): ?array
     }
     set_database_tenant_context(
         (int) ($_SESSION['active_company_id'] ?? 0),
-        (int) $user['id'],
+        (string) $user['user_code'],
         is_platform_operator($user)
     );
 
@@ -181,17 +181,17 @@ function current_user(): ?array
  *  Sets request-local PostgreSQL row-security context after authentication.
  *
  * @param int $companyId The company database ID.
- * @param int $userId The user database ID.
+ * @param string $userCode The stable user code.
  * @param bool $platformOperator Whether the user has platform-level access.
  * @return void
  */
-function set_database_tenant_context(int $companyId, int $userId, bool $platformOperator): void
+function set_database_tenant_context(int $companyId, string $userCode, bool $platformOperator): void
 {
     grompil_bootstrap_query(
         'bootstrap.set_tenant_context',
         'SELECT set_config($1, $2, false), set_config($3, $4, false), set_config($5, $6, false), set_config($7, $8, false)',
         [
-            'grompil.user_id', (string) $userId,
+            'grompil.user_code', $userCode,
             'grompil.company_id', $companyId > 0 ? (string) $companyId : '',
             'grompil.platform_operator', $platformOperator ? 'true' : 'false',
             'grompil.company_login_lookup', 'false',
@@ -214,7 +214,7 @@ function require_login(): array
 
     $activeCompanyId = (int) ($_SESSION['active_company_id'] ?? 0);
     if (is_platform_operator($user)) {
-        if (!platform_management_ip_allowed(null, (int) $user['id'])) {
+        if (!platform_management_ip_allowed(null, (string) $user['user_code'])) {
             grompil_show_error(403, 57314, 'Toegang tot het platformbeheer is vanaf dit IP-adres niet toegestaan.', 'Toegang vanaf dit IP-adres geweigerd');
         }
     } elseif ($activeCompanyId > 0) {
@@ -357,13 +357,13 @@ function available_companies(array $user): array
             'SELECT c.id, c.name, c.slug
              FROM companies AS c
              JOIN company_users AS cu ON cu.company_id = c.id
-             JOIN users AS u ON u.id = cu.user_id AND u.company_id = c.id
+             JOIN users AS u ON u.user_code = cu.user_code AND u.company_id = c.id
              JOIN company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
-             WHERE cu.user_id = $1 AND cu.is_active
+             WHERE cu.user_code = $1 AND cu.is_active
                AND cu.approval_status = \'approved\' AND c.is_active
                AND cr.level > 0 AND cr.level < 200
              ORDER BY c.name',
-            [$user['id']]
+            [$user['user_code']]
         );
     }
 
@@ -421,11 +421,11 @@ function set_active_company(int $companyId, array $user): bool
              FROM companies AS c
              JOIN company_users AS cu ON cu.company_id = c.id
              JOIN company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
-             WHERE c.id = $1 AND c.is_active AND cu.user_id = $2
-               AND EXISTS (SELECT 1 FROM users AS u WHERE u.id = cu.user_id AND u.company_id = c.id)
+             WHERE c.id = $1 AND c.is_active AND cu.user_code = $2
+               AND EXISTS (SELECT 1 FROM users AS u WHERE u.user_code = cu.user_code AND u.company_id = c.id)
                AND cu.is_active AND cu.approval_status = \'approved\'
                AND cr.level > 0 AND cr.level < 200',
-            [$companyId, $user['id']]
+            [$companyId, $user['user_code']]
         );
     }
 
@@ -433,7 +433,7 @@ function set_active_company(int $companyId, array $user): bool
         return false;
     }
     $_SESSION['active_company_id'] = $companyId;
-    set_database_tenant_context($companyId, (int) $user['id'], is_platform_operator($user));
+    set_database_tenant_context($companyId, (string) $user['user_code'], is_platform_operator($user));
     return true;
 }
 
@@ -450,7 +450,7 @@ function current_company_context(?array $user = null): ?array
     if ($user === null || $companyId < 1) {
         return null;
     }
-    set_database_tenant_context($companyId, (int) $user['id'], is_platform_operator($user));
+    set_database_tenant_context($companyId, (string) $user['user_code'], is_platform_operator($user));
 
     $result = grompil_bootstrap_query(
         'bootstrap.current_company_context',
@@ -459,10 +459,10 @@ function current_company_context(?array $user = null): ?array
                 cr.id AS company_role_id, cr.name AS company_role_name,
                 cr.level AS company_role_level, cr.permissions AS company_permissions
          FROM companies AS c
-         LEFT JOIN company_users AS cu ON cu.company_id = c.id AND cu.user_id = $2
+         LEFT JOIN company_users AS cu ON cu.company_id = c.id AND cu.user_code = $2
          LEFT JOIN company_roles AS cr ON cr.id = cu.company_role_id AND cr.company_id = c.id
          WHERE c.id = $1 AND c.is_active',
-        [$companyId, $user['id']]
+        [$companyId, $user['user_code']]
     );
     $company = $result ? pg_fetch_assoc($result) : false;
     if (!$company) {

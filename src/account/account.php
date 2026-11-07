@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -30,7 +30,7 @@ $user = require_login();
 $message = '';
 $acronym = '';
 $displayName = (string) ($user['display_name'] ?? '');
-$result = $accountQuery('account.load', 'SELECT display_name, acronym, street, house_number, box_number, postal_code, city, country_code, address_reference_id, password_hash, must_change_password FROM users WHERE id = $1', [$user['id']]);
+$result = $accountQuery('account.load', 'SELECT display_name, acronym, street, house_number, box_number, postal_code, city, country_code, address_reference_id, password_hash, must_change_password FROM users WHERE user_code = $1', [$user['user_code']]);
 $account = $result ? pg_fetch_assoc($result) : false;
 $address = [
     'street' => (string) ($user['street'] ?? ''),
@@ -91,21 +91,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $scopeResult = $user['company_id'] === null
                         ? $accountQuery(
                             'account.check_acronym_platform',
-                            'SELECT id FROM users
-                             WHERE company_id IS NULL AND id <> $1
+                            'SELECT user_code FROM users
+                             WHERE company_id IS NULL AND user_code <> $1
                                AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
                                     OR lower(acronym) = lower($3))
                              LIMIT 1',
-                            [$user['id'], $acronym, $user['email']]
+                            [$user['user_code'], $acronym, $user['email']]
                         )
                         : $accountQuery(
                             'account.check_acronym_company',
-                            'SELECT id FROM users
-                             WHERE company_id = $1 AND id <> $2
+                            'SELECT user_code FROM users
+                             WHERE company_id = $1 AND user_code <> $2
                                AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
                                     OR lower(acronym) = lower($4))
                              LIMIT 1',
-                            [$user['company_id'], $user['id'], $acronym, $user['email']]
+                            [$user['company_id'], $user['user_code'], $acronym, $user['email']]
                         );
                     if (!$scopeResult || pg_num_rows($scopeResult) > 0) {
                         $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_taken')) . '</div>';
@@ -120,17 +120,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'UPDATE users SET password_hash = $1, must_change_password = FALSE,
                             display_name = $2, acronym = NULLIF($3, \'\'), street = $4, house_number = $5,
                             box_number = $6, postal_code = $7, city = $8, country_code = $9,
-                            address_reference_id = $10, updated_at = now() WHERE id = $11',
+                            address_reference_id = $10, updated_at = now() WHERE user_code = $11',
                         [password_hash($newPassword, PASSWORD_DEFAULT), $displayName, $acronym,
                             $address['street'], $address['house_number'], $address['box_number'],
                             $address['postal_code'], $address['city'], $address['country_code'],
-                            $address['address_reference_id'], $user['id']]
+                            $address['address_reference_id'], $user['user_code']]
                     );
                 } else {
                     $saved = $accountQuery(
                         'account.change_password',
-                        'UPDATE users SET password_hash = $1, must_change_password = FALSE, updated_at = now() WHERE id = $2',
-                        [password_hash($newPassword, PASSWORD_DEFAULT), $user['id']]
+                        'UPDATE users SET password_hash = $1, must_change_password = FALSE, updated_at = now() WHERE user_code = $2',
+                        [password_hash($newPassword, PASSWORD_DEFAULT), $user['user_code']]
                     );
                 }
                 if ($saved) {
@@ -156,21 +156,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $scopeResult = $user['company_id'] === null
                 ? $accountQuery(
                     'account.check_acronym_platform',
-                    'SELECT id FROM users
-                     WHERE company_id IS NULL AND id <> $1
+                    'SELECT user_code FROM users
+                     WHERE company_id IS NULL AND user_code <> $1
                        AND (($2 <> \'\' AND (lower(email) = lower($2) OR lower(acronym) = lower($2)))
                             OR lower(acronym) = lower($3))
                      LIMIT 1',
-                    [$user['id'], $acronym, $user['email']]
+                    [$user['user_code'], $acronym, $user['email']]
                 )
                 : $accountQuery(
                     'account.check_acronym_company',
-                    'SELECT id FROM users
-                     WHERE company_id = $1 AND id <> $2
+                    'SELECT user_code FROM users
+                     WHERE company_id = $1 AND user_code <> $2
                        AND (($3 <> \'\' AND (lower(email) = lower($3) OR lower(acronym) = lower($3)))
                             OR lower(acronym) = lower($4))
                      LIMIT 1',
-                    [$user['company_id'], $user['id'], $acronym, $user['email']]
+                    [$user['company_id'], $user['user_code'], $acronym, $user['email']]
                 );
             if (!$scopeResult || pg_num_rows($scopeResult) > 0) {
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_taken')) . '</div>';
@@ -179,8 +179,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'account.save_profile',
                     "UPDATE users SET display_name = $1, acronym = NULLIF($2, ''), street = $3,
                         house_number = $4, box_number = $5, postal_code = $6, city = $7,
-                        country_code = $8, address_reference_id = $9, updated_at = now() WHERE id = $10",
-                    [$displayName, $acronym, $address['street'], $address['house_number'], $address['box_number'], $address['postal_code'], $address['city'], $address['country_code'], $address['address_reference_id'], $user['id']]
+                        country_code = $8, address_reference_id = $9, updated_at = now() WHERE user_code = $10",
+                    [$displayName, $acronym, $address['street'], $address['house_number'], $address['box_number'], $address['postal_code'], $address['city'], $address['country_code'], $address['address_reference_id'], $user['user_code']]
                 );
                 if ($saved) {
                     $message = '<div class="alert alert-success" role="status">' . e(fn_t('acronym_saved')) . '</div>';

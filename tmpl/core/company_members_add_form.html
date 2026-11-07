@@ -16,7 +16,7 @@
                 <label class="form-label" for="member-user">
                     @company_members_user@
                 </label>
-                <select class="form-select" name="user_id" id="member-user" required>
+                <select class="form-select" name="user_code" id="member-user" required>
                     @_user_options_html@
                 </select>
             </div>
@@ -67,7 +67,7 @@
             return;
         }
 
-        const userSelect = form.querySelector('[name="user_id"]');
+        const userSelect = form.querySelector('[name="user_code"]');
         const roleSelect = form.querySelector('[name="company_role_id"]');
         const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
         form.addEventListener('submit', (event) => {

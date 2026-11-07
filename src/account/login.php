@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -37,14 +37,14 @@ if ($companySlug !== '' && $loginCompany === null) {
     grompil_show_error(404, 18403, 'Het bedrijfsinlogscherm is niet beschikbaar. Controleer de bedrijfslink.', 'Aanmelden niet mogelijk');
 }
 if ($loginCompany !== null) {
-    set_database_tenant_context((int) $loginCompany['id'], 0, false);
+    set_database_tenant_context((int) $loginCompany['id'], '', false);
 }
 
 $introHtml = '<span class="eyebrow">' . e(fn_t('login_eyebrow')) . '</span>'
     . '<h1>' . e(fn_t('login_headline')) . '<br><span>' . e(fn_t('login_headline_second')) . '</span></h1>'
     . '<p>' . e(fn_t('login_intro')) . '</p>';
 if ($loginCompany !== null) {
-    set_database_tenant_context((int) $loginCompany['id'], 0, false);
+    set_database_tenant_context((int) $loginCompany['id'], '', false);
     $language = strtoupper((string) ($_SESSION['language'] ?? $loginCompany['default_language'] ?? 'NL'));
     $allowedLanguages = ['NL', 'FR', 'EN', 'DE'];
     if (!in_array($language, $allowedLanguages, true)) {
@@ -111,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userResult = false;
     if (!$isLocked) {
         $userResult = $loginCompany
-            ? $loginQuery('login.find_company_user', 'SELECT id, password_hash, is_active, company_id, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
-            : $loginQuery('login.find_platform_user', 'SELECT u.id, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM users AS u JOIN roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
+            ? $loginQuery('login.find_company_user', 'SELECT user_code, password_hash, is_active, company_id, COALESCE((to_jsonb(users)->>\'auth_version\')::bigint, 0) AS auth_version FROM users WHERE company_id = $2 AND (lower(email) = lower($1) OR lower(acronym) = lower($1)) LIMIT 2', [$email, (int) $loginCompany['id']])
+            : $loginQuery('login.find_platform_user', 'SELECT u.user_code, u.email, u.password_hash, u.is_active, u.company_id, r.name AS role_name, r.level AS role_level, r.permissions, COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version FROM users AS u JOIN roles AS r ON r.id = u.role_id WHERE u.company_id IS NULL AND (lower(u.email) = lower($1) OR lower(u.acronym) = lower($1)) LIMIT 2', [$email]);
     }
     $user = $userResult && pg_num_rows($userResult) === 1 ? pg_fetch_assoc($userResult) : false;
 
@@ -140,9 +140,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if ($ipAllowed) {
                 session_regenerate_id(true);
-                unset($_SESSION['user_id'], $_SESSION['auth_version'], $_SESSION['active_company_id']);
+                unset($_SESSION['user_code'], $_SESSION['auth_version'], $_SESSION['active_company_id']);
                 unset($_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
-                $_SESSION['mfa_pending_user_id'] = (int) $user['id'];
+                $_SESSION['mfa_pending_user_code'] = (string) $user['user_code'];
                 $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
                 $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
                 $_SESSION['mfa_pending_attempt_email'] = $email;
@@ -150,15 +150,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('authenticator.php');
             }
         } elseif ($loginCompany !== null) {
-            set_database_tenant_context((int) $loginCompany['id'], (int) $user['id'], false);
+            set_database_tenant_context((int) $loginCompany['id'], (string) $user['user_code'], false);
             $membershipResult = $loginQuery(
                 'login.check_company_membership',
                 'SELECT cr.level
                  FROM company_users AS cu
                  JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
-                 WHERE cu.company_id = $1 AND cu.user_id = $2
+                 WHERE cu.company_id = $1 AND cu.user_code = $2
                    AND cu.is_active AND cu.approval_status = \'approved\'',
-                [(int) $loginCompany['id'], (int) $user['id']]
+                [(int) $loginCompany['id'], (string) $user['user_code']]
             );
             $membership = $membershipResult ? pg_fetch_assoc($membershipResult) : false;
             if ($membership && (int) $membership['level'] > 0 && (int) $membership['level'] < 200
@@ -176,8 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
             unset($_SESSION['active_company_id']);
             unset($_SESSION['platform_mfa_verified']);
-            unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
-            $_SESSION['user_id'] = (int) $user['id'];
+            unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+            $_SESSION['user_code'] = (string) $user['user_code'];
             $_SESSION['auth_version'] = (int) $user['auth_version'];
             $_SESSION['last_activity_at'] = time();
             if ($loginCompany) {
@@ -187,8 +187,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($signedInUser !== null) {
                 $lastLoginResult = $loginQuery(
                     'login.update_last_login',
-                    'UPDATE users SET last_login_at = now() WHERE id = $1',
-                    [(int) $signedInUser['id']]
+                    'UPDATE users SET last_login_at = now() WHERE user_code = $1',
+                    [(string) $signedInUser['user_code']]
                 );
                 if (!$lastLoginResult) {
                     error_log('Successful login timestamp could not be saved.');

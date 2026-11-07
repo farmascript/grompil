@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS kbo_lookup_attempts (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     enterprise_number VARCHAR(16) NOT NULL,
     request_type VARCHAR(40) NOT NULL DEFAULT 'read_enterprise',
-    requested_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    requested_by_user_code VARCHAR(6) REFERENCES users(user_code) ON DELETE SET NULL,
     requested_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS kbo_lookup_attempts_requested_at_idx

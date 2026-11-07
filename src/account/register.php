@@ -35,7 +35,7 @@ $registrationCompany = resolve_company_slug(trim((string) ($_GET['c'] ?? '')));
 if ($registrationCompany === null) {
     grompil_show_error(404, 12545, 'Open eerst de publieke website van een bedrijf om te registreren.', 'Registratie vereist een bedrijfswebsite');
 }
-set_database_tenant_context((int) $registrationCompany['id'], 0, false);
+set_database_tenant_context((int) $registrationCompany['id'], '', false);
 
 $messageKey = '';
 $messageType = 'danger';
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'register.insert_user',
                     "INSERT INTO users (email, display_name, name_first, name_last, street, house_number, box_number, postal_code, city, country_code, address_reference_id, acronym, password_hash, role_id, is_active, approval_status, company_id, user_code)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NULLIF($12, ''), $13, $14, TRUE, $15, $16, $17)
-                     ON CONFLICT DO NOTHING RETURNING id",
+                     ON CONFLICT DO NOTHING RETURNING user_code",
                     [...$insertUserParams, $userCode]
                 )
             );
@@ -144,12 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $membershipResult = $registerQuery(
                     'register.insert_membership',
                     "INSERT INTO company_users (
-                        company_id, user_id, company_role_id, is_active,
+                        company_id, user_code, company_role_id, is_active,
                         approval_status, approved_at
                      ) VALUES ($1, $2, $3, $4, $5, CASE WHEN $4 THEN now() ELSE NULL END)",
                     [
                         (int) $registrationCompany['id'],
-                        (int) $createdUser['id'],
+                        (string) $createdUser['user_code'],
                         (int) $companyRole['id'],
                         $customer ? 'true' : 'false',
                         $customer ? 'approved' : 'pending',

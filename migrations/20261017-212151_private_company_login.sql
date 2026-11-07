@@ -22,7 +22,7 @@ CREATE POLICY companies_visible_to_public_members_or_platform ON companies
         OR id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         OR id IN (
             SELECT cu.company_id FROM company_users AS cu
-            WHERE cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+            WHERE cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         )
         OR (is_active AND current_setting('grompil.company_login_lookup', true) = 'true')

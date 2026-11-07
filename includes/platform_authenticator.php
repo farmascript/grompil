@@ -87,15 +87,15 @@ function grompil_totp(string $secret, string $label): TOTP
 }
 
 /** Check the deployment-wide platform management IP rules. Empty means unrestricted. */
-function platform_management_ip_allowed(?string $address = null, int $contextUserId = 0): bool
+function platform_management_ip_allowed(?string $address = null, string $contextUserCode = ''): bool
 {
     $address ??= grompil_client_ip_address();
     if (filter_var($address, FILTER_VALIDATE_IP) === false) {
         return false;
     }
     // The RLS context is elevated only for this narrowly scoped global-rule lookup.
-    $contextCompanyId = $contextUserId > 0 ? (int) ($_SESSION['active_company_id'] ?? 0) : 0;
-    set_database_tenant_context($contextCompanyId, $contextUserId, true);
+    $contextCompanyId = $contextUserCode !== '' ? (int) ($_SESSION['active_company_id'] ?? 0) : 0;
+    set_database_tenant_context($contextCompanyId, $contextUserCode, true);
     $result = grompil_platform_authenticator_query(
         'platform_authenticator.ip_rules',
         "SELECT count(*) AS rule_count,
@@ -110,13 +110,13 @@ function platform_management_ip_allowed(?string $address = null, int $contextUse
 }
 
 /** Return the active encrypted TOTP secret for a platform account, if configured. */
-function grompil_platform_totp_ciphertext(int $userId): ?string
+function grompil_platform_totp_ciphertext(string $userCode): ?string
 {
-    set_database_tenant_context(0, $userId, true);
+    set_database_tenant_context(0, $userCode, true);
     $result = grompil_platform_authenticator_query(
         'platform_authenticator.read_secret',
-        'SELECT secret_ciphertext FROM platform_totp_credentials WHERE user_id = $1 AND enabled_at IS NOT NULL',
-        [$userId]
+        'SELECT secret_ciphertext FROM platform_totp_credentials WHERE user_code = $1 AND enabled_at IS NOT NULL',
+        [$userCode]
     );
     if (!$result) {
         throw new RuntimeException('The platform authenticator table is not available.');
@@ -126,22 +126,22 @@ function grompil_platform_totp_ciphertext(int $userId): ?string
 }
 
 /** Generate single-use recovery codes and persist only password hashes. */
-function grompil_create_totp_recovery_codes(int $userId): array
+function grompil_create_totp_recovery_codes(string $userCode): array
 {
-    set_database_tenant_context(0, $userId, true);
+    set_database_tenant_context(0, $userCode, true);
     $codes = [];
     for ($index = 0; $index < 10; $index++) {
         $codes[] = strtoupper(bin2hex(random_bytes(8)));
     }
-    $deleted = grompil_platform_authenticator_query('platform_authenticator.delete_recovery_codes', 'DELETE FROM platform_totp_recovery_codes WHERE user_id = $1', [$userId]);
+    $deleted = grompil_platform_authenticator_query('platform_authenticator.delete_recovery_codes', 'DELETE FROM platform_totp_recovery_codes WHERE user_code = $1', [$userCode]);
     if (!$deleted) {
         throw new RuntimeException('Recovery codes could not be prepared.');
     }
     foreach ($codes as $code) {
         $inserted = grompil_platform_authenticator_query(
             'platform_authenticator.insert_recovery_code',
-            'INSERT INTO platform_totp_recovery_codes (user_id, code_hash) VALUES ($1, $2)',
-            [$userId, password_hash($code, PASSWORD_DEFAULT)]
+            'INSERT INTO platform_totp_recovery_codes (user_code, code_hash) VALUES ($1, $2)',
+            [$userCode, password_hash($code, PASSWORD_DEFAULT)]
         );
         if (!$inserted) {
             throw new RuntimeException('Recovery codes could not be stored.');
@@ -151,16 +151,16 @@ function grompil_create_totp_recovery_codes(int $userId): array
 }
 
 /** Verify and consume one single-use recovery code. */
-function grompil_consume_totp_recovery_code(int $userId, string $code): bool
+function grompil_consume_totp_recovery_code(string $userCode, string $code): bool
 {
     if (!preg_match('/^[A-F0-9]{16}$/i', $code)) {
         return false;
     }
-    set_database_tenant_context(0, $userId, true);
+    set_database_tenant_context(0, $userCode, true);
     $result = grompil_platform_authenticator_query(
         'platform_authenticator.list_recovery_codes',
-        'SELECT code_hash FROM platform_totp_recovery_codes WHERE user_id = $1 AND used_at IS NULL',
-        [$userId]
+        'SELECT code_hash FROM platform_totp_recovery_codes WHERE user_code = $1 AND used_at IS NULL',
+        [$userCode]
     );
     while ($result && $row = pg_fetch_assoc($result)) {
         if (!password_verify(strtoupper($code), (string) $row['code_hash'])) {
@@ -168,8 +168,8 @@ function grompil_consume_totp_recovery_code(int $userId, string $code): bool
         }
         $consumed = grompil_platform_authenticator_query(
             'platform_authenticator.consume_recovery_code',
-            'UPDATE platform_totp_recovery_codes SET used_at = now() WHERE user_id = $1 AND code_hash = $2 AND used_at IS NULL',
-            [$userId, $row['code_hash']]
+            'UPDATE platform_totp_recovery_codes SET used_at = now() WHERE user_code = $1 AND code_hash = $2 AND used_at IS NULL',
+            [$userCode, $row['code_hash']]
         );
         return $consumed && pg_affected_rows($consumed) === 1;
     }

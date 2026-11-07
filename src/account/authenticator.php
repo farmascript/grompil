@@ -19,26 +19,26 @@ if (current_user() !== null) {
     redirect('admin.php');
 }
 
-$userId = (int) ($_SESSION['mfa_pending_user_id'] ?? 0);
+$userCode = (string) ($_SESSION['mfa_pending_user_code'] ?? '');
 $authVersion = (int) ($_SESSION['mfa_pending_auth_version'] ?? -1);
 $email = (string) ($_SESSION['mfa_pending_email'] ?? '');
 $attemptEmail = (string) ($_SESSION['mfa_pending_attempt_email'] ?? '');
 $loginIp = (string) ($_SESSION['mfa_pending_ip'] ?? '');
 $currentIp = grompil_client_ip_address();
-if ($userId < 1 || $email === '' || $attemptEmail === '' || $loginIp === '' || $currentIp !== $loginIp) {
-    unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+if ($userCode === '' || $email === '' || $attemptEmail === '' || $loginIp === '' || $currentIp !== $loginIp) {
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     redirect('login.php');
 }
 
-set_database_tenant_context(0, $userId, true);
+set_database_tenant_context(0, $userCode, true);
 $accountResult = $authenticatorQuery(
     'account_authenticator.load_platform_account',
     'SELECT u.is_active, u.approval_status,
             COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version,
             r.name AS role_name, r.level AS role_level, r.permissions
      FROM users AS u JOIN roles AS r ON r.id = u.role_id
-     WHERE u.id = $1 AND u.company_id IS NULL',
-    [$userId]
+     WHERE u.user_code = $1 AND u.company_id IS NULL',
+    [$userCode]
 );
 $account = $accountResult ? pg_fetch_assoc($accountResult) : false;
 $accountIsPlatform = $account && $account['is_active'] === 't'
@@ -50,8 +50,8 @@ $accountIsPlatform = $account && $account['is_active'] === 't'
         'role_name' => (string) $account['role_name'],
         'permissions' => json_decode((string) $account['permissions'], true) ?: [],
     ]);
-if (!$accountIsPlatform || !platform_management_ip_allowed($currentIp, $userId)) {
-    unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+if (!$accountIsPlatform || !platform_management_ip_allowed($currentIp, $userCode)) {
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     redirect('login.php');
 }
 
@@ -63,7 +63,7 @@ try {
     grompil_totp_encryption_key();
     grompil_totp_library_ready();
     if (!$isVerifiedSetup) {
-        $encryptedSecret = grompil_platform_totp_ciphertext($userId);
+        $encryptedSecret = grompil_platform_totp_ciphertext($userCode);
         if ($encryptedSecret === null) {
             if ($setupSecret === '') {
                 $setup = OTPHP\TOTP::generate(new OTPHP\InternalClock(), 20)
@@ -96,12 +96,12 @@ $attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $log
     return $row ? (int) $row['total'] : 0;
 };
 
-$completeLogin = static function () use ($authenticatorQuery, $userId, $authVersion, $attemptEmail, $loginIp): never {
+$completeLogin = static function () use ($authenticatorQuery, $userCode, $authVersion, $attemptEmail, $loginIp): never {
     $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM login_attempts WHERE company_id = 0 AND email = $1 AND ip_address = $2', [$attemptEmail, $loginIp]);
     session_regenerate_id(true);
-    unset($_SESSION['mfa_pending_user_id'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     unset($_SESSION['active_company_id']);
-    $_SESSION['user_id'] = $userId;
+    $_SESSION['user_code'] = $userCode;
     $_SESSION['auth_version'] = $authVersion;
     $_SESSION['platform_mfa_verified'] = true;
     $_SESSION['last_activity_at'] = time();
@@ -109,7 +109,7 @@ $completeLogin = static function () use ($authenticatorQuery, $userId, $authVers
     if ($signedInUser === null) {
         redirect('login.php');
     }
-    $saved = $authenticatorQuery('account_authenticator.update_last_login', 'UPDATE users SET last_login_at = now() WHERE id = $1', [$userId]);
+    $saved = $authenticatorQuery('account_authenticator.update_last_login', 'UPDATE users SET last_login_at = now() WHERE user_code = $1', [$userCode]);
     if (!$saved) {
         error_log('Successful platform login timestamp could not be saved.');
     }
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $validCode = grompil_totp($secret, $email)->verify($code, null, 5);
             }
             if (!$validCode && $encryptedSecret !== null) {
-                $validCode = grompil_consume_totp_recovery_code($userId, $code);
+                $validCode = grompil_consume_totp_recovery_code($userCode, $code);
             }
         } catch (Throwable $error) {
             error_log('Platform authenticator code verification failed: ' . $error->getMessage());
@@ -146,16 +146,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stored = $started ? $authenticatorQuery(
                     'account_authenticator.enroll.store',
-                    'INSERT INTO platform_totp_credentials (user_id, secret_ciphertext, enabled_at)
+                    'INSERT INTO platform_totp_credentials (user_code, secret_ciphertext, enabled_at)
                      VALUES ($1, $2, now())
-                     ON CONFLICT (user_id) DO UPDATE
+                     ON CONFLICT (user_code) DO UPDATE
                      SET secret_ciphertext = EXCLUDED.secret_ciphertext, enabled_at = now(), created_at = now()',
-                    [$userId, grompil_totp_encrypt_secret($setupSecret)]
+                    [$userCode, grompil_totp_encrypt_secret($setupSecret)]
                 ) : false;
                 if (!$stored) {
                     throw new RuntimeException('Authenticator credentials could not be stored.');
                 }
-                $recoveryCodes = grompil_create_totp_recovery_codes($userId);
+                $recoveryCodes = grompil_create_totp_recovery_codes($userCode);
                 if (!$authenticatorQuery('account_authenticator.enroll.commit', 'COMMIT')) {
                     throw new RuntimeException('Authenticator enrollment could not be committed.');
                 }

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -30,7 +30,7 @@ if ($slug !== '' && $company === null) {
 }
 $companyId = $company ? (int) $company['id'] : null;
 $scope = $companyId ?? 0;
-set_database_tenant_context($scope, 0, false);
+set_database_tenant_context($scope, '', false);
 $query = $company ? '?c=' . rawurlencode($slug) : '';
 $message = '';
 $form = '';
@@ -59,7 +59,7 @@ try {
             } elseif (!hash_equals($password, $confirmation)) {
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_confirmation_mismatch')) . '</div>';
             } elseif (password_reset_consume(db(), $companyId, $tokenHash, $password)) {
-                unset($_SESSION['password_reset_grants'][$scope], $_SESSION['user_id'], $_SESSION['active_company_id'], $_SESSION['auth_version']);
+                unset($_SESSION['password_reset_grants'][$scope], $_SESSION['user_code'], $_SESSION['active_company_id'], $_SESSION['auth_version']);
                 session_regenerate_id(true);
                 $_SESSION['password_reset_done'][$scope] = true;
                 redirect('reset-password.php' . $query);

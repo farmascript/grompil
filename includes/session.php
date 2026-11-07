@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-05
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -70,7 +70,7 @@ function grompil_start_session(): void
 /** Expire an authenticated session after inactivity, preserving language for the login screen. */
 function grompil_enforce_session_idle_timeout(): void
 {
-    if (!isset($_SESSION['user_id'])) {
+    if (!isset($_SESSION['user_code'])) {
         return;
     }
 

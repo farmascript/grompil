@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:49
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -101,7 +101,7 @@ $rows = '';
 try {
     $result = db_query_params(
         'company_roles.list',
-        'SELECT cr.*, count(cu.user_id) AS users_count
+        'SELECT cr.*, count(cu.user_code) AS users_count
          FROM company_roles AS cr
          LEFT JOIN company_users AS cu ON cu.company_id=cr.company_id AND cu.company_role_id=cr.id
          WHERE cr.company_id=$1 AND cr.level > 0 AND cr.level < 200

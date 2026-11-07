@@ -72,7 +72,7 @@ function create_initial_company_administrator(
                 'INSERT INTO users (
                     user_code, company_id, email, display_name, password_hash, role_id, must_change_password
                  ) VALUES ($1, $2, $3, $4, $5, $6, TRUE)
-                 ON CONFLICT (user_code) DO NOTHING RETURNING id',
+                 ON CONFLICT (user_code) DO NOTHING RETURNING user_code',
                 [$userCode, ...$userParams]
             )
         );
@@ -88,10 +88,10 @@ function create_initial_company_administrator(
         $membership = db_query_params(
             'company_admin.initial_membership',
             "INSERT INTO company_users (
-                company_id, user_id, company_role_id, is_active,
+                company_id, user_code, company_role_id, is_active,
                 approval_status, approved_at
              ) VALUES ($1, $2, $3, TRUE, 'approved', now())",
-            [$companyId, (int) $user['id'], (int) $role['company_role_id']]
+            [$companyId, (string) $user['user_code'], (int) $role['company_role_id']]
         );
     } catch (GrompilDatabaseQueryException) {
         return false;

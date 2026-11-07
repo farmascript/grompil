@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -31,7 +31,7 @@ if ($company === null) {
     }
     grompil_show_error(404, 12544, 'Deze website is niet beschikbaar. Controleer de link of neem contact op met het bedrijf.', 'Website niet beschikbaar');
 }
-set_database_tenant_context((int) $company['id'], (int) ($_SESSION['user_id'] ?? 0), false);
+set_database_tenant_context((int) $company['id'], (string) ($_SESSION['user_code'] ?? ''), false);
 $page = (string) ($_GET['page'] ?? 'home');
 $validPages = ['home', 'services', 'about_us', 'contact'];
 if (!in_array($page, $validPages, true)) {

@@ -36,7 +36,7 @@ CREATE POLICY company_navigation_preferences_read ON company_navigation_preferen
             OR EXISTS (
                 SELECT 1 FROM company_users AS cu
                 WHERE cu.company_id = company_navigation_preferences.company_id
-                  AND cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+                  AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
                   AND cu.is_active AND cu.approval_status = 'approved'
             )
         )
@@ -52,7 +52,7 @@ CREATE POLICY company_navigation_preferences_admin_write ON company_navigation_p
                 JOIN company_roles AS cr
                   ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
                 WHERE cu.company_id = company_navigation_preferences.company_id
-                  AND cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+                  AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
                   AND cu.is_active AND cu.approval_status = 'approved'
                   AND cr.level > 0 AND cr.level < 100
                   AND cr.permissions ? 'company.settings.manage'
@@ -68,7 +68,7 @@ CREATE POLICY company_navigation_preferences_admin_write ON company_navigation_p
                 JOIN company_roles AS cr
                   ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
                 WHERE cu.company_id = company_navigation_preferences.company_id
-                  AND cu.user_id = NULLIF(current_setting('grompil.user_id', true), '')::BIGINT
+                  AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
                   AND cu.is_active AND cu.approval_status = 'approved'
                   AND cr.level > 0 AND cr.level < 100
                   AND cr.permissions ? 'company.settings.manage'

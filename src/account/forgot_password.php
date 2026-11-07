@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -30,7 +30,7 @@ if ($slug !== '' && $company === null) {
     grompil_show_error(404, 18404, fn_t('recovery_company_unavailable'), fn_t('forgot_password_link_text'));
 }
 $companyId = $company ? (int) $company['id'] : null;
-set_database_tenant_context($companyId ?? 0, 0, false);
+set_database_tenant_context($companyId ?? 0, '', false);
 $query = $company ? '?c=' . rawurlencode($slug) : '';
 $email = trim((string) ($_POST['email'] ?? ''));
 $message = '';

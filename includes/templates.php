@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -56,7 +56,7 @@ function fn_loadLanguage(): array
         $companyId = (int) $requestedCompany['id'];
     }
     if ($companyId > 0) {
-        set_database_tenant_context($companyId, (int) ($_SESSION['user_id'] ?? 0), false);
+        set_database_tenant_context($companyId, (string) ($_SESSION['user_code'] ?? ''), false);
         $companyFile = fn_companyLanguageFilePath($companyId, $language);
         if (is_file($companyFile)) {
             $arrSubst = [];

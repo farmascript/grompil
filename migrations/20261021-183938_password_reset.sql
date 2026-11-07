@@ -19,7 +19,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_version BIGINT NOT NULL DEFAULT 
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     token_hash CHAR(64) PRIMARY KEY CHECK (token_hash ~ '^[a-f0-9]{64}$'),
-    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    user_code VARCHAR(6) NOT NULL UNIQUE REFERENCES users(user_code) ON DELETE CASCADE,
     company_id BIGINT REFERENCES companies(id) ON DELETE CASCADE,
     password_hash_at_issue VARCHAR(255) NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Sat 2026-11-07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -62,7 +62,7 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $action = (string) ($_POST['action'] ?? '');
-    $targetUserId = (int) ($_POST['user_id'] ?? 0);
+    $targetUserCode = strtoupper(trim((string) ($_POST['user_code'] ?? '')));
 
     if ($company === null) {
         http_response_code(404);
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             [$companyId, $roleId]
         ) : false;
         $selectedRole = $selectedRoleResult ? pg_fetch_assoc($selectedRoleResult) : false;
-        if ($targetUserId < 1 || $selectedRole === false) {
+        if (preg_match('/^[A-Z0-9]{6}$/', $targetUserCode) !== 1 || $selectedRole === false) {
             $message = '<div class="alert alert-warning" role="status">'
                 . e(fn_t('company_members_role_required')) . '</div>';
         } else {
@@ -83,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'company_members.add.check_collision',
             "SELECT 1
              FROM users AS target
-             JOIN users AS existing ON existing.company_id = $1 AND existing.id <> target.id
-             WHERE target.id = $2 AND (
+             JOIN users AS existing ON existing.company_id = $1 AND existing.user_code <> target.user_code
+             WHERE target.user_code = $2 AND (
                 lower(existing.email) = lower(target.email)
                 OR lower(existing.acronym) = lower(target.email)
                 OR (target.acronym IS NOT NULL AND (
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     OR lower(existing.acronym) = lower(target.acronym)
                 ))
              ) LIMIT 1",
-            [$companyId, $targetUserId]
+            [$companyId, $targetUserCode]
         );
         if ($collisionResult && pg_num_rows($collisionResult) > 0) {
             $message = '<div class="alert alert-warning" role="status">'
@@ -103,10 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'company_members.add.claim_user',
                 "UPDATE users AS u SET company_id = $2, updated_at = now()
                  FROM roles AS r
-                 WHERE u.id = $1 AND u.company_id IS NULL AND u.role_id = r.id
+                 WHERE u.user_code = $1 AND u.company_id IS NULL AND u.role_id = r.id
                    AND u.is_active AND u.approval_status = 'approved'
                    AND r.level > 0 AND r.level < 200 AND NOT (r.permissions ? 'companies.manage')
-                   AND NOT EXISTS (SELECT 1 FROM company_users AS existing WHERE existing.user_id = u.id)
+                   AND NOT EXISTS (SELECT 1 FROM company_users AS existing WHERE existing.user_code = u.user_code)
                    AND NOT EXISTS (
                         SELECT 1 FROM users AS existing
                         WHERE existing.company_id = $2 AND (
@@ -118,26 +118,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ))
                         )
                    )",
-                [$targetUserId, $companyId]
+                [$targetUserCode, $companyId]
             );
             $result = $claimResult && pg_affected_rows($claimResult) === 1 ? $companyMemberQuery(
                 'company_members.add.membership',
                 "INSERT INTO company_users (
-                    company_id, user_id, company_role_id, is_active,
-                    approval_status, approved_at, approved_by
+                    company_id, user_code, company_role_id, is_active,
+                    approval_status, approved_at, approved_by_user_code
                  )
-                 SELECT $1, u.id, cr.id, TRUE, 'approved', now(), $4
+                 SELECT $1, u.user_code, cr.id, TRUE, 'approved', now(), $4
                  FROM users AS u
                  JOIN roles AS ur ON ur.id = u.role_id
                  JOIN company_roles AS cr ON cr.company_id = $1 AND cr.id = $3
-                 WHERE u.id = $2 AND u.company_id = $1 AND u.is_active AND u.approval_status = 'approved'
+                 WHERE u.user_code = $2 AND u.company_id = $1 AND u.is_active AND u.approval_status = 'approved'
                    AND ur.level > 0 AND ur.level < 200 AND cr.level > 0 AND cr.level < 200
-                 ON CONFLICT (company_id, user_id) DO UPDATE SET
+                 ON CONFLICT (company_id, user_code) DO UPDATE SET
                     company_role_id = EXCLUDED.company_role_id,
                     is_active = TRUE, approval_status = 'approved',
-                    approved_at = now(), approved_by = EXCLUDED.approved_by,
+                    approved_at = now(), approved_by_user_code = EXCLUDED.approved_by_user_code,
                     updated_at = now()",
-                [$companyId, $targetUserId, $roleId, $actor['id']]
+                [$companyId, $targetUserCode, $roleId, $actor['user_code']]
             ) : false;
             $saved = $result && pg_affected_rows($result) > 0 && $companyMemberQuery('company_members.add.commit', 'COMMIT');
             if (!$saved) {
@@ -148,17 +148,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 : '<div class="alert alert-danger" role="alert">' . e(fn_t('company_member_save_failed')) . '</div>';
         }
         }
-    } elseif ($action === 'role' && ($isPlatformOperator || $targetUserId !== (int) $actor['id'])) {
+    } elseif ($action === 'role' && ($isPlatformOperator || $targetUserCode !== (string) $actor['user_code'])) {
         $roleId = (int) ($_POST['company_role_id'] ?? 0);
         $roleResult = $roleId > 0 ? $companyMemberQuery(
             'company_members.change_role',
             'UPDATE company_users AS cu SET company_role_id = cr.id, updated_at = now()
              FROM company_roles AS cr
-             WHERE cu.company_id = $1 AND cu.user_id = $2
+             WHERE cu.company_id = $1 AND cu.user_code = $2
                AND cu.approval_status = \'approved\'
                AND cr.company_id = cu.company_id AND cr.id = $3
                AND cr.level > 0 AND cr.level < 200',
-            [$companyId, $targetUserId, $roleId]
+            [$companyId, $targetUserCode, $roleId]
         ) : false;
         $message = $roleResult && pg_affected_rows($roleResult) === 1
             ? '<div class="alert alert-success" role="status">' . e(fn_t('company_member_saved')) . '</div>'
@@ -170,22 +170,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'company_members.approve.membership',
             "UPDATE company_users AS cu SET company_role_id = cr.id,
                     is_active = TRUE, approval_status = 'approved',
-                    approved_at = now(), approved_by = $4, updated_at = now()
+                    approved_at = now(), approved_by_user_code = $4, updated_at = now()
              FROM company_roles AS cr
-             WHERE cu.company_id = $1 AND cu.user_id = $2
+             WHERE cu.company_id = $1 AND cu.user_code = $2
                AND cu.approval_status = 'pending'
                AND cr.company_id = cu.company_id AND cr.id = $3
                AND cr.level > 0 AND cr.level < 200",
-            [$companyId, $targetUserId, $roleId, $actor['id']]
+            [$companyId, $targetUserCode, $roleId, $actor['user_code']]
         );
         if ($result && pg_affected_rows($result) === 1) {
             $companyMemberQuery(
                 'company_members.approve.user',
                 "UPDATE users SET is_active = TRUE, approval_status = 'approved',
                     approved_at = COALESCE(approved_at, now()),
-                    approved_by = COALESCE(approved_by, $2), updated_at = now()
-                 WHERE id = $1",
-                [$targetUserId, $actor['id']]
+                    approved_by_user_code = COALESCE(approved_by_user_code, $2), updated_at = now()
+                 WHERE user_code = $1",
+                [$targetUserCode, $actor['user_code']]
             );
             $ok = (bool) $companyMemberQuery('company_members.approve.commit', 'COMMIT');
         } else {
@@ -200,16 +200,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $companyMemberQuery(
             'company_members.reject.membership',
             "UPDATE company_users SET is_active = FALSE, approval_status = 'rejected',
-                approved_by = $3, updated_at = now()
-             WHERE company_id = $1 AND user_id = $2 AND approval_status = 'pending'",
-            [$companyId, $targetUserId, $actor['id']]
+                approved_by_user_code = $3, updated_at = now()
+             WHERE company_id = $1 AND user_code = $2 AND approval_status = 'pending'",
+            [$companyId, $targetUserCode, $actor['user_code']]
         );
         if ($result && pg_affected_rows($result) === 1) {
             $companyMemberQuery(
                 'company_members.reject.user',
                 "UPDATE users SET is_active = FALSE, approval_status = 'rejected', updated_at = now()
-                 WHERE id = $1 AND company_id = $2 AND approval_status = 'pending'",
-                [$targetUserId, $companyId]
+                 WHERE user_code = $1 AND company_id = $2 AND approval_status = 'pending'",
+                [$targetUserCode, $companyId]
             );
             $rejected = (bool) $companyMemberQuery('company_members.reject.commit', 'COMMIT');
         } else {
@@ -219,13 +219,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = $rejected
             ? '<div class="alert alert-success" role="status">' . e(fn_t('company_member_saved')) . '</div>'
             : '<div class="alert alert-danger" role="alert">' . e(fn_t('company_member_save_failed')) . '</div>';
-    } elseif ($action === 'status' && ($isPlatformOperator || $targetUserId !== (int) $actor['id'])) {
+    } elseif ($action === 'status' && ($isPlatformOperator || $targetUserCode !== (string) $actor['user_code'])) {
         $active = (($_POST['is_active'] ?? '') === '1');
         $result = $companyMemberQuery(
             'company_members.change_status',
             "UPDATE company_users SET is_active = $1, updated_at = now()
-             WHERE company_id = $2 AND user_id = $3 AND approval_status = 'approved'",
-            [$active ? 'true' : 'false', $companyId, $targetUserId]
+             WHERE company_id = $2 AND user_code = $3 AND approval_status = 'approved'",
+            [$active ? 'true' : 'false', $companyId, $targetUserCode]
         );
         $message = $result && pg_affected_rows($result) === 1
             ? '<div class="alert alert-success" role="status">' . e(fn_t('company_member_saved')) . '</div>'
@@ -272,7 +272,7 @@ if ($company !== null) {
     if ($isPlatformOperator) {
         $userResult = $companyMemberQuery(
             'company_members.list_unassigned_users',
-            "SELECT u.id, u.display_name, u.email
+            "SELECT u.user_code, u.display_name, u.email
              FROM users AS u JOIN roles AS r ON r.id = u.role_id
              WHERE u.company_id IS NULL AND u.is_active AND u.approval_status = 'approved'
                AND r.level > 0 AND r.level < 200 AND NOT (r.permissions ? 'companies.manage')
@@ -297,10 +297,10 @@ if ($company !== null) {
 
     $membersResult = $companyMemberQuery(
         'company_members.list_members',
-        'SELECT u.id, u.display_name, u.email, cu.is_active, cu.approval_status,
+        'SELECT u.user_code, u.display_name, u.email, cu.is_active, cu.approval_status,
                 cu.company_role_id, cr.name AS role_name
          FROM company_users AS cu
-         JOIN users AS u ON u.id = cu.user_id
+         JOIN users AS u ON u.user_code = cu.user_code
          JOIN company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
          WHERE cu.company_id = $1 AND cr.level > 0 AND cr.level < 200
          ORDER BY CASE cu.approval_status WHEN \'pending\' THEN 0 WHEN \'approved\' THEN 1 ELSE 2 END,
@@ -318,12 +318,12 @@ if ($company !== null) {
                 $pendingRoleOptions .= '<option value="' . e((string) $role['id']) . '"' . $selected . '>' . e((string) $role['name']) . '</option>';
             }
             $actions = '<form method="post" action="company_members.php?company_id=' . $companyId . '" class="d-flex flex-wrap gap-2">'
-                . csrf_field() . '<input type="hidden" name="company_id" value="' . $companyId . '"><input type="hidden" name="user_id" value="'
-                . (int) $member['id'] . '"><select class="form-select form-select-sm" name="company_role_id" aria-label="'
+                . csrf_field() . '<input type="hidden" name="company_id" value="' . $companyId . '"><input type="hidden" name="user_code" value="'
+                . e((string) $member['user_code']) . '"><select class="form-select form-select-sm" name="company_role_id" aria-label="'
                 . e(fn_t('company_members_role')) . '">' . $pendingRoleOptions . '</select><button class="btn btn-sm btn-success" name="action" value="approve">'
                 . e(fn_t('approve')) . '</button><button class="btn btn-sm btn-outline-danger" name="action" value="reject">'
                 . e(fn_t('reject')) . '</button></form>';
-        } elseif ($isPlatformOperator || (int) $member['id'] !== (int) $actor['id']) {
+        } elseif ($isPlatformOperator || (string) $member['user_code'] !== (string) $actor['user_code']) {
             $memberRoleOptions = '';
             foreach ($roles as $role) {
                 $selected = (int) $role['id'] === (int) $member['company_role_id'] ? ' selected' : '';
@@ -331,13 +331,13 @@ if ($company !== null) {
             }
             $actions = '<div class="d-flex flex-column gap-2">'
                 . '<form method="post" action="company_members.php?company_id=' . $companyId . '" class="d-flex gap-2">'
-                . csrf_field() . '<input type="hidden" name="company_id" value="' . $companyId . '"><input type="hidden" name="user_id" value="'
-                . (int) $member['id'] . '"><select class="form-select form-select-sm" name="company_role_id" aria-label="'
+                . csrf_field() . '<input type="hidden" name="company_id" value="' . $companyId . '"><input type="hidden" name="user_code" value="'
+                . e((string) $member['user_code']) . '"><select class="form-select form-select-sm" name="company_role_id" aria-label="'
                 . e(fn_t('company_members_role')) . '">' . $memberRoleOptions . '</select><button class="btn btn-sm btn-outline-primary"'
                 . ' type="submit" name="action" value="role">' . e(fn_t('save')) . '</button></form>'
                 . '<form method="post" action="company_members.php?company_id=' . $companyId . '" class="m-0">'
-                . csrf_field() . '<input type="hidden" name="company_id" value="' . $companyId . '"><input type="hidden" name="user_id" value="'
-                . (int) $member['id'] . '"><input type="hidden" name="is_active" value="' . ($active ? '0' : '1') . '"><button class="btn btn-sm btn-outline-secondary"'
+                . csrf_field() . '<input type="hidden" name="company_id" value="' . $companyId . '"><input type="hidden" name="user_code" value="'
+                . e((string) $member['user_code']) . '"><input type="hidden" name="is_active" value="' . ($active ? '0' : '1') . '"><button class="btn btn-sm btn-outline-secondary"'
                 . ' type="submit" name="action" value="status">' . e(fn_t($active ? 'company_member_deactivate' : 'company_member_activate'))
                 . '</button></form></div>';
         }
@@ -353,7 +353,7 @@ if ($company !== null) {
 
 $userOptions = '';
 foreach ($users as $userRow) {
-    $userOptions .= '<option value="' . e((string) $userRow['id']) . '">'
+    $userOptions .= '<option value="' . e((string) $userRow['user_code']) . '">'
         . e((string) $userRow['display_name'] . ' · ' . (string) $userRow['email']) . '</option>';
 }
 if ($userOptions === '') {

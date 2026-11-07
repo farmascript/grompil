@@ -50,7 +50,7 @@ while ($roleResult && $role = pg_fetch_assoc($roleResult)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
-    $userId = (int) ($_POST['id'] ?? 0);
+    $userCode = (string) ($_POST['user_code'] ?? '');
     $action = (string) ($_POST['action'] ?? 'update');
 
     if ($action === 'add') {
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $newUserAddress['address_reference_id'],
                     password_hash($password, PASSWORD_DEFAULT),
                     $selectedNewRoleId,
-                    $currentUser['id'],
+                    $currentUser['user_code'],
                 ];
                 $result = grompil_insert_user_with_unique_code(
                     static fn (string $userCode): PgSql\Result|false => db_query_params(
@@ -102,9 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         "INSERT INTO users (
                             email, display_name, name_first, name_last, street, house_number, box_number,
                             postal_code, city, country_code, address_reference_id, password_hash, role_id, is_active,
-                            approval_status, approved_at, approved_by, user_code
+                            approval_status, approved_at, approved_by_user_code, user_code
                          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, 'approved', now(), $14, $15)
-                         ON CONFLICT DO NOTHING RETURNING id",
+                         ON CONFLICT DO NOTHING RETURNING user_code",
                         [...$userParams, $userCode]
                     )
                 );
@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageKey = 'user_add_failed';
             }
         }
-    } elseif ($userId === (int) $currentUser['id']) {
+    } elseif ($userCode === (string) $currentUser['user_code']) {
         $messageKey = 'user_self_error';
     } elseif ($action === 'approve') {
         $staffRoleId = (int) ($_POST['role_id'] ?? 0);
@@ -135,10 +135,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'users.approve',
                 "UPDATE users
                  SET role_id = $1, approval_status = 'approved', is_active = TRUE,
-                     approved_at = now(), approved_by = $2, updated_at = now()
-                 WHERE id = $3 AND company_id IS NULL AND approval_status = 'pending'
+                     approved_at = now(), approved_by_user_code = $2, updated_at = now()
+                 WHERE user_code = $3 AND company_id IS NULL AND approval_status = 'pending'
                    AND EXISTS (SELECT 1 FROM roles WHERE id = $1 AND level > 100 AND level < 200)",
-                [$staffRoleId, $currentUser['id'], $userId]
+                [$staffRoleId, $currentUser['user_code'], $userCode]
             );
         } catch (GrompilDatabaseQueryException) {
             $result = false;
@@ -150,8 +150,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = db_query_params(
                 'users.reject',
                 "UPDATE users SET approval_status = 'rejected', is_active = FALSE,
-                     updated_at = now() WHERE id = $1 AND company_id IS NULL AND approval_status = 'pending'",
-                [$userId]
+                     updated_at = now() WHERE user_code = $1 AND company_id IS NULL AND approval_status = 'pending'",
+                [$userCode]
             );
         } catch (GrompilDatabaseQueryException) {
             $result = false;
@@ -165,8 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = db_query_params(
                 'users.update',
                 "UPDATE users SET role_id = $1, is_active = $2, updated_at = now()
-                 WHERE id = $3 AND company_id IS NULL AND approval_status = 'approved'",
-                [$roleId, $isActive, $userId]
+                 WHERE user_code = $3 AND company_id IS NULL AND approval_status = 'approved'",
+                [$roleId, $isActive, $userCode]
             );
         } catch (GrompilDatabaseQueryException) {
             $result = false;
@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $usersResult = db_query_params(
         'users.list',
-        'SELECT u.id, u.email, u.display_name, u.role_id, u.is_active,
+        'SELECT u.user_code, u.email, u.display_name, u.role_id, u.is_active,
                 u.approval_status, r.name AS role_name, u.last_login_at
          FROM users AS u JOIN roles AS r ON r.id = u.role_id
          WHERE u.company_id IS NULL
@@ -192,15 +192,15 @@ try {
 
 $rows = '';
 while ($usersResult && $user = pg_fetch_assoc($usersResult)) {
-    $userId = (int) $user['id'];
-    $isCurrentUser = $userId === $currentUser['id'];
+    $userCode = (string) $user['user_code'];
+    $isCurrentUser = $userCode === (string) $currentUser['user_code'];
     $isPending = $user['approval_status'] === 'pending';
     $isApproved = $user['approval_status'] === 'approved';
-    $formId = ($isPending ? 'approve-user-' : 'user-') . $userId;
+    $formId = ($isPending ? 'approve-user-' : 'user-') . $userCode;
     $actionName = $isPending ? 'approve' : 'update';
     $form = $isCurrentUser ? '' : '<form id="' . e($formId) . '" method="post" action="users.php">'
         . csrf_field() . '<input type="hidden" name="action" value="' . $actionName
-        . '"><input type="hidden" name="id" value="' . $userId . '"></form>';
+        . '"><input type="hidden" name="user_code" value="' . e($userCode) . '"></form>';
 
     $roleControl = e($user['role_name']);
     if ($isPending) {
@@ -227,8 +227,8 @@ while ($usersResult && $user = pg_fetch_assoc($usersResult)) {
         $statusControl = '<span class="badge text-bg-warning">' . e(fn_t('approval_pending')) . '</span>';
         $action = '<button form="' . e($formId) . '" class="btn btn-sm btn-success" type="submit">'
             . e(fn_t('approve')) . '</button>';
-        $action .= '<form method="post" action="users.php" class="d-inline ms-1">' . csrf_field()
-            . '<input type="hidden" name="id" value="' . $userId . '"><input type="hidden" name="action" value="reject">'
+            $action .= '<form method="post" action="users.php" class="d-inline ms-1">' . csrf_field()
+            . '<input type="hidden" name="user_code" value="' . e($userCode) . '"><input type="hidden" name="action" value="reject">'
             . '<button class="btn btn-sm btn-outline-danger" type="submit">' . e(fn_t('reject')) . '</button></form>';
     } elseif (!$isApproved) {
         $statusControl = '<span class="badge text-bg-secondary">' . e(fn_t('approval_rejected')) . '</span>';
