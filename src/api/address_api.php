@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sat 2026-11-07 17:28:50
+ * @date_mut: Sat 2026-11-07 17:42:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -105,6 +105,7 @@ switch ($type) {
         // Search those first so selecting a place can immediately provide its postcode.
         $path = '/postalInfos';
         $parameters['name'] = '*' . $query . '*';
+        $parameters['pageSize'] = 100;
         break;
     case 'municipality':
         if (strlen($query) < 2) address_api_error(400, 'Enter at least two characters.');
@@ -152,7 +153,7 @@ $name = static function (mixed $value) use ($language): string {
     $selected = $value[$language] ?? $value['nl'] ?? $value['fr'] ?? $value['en'] ?? '';
     return (string) ($selected !== '' ? $selected : (reset($value) ?: ''));
 };
-foreach (array_slice($data['items'] ?? [], 0, 10) as $item) {
+foreach (array_slice($data['items'] ?? [], 0, $type === 'locality' ? 50 : 10) as $item) {
     if (!is_array($item)) continue;
     if ($type === 'postal') {
         $items[] = ['id' => (string) ($item['id'] ?? ''), 'label' => trim((string) ($item['postCode'] ?? '') . ' ' . $name($item['name'] ?? null)), 'postal_code' => (string) ($item['postCode'] ?? ''), 'city' => $name($item['name'] ?? null)];

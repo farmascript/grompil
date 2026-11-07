@@ -74,8 +74,10 @@ body {
 
 .address-suggestions {
     z-index: 1050;
-    max-height: 16rem;
+    max-height: min(18rem, 45vh);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 }
 
 .eyebrow {

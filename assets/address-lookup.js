@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 17:28:50
+ * @date_mut: Sat 2026-11-07 17:42:17
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +12,9 @@
  * @description: Adds address suggestions to address forms.
  *
  */
+
+let addressSuggestionListId = 0;
+let addressSuggestionOptionId = 0;
 
 document.querySelectorAll('[data-address-fields]').forEach((group) => {
     if ((group.dataset.addressCountry || 'BE').toUpperCase() !== 'BE') return;
@@ -50,10 +53,53 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             list = document.createElement('div');
             list.className = 'address-suggestions list-group position-absolute w-100 shadow-sm';
             list.setAttribute('role', 'listbox');
+            list.id = `address-suggestions-${++addressSuggestionListId}`;
+            list.tabIndex = -1;
             input.parentElement.classList.add('position-relative');
             input.parentElement.append(list);
+            input.setAttribute('role', 'combobox');
+            input.setAttribute('aria-autocomplete', 'list');
+            input.setAttribute('aria-haspopup', 'listbox');
+            input.setAttribute('aria-controls', list.id);
+            input.setAttribute('aria-expanded', 'false');
+            list.addEventListener('pointerdown', () => { list.dataset.pointerDown = 'true'; });
+            const finishPointer = () => {
+                if (list.dataset.pointerDown !== 'true') return;
+                delete list.dataset.pointerDown;
+                input.focus({ preventScroll: true });
+            };
+            window.addEventListener('pointerup', finishPointer);
+            window.addEventListener('pointercancel', finishPointer);
             list.addEventListener('focusout', (event) => {
                 if (event.relatedTarget !== input && !list.contains(event.relatedTarget)) list.replaceChildren();
+            });
+            list.addEventListener('scroll', (event) => event.stopPropagation(), { passive: true });
+            input.addEventListener('keydown', (event) => {
+                const options = [...list.querySelectorAll('[role="option"]')];
+                if (!options.length) return;
+                const activeIndex = options.findIndex((option) => option.getAttribute('aria-selected') === 'true');
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    const direction = event.key === 'ArrowDown' ? 1 : -1;
+                    const nextIndex = activeIndex < 0
+                        ? (direction > 0 ? 0 : options.length - 1)
+                        : (activeIndex + direction + options.length) % options.length;
+                    options.forEach((option, index) => {
+                        const selected = index === nextIndex;
+                        option.setAttribute('aria-selected', selected ? 'true' : 'false');
+                        option.classList.toggle('active', selected);
+                    });
+                    input.setAttribute('aria-activedescendant', options[nextIndex].id);
+                    options[nextIndex].scrollIntoView({ block: 'nearest' });
+                } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    (activeIndex >= 0 ? options[activeIndex] : options[0]).click();
+                } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    list.replaceChildren();
+                    input.setAttribute('aria-expanded', 'false');
+                    input.removeAttribute('aria-activedescendant');
+                }
             });
             lists.set(input, list);
         }
@@ -71,12 +117,17 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     const show = (input, items, onSelect) => {
         const list = ensureList(input);
         list.replaceChildren();
+        input.removeAttribute('aria-activedescendant');
+        input.setAttribute('aria-expanded', items.length ? 'true' : 'false');
         items.forEach((item) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'list-group-item list-group-item-action';
             button.textContent = item.label;
             button.setAttribute('role', 'option');
+            button.setAttribute('aria-selected', 'false');
+            button.tabIndex = -1;
+            button.id = `address-suggestion-option-${++addressSuggestionOptionId}`;
             // Keep the input focused until the click selects the suggestion.
             button.addEventListener('mousedown', (event) => {
                 if (event.button === 0) event.preventDefault();
@@ -86,6 +137,8 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
                 onSelect(item);
                 setStatus('');
                 list.replaceChildren();
+                input.setAttribute('aria-expanded', 'false');
+                input.removeAttribute('aria-activedescendant');
             });
             list.append(button);
         });
@@ -99,7 +152,12 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             const sequence = requestSequence.get(input);
             const query = input.value.trim();
             setStatus('');
-            if (query.length < minimum) { ensureList(input).replaceChildren(); return; }
+            if (query.length < minimum) {
+                ensureList(input).replaceChildren();
+                input.setAttribute('aria-expanded', 'false');
+                input.removeAttribute('aria-activedescendant');
+                return;
+            }
             timers.set(input, setTimeout(async () => {
                 try {
                     const items = await search(type, { ...params(), q: query });
@@ -121,7 +179,15 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         input.addEventListener('blur', (event) => {
             cancelSearch(input);
             const list = lists.get(input);
-            if (!list?.contains(event.relatedTarget)) list?.replaceChildren();
+            if (!list?.contains(event.relatedTarget)) {
+                setTimeout(() => {
+                    if (list?.dataset.pointerDown === 'true' || document.activeElement === input
+                        || list?.contains(document.activeElement)) return;
+                    list?.replaceChildren();
+                    input.setAttribute('aria-expanded', 'false');
+                    input.removeAttribute('aria-activedescendant');
+                }, 0);
+            }
         });
     };
 

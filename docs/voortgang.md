@@ -548,3 +548,10 @@
 - De nieuwe hulp- en geen-resultaatteksten zijn toegevoegd voor NL, FR, EN en DE. Importeer de nieuwe vertalingen via Vertalingen beheren en exporteer ze daarna naar de taalbestanden.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.6.
 
+### Aanvulling: grotere en toetsenbordbedienbare adreskeuzelijst
+
+- De plaatszoekopdracht haalt maximaal 100 bronresultaten op en toont maximaal 50 suggesties, zodat plaatsen zoals Ekeren niet wegvallen achter de eerste tien resultaten.
+- De adreskeuzelijst ondersteunt nu pijltjestoetsen, Enter en Escape, met ARIA-comboboxsemantiek.
+- Scrollen in de suggestielijst sluit de lijst niet meer doordat het invoerveld focus verliest. De lijst houdt het scrollen binnen zichzelf.
+- Cacheversie van de adreszoeker verhoogd; softwareversie verhoogd naar 0.16.7. Geen databasemigratie nodig.
+
