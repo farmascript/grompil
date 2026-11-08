@@ -3,7 +3,8 @@
 ## Gedrag
 
 - Platformbeheerders (globale rollen level 1–100) melden zich aan met wachtwoord en daarna een TOTP-code uit Google Authenticator, Microsoft Authenticator of een compatibele app.
-- De eerste platformaanmelding na activering begeleidt de beheerder bij het koppelen van een authenticator en toont eenmalige herstelcodes.
+- De eerste platformaanmelding na activering begeleidt de beheerder bij het koppelen van een authenticator. Het instelscherm toont een scanbare QR-code en daarnaast de sleutel voor handmatige invoer. Eenmalige herstelcodes verschijnen nadat de eerste TOTP-code is bevestigd.
+- De QR-code wordt lokaal in de browser gegenereerd; de TOTP-instellingslink wordt niet naar een externe QR-dienst gestuurd.
 - De TOTP-sleutel wordt versleuteld opgeslagen. De versleutelingssleutel staat uitsluitend in het genegeerde `settings_local.php`-bestand.
 - Platformbeheer kan onder **Beheeromgeving → IP-toegang platformbeheer** tot IPv4- of IPv6-adressen/netwerken worden beperkt. Een lege lijst betekent dat er geen IP-filter is.
 - De bestaande company-IP-regels gelden voor companybeheerders en medewerkers. Klantrollen (level 200 of hoger) vallen buiten dit filter.

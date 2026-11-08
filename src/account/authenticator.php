@@ -1,6 +1,7 @@
 <?php
 /**
  * Completes the platform administrator password plus TOTP login.
+ * @date_mut: Sun 2026-11-08 12:07:53
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:authenticator
  */
 
@@ -190,8 +191,23 @@ if ($isVerifiedSetup) {
 }
 
 $setupHtml = '';
+$qrScriptsHtml = '';
 if (!$isVerifiedSetup && $encryptedSecret === null && $setupSecret !== '') {
-    $setupHtml = '<div class="alert alert-info"><p>' . e(fn_t('platform_mfa_setup_instructions'))
+    $qrHtml = '';
+    try {
+        $provisioningUri = grompil_totp($setupSecret, $email)->getProvisioningUri();
+        $qrLabel = fn_t('platform_mfa_qr_label');
+        $qrHtml = '<div class="text-center my-3 d-none" data-authenticator-qr-wrapper><div class="d-inline-block border rounded p-2 bg-white"'
+            . ' data-authenticator-qr data-otpauth-uri="' . e($provisioningUri) . '"'
+            . ' data-qr-label="' . e($qrLabel) . '"></div></div>';
+        $assetBaseHref = e(fn_appBaseHref());
+        $qrScriptsHtml = '<script src="' . $assetBaseHref . 'assets/qrcode-generator.js?v=1" defer></script>'
+            . '<script src="' . $assetBaseHref . 'assets/authenticator-qr.js?v=1" defer></script>';
+    } catch (Throwable $error) {
+        error_log('Platform authenticator QR could not be prepared: ' . $error->getMessage());
+    }
+    $setupHtml = '<div class="alert alert-info"><p>' . e(fn_t('platform_mfa_qr_instructions'))
+        . '</p>' . $qrHtml . '<p class="small">' . e(fn_t('platform_mfa_manual_instructions'))
         . '</p><p class="mb-0"><strong>' . e(fn_t('platform_mfa_secret_label')) . '</strong><br><code class="user-select-all fs-5">'
         . e($setupSecret) . '</code></p></div>';
 }
@@ -211,6 +227,7 @@ echo fn_templateRender('login_authenticator.html', [
     '_csrf_field_html' => csrf_field(),
     '_error_html' => $errorHtml,
     '_setup_html' => $setupHtml,
+    '_qr_scripts_html' => $qrScriptsHtml,
     '_recovery_codes_html' => $recoveryCodesHtml,
     '_language_selector_html' => fn_languageSelector('form-select form-select-sm w-auto'),
     '_cookie_footer_html' => fn_templateRender('cookie_footer.html'),

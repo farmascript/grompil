@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:02:45
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Sun 2026-11-08 12:12:54
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,7 +12,7 @@
  *
  * @description: Exports translations from PostgreSQL to PHP language files.
  *
- * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:translations_export
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:translations_2_export
  */
 
 declare(strict_types=1);

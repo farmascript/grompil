@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 18:08:55
+ * @date_mut: Sun 2026-11-08 12:14:10
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -243,7 +243,7 @@
 1. Maak een databasebackup en voer het bijgewerkte `schema.sql` uit.
 2. Plaats desgewenst logo- en hero-bestanden in `media/companies/<company-id>/` en vul de bestandsnamen in bij **Beheer → Bedrijven**.
 3. Maak voor een eerste alternatief thema `tmpl/themes/<naam>/store.html`, of maak voor één bedrijf `tmpl/companies/<company-id>/store.html`.
-4. Voer `php scripts/translations_import.php` uit en publiceer de bijgewerkte NL-, FR-, EN- en DE-bestanden, inclusief de nieuwe rolbevestiging en cookie-uitleg.
+4. Voer `php scripts/translations_1_import.php` uit en publiceer de bijgewerkte NL-, FR-, EN- en DE-bestanden, inclusief de nieuwe rolbevestiging en cookie-uitleg.
 5. Controleer de publieke bedrijfswebsite, de bevestiging bij het toevoegen van medewerkers, en het gedrag van de login-cookie en cookiemelding.
 
 ### Eerder vandaag: platform- en bedrijfsfuncties
@@ -273,7 +273,7 @@
 - De code en `schema.sql` zijn aangepast, maar de schemawijziging is nog niet uitgevoerd op de lokale database. Maak eerst een database-export.
 - De schemawijziging dupliceert bestaande gebruikers voor hun bestaande bedrijfslidmaatschappen en deactiveert daarna de oude niet-platformaccounts. De oude records blijven bewaard. Voer de migratie alleen uit nadat de backup is gecontroleerd.
 - De publieke route vereist dat het bedrijf actief en publiek is. Test na de migratie zowel `/c=<slug>` als de queryroute, en controleer registratie en login afzonderlijk voor twee bedrijven.
-- De Grompil-vertalingen zijn toegevoegd aan de PHP-taalbestanden. Na de schemamigratie kunnen ontbrekende keys met `php scripts/translations_import.php` aan de vertalingstabel worden toegevoegd en via Beheer → Vertalingen worden gepubliceerd.
+- De Grompil-vertalingen zijn toegevoegd aan de PHP-taalbestanden. Na de schemamigratie kunnen ontbrekende keys met `php scripts/translations_1_import.php` aan de vertalingstabel worden toegevoegd en via Beheer → Vertalingen worden gepubliceerd.
 - Voor de acroniemwijziging moet `schema.sql` opnieuw worden uitgevoerd; daarin staat de idempotente `ALTER TABLE` en de unieke index per bedrijf. Importeer daarna ook de nieuwe acroniemvertalingen.
 - `.htaccess` gebruikt Apache `mod_rewrite`; als die niet beschikbaar is, blijft `index.php?c=<slug>` werken.
 
@@ -281,7 +281,7 @@
 
 1. Exporteer de huidige PostgreSQL-database als backup.
 2. Voer `schema.sql` uit met de databasebeheerder en controleer dat alle statements slagen.
-3. Voer `php scripts/translations_import.php` uit en publiceer de taalbestanden.
+3. Voer `php scripts/translations_1_import.php` uit en publiceer de taalbestanden.
 4. Controleer in de browser de marketingpagina’s, de taalkeuze, een publieke bedrijfsroute, en registratie/login met dezelfde e-mail bij twee bedrijven.
 5. Maak daarna een beheerscherm voor de vier bedrijfspagina’s en hun NL/FR/EN/DE-teksten.
 
@@ -313,7 +313,7 @@
 
 1. Maak een export/backup van de lokale PostgreSQL-database.
 2. Voer het bijgewerkte `schema.sql` in Adminer uit met een databasebeheerder. Controleer dat de migratie afrondt, inclusief `name_first`, `name_last`, tenantrollen en RLS-beleid.
-3. Voer `php scripts/translations_import.php` uit en publiceer de vertalingen via `translations.php` of `php scripts/translations_export.php`.
+3. Voer `php scripts/translations_1_import.php` uit en publiceer de vertalingen via `translations.php` of `php scripts/translations_2_export.php`.
 4. Controleer in de browser het aanmaken van een gebruiker, het koppelen aan een apotheek en de nieuwe knop voor openbare website aan/uit.
 5. Voeg daarna een beheerscherm toe voor domeinnamen en verificatie, zodat ook domeininstellingen Adminer niet meer vereisen.
 
@@ -575,4 +575,16 @@
 
 - Een nieuw adres krijgt standaard het hoogste bestaande volgordenummer plus 10. Dit geldt zowel voor de vooraf ingevulde waarde als wanneer het veld bij opslaan leeg is.
 - Softwareversie verhoogd naar 0.16.11. Geen databasemigratie nodig.
+
+### Aanvulling: QR-code voor authenticatorinstelling
+
+- Bij het eerste instellen van TOTP verschijnt nu naast de handmatige sleutel een QR-code met de OTPHP-provisioning-URI. De gebruiker kan de code met de authenticator-app scannen.
+- De QR wordt in de browser aangemaakt met een lokaal opgeslagen MIT-gelicentieerde generator; het geheim wordt niet naar een externe QR-dienst gestuurd. De handmatige sleutel blijft beschikbaar als terugvaloptie.
+- De scaninstructie, handmatige terugvalinstructie en QR-toegankelijkheidslabel zijn vertaald in NL, FR, EN en DE. Importeer de drie nieuwe vertaalcodes met `php scripts/translations_1_import.php` en exporteer ze daarna met `php scripts/translations_2_export.php` op lokaal en test. Geen structurele databasemigratie nodig; softwareversie verhoogd naar 0.16.12.
+
+### Aanvulling: vertalingsscripts sorteren op uitvoervolgorde
+
+- `scripts/translations_import.php` is hernoemd naar `scripts/translations_1_import.php` en `scripts/translations_export.php` naar `scripts/translations_2_export.php`.
+- Alle documentatiereferenties en de DokuWiki-bronpagina-generator zijn bijgewerkt; de importer staat nu vóór de exporter in de alfabetische lijst.
+- Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.13.
 
