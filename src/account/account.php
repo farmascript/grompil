@@ -812,16 +812,20 @@ if ($isPlatformAuthenticatorAccount && $platformAuthenticatorEnabled && !$mustCh
             . '<input type="hidden" name="action" value="platform_mfa_reset_cancel"><button class="btn btn-outline-secondary" type="submit">'
             . e(fn_t('cancel')) . '</button></form>' . $setupScriptsMarkup;
     } else {
-        $mfaContentsHtml = $mfaResetFormMessage . $mfaResetFlashCodesHtml
-            . '<p class="text-secondary">' . e(fn_t('platform_mfa_reset_help')) . '</p>'
-            . '<form method="post" action="account.php#platform-authenticator">' . csrf_field()
-            . '<input type="hidden" name="action" value="platform_mfa_reset_begin">'
-            . '<div class="mb-3"><label class="form-label" for="reset-current-password">' . e(fn_t('password_current_label')) . '</label>'
-            . '<input class="form-control" id="reset-current-password" type="password" name="current_password" autocomplete="current-password" required></div>'
-            . '<div class="mb-3"><label class="form-label" for="current-authenticator-code">' . e(fn_t('platform_mfa_reset_current_code_label')) . '</label>'
-            . '<input class="form-control" id="current-authenticator-code" type="text" name="current_authenticator_code" inputmode="numeric"'
-            . ' autocomplete="one-time-code" pattern="[0-9 ]{6,8}" maxlength="8" required></div>'
-            . '<button class="btn btn-outline-primary" type="submit">' . e(fn_t('platform_mfa_reset_begin')) . '</button></form>';
+        if ($mfaResetFlashCodesHtml !== '') {
+            $mfaContentsHtml = $mfaResetFlashCodesHtml;
+        } else {
+            $mfaContentsHtml = $mfaResetFormMessage
+                . '<p class="text-secondary">' . e(fn_t('platform_mfa_reset_help')) . '</p>'
+                . '<form method="post" action="account.php#platform-authenticator">' . csrf_field()
+                . '<input type="hidden" name="action" value="platform_mfa_reset_begin">'
+                . '<div class="mb-3"><label class="form-label" for="reset-current-password">' . e(fn_t('password_current_label')) . '</label>'
+                . '<input class="form-control" id="reset-current-password" type="password" name="current_password" autocomplete="current-password" required></div>'
+                . '<div class="mb-3"><label class="form-label" for="current-authenticator-code">' . e(fn_t('platform_mfa_reset_current_code_label')) . '</label>'
+                . '<input class="form-control" id="current-authenticator-code" type="text" name="current_authenticator_code" inputmode="numeric"'
+                . ' autocomplete="one-time-code" pattern="[0-9 ]{6,8}" maxlength="8" required></div>'
+                . '<button class="btn btn-outline-primary" type="submit">' . e(fn_t('platform_mfa_reset_begin')) . '</button></form>';
+        }
     }
     $platformAuthenticatorHtml = '<button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal"'
         . ' data-bs-target="#platform-authenticator-modal">' . e(fn_t('platform_mfa_reset_title')) . '</button>'

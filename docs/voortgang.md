@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 14:09:35
+ * @date_mut: Sun 2026-11-08 14:11:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -617,4 +617,9 @@
 
 - De centrale tenantcontextquery ontving vijf configuratieparen, maar voerde slechts vier `set_config`-aanroepen uit. Daardoor faalde het opnieuw instellen van de context tijdens de resettransactie en werd die transactie afgebroken vóór het verwijderen van oude herstelcodes.
 - Alle vijf instellingen worden nu gezet. Dit herstelt ook tenantcontextaanroepen elders in de software. Geen databasemigratie of vertaalwijziging nodig; softwareversie verhoogd naar 0.16.19.
+
+### Aanvulling: authenticator-reset duidelijker afronden
+
+- De resetmelding spreekt nu over de huidige (oude) authenticator, zodat duidelijk is welke code nodig is vóór de vervanging.
+- Na een geslaagde reset toont de modal alleen de eenmalige herstelcodes; het resetformulier verschijnt pas weer nadat de gebruiker de modal sluit en opnieuw opent. Vertalingen bijgewerkt in NL, FR, EN en DE. Versie verhoogd naar 0.16.20.
 
