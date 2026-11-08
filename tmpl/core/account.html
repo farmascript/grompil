@@ -23,30 +23,37 @@
                     <button class="btn btn-grompil" type="submit">@acronym_save@</button>
                 </form>
                 @_address_manager_html@
-                <hr class="my-4">
-                <section id="change-password">
-                    <h2 class="h5">@password_section_title@</h2>
-                    <p class="text-secondary">@password_section_help@</p>
-                    <form method="post" action="account.php#change-password">
-                        @_password_csrf_field_html@
-                        <input type="hidden" name="action" value="password_change">
-                        @_forced_profile_fields_html@
-                        <div class="mb-3">
-                            <label class="form-label" for="current-password">@password_current_label@</label>
-                            <input class="form-control" id="current-password" type="password" name="current_password" autocomplete="current-password" required>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#account-password-modal">@password_section_title@</button>
+                    @_platform_authenticator_html@
+                </div>
+                <div class="modal fade" id="account-password-modal" tabindex="-1" aria-labelledby="account-password-modal-title" aria-hidden="true" data-account-modal-open="@password_modal_auto_open@">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+                        <div class="modal-header"><h2 class="modal-title fs-5" id="account-password-modal-title">@password_section_title@</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@close@"></button></div>
+                        <div class="modal-body">
+                            @_password_modal_message_html@
+                            <p class="text-secondary">@password_section_help@</p>
+                            <form method="post" action="account.php#account-password-modal">
+                                @_password_csrf_field_html@
+                                <input type="hidden" name="action" value="password_change">
+                                @_forced_profile_fields_html@
+                                <div class="mb-3">
+                                    <label class="form-label" for="current-password">@password_current_label@</label>
+                                    <input class="form-control" id="current-password" type="password" name="current_password" autocomplete="current-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="new-password">@password_new_label@</label>
+                                    <input class="form-control" id="new-password" type="password" name="new_password" autocomplete="new-password" minlength="12" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="confirm-password">@password_confirm_label@</label>
+                                    <input class="form-control" id="confirm-password" type="password" name="confirm_password" autocomplete="new-password" minlength="12" required>
+                                </div>
+                                <button class="btn btn-grompil" type="submit">@password_save@</button>
+                            </form>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="new-password">@password_new_label@</label>
-                            <input class="form-control" id="new-password" type="password" name="new_password" autocomplete="new-password" minlength="12" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="confirm-password">@password_confirm_label@</label>
-                            <input class="form-control" id="confirm-password" type="password" name="confirm_password" autocomplete="new-password" minlength="12" required>
-                        </div>
-                        <button class="btn btn-grompil" type="submit">@password_save@</button>
-                    </form>
-                </section>
-                @_platform_authenticator_html@
+                    </div></div>
+                </div>
             </div>
         </div>
     </div>
