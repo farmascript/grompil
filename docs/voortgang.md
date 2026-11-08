@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 14:31:00
+ * @date_mut: Sun 2026-11-08 14:37:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -632,4 +632,8 @@
 
 - Een platformbeheerder kan bij het vervangen van een authenticator het wachtwoord combineren met een TOTP-code of een ongebruikte herstelcode. Een gebruikte herstelcode wordt direct ongeldig.
 - Het invoerveld aanvaardt nu ook hexadecimale herstelcodes. Vertalingen bijgewerkt in NL, FR, EN en DE; voer de vertaalworkflow uit. Versie verhoogd naar 0.16.22.
+
+### Aanvulling: opmaak van herstelcodes accepteren
+
+- Het browserformulier accepteert nu herstelcodes met optionele spaties en koppeltekens. Die scheidingstekens worden vóór servervalidatie verwijderd; daarna moet de code nog steeds exact overeenkomen met een geldige ongebruikte herstelcode van 16 hexadecimale tekens. Versie verhoogd naar 0.16.23.
 

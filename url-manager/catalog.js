@@ -1,7 +1,7 @@
 window.GROMPIL_NAVIGATION = {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.16.22",
+    "applicationVersion": "0.16.23",
     "defaultLanguage": "nl",
     "languages": [
         "nl",

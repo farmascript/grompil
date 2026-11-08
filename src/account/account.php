@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 14:31:00
+ * @date_mut: Sun 2026-11-08 14:37:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -395,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     . e($lockoutMessage) . '</div>';
             } elseif ($action === 'platform_mfa_reset_begin') {
                 $currentPassword = (string) ($_POST['current_password'] ?? '');
-                $currentCode = strtoupper(preg_replace('/\s+/', '', trim((string) ($_POST['current_authenticator_code'] ?? ''))));
+                $currentCode = strtoupper(preg_replace('/[\s-]+/', '', trim((string) ($_POST['current_authenticator_code'] ?? ''))));
                 $currentValid = false;
                 $currentPasswordValid = password_verify($currentPassword, (string) $account['password_hash']);
                 try {
@@ -842,7 +842,7 @@ if ($isPlatformAuthenticatorAccount && $platformAuthenticatorEnabled && !$mustCh
                 . '<input class="form-control" id="reset-current-password" type="password" name="current_password" autocomplete="current-password" required></div>'
                 . '<div class="mb-3"><label class="form-label" for="current-authenticator-code">' . e(fn_t('platform_mfa_reset_current_code_label')) . '</label>'
                 . '<input class="form-control" id="current-authenticator-code" type="text" name="current_authenticator_code" inputmode="text"'
-                . ' autocomplete="one-time-code" pattern="[A-Fa-f0-9 ]{6,20}" maxlength="20" required></div>'
+                . ' autocomplete="one-time-code" pattern="[A-Fa-f0-9 -]{6,24}" maxlength="24" required></div>'
                 . '<button class="btn btn-outline-primary" type="submit">' . e(fn_t('platform_mfa_reset_begin')) . '</button></form>';
         }
     }
