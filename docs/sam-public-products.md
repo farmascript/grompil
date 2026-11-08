@@ -67,6 +67,13 @@ exactly one `AMP-*.xml` and one `REF-*.xml` from the same full SAM export:
 bash scripts/sam_sync_full_test.sh --source-dir /path/to/sam-export
 ```
 
+If the full ZIP is already downloaded, pass its path directly. The runner
+checks and extracts it without downloading it again:
+
+```bash
+bash scripts/sam_sync_full_test.sh --archive /home/grompilc/sam/download/samv2_full_xsd6_v12666.zip
+```
+
 For a direct ZIP download, the script also accepts an archive URL:
 
 ```bash
@@ -77,8 +84,10 @@ Only after a successful check-only run, add `--apply` to replace
 `xt_sam_public_products` and `xt_sam_atc_classifications`. The deletes and
 inserts run in one transaction, so an error rolls back and leaves the previous
 catalog intact. The database role needs `DELETE` and `INSERT` privileges on
-both tables. Temporary downloads and CSV files are removed at exit; run logs
-are kept under `~/logs/grompil-sam-sync/`.
+both tables. Temporary extraction files and CSV files are removed at exit. Run
+logs are kept under `~/sam/logs/`, and temporary work files are created under
+`~/sam/tmp/`. These locations can be overridden with `SAM_LOG_DIR` and
+`SAM_TMP_DIR`.
 
 Initially use this only with the test database. Keep production credentials
 out of the test server environment.

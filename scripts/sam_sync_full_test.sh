@@ -8,8 +8,10 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 PHP_BIN="${PHP_BIN:-php}"
 PSQL_BIN="${PSQL_BIN:-psql}"
-SAM_LOG_DIR="${SAM_LOG_DIR:-${HOME:?HOME must be set}/logs/grompil-sam-sync}"
+SAM_LOG_DIR="${SAM_LOG_DIR:-${HOME:?HOME must be set}/sam/logs}"
+SAM_TMP_DIR="${SAM_TMP_DIR:-$HOME/sam/tmp}"
 SOURCE_DIR=""
+ARCHIVE_FILE=""
 DOWNLOAD_URL=""
 APPLY=0
 
@@ -17,6 +19,7 @@ usage() {
     cat <<'USAGE'
 Usage:
   bash scripts/sam_sync_full_test.sh --source-dir /path/to/full-sam-files [--apply]
+  bash scripts/sam_sync_full_test.sh --archive /path/to/full-export.zip [--apply]
   bash scripts/sam_sync_full_test.sh --download-url https://.../full-export.zip [--apply]
 
 The source must contain exactly one AMP-*.xml and one REF-*.xml full export.
@@ -45,6 +48,11 @@ while (($#)); do
             DOWNLOAD_URL="$2"
             shift 2
             ;;
+        --archive)
+            (($# >= 2)) || die "--archive needs a path to an existing full export ZIP."
+            ARCHIVE_FILE="$2"
+            shift 2
+            ;;
         --apply)
             APPLY=1
             shift
@@ -60,8 +68,11 @@ while (($#)); do
     esac
 done
 
-[[ -n "$SOURCE_DIR" || -n "$DOWNLOAD_URL" ]] || { usage >&2; die "Provide --source-dir or --download-url."; }
-[[ -z "$SOURCE_DIR" || -z "$DOWNLOAD_URL" ]] || die "Use only one of --source-dir and --download-url."
+SOURCE_COUNT=0
+[[ -z "$SOURCE_DIR" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
+[[ -z "$ARCHIVE_FILE" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
+[[ -z "$DOWNLOAD_URL" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
+((SOURCE_COUNT == 1)) || { usage >&2; die "Provide exactly one of --source-dir, --archive, or --download-url."; }
 
 for command in "$PHP_BIN" "$PSQL_BIN" find sort wc grep sed mktemp date head tr tee cat mkdir basename; do
     command -v "$command" >/dev/null 2>&1 || die "Required command is unavailable: $command"
@@ -69,7 +80,9 @@ done
 
 if [[ -n "$DOWNLOAD_URL" ]]; then
     command -v curl >/dev/null 2>&1 || die "curl is required for --download-url."
-    command -v unzip >/dev/null 2>&1 || die "unzip is required for --download-url."
+fi
+if [[ -n "$DOWNLOAD_URL" || -n "$ARCHIVE_FILE" ]]; then
+    command -v unzip >/dev/null 2>&1 || die "unzip is required for ZIP input."
 fi
 
 [[ -n "${PGHOST:-}" && -n "${PGDATABASE:-}" && -n "${PGUSER:-}" ]] || \
@@ -83,17 +96,17 @@ else
     die "Set PGPASSFILE or create a readable ~/.pgpass; interactive prompts are disabled."
 fi
 
-mkdir -p -- "$SAM_LOG_DIR"
+mkdir -p -- "$SAM_LOG_DIR" "$SAM_TMP_DIR"
 command -v flock >/dev/null 2>&1 || die "flock is required to prevent overlapping SAM sync runs."
 exec 9>"$SAM_LOG_DIR/sam-sync.lock"
 flock -n 9 || die "Another SAM sync run is already active."
 
 RUN_ID="$(date -u '+%Y%m%dT%H%M%SZ')"
 LOG_FILE="$SAM_LOG_DIR/sam-full-sync-$RUN_ID.log"
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/grompil-sam-sync.XXXXXXXX")"
+WORK_DIR="$(mktemp -d "$SAM_TMP_DIR/grompil-sam-sync.XXXXXXXX")"
 cleanup() {
     local status=$?
-    if [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" && "$WORK_DIR" == "${TMPDIR:-/tmp}"/grompil-sam-sync.* ]]; then
+    if [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" && "$WORK_DIR" == "$SAM_TMP_DIR"/grompil-sam-sync.* ]]; then
         rm -rf -- "$WORK_DIR"
     fi
     if ((status != 0)); then
@@ -117,7 +130,14 @@ if [[ -n "$DOWNLOAD_URL" ]]; then
     curl --fail --location --retry 2 --connect-timeout 30 --output "$ARCHIVE" "$DOWNLOAD_URL"
     [[ -s "$ARCHIVE" ]] || die "Downloaded archive is empty."
     printf 'Downloaded archive size: %s bytes\n' "$(wc -c < "$ARCHIVE" | tr -d ' ')"
+    unzip -tq "$ARCHIVE" || die "Downloaded ZIP failed its integrity check."
     unzip -q "$ARCHIVE" -d "$EXPORT_DIR"
+elif [[ -n "$ARCHIVE_FILE" ]]; then
+    [[ -f "$ARCHIVE_FILE" && -r "$ARCHIVE_FILE" ]] || die "Archive is missing or unreadable: $ARCHIVE_FILE"
+    ARCHIVE_FILE="$(cd -- "$(dirname -- "$ARCHIVE_FILE")" && pwd)/$(basename -- "$ARCHIVE_FILE")"
+    printf 'Using existing SAM full export archive: %s (%s bytes)\n' "$ARCHIVE_FILE" "$(wc -c < "$ARCHIVE_FILE" | tr -d ' ')"
+    unzip -tq "$ARCHIVE_FILE" || die "Existing ZIP failed its integrity check."
+    unzip -q "$ARCHIVE_FILE" -d "$EXPORT_DIR"
 else
     [[ -d "$SOURCE_DIR" && -r "$SOURCE_DIR" ]] || die "Source directory is missing or unreadable: $SOURCE_DIR"
     EXPORT_DIR="$(cd -- "$SOURCE_DIR" && pwd)"
