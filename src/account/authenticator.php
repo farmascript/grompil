@@ -1,7 +1,7 @@
 <?php
 /**
  * Completes the platform administrator password plus TOTP login.
- * @date_mut: Sun 2026-11-08 12:07:53
+ * @date_mut: Sun 2026-11-08 13:25:04
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:authenticator
  */
 
@@ -72,7 +72,7 @@ try {
                     ->withDigits(6)
                     ->withDigest('sha1')
                     ->withIssuer('gromPil')
-                    ->withLabel($email);
+                    ->withLabel('Platformbeheerder ' . $userCode);
                 $setupSecret = $setup->getSecret();
                 $_SESSION['mfa_enroll_secret'] = $setupSecret;
             }

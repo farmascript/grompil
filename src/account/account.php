@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 12:29:42
+ * @date_mut: Sun 2026-11-08 13:25:04
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -407,7 +407,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ->withDigits(6)
                             ->withDigest('sha1')
                             ->withIssuer('gromPil')
-                            ->withLabel($resetEmail);
+                            ->withLabel('Platformbeheerder ' . (string) $user['user_code']);
                         $_SESSION['mfa_reset_user_code'] = (string) $user['user_code'];
                         $_SESSION['mfa_reset_started_at'] = time();
                         $_SESSION['mfa_reset_pending_secret'] = $newSetup->getSecret();
