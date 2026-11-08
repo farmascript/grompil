@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 14:27:34
+ * @date_mut: Sun 2026-11-08 14:31:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -627,4 +627,9 @@
 
 - De resetblokkering treedt na vijf mislukte pogingen in werking. De wachttijd kan per installatie via `platform_mfa_reset_lockout_minutes` in `settings_local.php` worden ingesteld; standaard 15 minuten, toegestane waarden 1–1440.
 - De resterende pogingen worden nu gefilterd met de geconfigureerde periode en de foutmelding toont diezelfde waarde. Vertalingen bijgewerkt in NL, FR, EN en DE; vertaalworkflow uitvoeren. Versie verhoogd naar 0.16.21.
+
+### Aanvulling: authenticator herstellen met herstelcode
+
+- Een platformbeheerder kan bij het vervangen van een authenticator het wachtwoord combineren met een TOTP-code of een ongebruikte herstelcode. Een gebruikte herstelcode wordt direct ongeldig.
+- Het invoerveld aanvaardt nu ook hexadecimale herstelcodes. Vertalingen bijgewerkt in NL, FR, EN en DE; voer de vertaalworkflow uit. Versie verhoogd naar 0.16.22.
 

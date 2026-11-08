@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 14:12:00
+ * @date_mut: Sun 2026-11-08 14:31:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -397,16 +397,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $currentPassword = (string) ($_POST['current_password'] ?? '');
                 $currentCode = strtoupper(preg_replace('/\s+/', '', trim((string) ($_POST['current_authenticator_code'] ?? ''))));
                 $currentValid = false;
+                $currentPasswordValid = password_verify($currentPassword, (string) $account['password_hash']);
                 try {
-                    $encrypted = grompil_platform_totp_ciphertext((string) $user['user_code']);
-                    if ($encrypted !== null && preg_match('/^\d{6}$/', $currentCode) === 1) {
-                        $currentSecret = grompil_totp_decrypt_secret($encrypted);
-                        $currentValid = grompil_totp($currentSecret, $resetEmail)->verify($currentCode, null, 5);
+                    if ($currentPasswordValid) {
+                        $encrypted = grompil_platform_totp_ciphertext((string) $user['user_code']);
+                        if ($encrypted !== null && preg_match('/^\d{6}$/', $currentCode) === 1) {
+                            $currentSecret = grompil_totp_decrypt_secret($encrypted);
+                            $currentValid = grompil_totp($currentSecret, $resetEmail)->verify($currentCode, null, 5);
+                        }
+                        if (!$currentValid) {
+                            $currentValid = grompil_consume_totp_recovery_code((string) $user['user_code'], $currentCode);
+                        }
                     }
                 } catch (Throwable $error) {
                     error_log('Platform authenticator re-enrollment verification failed: ' . $error->getMessage());
                 }
-                $currentPasswordValid = password_verify($currentPassword, (string) $account['password_hash']);
                 if (!$currentPasswordValid || !$currentValid) {
                     $recordMfaResetAttempt();
                     $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
@@ -836,8 +841,8 @@ if ($isPlatformAuthenticatorAccount && $platformAuthenticatorEnabled && !$mustCh
                 . '<div class="mb-3"><label class="form-label" for="reset-current-password">' . e(fn_t('password_current_label')) . '</label>'
                 . '<input class="form-control" id="reset-current-password" type="password" name="current_password" autocomplete="current-password" required></div>'
                 . '<div class="mb-3"><label class="form-label" for="current-authenticator-code">' . e(fn_t('platform_mfa_reset_current_code_label')) . '</label>'
-                . '<input class="form-control" id="current-authenticator-code" type="text" name="current_authenticator_code" inputmode="numeric"'
-                . ' autocomplete="one-time-code" pattern="[0-9 ]{6,8}" maxlength="8" required></div>'
+                . '<input class="form-control" id="current-authenticator-code" type="text" name="current_authenticator_code" inputmode="text"'
+                . ' autocomplete="one-time-code" pattern="[A-Fa-f0-9 ]{6,20}" maxlength="20" required></div>'
                 . '<button class="btn btn-outline-primary" type="submit">' . e(fn_t('platform_mfa_reset_begin')) . '</button></form>';
         }
     }

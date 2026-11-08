@@ -9,6 +9,7 @@
 - Platformbeheer kan onder **Beheeromgeving → IP-toegang platformbeheer** tot IPv4- of IPv6-adressen/netwerken worden beperkt. Een lege lijst betekent dat er geen IP-filter is.
 - De bestaande company-IP-regels gelden voor companybeheerders en medewerkers. Klantrollen (level 200 of hoger) vallen buiten dit filter.
 - Een gebruikte herstelcode wordt ongeldig. Bewaar de getoonde codes buiten de server.
+- Bij het opnieuw instellen van een authenticator kan naast een TOTP-code ook een ongebruikte herstelcode worden gebruikt, samen met het wachtwoord. De gebruikte herstelcode wordt meteen verbruikt.
 - De authenticator-reset wordt na vijf mislukte pogingen tijdelijk geblokkeerd. `platform_mfa_reset_lockout_minutes` in `settings_local.php` bepaalt de wachttijd in minuten; de standaard is 15 en toegestane waarden zijn 1 tot en met 1440. Deze instelling geldt per installatie.
 - De time-out na inactiviteit wordt per installatie ingesteld met `session_idle_timeout_minutes` in `settings_local.php`. De standaardwaarde is 30 minuten. Na een time-out vraagt Grompil opnieuw om in te loggen.
 
