@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 13:48:27
+ * @date_mut: Sun 2026-11-08 14:12:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -58,9 +58,18 @@ if (!$mfaResetPending && $mfaResetPendingSecret !== '') {
     unset($_SESSION['mfa_reset_user_code'], $_SESSION['mfa_reset_started_at'], $_SESSION['mfa_reset_pending_secret']);
 }
 $mfaResetFormMessage = '';
+$deploymentSettings = grompil_deployment_settings(GROMPIL_ROOT);
+$mfaResetLockoutMinutes = filter_var(
+    $deploymentSettings['platform_mfa_reset_lockout_minutes'] ?? 15,
+    FILTER_VALIDATE_INT
+);
+if ($mfaResetLockoutMinutes === false || $mfaResetLockoutMinutes < 1 || $mfaResetLockoutMinutes > 1440) {
+    error_log('Invalid platform_mfa_reset_lockout_minutes in settings_local.php; using 15 minutes.');
+    $mfaResetLockoutMinutes = 15;
+}
 $mfaResetAttemptTimes = array_values(array_filter(
     (array) ($_SESSION['mfa_reset_attempt_times'] ?? []),
-    static fn(mixed $timestamp): bool => is_int($timestamp) && $timestamp > time() - 900
+    static fn(mixed $timestamp): bool => is_int($timestamp) && $timestamp > time() - ($mfaResetLockoutMinutes * 60)
 ));
 $_SESSION['mfa_reset_attempt_times'] = $mfaResetAttemptTimes;
 $recordMfaResetAttempt = static function () use (&$mfaResetAttemptTimes): void {
@@ -377,8 +386,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resetEmail = (string) ($user['email'] ?? '');
             $attemptsLocked = count($mfaResetAttemptTimes) >= 5;
             if ($attemptsLocked) {
+                $lockoutMessage = str_replace(
+                    '{minutes}',
+                    (string) $mfaResetLockoutMinutes,
+                    fn_t('platform_mfa_reset_locked')
+                );
                 $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
-                    . e(fn_t('platform_mfa_reset_locked')) . '</div>';
+                    . e($lockoutMessage) . '</div>';
             } elseif ($action === 'platform_mfa_reset_begin') {
                 $currentPassword = (string) ($_POST['current_password'] ?? '');
                 $currentCode = strtoupper(preg_replace('/\s+/', '', trim((string) ($_POST['current_authenticator_code'] ?? ''))));
