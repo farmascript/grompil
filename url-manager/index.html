@@ -78,8 +78,8 @@
         <form method="dialog" id="link-form">
             <div class="dialog-head"><div><div class="eyebrow">PERSOONLIJKE LINK</div><h2 id="dialog-title">Link toevoegen</h2></div><button class="icon-button" value="cancel" formnovalidate aria-label="Sluiten" data-i18n-aria-label="close">×</button></div>
             <label class="field-label" for="link-title" data-i18n="link_name">Naam</label><input id="link-title" required maxlength="100" placeholder="Bijvoorbeeld Adminer">
-            <label class="field-label" for="link-url" data-i18n="link_url">Webadres of pad</label><input id="link-url" type="text" required maxlength="2048" placeholder="/grompil/translations.php">
-            <p class="help-text">Voor een interne link volstaat het pad vanaf de domeinnaam, bijvoorbeeld /grompil/translations.php. Externe websites gebruiken een volledig http(s)-adres.</p>
+            <label class="field-label" for="link-url" data-i18n="link_url">Webadres of pad</label><input id="link-url" type="text" required maxlength="2048" data-i18n-placeholder="link_url_example" placeholder="translations.php">
+            <p class="help-text" data-i18n="link_url_help">Voor een interne link vul je het pad vanaf het ingestelde basisadres in, bijvoorbeeld translations.php. Externe websites gebruiken een volledig http(s)-adres.</p>
             <label class="field-label" for="link-group" data-i18n="group">Blok</label><select id="link-group" required></select>
             <div class="delete-confirmation" id="link-delete-confirmation" hidden>
                 <label><input id="confirm-link-delete" type="checkbox"> <span>Ik bevestig dat deze link wordt verwijderd.</span></label>
@@ -114,7 +114,7 @@
             <div class="dialog-actions"><button class="button button-light" value="cancel" formnovalidate data-i18n="cancel">Annuleren</button><button class="button button-primary" value="default" data-i18n="save">Bewaren</button></div>
         </form>
     </dialog>
-    <script src="version.js?v=0.16.23" defer></script>
+    <script src="version.js?v=0.16.24" defer></script>
     <script src="app.js?v=42" defer></script>
 </body>
 </html>

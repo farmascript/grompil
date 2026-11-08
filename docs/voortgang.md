@@ -637,3 +637,7 @@
 
 - Het browserformulier accepteert nu herstelcodes met optionele spaties en koppeltekens. Die scheidingstekens worden vóór servervalidatie verwijderd; daarna moet de code nog steeds exact overeenkomen met een geldige ongebruikte herstelcode van 16 hexadecimale tekens. Versie verhoogd naar 0.16.23.
 
+### Aanvulling: voorbeeldpad voor persoonlijke links
+
+- De url-manager toont nu `translations.php` als voorbeeldpad en verduidelijkt dat interne paden relatief aan het ingestelde basisadres worden ingevoerd. De uitleg is vertaald in NL, FR, EN en DE. Dit werkt bij een Grompil-webroot op een domeinroot en bij een lokale installatie in een submap. Versie verhoogd naar 0.16.24.
+

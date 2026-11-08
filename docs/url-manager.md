@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-10-21 18:04:36
+ * @date_mut: Sun 2026-11-08 15:11:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -101,7 +101,7 @@ De vaste Grompil-catalogus wordt standaard uit `navigation.json` geladen. De pla
 
 Voer voor een bestaande database eenmalig `migrations/20261017-212150_company_navigation_preferences.sql` en `migrations/20261018-212150_platform_navigation_preferences.sql` uit als databasebeheerder. Neem de tabeldefinities en RLS-policies ook mee bij nieuwe installaties via `schema.sql`. De JSON kan met **Exporteren** en **JSON importeren** nog steeds tussen bedrijven of zelfstandige managerinstallaties worden uitgewisseld. Import biedt samenvoegen of vervangen.
 
-Je kunt eigen blokken aanmaken, tegels tussen blokken verslepen en persoonlijke links aan een blok koppelen. Nieuwe catalogusfuncties verschijnen automatisch in hun standaardblok; persoonlijke verplaatsingen blijven bewaard.
+Je kunt eigen blokken aanmaken, tegels tussen blokken verslepen en persoonlijke links aan een blok koppelen. Voor een interne link voer je een pad relatief aan het ingestelde basisadres in, zoals `translations.php`; gebruik geen `/grompil/`-prefix als die al in het basisadres zit. Externe links gebruiken een volledig `http(s)`-adres. Nieuwe catalogusfuncties verschijnen automatisch in hun standaardblok; persoonlijke verplaatsingen blijven bewaard.
 
 De manager begint met twee bladen: **blad1** en **blad2**. Bovenaan wissel je van blad; de laatste knop **blad toevoegen** maakt een volgend blad aan en opent dat meteen. Met het potlood naast een bladknop wijzig je de naam. Bestaande indelingen blijven op het eerste blad staan; vaste Grompil-blokken staan daar ook.
 
