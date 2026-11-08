@@ -89,6 +89,11 @@ logs are kept under `~/sam/logs/`, and temporary work files are created under
 `~/sam/tmp/`. These locations can be overridden with `SAM_LOG_DIR` and
 `SAM_TMP_DIR`.
 
+The hosting Bash environment may not support process substitution through
+`/dev/fd`. See [Bash scripts on shared hosting](bash-on-shared-hosting.md) for
+the error symptoms and implementation guidance; the SAM runner avoids that
+feature.
+
 Initially use this only with the test database. Keep production credentials
 out of the test server environment.
 
