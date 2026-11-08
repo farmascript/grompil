@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 18:08:55
+ * @date_mut: Sun 2026-11-08 12:29:42
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -32,6 +32,46 @@ $acronym = '';
 $displayName = (string) ($user['display_name'] ?? '');
 $result = $accountQuery('account.load', 'SELECT display_name, acronym, password_hash, must_change_password FROM bt_users WHERE user_code = $1', [$user['user_code']]);
 $account = $result ? pg_fetch_assoc($result) : false;
+$isPlatformAuthenticatorAccount = ($user['company_id'] ?? null) === null
+    && is_platform_operator($user)
+    && ($_SESSION['platform_mfa_verified'] ?? false) === true;
+$platformAuthenticatorEnabled = false;
+if ($isPlatformAuthenticatorAccount) {
+    try {
+        grompil_totp_encryption_key();
+        grompil_totp_library_ready();
+        $platformAuthenticatorEnabled = grompil_platform_totp_ciphertext((string) $user['user_code']) !== null;
+    } catch (Throwable $error) {
+        error_log('Platform authenticator settings could not be loaded: ' . $error->getMessage());
+    }
+}
+$mfaResetUserCode = (string) ($_SESSION['mfa_reset_user_code'] ?? '');
+$mfaResetStartedAt = (int) ($_SESSION['mfa_reset_started_at'] ?? 0);
+$mfaResetPendingSecret = (string) ($_SESSION['mfa_reset_pending_secret'] ?? '');
+$mfaResetPending = $isPlatformAuthenticatorAccount
+    && $platformAuthenticatorEnabled
+    && $mfaResetUserCode === (string) $user['user_code']
+    && $mfaResetPendingSecret !== ''
+    && $mfaResetStartedAt > 0
+    && time() - $mfaResetStartedAt <= 600;
+if (!$mfaResetPending && $mfaResetPendingSecret !== '') {
+    unset($_SESSION['mfa_reset_user_code'], $_SESSION['mfa_reset_started_at'], $_SESSION['mfa_reset_pending_secret']);
+}
+$mfaResetFormMessage = '';
+$mfaResetFlashCodes = (string) ($_SESSION['mfa_reset_recovery_codes_user_code'] ?? '') === (string) $user['user_code']
+    ? (array) ($_SESSION['mfa_reset_recovery_codes_display'] ?? [])
+    : [];
+$mfaResetFlashCodesHtml = '';
+if ($mfaResetFlashCodes !== []) {
+    $mfaResetCodesList = '';
+    foreach ($mfaResetFlashCodes as $recoveryCode) {
+        $mfaResetCodesList .= '<li><code>' . e((string) $recoveryCode) . '</code></li>';
+    }
+    $mfaResetFlashCodesHtml = '<div class="alert alert-warning"><strong>' . e(fn_t('platform_mfa_recovery_title'))
+        . '</strong><p class="mb-2">' . e(fn_t('platform_mfa_recovery_help')) . '</p><ul class="mb-0 columns-2">'
+        . $mfaResetCodesList . '</ul></div>';
+    unset($_SESSION['mfa_reset_recovery_codes_display'], $_SESSION['mfa_reset_recovery_codes_user_code']);
+}
 $address = grompil_user_primary_address((string) $user['user_code']);
 $userCode = (string) $user['user_code'];
 $addressTypes = dd_varia_get_options('address_types', '_root');
@@ -316,6 +356,115 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 . e(fn_t('account_address_save_failed')) . '</div>';
         }
         $addressRows = $loadUserAddresses();
+    } elseif (str_starts_with($action, 'platform_mfa_reset_')) {
+        if (!$isPlatformAuthenticatorAccount || !$platformAuthenticatorEnabled || !$account) {
+            $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
+                . e(fn_t('platform_mfa_reset_unavailable')) . '</div>';
+        } elseif ($action === 'platform_mfa_reset_cancel') {
+            unset($_SESSION['mfa_reset_user_code'], $_SESSION['mfa_reset_started_at'], $_SESSION['mfa_reset_pending_secret']);
+            redirect('account.php#platform-authenticator');
+        } else {
+            set_database_tenant_context(0, (string) $user['user_code'], true);
+            $resetEmail = (string) ($user['email'] ?? '');
+            $resetIp = grompil_client_ip_address();
+            $attemptsResult = $accountQuery(
+                'account.platform_mfa_reset.count_attempts',
+                "SELECT count(*) AS total FROM st_login_attempts
+                 WHERE company_id = 0 AND email = $1 AND ip_address = $2
+                   AND attempted_at > now() - interval '15 minutes'",
+                [$resetEmail, $resetIp]
+            );
+            $attemptsRow = $attemptsResult ? pg_fetch_assoc($attemptsResult) : false;
+            $attemptsLocked = !$attemptsRow || (int) $attemptsRow['total'] >= 5;
+            if ($attemptsLocked) {
+                $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
+                    . e(fn_t('platform_mfa_locked')) . '</div>';
+            } elseif ($action === 'platform_mfa_reset_begin') {
+                $currentPassword = (string) ($_POST['current_password'] ?? '');
+                $currentCode = strtoupper(preg_replace('/\s+/', '', trim((string) ($_POST['current_authenticator_code'] ?? ''))));
+                $currentValid = false;
+                try {
+                    $encrypted = grompil_platform_totp_ciphertext((string) $user['user_code']);
+                    if ($encrypted !== null && preg_match('/^\d{6}$/', $currentCode) === 1) {
+                        $currentSecret = grompil_totp_decrypt_secret($encrypted);
+                        $currentValid = grompil_totp($currentSecret, $resetEmail)->verify($currentCode, null, 1);
+                    }
+                } catch (Throwable $error) {
+                    error_log('Platform authenticator re-enrollment verification failed: ' . $error->getMessage());
+                }
+                if (!password_verify($currentPassword, (string) $account['password_hash']) || !$currentValid) {
+                    $accountQuery(
+                        'account.platform_mfa_reset.record_attempt',
+                        'INSERT INTO st_login_attempts (company_id, email, ip_address) VALUES (0, $1, $2)',
+                        [$resetEmail, $resetIp]
+                    );
+                    $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
+                        . e(fn_t('platform_mfa_reset_reauth_failed')) . '</div>';
+                } else {
+                    try {
+                        $newSetup = OTPHP\TOTP::generate(new OTPHP\InternalClock(), 20)
+                            ->withPeriod(30)
+                            ->withDigits(6)
+                            ->withDigest('sha1')
+                            ->withIssuer('gromPil')
+                            ->withLabel($resetEmail);
+                        $_SESSION['mfa_reset_user_code'] = (string) $user['user_code'];
+                        $_SESSION['mfa_reset_started_at'] = time();
+                        $_SESSION['mfa_reset_pending_secret'] = $newSetup->getSecret();
+                        $mfaResetPendingSecret = $newSetup->getSecret();
+                        $mfaResetPending = true;
+                    } catch (Throwable $error) {
+                        error_log('New platform authenticator setup could not be started: ' . $error->getMessage());
+                        $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
+                            . e(fn_t('platform_mfa_reset_unavailable')) . '</div>';
+                    }
+                }
+            } elseif ($action === 'platform_mfa_reset_confirm') {
+                $newCode = strtoupper(preg_replace('/\s+/', '', trim((string) ($_POST['new_authenticator_code'] ?? ''))));
+                $newCodeValid = $mfaResetPending
+                    && preg_match('/^\d{6}$/', $newCode) === 1
+                    && grompil_totp($mfaResetPendingSecret, $resetEmail)->verify($newCode, null, 1);
+                if (!$newCodeValid) {
+                    $accountQuery(
+                        'account.platform_mfa_reset.record_attempt',
+                        'INSERT INTO st_login_attempts (company_id, email, ip_address) VALUES (0, $1, $2)',
+                        [$resetEmail, $resetIp]
+                    );
+                    $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
+                        . e(fn_t('platform_mfa_reset_new_code_invalid')) . '</div>';
+                } else {
+                    $transaction = $accountQuery('account.platform_mfa_reset.begin', 'BEGIN');
+                    try {
+                        $updated = $transaction ? $accountQuery(
+                            'account.platform_mfa_reset.replace_secret',
+                            'UPDATE st_platform_totp_credentials
+                             SET secret_ciphertext = $1, enabled_at = now(), created_at = now()
+                             WHERE user_code = $2 AND enabled_at IS NOT NULL',
+                            [grompil_totp_encrypt_secret($mfaResetPendingSecret), (string) $user['user_code']]
+                        ) : false;
+                        if (!$updated || pg_affected_rows($updated) !== 1) {
+                            throw new RuntimeException('The platform authenticator could not be replaced.');
+                        }
+                        $newRecoveryCodes = grompil_create_totp_recovery_codes((string) $user['user_code']);
+                        if (!$accountQuery('account.platform_mfa_reset.commit', 'COMMIT')) {
+                            throw new RuntimeException('The platform authenticator reset could not be committed.');
+                        }
+                        unset($_SESSION['mfa_reset_user_code'], $_SESSION['mfa_reset_started_at'], $_SESSION['mfa_reset_pending_secret']);
+                        $_SESSION['mfa_reset_recovery_codes_display'] = $newRecoveryCodes;
+                        $_SESSION['mfa_reset_recovery_codes_user_code'] = (string) $user['user_code'];
+                        session_regenerate_id(true);
+                        redirect('account.php?authenticator_changed=1#platform-authenticator');
+                    } catch (Throwable $error) {
+                        if ($transaction) {
+                            $accountQuery('account.platform_mfa_reset.rollback', 'ROLLBACK');
+                        }
+                        error_log('Platform authenticator reset failed: ' . $error->getMessage());
+                        $mfaResetFormMessage = '<div class="alert alert-danger" role="alert">'
+                            . e(fn_t('platform_mfa_reset_unavailable')) . '</div>';
+                    }
+                }
+            }
+        }
     } elseif (($user['must_change_password'] ?? 'f') === 't' && $action !== 'password_change') {
         $message = '<div class="alert alert-warning" role="alert">' . e(fn_t('password_change_required')) . '</div>';
     } elseif ($action === 'password_change') {
@@ -481,6 +630,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if (isset($_GET['password_changed'])) {
     $message = '<div class="alert alert-success" role="status">' . e(fn_t('password_changed')) . '</div>';
+} elseif (isset($_GET['authenticator_changed'])) {
+    $message = '<div class="alert alert-success" role="status">' . e(fn_t('platform_mfa_reset_complete')) . '</div>';
 } elseif (($user['must_change_password'] ?? 'f') === 't') {
     $message = '<div class="alert alert-warning" role="alert">' . e(fn_t('password_change_required')) . '</div>';
 }
@@ -619,6 +770,52 @@ $addressManagerHtml = '<section id="addresses" class="border rounded p-3 mb-4"><
     . e(fn_t('account_addresses_manage')) . ' (' . count($addressRows) . ')</button>'
     . '<a class="btn btn-grompil" href="account.php?add_address=1#addresses">' . e(fn_t('account_address_add')) . '</a>'
     . '</div></div></section>' . $addressModalHtml;
+$platformAuthenticatorHtml = '';
+if ($isPlatformAuthenticatorAccount && $platformAuthenticatorEnabled && !$mustChangePassword) {
+    $setupMarkup = '';
+    $setupScriptsMarkup = '';
+    if ($mfaResetPending) {
+        try {
+            $provisioningUri = grompil_totp($mfaResetPendingSecret, (string) ($user['email'] ?? ''))->getProvisioningUri();
+            $qrLabel = fn_t('platform_mfa_qr_label');
+            $setupMarkup = '<div class="alert alert-info"><p>' . e(fn_t('platform_mfa_reset_scan')) . '</p>'
+                . '<div class="text-center my-3" data-authenticator-qr-wrapper><div class="d-inline-block border rounded p-2 bg-white"'
+                . ' data-authenticator-qr data-otpauth-uri="' . e($provisioningUri) . '" data-qr-label="' . e($qrLabel) . '"></div></div>'
+                . '<p class="small">' . e(fn_t('platform_mfa_manual_instructions')) . '</p><p class="mb-0"><strong>'
+                . e(fn_t('platform_mfa_secret_label')) . '</strong><br><code class="user-select-all fs-5">'
+                . e($mfaResetPendingSecret) . '</code></p></div>';
+            $assetBaseHref = e(fn_appBaseHref());
+            $setupScriptsMarkup = '<script src="' . $assetBaseHref . 'assets/qrcode-generator.js?v=1" defer></script>'
+                . '<script src="' . $assetBaseHref . 'assets/authenticator-qr.js?v=1" defer></script>';
+        } catch (Throwable $error) {
+            error_log('Replacement platform authenticator QR could not be prepared: ' . $error->getMessage());
+            $setupMarkup = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_reset_unavailable')) . '</div>';
+        }
+        $platformAuthenticatorHtml = '<section id="platform-authenticator" class="border rounded p-3 mb-4"><h2 class="h5">'
+            . e(fn_t('platform_mfa_reset_title')) . '</h2>' . $mfaResetFormMessage . $setupMarkup
+            . '<p>' . e(fn_t('platform_mfa_reset_verify_new')) . '</p><form method="post" action="account.php#platform-authenticator">'
+            . csrf_field() . '<input type="hidden" name="action" value="platform_mfa_reset_confirm">'
+            . '<div class="mb-3"><label class="form-label" for="new-authenticator-code">' . e(fn_t('platform_mfa_code_label')) . '</label>'
+            . '<input class="form-control" id="new-authenticator-code" type="text" name="new_authenticator_code" inputmode="numeric"'
+            . ' autocomplete="one-time-code" pattern="[0-9 ]{6,8}" maxlength="8" required autofocus></div>'
+            . '<button class="btn btn-grompil" type="submit">' . e(fn_t('platform_mfa_reset_confirm')) . '</button></form>'
+            . '<form method="post" action="account.php#platform-authenticator" class="mt-2">' . csrf_field()
+            . '<input type="hidden" name="action" value="platform_mfa_reset_cancel"><button class="btn btn-outline-secondary" type="submit">'
+            . e(fn_t('cancel')) . '</button></form>' . $setupScriptsMarkup . '</section>';
+    } else {
+        $platformAuthenticatorHtml = '<section id="platform-authenticator" class="border rounded p-3 mb-4"><h2 class="h5">'
+            . e(fn_t('platform_mfa_reset_title')) . '</h2>' . $mfaResetFormMessage . $mfaResetFlashCodesHtml
+            . '<p class="text-secondary">' . e(fn_t('platform_mfa_reset_help')) . '</p>'
+            . '<form method="post" action="account.php#platform-authenticator">' . csrf_field()
+            . '<input type="hidden" name="action" value="platform_mfa_reset_begin">'
+            . '<div class="mb-3"><label class="form-label" for="reset-current-password">' . e(fn_t('password_current_label')) . '</label>'
+            . '<input class="form-control" id="reset-current-password" type="password" name="current_password" autocomplete="current-password" required></div>'
+            . '<div class="mb-3"><label class="form-label" for="current-authenticator-code">' . e(fn_t('platform_mfa_code_label')) . '</label>'
+            . '<input class="form-control" id="current-authenticator-code" type="text" name="current_authenticator_code" inputmode="numeric"'
+            . ' autocomplete="one-time-code" pattern="[0-9 ]{6,8}" maxlength="8" required></div>'
+            . '<button class="btn btn-outline-primary" type="submit">' . e(fn_t('platform_mfa_reset_begin')) . '</button></form></section>';
+    }
+}
 echo fn_templateRender('account.html', [
     'account_title' => fn_t('account_title'),
     'account_intro' => fn_t('account_intro'),
@@ -642,6 +839,7 @@ echo fn_templateRender('account.html', [
     'password_confirm_label' => fn_t('password_confirm_label'),
     'password_save' => fn_t('password_save'),
     '_password_csrf_field_html' => csrf_field(),
+    '_platform_authenticator_html' => $platformAuthenticatorHtml,
 ]);
 page_end();
 

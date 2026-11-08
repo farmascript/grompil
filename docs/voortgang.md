@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 12:14:10
+ * @date_mut: Sun 2026-11-08 12:29:42
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -587,4 +587,11 @@
 - `scripts/translations_import.php` is hernoemd naar `scripts/translations_1_import.php` en `scripts/translations_export.php` naar `scripts/translations_2_export.php`.
 - Alle documentatiereferenties en de DokuWiki-bronpagina-generator zijn bijgewerkt; de importer staat nu vóór de exporter in de alfabetische lijst.
 - Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.13.
+
+### Aanvulling: authenticator opnieuw instellen
+
+- Platformbeheerders met een ingestelde authenticator kunnen die opnieuw instellen via **Mijn account** (`account.php#platform-authenticator`).
+- De stroom vraagt opnieuw om het huidige wachtwoord en een geldige code van de huidige authenticator. Daarna wordt een nieuwe QR-code getoond; het bestaande geheim blijft geldig totdat de gebruiker een code van de nieuwe authenticator bevestigt.
+- Na bevestiging wordt het nieuwe geheim opgeslagen en worden nieuwe herstelcodes aangemaakt. Deze codes worden eenmalig getoond. De QR-instelling verloopt na tien minuten.
+- Nieuwe schermteksten zijn toegevoegd voor NL, FR, EN en DE. Importeer ontbrekende teksten met `php scripts/translations_1_import.php` en publiceer ze met `php scripts/translations_2_export.php`. Geen databasemigratie nodig; softwareversie verhoogd naar 0.16.14.
 
