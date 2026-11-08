@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 14:54:17
+ * @date_mut: Sun 2026-11-08
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -278,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'INSERT INTO bt_companies (
                             slug, name, legal_name, enterprise_number, enterprise_number_status,
                             default_language, is_active, is_public, company_permit_number, vat_number_status
-                         ) VALUES ($1,$2,$3,$4,'known','NL',TRUE,FALSE,'','unknown') RETURNING id',
+                         ) VALUES ($1,$2,$3,$4,\'known\',\'NL\',TRUE,FALSE,\'\',\'unknown\') RETURNING id',
                         [$slug, $companyName, $companyName, $number]
                     ) : false;
                     $created = $insert ? pg_fetch_assoc($insert) : false;
@@ -384,7 +384,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'INSERT INTO bt_companies (
                         slug, name, legal_name, enterprise_number, enterprise_number_status,
                         default_language, is_active, is_public, company_permit_number, vat_number_status
-                     ) VALUES ($1,$2,$3,$4,'known','NL',TRUE,FALSE,$5,'unknown') RETURNING id',
+                     ) VALUES ($1,$2,$3,$4,\'known\',\'NL\',TRUE,FALSE,$5,\'unknown\') RETURNING id',
                     [$slug, $companyName, (string) ($details['name'] ?? ''), $number, $selectedPermit]
                 ) : false;
                 $created = $insert ? pg_fetch_assoc($insert) : false;

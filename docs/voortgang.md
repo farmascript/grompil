@@ -17,6 +17,14 @@
 
 # Voortgang Grompil
 
+## 8 november 2026
+
+### Herstel bedrijfskiezer HTTP 500
+
+- `select-company.php` bevatte een SQL-string waarin `'known'` en andere PostgreSQL-stringwaarden niet als PHP-literals waren ge-escaped. Daardoor veroorzaakte de PHP-parser een HTTP 500 bij iedere opening van de pagina.
+- De quotes zijn nu correct ge-escaped in de PHP-string. De wijziging repareert ook het pad voor het aanmaken van een company vanuit de KBO-gegevens.
+- Applicatieversie bijgewerkt naar `0.16.26`.
+
 ## 25 oktober 2026
 
 ### Omgevingsafhankelijke credentials
