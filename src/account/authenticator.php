@@ -1,7 +1,7 @@
 <?php
 /**
  * Completes the platform administrator password plus TOTP login.
- * @date_mut: Sun 2026-11-08 13:25:04
+ * @date_mut: Sun 2026-11-08 13:33:54
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:authenticator
  */
 
@@ -195,7 +195,7 @@ $qrScriptsHtml = '';
 if (!$isVerifiedSetup && $encryptedSecret === null && $setupSecret !== '') {
     $qrHtml = '';
     try {
-        $provisioningUri = grompil_totp($setupSecret, $email)->getProvisioningUri();
+        $provisioningUri = grompil_totp($setupSecret, 'Platformbeheerder ' . $userCode)->getProvisioningUri();
         $qrLabel = fn_t('platform_mfa_qr_label');
         $qrHtml = '<div class="text-center my-3 d-none" data-authenticator-qr-wrapper><div class="d-inline-block border rounded p-2 bg-white"'
             . ' data-authenticator-qr data-otpauth-uri="' . e($provisioningUri) . '"'

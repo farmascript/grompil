@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 13:25:04
+ * @date_mut: Sun 2026-11-08 13:33:54
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -599,4 +599,5 @@
 
 - Nieuwe authenticator-QR-codes gebruiken voortaan `Platformbeheerder <user_code>` als accountlabel in plaats van het e-mailadres. Dit geldt voor de eerste instelling en voor het opnieuw instellen.
 - De TOTP-geheimen en verificatie blijven ongewijzigd; alleen het label dat de authenticator-app toont is aangepast. Softwareversie verhoogd naar 0.16.15.
+- Correctie: ook de uiteindelijke provisioning-URI voor zowel de eerste instelling als de herinstelling gebruikt nu dit label. Versie verhoogd naar 0.16.16.
 

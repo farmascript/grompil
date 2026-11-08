@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 13:25:04
+ * @date_mut: Sun 2026-11-08 13:33:54
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -776,7 +776,10 @@ if ($isPlatformAuthenticatorAccount && $platformAuthenticatorEnabled && !$mustCh
     $setupScriptsMarkup = '';
     if ($mfaResetPending) {
         try {
-            $provisioningUri = grompil_totp($mfaResetPendingSecret, (string) ($user['email'] ?? ''))->getProvisioningUri();
+            $provisioningUri = grompil_totp(
+                $mfaResetPendingSecret,
+                'Platformbeheerder ' . (string) $user['user_code']
+            )->getProvisioningUri();
             $qrLabel = fn_t('platform_mfa_qr_label');
             $setupMarkup = '<div class="alert alert-info"><p>' . e(fn_t('platform_mfa_reset_scan')) . '</p>'
                 . '<div class="text-center my-3" data-authenticator-qr-wrapper><div class="d-inline-block border rounded p-2 bg-white"'
