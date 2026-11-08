@@ -641,3 +641,8 @@
 
 - De url-manager toont nu `translations.php` als voorbeeldpad en verduidelijkt dat interne paden relatief aan het ingestelde basisadres worden ingevoerd. De uitleg is vertaald in NL, FR, EN en DE. Dit werkt bij een Grompil-webroot op een domeinroot en bij een lokale installatie in een submap. Versie verhoogd naar 0.16.24.
 
+### Aanvulling: directe URL naar authenticator-reset
+
+- Een url-manager-link naar `account.php#platform-authenticator` opent nu meteen de authenticator-modal. Voorheen scrolde de browser naar een element binnen een gesloten modal, waardoor het leek alsof de link niet werkte.
+- De cacheversie van `account-modals.js` is verhoogd en de softwareversie naar 0.16.25.
+
