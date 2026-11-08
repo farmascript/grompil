@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 14:04:53
+ * @date_mut: Sun 2026-11-08 14:09:35
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -612,4 +612,9 @@
 
 - `DELETE` op de herstelcodes faalde op de testserver ondanks dat de expliciete DELETE-privilege aanwezig is. De foutafhandeling registreert nu ook de PostgreSQL-fouttekst voor deze ene bewerking, zodat de oorzaak gericht kan worden vastgesteld.
 - Geen databasemigratie of vertaalwijziging nodig; softwareversie verhoogd naar 0.16.18.
+
+### Aanvulling: databasecontext herstellen tijdens authenticatortransactie
+
+- De centrale tenantcontextquery ontving vijf configuratieparen, maar voerde slechts vier `set_config`-aanroepen uit. Daardoor faalde het opnieuw instellen van de context tijdens de resettransactie en werd die transactie afgebroken vóór het verwijderen van oude herstelcodes.
+- Alle vijf instellingen worden nu gezet. Dit herstelt ook tenantcontextaanroepen elders in de software. Geen databasemigratie of vertaalwijziging nodig; softwareversie verhoogd naar 0.16.19.
 

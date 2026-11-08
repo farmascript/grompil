@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Sat 2026-11-07 14:54:17
+ * @date_mut: Sun 2026-11-08 14:09:35
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -229,7 +229,7 @@ function set_database_tenant_context(int $companyId, string $userCode, bool $pla
 {
     grompil_bootstrap_query(
         'bootstrap.set_tenant_context',
-        'SELECT set_config($1, $2, false), set_config($3, $4, false), set_config($5, $6, false), set_config($7, $8, false)',
+        'SELECT set_config($1, $2, false), set_config($3, $4, false), set_config($5, $6, false), set_config($7, $8, false), set_config($9, $10, false)',
         [
             'grompil.user_code', $userCode,
             'grompil.company_id', $companyId > 0 ? (string) $companyId : '',
