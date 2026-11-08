@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 13:48:27
+ * @date_mut: Sun 2026-11-08 14:04:53
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -607,4 +607,9 @@
 - De melding voor het huidige wachtwoord en de huidige authenticatorcode is opgesplitst, zodat duidelijk is welke controle faalde. De controle van huidige en nieuwe TOTP-codes gebruikt nu dezelfde tijdsafwijking als de logincontrole.
 - Pogingen voor authenticatorherstel worden alleen per ingelogde sessie beperkt, zodat ze de normale loginlimiet niet blokkeren. Geen databasemigratie nodig.
 - Nieuwe labels en meldingen zijn toegevoegd in NL, FR, EN en DE. Importeer en publiceer ze met `php scripts/translations_1_import.php` en `php scripts/translations_2_export.php`. Softwareversie verhoogd naar 0.16.17.
+
+### Aanvulling: PostgreSQL-foutdetails bij authenticatorherstel
+
+- `DELETE` op de herstelcodes faalde op de testserver ondanks dat de expliciete DELETE-privilege aanwezig is. De foutafhandeling registreert nu ook de PostgreSQL-fouttekst voor deze ene bewerking, zodat de oorzaak gericht kan worden vastgesteld.
+- Geen databasemigratie of vertaalwijziging nodig; softwareversie verhoogd naar 0.16.18.
 

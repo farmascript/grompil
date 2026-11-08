@@ -15,6 +15,11 @@ function grompil_platform_authenticator_query(string $operation, string $sql, ar
     try {
         return db_query_params($operation, $sql, $params);
     } catch (GrompilDatabaseQueryException) {
+        if ($operation === 'platform_authenticator.delete_recovery_codes') {
+            $databaseError = pg_last_error(db());
+            $databaseError = preg_replace('/[\r\n\t]+/', ' ', $databaseError) ?? '';
+            error_log('Platform authenticator recovery-code delete detail: ' . substr($databaseError, 0, 500));
+        }
         return false;
     }
 }
