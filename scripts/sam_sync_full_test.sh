@@ -74,7 +74,7 @@ SOURCE_COUNT=0
 [[ -z "$DOWNLOAD_URL" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
 ((SOURCE_COUNT == 1)) || { usage >&2; die "Provide exactly one of --source-dir, --archive, or --download-url."; }
 
-for command in "$PHP_BIN" "$PSQL_BIN" find sort wc grep sed mktemp date head tr tee cat mkdir basename; do
+for command in "$PHP_BIN" "$PSQL_BIN" find sort wc grep sed mktemp date head tr cat mkdir basename; do
     command -v "$command" >/dev/null 2>&1 || die "Required command is unavailable: $command"
 done
 
@@ -104,19 +104,22 @@ flock -n 9 || die "Another SAM sync run is already active."
 RUN_ID="$(date -u '+%Y%m%dT%H%M%SZ')"
 LOG_FILE="$SAM_LOG_DIR/sam-full-sync-$RUN_ID.log"
 WORK_DIR="$(mktemp -d "$SAM_TMP_DIR/grompil-sam-sync.XXXXXXXX")"
+exec 8>&1
 cleanup() {
     local status=$?
     if [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" && "$WORK_DIR" == "$SAM_TMP_DIR"/grompil-sam-sync.* ]]; then
         rm -rf -- "$WORK_DIR"
     fi
     if ((status != 0)); then
-        printf 'SAM sync failed (exit %s). Log: %s\n' "$status" "$LOG_FILE" >&2
+        printf 'SAM sync failed (exit %s). Log: %s\n' "$status" "$LOG_FILE" >&8
     fi
+    cat "$LOG_FILE" >&8
+    exec 8>&-
     exit "$status"
 }
 trap cleanup EXIT
 
-exec > >(tee -a "$LOG_FILE") 2>&1
+exec >>"$LOG_FILE" 2>&1
 printf 'SAM full snapshot run: %s\n' "$RUN_ID"
 printf 'Database target: %s at %s (user %s)\n' "$PGDATABASE" "$PGHOST" "$PGUSER"
 printf 'Mode: %s\n' "$([[ $APPLY -eq 1 ]] && printf APPLY || printf CHECK-ONLY)"
@@ -145,8 +148,13 @@ fi
 
 find_one_export() {
     local prefix="$1"
+    local list_file="$WORK_DIR/${prefix}-files.txt"
+    local match=""
     local -a matches=()
-    mapfile -t matches < <(find "$EXPORT_DIR" -type f -name "${prefix}-*.xml" -print | sort)
+    find "$EXPORT_DIR" -type f -name "${prefix}-*.xml" -print | sort > "$list_file"
+    while IFS= read -r match; do
+        [[ -n "$match" ]] && matches+=("$match")
+    done < "$list_file"
     ((${#matches[@]} == 1)) || die "Expected exactly one ${prefix}-*.xml full export under $EXPORT_DIR; found ${#matches[@]}."
     printf '%s\n' "${matches[0]}"
 }
