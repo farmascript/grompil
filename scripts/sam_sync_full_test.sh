@@ -74,7 +74,7 @@ SOURCE_COUNT=0
 [[ -z "$DOWNLOAD_URL" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
 ((SOURCE_COUNT == 1)) || { usage >&2; die "Provide exactly one of --source-dir, --archive, or --download-url."; }
 
-for command in "$PHP_BIN" "$PSQL_BIN" find sort wc grep sed mktemp date head tr cat mkdir basename; do
+for command in "$PHP_BIN" "$PSQL_BIN" find sort wc grep sed mktemp date head tr cat mkdir basename sleep kill; do
     command -v "$command" >/dev/null 2>&1 || die "Required command is unavailable: $command"
 done
 
@@ -120,6 +120,29 @@ cleanup() {
 trap cleanup EXIT
 
 exec >>"$LOG_FILE" 2>&1
+run_with_heartbeat() {
+    local label="$1"
+    local command_status=0
+    local started_at=$SECONDS
+    shift
+
+    printf '%s started; a progress message appears every 30 seconds.\n' "$label" >&8
+    "$@" &
+    local command_pid=$!
+    while kill -0 "$command_pid" 2>/dev/null; do
+        sleep 30
+        if kill -0 "$command_pid" 2>/dev/null; then
+            printf '%s is still running (%s seconds elapsed).\n' \
+                "$label" "$((SECONDS - started_at))" >&8
+        fi
+    done
+    wait "$command_pid" || command_status=$?
+    if ((command_status != 0)); then
+        return "$command_status"
+    fi
+    printf '%s completed after %s seconds.\n' "$label" "$((SECONDS - started_at))" >&8
+}
+
 printf 'SAM full snapshot run: %s\n' "$RUN_ID"
 printf 'Database target: %s at %s (user %s)\n' "$PGDATABASE" "$PGHOST" "$PGUSER"
 printf 'Mode: %s\n' "$([[ $APPLY -eq 1 ]] && printf APPLY || printf CHECK-ONLY)"
@@ -169,11 +192,13 @@ REF_REPORT="$WORK_DIR/ref-extract.log"
 printf 'AMP source: %s (%s bytes)\n' "$(basename -- "$AMP_XML")" "$(wc -c < "$AMP_XML" | tr -d ' ')"
 printf 'REF source: %s (%s bytes)\n' "$(basename -- "$REF_XML")" "$(wc -c < "$REF_XML" | tr -d ' ')"
 
-"$PHP_BIN" "$SCRIPT_DIR/sam_public_catalog_export.php" "$AMP_XML" "$PRODUCT_CSV" >"$AMP_REPORT" 2>&1 || {
+run_with_heartbeat "AMP catalog extraction (large XML file)" \
+    "$PHP_BIN" "$SCRIPT_DIR/sam_public_catalog_export.php" "$AMP_XML" "$PRODUCT_CSV" >"$AMP_REPORT" 2>&1 || {
     cat "$AMP_REPORT" >&2
     die "Product CSV extraction failed."
 }
-"$PHP_BIN" "$SCRIPT_DIR/sam_atc_classifications_export.php" "$REF_XML" "$ATC_CSV" >"$REF_REPORT" 2>&1 || {
+run_with_heartbeat "ATC classification extraction" \
+    "$PHP_BIN" "$SCRIPT_DIR/sam_atc_classifications_export.php" "$REF_XML" "$ATC_CSV" >"$REF_REPORT" 2>&1 || {
     cat "$REF_REPORT" >&2
     die "ATC CSV extraction failed."
 }

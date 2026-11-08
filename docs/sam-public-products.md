@@ -92,7 +92,10 @@ logs are kept under `~/sam/logs/`, and temporary work files are created under
 The hosting Bash environment may not support process substitution through
 `/dev/fd`. See [Bash scripts on shared hosting](bash-on-shared-hosting.md) for
 the error symptoms and implementation guidance; the SAM runner avoids that
-feature.
+feature. During the large AMP XML extraction, it prints a heartbeat every 30
+seconds; this stage can take a while because the expanded AMP file is very
+large. Pressing Ctrl+C stops the run and removes its temporary working files;
+the permanent catalog tables are unchanged unless `--apply` was supplied.
 
 Initially use this only with the test database. Keep production credentials
 out of the test server environment.
