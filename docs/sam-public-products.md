@@ -50,6 +50,39 @@ run the matching `schema_grant_local.sql`, `schema_grant_test.sql`, or
 This is a small, separate reference import; it does not require re-importing
 the SAM product CSV.
 
+## Full snapshot synchronization
+
+`scripts/sam_sync_full_test.sh` is a Bash runner for a complete AMP + REF
+snapshot. It calls the existing PHP extractors, stages both CSV files in one
+PostgreSQL transaction, validates row counts, source keys and the shared SAM
+ID, then rolls back by default. The first run checks connectivity, CSV
+compatibility, staging permissions, and data quality without changing the
+live tables.
+
+On the test server, configure `PGHOST`, `PGDATABASE`, `PGUSER`, and a protected
+`.pgpass` file (or `PGPASSFILE`). Point `--source-dir` at a directory with
+exactly one `AMP-*.xml` and one `REF-*.xml` from the same full SAM export:
+
+```bash
+bash scripts/sam_sync_full_test.sh --source-dir /path/to/sam-export
+```
+
+For a direct ZIP download, the script also accepts an archive URL:
+
+```bash
+bash scripts/sam_sync_full_test.sh --download-url 'https://.../full-export.zip'
+```
+
+Only after a successful check-only run, add `--apply` to replace
+`xt_sam_public_products` and `xt_sam_atc_classifications`. The deletes and
+inserts run in one transaction, so an error rolls back and leaves the previous
+catalog intact. The database role needs `DELETE` and `INSERT` privileges on
+both tables. Temporary downloads and CSV files are removed at exit; run logs
+are kept under `~/logs/grompil-sam-sync/`.
+
+Initially use this only with the test database. Keep production credentials
+out of the test server environment.
+
 The per-installation maximum number of product results is configured in
 `settings_local.php` with `'sam_product_search_limit' => 20`. The default is
 20, and values above 100 are capped at 100. The result page and JSON endpoint
