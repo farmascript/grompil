@@ -1,41 +1,49 @@
-# Grompil bookmarkmappen
+# Grompil-bookmarks installeren
 
-Deze Manifest V3-extensie maakt twee gegenereerde mappen vooraan op de
-bookmarkbalk:
+Met deze browserextensie komen er twee mappen vooraan op je bookmarkbalk:
 
-1. **Grompil-functies**: modules uit `navigation.json` die de ingelogde sessie
-   op dat moment mag openen, gegroepeerd volgens de platformcatalogus.
-2. **Mijn navigator**: bladen, persoonlijke groepen, bedrijfs- of persoonlijke
-   links en catalogusmodules die in de URL-manager aan eigen groepen zijn
-   toegewezen.
+- **Grompil-functies** bevat de Grompil-modules die je met je huidige account
+  mag openen.
+- **Mijn navigator** bevat de indeling en links uit de URL-manager.
 
-Start de synchronisatie terwijl de online Grompil-URL-manager de actieve tab
-is. De extensie leest de catalogus, actuele toegangsrechten en platform- en
-persoonlijke/bedrijfsindeling van die installatie. De sessiecookie wordt alleen
-gebruikt door dezelfde-origin-verzoeken vanuit de actieve pagina. De extensie
-bewaart geen inloggegevens en stuurt geen navigatiegegevens naar derden. Er
-zijn geen brede hostrechten; `activeTab` wordt pas gebruikt nadat je zelf de
-extensieknop indrukt.
+Je bestaande bookmarks blijven staan en schuiven naar rechts. De extensie
+ververst haar twee mappen alleen wanneer je op **Synchroniseren** klikt.
 
-Bij elke synchronisatie vervangt de extensie alleen de twee mappen die zij
-eerder heeft aangemaakt. Andere bookmarks blijven staan en schuiven naar
-rechts wanneer de mappen op positie nul en één worden ingevoegd. Zet geen
-handmatig beheerde bookmarks in deze twee mappen: hun inhoud wordt bij de
-volgende synchronisatie opnieuw opgebouwd.
+## Eenmalig installeren in Vivaldi, Chrome of Edge
 
-## Lokale installatie voor ontwikkeling
+De installatie is voor elke browser apart. Je gebruikt telkens dezelfde map.
 
-Dit is een ontwikkelversie, geen ondertekende release uit een extensiewinkel.
-Voor Chrome, Edge, Vivaldi en Opera open je de extensiepagina, schakel je
-ontwikkelaarsmodus in en kies je **Niet-verpakte extensie laden** of **Load
-unpacked**. Selecteer deze map en pin daarna de extensieknop als je die naast
-de adresbalk wilt zien. Open vervolgens de online URL-manager, kies taal en
-bedrijfscontext en klik op **Synchroniseren** in de extensiepopup.
+1. Open in de browser de extensiepagina:
+   - Vivaldi: typ `vivaldi://extensions` in de adresbalk.
+   - Chrome: typ `chrome://extensions`.
+   - Edge: typ `edge://extensions`.
+2. Zet **Ontwikkelaarsmodus** aan. In Edge en Chrome staat die meestal rechts
+   bovenaan; in Vivaldi kan de plaats verschillen.
+3. Klik op **Niet-verpakte extensie laden** of **Load unpacked**.
+4. Selecteer deze map, de map waarin `manifest.json` staat:
+   `C:\usr\Dropbox\php\grompil\browser-extensions\grompil-bookmarks`
+5. Bevestig de keuze. De extensie verschijnt nu in de lijst.
+6. Open de extensieknop naast de adresbalk. Als je die niet ziet, open dan het
+   extensiemenu (puzzelstukje) en pin **Grompil Bookmarks** vast.
 
-Firefox kan de ontwikkelversie tijdelijk laden via `about:debugging` → **This
-Firefox** → **Load Temporary Add-on**. Selecteer `manifest.json`. De extensie
-gebruikt callback-stijl `chrome.*`-aanroepen voor gedeelde WebExtensions-
-compatibiliteit. Controleer voor de gebruikte Firefox-versie of
-`scripting.executeScript` de `MAIN`-wereld ondersteunt. Opera ondersteunt het
-merendeel van de Chrome-extensie-API's; controleer installatie met de actuele
-Opera-versie.
+## De bookmarkmappen vullen of vernieuwen
+
+1. Meld je aan op de gewenste Grompil-installatie.
+2. Open de URL-manager in diezelfde browser, bijvoorbeeld
+   `https://test.grompil.com/url-manager/index.html`.
+3. Kies in de URL-manager het juiste bedrijf en de gewenste taal.
+4. Klik op **Grompil Bookmarks** en daarna op **Synchroniseren**.
+5. Open de bookmarkbalk. In Chrome, Edge en Vivaldi kun je die tonen met
+   `Ctrl+Shift+B`.
+
+Bij een volgende synchronisatie worden alleen de twee Grompil-mappen vervangen.
+Andere bookmarks worden niet verwijderd. Zet daarom geen eigen bookmarks
+binnen de twee Grompil-mappen.
+
+## Opera en Firefox
+
+Opera ondersteunt de meeste Chrome-extensie-API's. Je kunt dezelfde
+ontwikkelmap proberen te laden via Opera's extensiepagina. Firefox gebruikt
+grotendeels dezelfde WebExtensions-aanpak; laden kan tijdelijk via
+`about:debugging` → **This Firefox** → **Load Temporary Add-on**, en kies dan
+`manifest.json`. De extensie is nog niet in Opera of Firefox getest.
