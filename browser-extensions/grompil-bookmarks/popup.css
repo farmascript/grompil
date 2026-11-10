@@ -1,0 +1,26 @@
+:root {
+    color-scheme: light;
+    font: 14px/1.45 system-ui, "Segoe UI", sans-serif;
+    color: #183c36;
+    background: #f4f7f5;
+}
+
+body { width: 330px; margin: 0; }
+main { padding: 18px; }
+h1 { margin: 0 0 10px; font-size: 19px; }
+p { margin: 0 0 14px; }
+button {
+    width: 100%;
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 14px;
+    color: #fff;
+    background: #176f52;
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+}
+button:disabled { opacity: .6; cursor: wait; }
+.note { margin-top: 13px; color: #60716d; font-size: 12px; }
+#status { min-height: 20px; margin: 10px 0 0; color: #305f50; }
+#status[data-error="true"] { color: #a12735; }
