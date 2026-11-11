@@ -134,8 +134,8 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             });
             button.addEventListener('click', () => {
                 cancelSearch(input);
-                onSelect(item);
                 setStatus('');
+                onSelect(item);
                 list.replaceChildren();
                 input.setAttribute('aria-expanded', 'false');
                 input.removeAttribute('aria-activedescendant');
@@ -223,6 +223,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             lists.get(fields.postal)?.replaceChildren();
         }
         clearStreetAndHouse();
+        if (!selectedPostalCode) setStatus(status?.dataset.postalReminder || '');
     });
     schedule('street', 'street', 2, () => ({
         postal_code: getValue('postal'),
@@ -232,6 +233,11 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         if (item.city && fields.city) fields.city.value = item.city;
         if (streetId) streetId.value = item.id;
         clearReference();
+        if (getValue('house')) {
+            fields.house.dispatchEvent(new Event('input', { bubbles: true }));
+        } else if (!getValue('postal')) {
+            setStatus(status?.dataset.postalReminder || '');
+        }
     });
     schedule('house', 'address', 1, () => ({
         postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
@@ -245,6 +251,13 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         fields.city.value = item.city;
         if (referenceId) referenceId.value = item.id;
         setStatus('');
+    }, (items) => {
+        const postalCodes = [...new Set(items.map((item) => item.postal_code?.trim()).filter(Boolean))];
+        if (postalCodes.length === 1 && fields.postal && !getValue('postal')) {
+            fields.postal.value = postalCodes[0];
+            if (items[0].city && fields.city) fields.city.value = items[0].city;
+            if (status) setStatus('');
+        }
     });
 });
 

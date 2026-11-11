@@ -329,6 +329,7 @@ echo fn_templateRender('companies.html', [
         'address_prefix' => 'company-address',
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
+        'address_postal_reminder' => fn_t('address_postal_reminder'),
         'address_country_code_value' => (string) $fields['country_code'],
         'address_reference_id_value' => (string) $fields['address_reference_id'],
         'street_reference_id_value' => '',

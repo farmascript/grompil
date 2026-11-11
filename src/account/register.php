@@ -230,6 +230,7 @@ echo fn_templateRender('registration.html', [
         'address_prefix' => 'register-address',
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
+        'address_postal_reminder' => fn_t('address_postal_reminder'),
         'address_country_code_value' => $address['country_code'],
         'address_reference_id_value' => $address['address_reference_id'],
         'street_reference_id_value' => '',

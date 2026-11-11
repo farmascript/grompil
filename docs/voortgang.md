@@ -669,3 +669,9 @@
 - Een url-manager-link naar `account.php#platform-authenticator` opent nu meteen de authenticator-modal. Voorheen scrolde de browser naar een element binnen een gesloten modal, waardoor het leek alsof de link niet werkte.
 - De cacheversie van `account-modals.js` is verhoogd en de softwareversie naar 0.16.25.
 
+### Aanvulling: postcode bepalen vanuit een adreskeuze
+
+- Na selectie van een gemeente zonder eigen postcode toont het adresformulier een korte aanwijzing dat de straat en huisnummerkeuze de postcode bepalen.
+- De postcode wordt bij een straat- en huisnummercombinatie automatisch ingevuld zodra BeSt precies één postcode teruggeeft. Bij keuze van een officieel adres worden postcode en gemeente uit de adresbron ingevuld.
+- De API-respons haalt de postcode ook op uit de embedded `hasPostalInfo` gegevens wanneer die niet rechtstreeks in `hasPostalInfo` staan. Vertalingen bijgewerkt in NL, FR, EN en DE; voer de vertaalworkflow uit. Softwareversie verhoogd naar 0.16.29.
+

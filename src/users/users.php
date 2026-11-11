@@ -283,6 +283,7 @@ $addUserForm = fn_templateRender('user_add_form.html', [
         'address_prefix' => 'new-user-address',
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
+        'address_postal_reminder' => fn_t('address_postal_reminder'),
         'address_country_code_value' => $newUserAddress['country_code'],
         'address_reference_id_value' => $newUserAddress['address_reference_id'],
         'street_reference_id_value' => '',

@@ -126,6 +126,7 @@ switch ($type) {
         $path = '/addresses';
         $parameters['houseNumber'] = $houseNumber;
         $parameters['embed'] = 'true';
+        $parameters['firstOfBuilding'] = 'true';
         if ($postCode !== '') $parameters['postCode'] = $postCode;
         elseif ($nisCode !== '') $parameters['nisCode'] = $nisCode;
         if ($streetId !== '') $parameters['streetId'] = $streetId;
@@ -188,6 +189,20 @@ foreach (array_slice($data['items'] ?? [], 0, $type === 'locality' ? 50 : 10) as
         $streetData = $item['hasStreetName'] ?? [];
         $municipalityData = $item['hasMunicipality'] ?? [];
         $postalData = $item['hasPostalInfo'] ?? [];
+        $embedded = $item['embedded'] ?? [];
+        if (is_array($embedded) && is_array($postalData)) {
+            $postalHref = (string) ($postalData['href'] ?? '');
+            if ($postalHref !== '' && is_array($embedded[$postalHref] ?? null)) {
+                $postalData = $embedded[$postalHref];
+            } elseif (isset($postalData['id'])) {
+                foreach ($embedded as $embeddedEntity) {
+                    if (is_array($embeddedEntity) && (string) ($embeddedEntity['id'] ?? '') === (string) $postalData['id']) {
+                        $postalData = $embeddedEntity;
+                        break;
+                    }
+                }
+            }
+        }
         $items[] = [
             'id' => (string) ($item['id'] ?? ''),
             'label' => trim($name($streetData['name'] ?? null) . ' ' . (string) ($item['houseNumber'] ?? '') . (!empty($item['boxNumber']) ? ' bus ' . $item['boxNumber'] : '') . ', ' . (string) ($postalData['postCode'] ?? '') . ' ' . $name($municipalityData['name'] ?? null)),
