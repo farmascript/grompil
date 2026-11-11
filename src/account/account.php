@@ -223,7 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cityLength = function_exists('mb_strlen')
                 ? mb_strlen($addressFormValues['city']) : strlen($addressFormValues['city']);
             $addressValid = isset($addressTypeLabels[$addressFormValues['address_type_key']])
-                && $addressFormValues['label'] !== ''
                 && strlen($addressFormValues['label']) <= 160
                 && $streetLength <= 160
                 && strlen($addressFormValues['house_number']) <= 32
@@ -761,12 +760,13 @@ $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex
     . '<details' . ($addressFormOpen ? ' open' : '') . ' class="border rounded p-3 mt-3"><summary class="fw-semibold">'
     . e($addressFormValues['id'] > 0 ? fn_t('account_address_edit') : fn_t('account_address_add'))
     . '</summary><form method="post" action="account.php#addresses" class="mt-3">' . csrf_field()
+    . '<div class="mb-3"><button class="btn btn-sm btn-grompil" type="submit">' . e(fn_t('save')) . '</button></div>'
     . '<input type="hidden" name="action" value="address_save"><input type="hidden" name="address_id" value="' . (int) $addressFormValues['id'] . '">'
     . '<input type="hidden" name="country_code" value="' . e((string) $addressFormValues['country_code']) . '">'
     . '<div class="row g-3 mb-3"><div class="col-md-6"><label class="form-label" for="account-address-type">'
     . e(fn_t('account_address_type')) . '</label><select class="form-select" id="account-address-type" name="address_type_key" required>'
     . $addressTypeOptionsHtml . '</select></div><div class="col-md-6"><label class="form-label" for="account-address-label">'
-    . e(fn_t('account_address_label')) . '</label><input class="form-control" id="account-address-label" name="label" maxlength="160" required value="'
+    . e(fn_t('account_address_label')) . '</label><input class="form-control" id="account-address-label" name="label" maxlength="160" value="'
     . e((string) $addressFormValues['label']) . '"></div></div>'
     . fn_templateRender('address_fields.html', [
         'address_prefix' => 'account-address-manager',
@@ -783,8 +783,7 @@ $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex
     . (int) $addressFormValues['sort_order'] . '"></div><div class="col-md-8 form-check mb-2">'
     . '<input class="form-check-input" type="checkbox" id="account-address-primary" name="is_primary"'
     . ($addressFormValues['is_primary'] ? ' checked' : '') . '><label class="form-check-label" for="account-address-primary">'
-    . e(fn_t('account_address_make_default')) . '</label></div></div><button class="btn btn-grompil mt-3" type="submit">'
-    . e(fn_t('save')) . '</button></form></details></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">'
+    . e(fn_t('account_address_make_default')) . '</label></div></div></form></details></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">'
     . e(fn_t('close')) . '</button></div></div></div></div>';
 $addressManagerHtml = '<section id="addresses" class="border rounded p-3 mb-4"><div class="d-flex flex-wrap justify-content-between gap-2 align-items-center">'
     . '<div><h2 class="h5 mb-1">' . e(fn_t('account_addresses_title')) . '</h2><div class="small text-secondary">'
