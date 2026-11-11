@@ -19,6 +19,14 @@
 
 ## 11 november 2026
 
+### Opslaan van een nieuw adres herstellen
+
+- De INSERT-query voor nieuwe adressen miste de parameter-placeholder voor `is_primary`, terwijl die waarde wel werd doorgegeven. Daardoor mislukte het toevoegen van een nieuw adres.
+- De query gebruikt nu alle 17 parameters en zet `is_active` apart op `TRUE`.
+- Applicatieversie bijgewerkt naar `0.16.33`.
+
+## 11 november 2026
+
 ### Adrescoördinaten en Google Maps
 
 - De gedeelde adreszoekfunctie neemt nu Lambert 72 en WGS84-coördinaten over uit de officiële BeSt-adressuggestie.

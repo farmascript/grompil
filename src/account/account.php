@@ -304,7 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             user_code, company_id, address_type_key, label, street, house_number, box_number,
                             postal_code, city, country_code, address_reference_id, lambert72_x, lambert72_y,
                             wgs84_latitude, wgs84_longitude, sort_order, is_primary, is_active
-                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, TRUE)
+                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, TRUE)
                          RETURNING id',
                         [
                             $userCode, $user['company_id'], $addressFormValues['address_type_key'],
