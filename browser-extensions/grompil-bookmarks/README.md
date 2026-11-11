@@ -1,49 +1,47 @@
-# Grompil-bookmarks installeren
+# Grompil Bookmarks
 
-Met deze browserextensie komen er twee mappen vooraan op je bookmarkbalk:
+Grompil Bookmarks adds two folders to the browser bookmarks bar:
 
-- **Grompil-functies** bevat de Grompil-modules die je met je huidige account
-  mag openen.
-- **Mijn navigator** bevat de indeling en links uit de URL-manager.
+- **Grompil functions** contains modules the signed-in user is allowed to open.
+- **My navigator** contains the user's URL Manager layout and links.
 
-Je bestaande bookmarks blijven staan en schuiven naar rechts. De extensie
-ververst haar twee mappen alleen wanneer je op **Synchroniseren** klikt.
+The extension only replaces the contents of the two folders it manages. Other
+browser bookmarks are left untouched. Synchronization starts only when the user
+clicks **Sync bookmarks**.
 
-## Eenmalig installeren in Vivaldi, Chrome of Edge
+## Supported browsers
 
-De installatie is voor elke browser apart. Je gebruikt telkens dezelfde map.
+This package targets Chromium browsers that can install extensions from the
+Chrome Web Store. Chrome is the primary target. Vivaldi supports installing
+Chrome Web Store extensions. Compatibility with other Chromium browsers must
+be confirmed separately.
 
-1. Open in de browser de extensiepagina:
-   - Vivaldi: typ `vivaldi://extensions` in de adresbalk.
-   - Chrome: typ `chrome://extensions`.
-   - Edge: typ `edge://extensions`.
-2. Zet **Ontwikkelaarsmodus** aan. In Edge en Chrome staat die meestal rechts
-   bovenaan; in Vivaldi kan de plaats verschillen.
-3. Klik op **Niet-verpakte extensie laden** of **Load unpacked**.
-4. Selecteer deze map, de map waarin `manifest.json` staat:
-   `C:\usr\Dropbox\php\grompil\browser-extensions\grompil-bookmarks`
-5. Bevestig de keuze. De extensie verschijnt nu in de lijst.
-6. Open de extensieknop naast de adresbalk. Als je die niet ziet, open dan het
-   extensiemenu (puzzelstukje) en pin **Grompil Bookmarks** vast.
+## Load the development build
 
-## De bookmarkmappen vullen of vernieuwen
+1. Open the browser's extension page:
+   - Chrome: `chrome://extensions`
+   - Vivaldi: `vivaldi://extensions`
+2. Enable **Developer mode**.
+3. Select **Load unpacked**.
+4. Choose this directory, the one containing `manifest.json`.
+5. Pin **Grompil Bookmarks** to the browser toolbar if desired.
 
-1. Meld je aan op de gewenste Grompil-installatie.
-2. Open de URL-manager in diezelfde browser, bijvoorbeeld
-   `https://test.grompil.com/url-manager/index.html`.
-3. Kies in de URL-manager het juiste bedrijf en de gewenste taal.
-4. Klik op **Grompil Bookmarks** en daarna op **Synchroniseren**.
-5. Open de bookmarkbalk. In Chrome, Edge en Vivaldi kun je die tonen met
-   `Ctrl+Shift+B`.
+## Sync the bookmark folders
 
-Bij een volgende synchronisatie worden alleen de twee Grompil-mappen vervangen.
-Andere bookmarks worden niet verwijderd. Zet daarom geen eigen bookmarks
-binnen de twee Grompil-mappen.
+1. Sign in to the desired Grompil installation.
+2. Open **Navigation** in Grompil, or open the URL Manager directly, for
+   example `https://test.grompil.com/url-manager/index.html`.
+3. Select the company and language you want to use in the URL Manager.
+4. Open the **Grompil Bookmarks** extension and click **Sync bookmarks**.
+5. Show the bookmarks bar if needed (usually `Ctrl+Shift+B`).
 
-## Opera en Firefox
+The extension stores the IDs of its generated folders locally so it can replace
+those folders during the next sync. Do not put personal bookmarks inside the
+two folders managed by the extension.
 
-Opera ondersteunt de meeste Chrome-extensie-API's. Je kunt dezelfde
-ontwikkelmap proberen te laden via Opera's extensiepagina. Firefox gebruikt
-grotendeels dezelfde WebExtensions-aanpak; laden kan tijdelijk via
-`about:debugging` → **This Firefox** → **Load Temporary Add-on**, en kies dan
-`manifest.json`. De extensie is nog niet in Opera of Firefox getest.
+## Store publication files
+
+See `STORE_LISTING.md`, `PRIVACY_POLICY.html`, and `SUBMISSION_CHECKLIST.md` for
+the English Chrome Web Store submission materials and remaining publication
+steps. The privacy policy must be published at a public HTTPS URL before the
+listing is submitted.

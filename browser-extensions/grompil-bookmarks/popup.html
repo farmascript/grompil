@@ -1,17 +1,18 @@
 <!doctype html>
-<html lang="nl">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Grompil-bookmarks</title>
+    <title>Grompil Bookmarks</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <main>
-        <h1>Grompil-bookmarks</h1>
-        <p>Open de Grompil-URL-manager in een ingelogde tab en synchroniseer daarna de twee bookmarkmappen.</p>
-        <button id="sync" type="button">Synchroniseren</button>
-        <p class="note">De extensie vervangt bij synchronisatie alleen de inhoud van haar eigen mappen. Andere bookmarks blijven staan en schuiven op.</p>
+        <h1>Grompil Bookmarks</h1>
+        <p>Open Navigation in Grompil or the URL Manager, then sync the two bookmark folders.</p>
+        <p class="note">When you sync, this extension reads permitted modules and URL Manager links from the Grompil site open in this tab. It uses them only to create bookmarks and does not send them to third parties.</p>
+        <button id="sync" type="button">Sync bookmarks</button>
+        <p class="note">Sync replaces only the contents of the two folders managed by this extension. Your other bookmarks stay in place.</p>
         <p id="status" role="status" aria-live="polite"></p>
     </main>
     <script src="popup.js"></script>

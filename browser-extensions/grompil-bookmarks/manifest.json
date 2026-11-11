@@ -2,15 +2,19 @@
   "manifest_version": 3,
   "name": "Grompil Bookmarks",
   "version": "0.1.0",
-  "description": "Zet Grompil-functies en de URL-managerindeling in de browser-bookmarkbalk.",
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "grompil-bookmarks@grompil.com"
-    }
-  },
+  "description": "Add your permitted Grompil modules and navigation links to your browser bookmarks.",
   "permissions": ["activeTab", "scripting", "bookmarks", "storage"],
+  "icons": {
+    "16": "icons/grompil-16.png",
+    "48": "icons/grompil-48.png",
+    "128": "icons/grompil-128.png"
+  },
   "action": {
-    "default_title": "Grompil-bookmarks synchroniseren",
+    "default_title": "Sync Grompil bookmarks",
+    "default_icon": {
+      "16": "icons/grompil-16.png",
+      "48": "icons/grompil-48.png"
+    },
     "default_popup": "popup.html"
   }
 }

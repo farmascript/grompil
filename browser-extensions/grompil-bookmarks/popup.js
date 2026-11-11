@@ -218,7 +218,7 @@ async function getBookmarksBarId() {
     const tree = await browserApi(chrome.bookmarks, chrome.bookmarks.getTree);
     const roots = tree[0]?.children || [];
     const bar = roots.find((node) => node.id === '1' || node.folderType === 'bookmarks-bar') || roots[0];
-    if (!bar) throw new Error('De bookmarkbalk kon niet worden gevonden.');
+    if (!bar) throw new Error('The bookmarks bar could not be found.');
     return bar.id;
 }
 
@@ -259,41 +259,43 @@ function countBookmarks(node) {
 
 syncButton.addEventListener('click', async () => {
     syncButton.disabled = true;
-    showStatus('De URL-manager en toegangsrechten ophalen…');
+    showStatus('Reading the URL Manager and your access permissions…');
     try {
         const [tab] = await browserApi(chrome.tabs, chrome.tabs.query, { active: true, currentWindow: true });
-        if (!tab?.id || !tab.url) throw new Error('Open eerst de Grompil-URL-manager in de actieve tab.');
+        if (!tab?.id || !tab.url) throw new Error('Open the Grompil URL Manager in the active tab first.');
         const current = new URL(tab.url);
-        if (!['http:', 'https:'].includes(current.protocol) || !/\/url-manager\/(?:index\.html)?$/.test(current.pathname)) {
-            throw new Error('Open de online URL-manager, kies eventueel het juiste bedrijf en start de synchronisatie opnieuw.');
-        }
+        if (!['http:', 'https:'].includes(current.protocol)) throw new Error('Open the online Grompil URL Manager in this tab.');
+        const topFrameIsManager = /\/url-manager\/(?:index\.html)?$/.test(current.pathname);
         const execution = await browserApi(chrome.scripting, chrome.scripting.executeScript, {
-            target: { tabId: tab.id },
+            target: { tabId: tab.id, allFrames: !topFrameIsManager },
             world: 'MAIN',
             func: async () => {
+                if (!/\/url-manager\/(?:index\.html)?$/.test(location.pathname)) {
+                    return { managerFrame: false, path: location.pathname };
+                }
                 const baseUrl = new URL('../', location.href).href;
                 const fetchJson = async (url, allowStatus = []) => {
                     const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin', headers: { Accept: 'application/json' } });
                     if (!response.ok && !allowStatus.includes(response.status)) {
                         throw new Error(response.status === 401
-                            ? 'Je Grompil-sessie is verlopen. Meld je opnieuw aan en synchroniseer opnieuw.'
-                            : `Grompil gaf een fout bij het ophalen van de bookmarkgegevens (HTTP ${response.status}).`);
+                            ? 'Your Grompil session has expired. Sign in again and sync once more.'
+                            : `Grompil could not provide the bookmark data (HTTP ${response.status}).`);
                     }
                     if (allowStatus.includes(response.status)) return { httpStatus: response.status };
                     try { return await response.json(); }
-                    catch { throw new Error('Grompil gaf geen geldige JSON-gegevens terug.'); }
+                    catch { throw new Error('Grompil returned invalid JSON data.'); }
                 };
                 const access = await fetchJson(new URL('navigation_access.php', baseUrl));
                 if (!Array.isArray(access.allowedModules) || !Array.isArray(access.knownModules)) {
-                    throw new Error('De Grompil-toegangscontrole gaf geen geldige lijst terug.');
+                    throw new Error('Grompil access control returned an invalid list.');
                 }
                 if (!access.logout || typeof access.logout.csrfToken !== 'string') {
-                    throw new Error('Meld je aan bij Grompil voordat je de bookmarkmappen synchroniseert.');
+                    throw new Error('Sign in to Grompil before syncing the bookmark folders.');
                 }
                 let catalog = window.GROMPIL_NAVIGATION;
                 if (!catalog || !Array.isArray(catalog.items)) catalog = await fetchJson(new URL('navigation.json', baseUrl));
                 if (!catalog || !Array.isArray(catalog.items) || !Array.isArray(catalog.groups)) {
-                    throw new Error('navigation.json kon niet worden gelezen.');
+                    throw new Error('Could not read navigation.json.');
                 }
                 const application = catalog.application || 'grompil';
                 const platform = await fetchJson(new URL(`platform_navigation_preferences.php?application=${encodeURIComponent(application)}`, baseUrl));
@@ -326,15 +328,23 @@ syncButton.addEventListener('click', async () => {
                     || personal.settings?.language
                     || catalog.defaultLanguage
                     || 'nl';
-                return { baseUrl: personal.settings?.baseUrl || baseUrl, language, catalog, access, platformLayout: layout, personal };
+                return {
+                    managerFrame: true,
+                    payload: { baseUrl: personal.settings?.baseUrl || baseUrl, language, catalog, access, platformLayout: layout, personal },
+                };
             },
         });
-        const payload = execution?.[0]?.result;
-        if (!payload || typeof payload !== 'object') throw new Error('De manager gaf geen navigatiegegevens terug.');
+        const managerFrame = execution?.map((entry) => entry.result).find((result) => result?.managerFrame);
+        const payload = managerFrame?.payload;
+        if (!payload) {
+            const paths = execution?.map((entry) => entry.result?.path).filter(Boolean);
+            throw new Error(`The URL Manager was not found in the active tab. Active path: ${paths?.join(', ') || current.pathname}. Open Navigation and try again.`);
+        }
+        if (!payload || typeof payload !== 'object') throw new Error('The manager returned no navigation data.');
         const count = await syncBookmarks(payload);
-        showStatus(`${count} bookmarks bijgewerkt in twee mappen. Andere bookmarks bleven onaangeraakt.`);
+        showStatus(`${count} bookmarks updated in two folders. Your other bookmarks were left untouched.`);
     } catch (error) {
-        showStatus(error?.message || 'Synchronisatie is mislukt.', true);
+        showStatus(error?.message || 'Bookmark sync failed.', true);
     } finally {
         syncButton.disabled = false;
     }
