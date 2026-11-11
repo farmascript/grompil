@@ -17,6 +17,14 @@
 
 # Voortgang Grompil
 
+## 11 november 2026
+
+### Adresinvoer: gemeente vóór postcode
+
+- In de gedeelde adresvelden-template staat nu Gemeente vóór Postcode. De veld- en tabvolgorde sluit zo aan op de adreszoeklogica, waarbij een gekozen gemeente de postcode invult.
+- De wijziging geldt voor account-, registratie-, gebruikers- en bedrijfsformulieren die deze template gebruiken.
+- Applicatieversie bijgewerkt naar `0.16.27`.
+
 ## 8 november 2026
 
 ### Herstel bedrijfskiezer HTTP 500
