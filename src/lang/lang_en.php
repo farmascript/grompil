@@ -369,6 +369,7 @@ $arrSubst = array (
   'manager_add_link' => '＋ Link',
   'manager_add_link_title' => 'Add link',
   'manager_add_page' => 'add sheet',
+  'manager_add_page_help' => 'Help with adding and managing sheets (opens in a new tab)',
   'manager_add_platform_group' => '＋ Grompil block',
   'manager_background_color' => 'Background color',
   'manager_base_url' => 'Grompil base address',

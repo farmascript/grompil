@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-11-01
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -22,7 +22,7 @@ require_once __DIR__ . '/module_guard.php';
 require_once __DIR__ . '/credentials_config.php';
 
 /** Build a stable wiki URL; an empty configuration disables documentation links. */
-function fn_dokuwikiUrl(string $level, string $pageId): string
+function fn_dokuwikiUrl(string $level, string $pageId, ?string $language = null): string
 {
     if (!in_array($level, ['users', 'dev', 'testers', 'extern'], true)
         || preg_match('/^[0-9]+$/D', $pageId) !== 1) {
@@ -41,7 +41,7 @@ function fn_dokuwikiUrl(string $level, string $pageId): string
         throw new InvalidArgumentException('Invalid DokuWiki base URL.');
     }
 
-    $language = strtolower((string) ($_SESSION['language'] ?? 'nl'));
+    $language = strtolower($language ?? (string) ($_SESSION['language'] ?? 'nl'));
     if (!in_array($language, ['nl', 'fr', 'en', 'de'], true)) {
         $language = 'nl';
     }

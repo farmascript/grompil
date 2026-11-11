@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Wed 2026-10-21 17:07:00
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -38,6 +38,35 @@ body {
     align-items: center;
     gap: 10px;
     margin-bottom: 24px;
+}
+.page-help-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    color: #0d6efd;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+.page-help-link:hover {
+    color: #084298;
+    background: #e9f2ff;
+}
+.page-help-link:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+.page-help-link svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+.page-help-link .page-help-dot {
+    fill: currentColor;
+    stroke: none;
 }
 .page-button-group {
     display: inline-flex;

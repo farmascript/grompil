@@ -679,3 +679,8 @@
 
 - Na het opslaan van een adres opent de adresbeheerder opnieuw met alle adressen zichtbaar, in plaats van terug te keren naar het accountoverzicht. De bewerkstand blijft gesloten. Softwareversie verhoogd naar 0.16.30.
 
+### Aanvulling: hulplink bij blad toevoegen in de URL-manager
+
+- Naast de knop ‘blad toevoegen’ staat nu een toegankelijk info-icoon dat de DokuWiki-hulppagina in de `users`-namespace opent in een nieuw tabblad. De link volgt de ingestelde DokuWiki-basis-URL en de geselecteerde taal.
+- De hulppagina gebruikt ID `384727` (`doc:grompil:users:384727`). Softwareversie verhoogd naar 0.16.31.
+

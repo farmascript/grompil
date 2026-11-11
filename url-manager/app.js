@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Sat 2026-10-24
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -658,8 +658,12 @@
         const moduleListTab = canEditPlatformLayout()
             ? `<span class="page-button-group"><button type="button" class="button ${isModuleListPage ? 'button-primary' : 'button-light'}" data-page="${MODULE_LIST_PAGE_ID}" ${isModuleListPage ? 'aria-current="page"' : ''}>${escapeHtml(t('module_list'))}</button></span>`
             : '';
+        const addPageHelpUrl = managerLabels[language()]?.manager_add_page_help_url || '';
+        const addPageHelp = canEditPages && addPageHelpUrl
+            ? `<a class="page-help-link" href="${escapeHtml(addPageHelpUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(t('add_page_help'))}" title="${escapeHtml(t('add_page_help'))}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"></circle><path d="M12 11v6"></path><circle cx="12" cy="7" r="1" class="page-help-dot"></circle></svg></a>`
+            : '';
         $('#page-navigation').innerHTML = pageButtons + moduleListTab
-            + (canEditPages ? `<button type="button" class="button button-light" id="add-page">${escapeHtml(t('add_page'))}</button>` : '');
+            + (canEditPages ? `<button type="button" class="button button-light" id="add-page">${escapeHtml(t('add_page'))}</button>${addPageHelp}` : '');
         const storageStatus = $('#storage-status');
         if (canEditPlatformLayout()) {
             storageStatus.textContent = t('platform_operator');
