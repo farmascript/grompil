@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:36:05
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -16,6 +16,6 @@
  */
 
 $arrSubst = array (
-  'tenant_select_title' => 'kies een bedrijf', (p)
+  'tenant_select_title' => 'kies een bedrijf'
 );
 
