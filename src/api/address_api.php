@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sat 2026-11-07 17:42:17
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -155,17 +155,18 @@ $name = static function (mixed $value) use ($language): string {
 };
 foreach (array_slice($data['items'] ?? [], 0, $type === 'locality' ? 50 : 10) as $item) {
     if (!is_array($item)) continue;
+    $postalCode = (string) ($item['postCode'] ?? $item['postalCode'] ?? '');
     if ($type === 'postal') {
-        $items[] = ['id' => (string) ($item['id'] ?? ''), 'label' => trim((string) ($item['postCode'] ?? '') . ' ' . $name($item['name'] ?? null)), 'postal_code' => (string) ($item['postCode'] ?? ''), 'city' => $name($item['name'] ?? null)];
-    } elseif ($type === 'municipality' || ($type === 'locality' && empty($item['postCode']))) {
+        $items[] = ['id' => (string) ($item['id'] ?? ''), 'label' => trim($postalCode . ' ' . $name($item['name'] ?? null)), 'postal_code' => $postalCode, 'city' => $name($item['name'] ?? null)];
+    } elseif ($type === 'municipality' || ($type === 'locality' && $postalCode === '')) {
         $items[] = [
             'id' => (string) ($item['id'] ?? ''),
             'label' => $name($item['name'] ?? null),
             'city' => $name($item['name'] ?? null),
+            'postal_code' => $postalCode,
             'nis_code' => (string) ($item['nisCode'] ?? ''),
         ];
     } elseif ($type === 'locality') {
-        $postalCode = (string) ($item['postCode'] ?? '');
         $localityName = $name($item['name'] ?? null);
         $items[] = [
             'id' => (string) ($item['id'] ?? ''),

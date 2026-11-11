@@ -25,6 +25,13 @@
 - De wijziging geldt voor account-, registratie-, gebruikers- en bedrijfsformulieren die deze template gebruiken.
 - Applicatieversie bijgewerkt naar `0.16.27`.
 
+### Adreszoekveld en help bij adressen
+
+- Bij een gekozen plaatsuggestie wordt de postcode overgenomen uit de beschikbare BeSt-velden, inclusief de alternatieve API-veldnaam. Bij een brede gemeente zonder concrete postcode blijft het veld leeg: de gemeente Sankt Vith heeft bijvoorbeeld meerdere postcodes en de API koppelt postcode-namen alleen in Vlaanderen.
+- De cacheversie van `address-lookup.js` is verhoogd zodat browsers de bijgewerkte zoekcode ophalen.
+- Naast “Adres toevoegen” staat nu een DokuWiki-helpicoon op level `users`; het pagina-ID staat in een HTML-template.
+- Applicatieversie bijgewerkt naar `0.16.28`.
+
 ## 8 november 2026
 
 ### Herstel bedrijfskiezer HTTP 500

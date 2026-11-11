@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 17:42:17
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -215,7 +215,8 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     });
     schedule('city', 'locality', 2, () => ({}), (item) => {
         fields.city.value = item.city;
-        if (fields.postal) fields.postal.value = item.postal_code || '';
+        const selectedPostalCode = item.postal_code || item.postCode || item.postalCode || '';
+        if (fields.postal) fields.postal.value = selectedPostalCode;
         if (municipalityNis) municipalityNis.value = item.nis_code || '';
         if (fields.postal) {
             cancelSearch(fields.postal);

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sun 2026-11-08 14:37:00
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -793,7 +793,7 @@ $addressManagerHtml = '<section id="addresses" class="border rounded p-3 mb-4"><
     . $selectedAddressHtml . '</div></div><div class="d-flex gap-2">'
     . '<button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#account-address-modal">'
     . e(fn_t('account_addresses_manage')) . ' (' . count($addressRows) . ')</button>'
-    . '<a class="btn btn-grompil" href="account.php?add_address=1#addresses">' . e(fn_t('account_address_add')) . '</a>'
+    . fn_templateRender('account_address_add_link.html')
     . '</div></div></section>' . $addressModalHtml;
 $platformAuthenticatorHtml = '';
 if ($isPlatformAuthenticatorAccount && $platformAuthenticatorEnabled && !$mustChangePassword) {
