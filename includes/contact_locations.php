@@ -156,6 +156,49 @@ function grompil_google_maps_url(mixed $latitude, mixed $longitude): ?string
 }
 
 /**
+ * Return an icon-only, accessible Google Maps link for an address.
+ *
+ * @param mixed $latitude Latitude.
+ * @param mixed $longitude Longitude.
+ * @return string
+ */
+function grompil_google_maps_link(mixed $latitude, mixed $longitude): string
+{
+    $url = grompil_google_maps_url($latitude, $longitude);
+    if ($url === null) {
+        return '';
+    }
+    $label = fn_t('address_google_maps');
+    return '<a class="address-map-link link-primary text-decoration-none ms-2" href="' . e($url)
+        . '" target="_blank" rel="noopener noreferrer" title="' . e($label)
+        . '" aria-label="' . e($label) . '"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">'
+        . '<path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM6.5 1.6a6.5 6.5 0 0 0-3.8 2.1h2.1c.4-.8 1-1.5 1.7-2.1ZM2 5.2a6.4 6.4 0 0 0-.5 2.1h2.2c.1-.7.2-1.4.5-2.1H2Zm-.5 3.5a6.4 6.4 0 0 0 .5 2.1h2.2a8 8 0 0 1-.5-2.1H1.5Zm1.2 3.4a6.5 6.5 0 0 0 3.8 2.1c-.7-.6-1.3-1.3-1.7-2.1H2.7ZM7.3 14a8 8 0 0 1-1.2-2.1h3.8A8 8 0 0 1 8.7 14a6.7 6.7 0 0 1-1.4 0Zm3.9-.3a6.5 6.5 0 0 0 2.1-1.6h-2.1c-.4.6-.8 1.2-1.3 1.7.4 0 .9 0 1.3-.1ZM11.2 10.6H4.8a6.6 6.6 0 0 1-.6-2.1h7.6a6.6 6.6 0 0 1-.6 2.1Zm.6-3.3H4.2c.1-.8.3-1.5.6-2.1h6.4c.3.6.5 1.3.6 2.1Zm2.7 0h-2.2a8 8 0 0 0-.5-2.1H14a6.4 6.4 0 0 1 .5 2.1Zm-1.7-3.4h-2.1c-.4-.8-1-1.5-1.7-2.1a6.5 6.5 0 0 1 3.8 2.1ZM8.7 2c.6.6 1.1 1.3 1.4 2.1H5.9C6.2 3.3 6.7 2.6 7.3 2a6.7 6.7 0 0 1 1.4 0Z"/></svg><span class="visually-hidden">'
+        . e($label) . '</span></a>';
+}
+
+/**
+ * Require an official address selection or an explicit manual-entry confirmation for Belgian addresses.
+ *
+ * @param array<string, mixed> $address Submitted address fields.
+ * @param bool $manualConfirmed Whether the user confirmed saving without an official match.
+ * @return bool
+ */
+function grompil_address_selection_allowed(array $address, bool $manualConfirmed): bool
+{
+    $hasAddress = false;
+    foreach (['street', 'house_number', 'postal_code', 'city'] as $field) {
+        if (trim((string) ($address[$field] ?? '')) !== '') {
+            $hasAddress = true;
+            break;
+        }
+    }
+    if (!$hasAddress || strtoupper((string) ($address['country_code'] ?? 'BE')) !== 'BE') {
+        return true;
+    }
+    return trim((string) ($address['address_reference_id'] ?? '')) !== '' || $manualConfirmed;
+}
+
+/**
  * Save a user's residential address without disturbing any other address type.
  *
  * @param string $userCode The stable user code.

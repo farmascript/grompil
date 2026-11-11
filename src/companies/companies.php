@@ -115,6 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ), true))
             && preg_match('/^(?:|[A-Za-z0-9][A-Za-z0-9._-]{0,126}\\.(?:jpe?g|png|webp|gif))$/i', $fields['store_logo_file']) === 1
             && preg_match('/^(?:|[A-Za-z0-9][A-Za-z0-9._-]{0,126}\\.(?:jpe?g|png|webp|gif))$/i', $fields['store_hero_image_file']) === 1;
+        $valid = $valid && grompil_address_selection_allowed(
+            $fields,
+            isset($_POST['manual_address_without_coordinates'])
+        );
 
         if (!$valid || !$numberStatusesValid) {
             $messageKey = $companyId === 0 && !filter_var($initialAdminEmail, FILTER_VALIDATE_EMAIL)
@@ -267,8 +271,7 @@ while ($companyResult && $company = pg_fetch_assoc($companyResult)) {
         ], static fn (string $value): bool => $value !== '')),
         'company_slug' => (string) $company['slug'],
         'company_location' => e(trim((string) $company['postal_code'] . ' ' . (string) $company['city']))
-            . (($mapUrl = grompil_google_maps_url($company['wgs84_latitude'], $company['wgs84_longitude'])) !== null
-                ? '<br><a href="' . e($mapUrl) . '" target="_blank" rel="noopener noreferrer">' . e(fn_t('address_google_maps')) . '</a>' : ''),
+            . grompil_google_maps_link($company['wgs84_latitude'], $company['wgs84_longitude']),
         'company_language' => (string) $company['default_language'],
         'company_users_count' => (string) $company['users_count'],
         'company_status' => fn_t($company['is_active'] === 't' ? 'active' : 'inactive'),
@@ -339,6 +342,10 @@ echo fn_templateRender('companies.html', [
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_postal_reminder' => fn_t('address_postal_reminder'),
+        'address_select_required' => fn_t('address_select_required'),
+        'address_manual_prompt' => fn_t('address_manual_prompt'),
+        'address_manual_required' => fn_t('address_manual_required'),
+        'address_manual_confirm' => fn_t('address_manual_confirm'),
         'address_country_code_value' => (string) $fields['country_code'],
         'address_reference_id_value' => (string) $fields['address_reference_id'],
         'lambert72_x_value' => (string) $fields['lambert72_x'], 'lambert72_y_value' => (string) $fields['lambert72_y'],

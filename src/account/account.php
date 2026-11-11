@@ -244,7 +244,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 && preg_match('/^[A-Z]{2}$/', $addressFormValues['country_code']) === 1
                 && $addressFormValues['sort_order'] >= 0
                 && $addressFormValues['sort_order'] <= 100000
-                && ($addressFormValues['street'] !== '' || $addressFormValues['postal_code'] !== '' || $addressFormValues['city'] !== '');
+                && ($addressFormValues['street'] !== '' || $addressFormValues['postal_code'] !== '' || $addressFormValues['city'] !== '')
+                && grompil_address_selection_allowed($addressFormValues, isset($_POST['manual_address_without_coordinates']));
             if (!$addressValid) {
                 $addressFormMessage = '<div class="alert alert-warning" role="status">'
                     . e(fn_t('account_address_invalid')) . '</div>';
@@ -535,7 +536,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $profileValid = true;
             if ($profileSubmitted) {
                 $displayNameLength = function_exists('mb_strlen') ? mb_strlen($displayName) : strlen($displayName);
-                if ($displayName === '' || $displayNameLength > 255 || preg_match('/[\x00-\x1F\x7F]/', $displayName)) {
+                if ($profileAddressSubmitted && !grompil_address_selection_allowed(
+                    $address,
+                    isset($_POST['manual_address_without_coordinates'])
+                )) {
+                    $message = '<div class="alert alert-warning" role="status">'
+                        . e(fn_t('address_manual_required')) . '</div>';
+                    $profileValid = false;
+                }
+                if ($profileValid && ($displayName === '' || $displayNameLength > 255 || preg_match('/[\x00-\x1F\x7F]/', $displayName))) {
                     $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('account_profile_invalid')) . '</div>';
                     $profileValid = false;
                 }
@@ -701,6 +710,10 @@ $forcedProfileFieldsHtml = $mustChangePassword
             'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
             'address_lookup_no_results' => fn_t('address_lookup_no_results'),
             'address_postal_reminder' => fn_t('address_postal_reminder'),
+            'address_select_required' => fn_t('address_select_required'),
+            'address_manual_prompt' => fn_t('address_manual_prompt'),
+            'address_manual_required' => fn_t('address_manual_required'),
+            'address_manual_confirm' => fn_t('address_manual_confirm'),
             'address_country_code_value' => $address['country_code'],
             'address_reference_id_value' => $address['address_reference_id'],
             'lambert72_x_value' => $address['lambert72_x'], 'lambert72_y_value' => $address['lambert72_y'],
@@ -744,9 +757,8 @@ foreach ($addressRows as $index => $addressRow) {
         . ' <span class="text-secondary">(' . e($typeLabel) . ')</span>'
         . ($addressRow['is_primary'] ? ' <span class="badge text-bg-success">' . e(fn_t('account_address_default')) . '</span>' : '')
         . ($isSelected ? ' <span class="badge text-bg-secondary">' . e(fn_t('account_address_displayed')) . '</span>' : '')
+        . grompil_google_maps_link($addressRow['wgs84_latitude'], $addressRow['wgs84_longitude'])
         . '<div>' . e($addressText) . '</div>'
-        . (($mapUrl = grompil_google_maps_url($addressRow['wgs84_latitude'], $addressRow['wgs84_longitude'])) !== null
-            ? '<div><a href="' . e($mapUrl) . '" target="_blank" rel="noopener noreferrer">' . e(fn_t('address_google_maps')) . '</a></div>' : '')
         . '<div class="small text-secondary">'
         . e(fn_t('account_address_order')) . ': ' . (int) $addressRow['sort_order'] . '</div></div></div>'
         . '<div class="account-address-actions d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">'
@@ -779,10 +791,9 @@ if ($selectedAddress !== null) {
         ?? (string) $selectedAddress['address_type_key'];
     $selectedAddressHtml = '<div class="mt-2">'
         . '<strong>' . e($selectedAddress['label'] !== '' ? (string) $selectedAddress['label'] : $selectedTypeLabel) . '</strong>'
-        . ' <span class="text-secondary">(' . e($selectedTypeLabel) . ')</span><br>'
+        . ' <span class="text-secondary">(' . e($selectedTypeLabel) . ')</span>'
+        . grompil_google_maps_link($selectedAddress['wgs84_latitude'], $selectedAddress['wgs84_longitude']) . '<br>'
         . e($selectedAddressText)
-        . (($mapUrl = grompil_google_maps_url($selectedAddress['wgs84_latitude'], $selectedAddress['wgs84_longitude'])) !== null
-            ? '<br><a href="' . e($mapUrl) . '" target="_blank" rel="noopener noreferrer">' . e(fn_t('address_google_maps')) . '</a>' : '')
         . '</div>';
 }
 $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex="-1" aria-labelledby="account-address-modal-title"'
@@ -809,6 +820,10 @@ $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_postal_reminder' => fn_t('address_postal_reminder'),
+        'address_select_required' => fn_t('address_select_required'),
+        'address_manual_prompt' => fn_t('address_manual_prompt'),
+        'address_manual_required' => fn_t('address_manual_required'),
+        'address_manual_confirm' => fn_t('address_manual_confirm'),
         'address_country_code_value' => $addressFormValues['country_code'],
         'address_reference_id_value' => $addressFormValues['address_reference_id'],
         'lambert72_x_value' => $addressFormValues['lambert72_x'], 'lambert72_y_value' => $addressFormValues['lambert72_y'],

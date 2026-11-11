@@ -25,6 +25,8 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         .map((input) => [input.dataset.addressCoordinate, input]));
     const municipalityNis = group.querySelector('[data-address-nis-code]');
     const status = group.querySelector('[data-address-status]');
+    const manualWrap = group.querySelector('[data-address-manual-wrap]');
+    const manualConfirm = group.querySelector('[data-address-manual-confirm]');
     const lists = new Map();
     const timers = new Map();
     const requestSequence = new Map();
@@ -32,6 +34,8 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     const clearReference = () => {
         if (referenceId) referenceId.value = '';
         Object.values(coordinateFields).forEach((input) => { input.value = ''; });
+        if (manualConfirm) manualConfirm.checked = false;
+        manualWrap?.classList.add('d-none');
     };
     const setStatus = (message = '') => {
         if (!status) return;
@@ -244,11 +248,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             setStatus(status?.dataset.postalReminder || '');
         }
     });
-    schedule('house', 'address', 1, () => ({
-        postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
-        nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
-        street_id: streetId?.value ?? '', house_number: getValue('house'),
-    }), (item) => {
+    const selectOfficialAddress = (item) => {
         fields.street.value = item.street;
         fields.house.value = item.house_number;
         if (fields.box) fields.box.value = item.box_number;
@@ -256,13 +256,63 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         fields.city.value = item.city;
         if (referenceId) referenceId.value = item.id;
         Object.entries(coordinateFields).forEach(([key, input]) => { input.value = item[key] || ''; });
+        if (manualConfirm) manualConfirm.checked = false;
+        manualWrap?.classList.add('d-none');
         setStatus('');
-    }, (items) => {
+    };
+    schedule('house', 'address', 1, () => ({
+        postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
+        nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
+        street_id: streetId?.value ?? '', house_number: getValue('house'),
+    }), selectOfficialAddress, (items) => {
         const postalCodes = [...new Set(items.map((item) => item.postal_code?.trim()).filter(Boolean))];
         if (postalCodes.length === 1 && fields.postal && !getValue('postal')) {
             fields.postal.value = postalCodes[0];
             if (items[0].city && fields.city) fields.city.value = items[0].city;
             if (status) setStatus('');
+        }
+    });
+
+    if (manualConfirm) {
+        manualConfirm.addEventListener('change', () => {
+            if (manualConfirm.checked) setStatus('');
+        });
+    }
+
+    const form = group.closest('form');
+    let checkingAddressBeforeSubmit = false;
+    form?.addEventListener('submit', async (event) => {
+        const hasAddress = ['street', 'house', 'postal', 'city'].some((role) => getValue(role) !== '');
+        if (!hasAddress || (referenceId?.value.trim() ?? '') !== '' || manualConfirm?.checked) return;
+
+        event.preventDefault();
+        if (checkingAddressBeforeSubmit) return;
+        checkingAddressBeforeSubmit = true;
+        cancelSearch(fields.house);
+        const query = {
+            postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
+            nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
+            street_id: streetId?.value ?? '', house_number: getValue('house'),
+        };
+        try {
+            if (getValue('house') && getValue('street') && (getValue('postal') || getValue('city'))) {
+                const items = await search('address', query);
+                if (items.length) {
+                    setStatus(status?.dataset.selectRequired || '');
+                    show(fields.house, items, selectOfficialAddress);
+                    fields.house.focus();
+                    return;
+                }
+            }
+            manualWrap?.classList.remove('d-none');
+            setStatus(status?.dataset.manualPrompt || status?.dataset.manualRequired || '');
+            manualConfirm?.focus();
+        } catch (error) {
+            manualWrap?.classList.remove('d-none');
+            setStatus(status?.dataset.manualPrompt || status?.dataset.manualRequired || error.message);
+            manualConfirm?.focus();
+        } finally {
+            checkingAddressBeforeSubmit = false;
         }
     });
 });

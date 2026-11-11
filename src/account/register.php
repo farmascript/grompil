@@ -83,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         && strlen($address['postal_code']) <= 20
         && (function_exists('mb_strlen') ? mb_strlen($address['city']) : strlen($address['city'])) <= 100
         && preg_match('/^[A-Z]{2}$/', $address['country_code']) === 1
+        && grompil_address_selection_allowed($address, isset($_POST['manual_address_without_coordinates']))
         && !preg_match('/[\x00-\x1F\x7F]/', $acronym)
         && strlen((string) ($_POST['password'] ?? '')) >= 12
         && strlen((string) ($_POST['password'] ?? '')) <= 4096
@@ -235,6 +236,10 @@ echo fn_templateRender('registration.html', [
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_postal_reminder' => fn_t('address_postal_reminder'),
+        'address_select_required' => fn_t('address_select_required'),
+        'address_manual_prompt' => fn_t('address_manual_prompt'),
+        'address_manual_required' => fn_t('address_manual_required'),
+        'address_manual_confirm' => fn_t('address_manual_confirm'),
         'address_country_code_value' => $address['country_code'],
         'address_reference_id_value' => $address['address_reference_id'],
         'lambert72_x_value' => $address['lambert72_x'], 'lambert72_y_value' => $address['lambert72_y'],

@@ -3,7 +3,7 @@
 <div class="col-12" data-address-fields data-address-country="@address_country_code_value@">
     <p class="form-label mb-1">@address_title@</p>
     <div class="form-text mb-2">@address_lookup_flow_help@</div>
-    <div class="form-text mb-2 d-none" data-address-status data-no-results="@address_lookup_no_results@" data-postal-reminder="@address_postal_reminder@" aria-live="polite"></div>
+    <div class="form-text mb-2 d-none" data-address-status data-no-results="@address_lookup_no_results@" data-postal-reminder="@address_postal_reminder@" data-select-required="@address_select_required@" data-manual-prompt="@address_manual_prompt@" data-manual-required="@address_manual_required@" aria-live="polite"></div>
     <input type="hidden" name="address_reference_id" data-address-reference-id value="@address_reference_id_value@">
     <input type="hidden" name="lambert72_x" data-address-coordinate="lambert72_x" value="@lambert72_x_value@">
     <input type="hidden" name="lambert72_y" data-address-coordinate="lambert72_y" value="@lambert72_y_value@">
@@ -32,6 +32,10 @@
             <label class="form-label" for="@address_prefix@-box">@address_box_number@</label>
             <input class="form-control" id="@address_prefix@-box" name="box_number" maxlength="32" data-address-role="box" value="@box_number_value@">
         </div>
+    </div>
+    <div class="form-check mt-2 d-none" data-address-manual-wrap>
+        <input class="form-check-input" type="checkbox" id="@address_prefix@-manual-confirm" name="manual_address_without_coordinates" value="1" data-address-manual-confirm>
+        <label class="form-check-label" for="@address_prefix@-manual-confirm">@address_manual_confirm@</label>
     </div>
 </div>
 

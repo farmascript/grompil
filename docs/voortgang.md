@@ -19,6 +19,15 @@
 
 ## 11 november 2026
 
+### Officiële adreskeuze en Maps-icoon
+
+- Bij opslaan controleert het adresformulier opnieuw of er een officiële BeSt-adresmatch bestaat. Als die er is, moet de gebruiker de volledige adresregel aanklikken voordat de opslag doorgaat.
+- Als er geen officiële match is of de adresdienst niet beschikbaar is, kan de gebruiker handmatige invoer expliciet bevestigen. De server controleert die bevestiging eveneens voor Belgische adressen.
+- De Google Maps-link staat nu als toegankelijk wereldbolicoon naast de adresnaam in de adresoverzichten.
+- Applicatieversie bijgewerkt naar `0.16.34`.
+
+## 11 november 2026
+
 ### Opslaan van een nieuw adres herstellen
 
 - De INSERT-query voor nieuwe adressen miste de parameter-placeholder voor `is_primary`, terwijl die waarde wel werd doorgegeven. Daardoor mislukte het toevoegen van een nieuw adres.

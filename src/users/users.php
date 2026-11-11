@@ -80,7 +80,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             || strlen($newUserAddress['house_number']) > 32 || strlen($newUserAddress['box_number']) > 32
             || strlen($newUserAddress['postal_code']) > 20
             || (function_exists('mb_strlen') ? mb_strlen($newUserAddress['city']) : strlen($newUserAddress['city'])) > 100
-            || preg_match('/^[A-Z]{2}$/', $newUserAddress['country_code']) !== 1) {
+            || preg_match('/^[A-Z]{2}$/', $newUserAddress['country_code']) !== 1
+            || !grompil_address_selection_allowed(
+                $newUserAddress,
+                isset($_POST['manual_address_without_coordinates'])
+            )) {
             $messageKey = 'user_add_invalid';
         } else {
             try {
@@ -288,6 +292,10 @@ $addUserForm = fn_templateRender('user_add_form.html', [
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_postal_reminder' => fn_t('address_postal_reminder'),
+        'address_select_required' => fn_t('address_select_required'),
+        'address_manual_prompt' => fn_t('address_manual_prompt'),
+        'address_manual_required' => fn_t('address_manual_required'),
+        'address_manual_confirm' => fn_t('address_manual_confirm'),
         'address_country_code_value' => $newUserAddress['country_code'],
         'address_reference_id_value' => $newUserAddress['address_reference_id'],
         'lambert72_x_value' => $newUserAddress['lambert72_x'], 'lambert72_y_value' => $newUserAddress['lambert72_y'],
