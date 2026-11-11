@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:15:50
- * @date_mut: Sat 2026-11-07 17:28:50
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -52,6 +52,10 @@ $address = [
     'city' => trim((string) ($_POST['city'] ?? '')),
     'country_code' => strtoupper(trim((string) ($_POST['country_code'] ?? 'BE'))),
     'address_reference_id' => trim((string) ($_POST['address_reference_id'] ?? '')),
+    'lambert72_x' => grompil_address_coordinate($_POST['lambert72_x'] ?? '', -1000000, 1000000, 3) ?? '',
+    'lambert72_y' => grompil_address_coordinate($_POST['lambert72_y'] ?? '', -1000000, 1000000, 3) ?? '',
+    'wgs84_latitude' => grompil_address_coordinate($_POST['wgs84_latitude'] ?? '', -90, 90, 7) ?? '',
+    'wgs84_longitude' => grompil_address_coordinate($_POST['wgs84_longitude'] ?? '', -180, 180, 7) ?? '',
 ];
 $accountType = (string) ($_POST['account_type'] ?? 'customer');
 
@@ -233,6 +237,8 @@ echo fn_templateRender('registration.html', [
         'address_postal_reminder' => fn_t('address_postal_reminder'),
         'address_country_code_value' => $address['country_code'],
         'address_reference_id_value' => $address['address_reference_id'],
+        'lambert72_x_value' => $address['lambert72_x'], 'lambert72_y_value' => $address['lambert72_y'],
+        'wgs84_latitude_value' => $address['wgs84_latitude'], 'wgs84_longitude_value' => $address['wgs84_longitude'],
         'street_reference_id_value' => '',
         'street_value' => $address['street'],
         'house_number_value' => $address['house_number'],

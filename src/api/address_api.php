@@ -190,6 +190,9 @@ foreach (array_slice($data['items'] ?? [], 0, $type === 'locality' ? 50 : 10) as
         $municipalityData = $item['hasMunicipality'] ?? [];
         $postalData = $item['hasPostalInfo'] ?? [];
         $embedded = $item['embedded'] ?? [];
+        $position = is_array($item['addressPosition'] ?? null) ? $item['addressPosition'] : [];
+        $lambert72 = is_array($position['lambert72'] ?? null) ? $position['lambert72'] : [];
+        $wgs84 = is_array($position['wgs84'] ?? null) ? $position['wgs84'] : [];
         if (is_array($embedded) && is_array($postalData)) {
             $postalHref = (string) ($postalData['href'] ?? '');
             if ($postalHref !== '' && is_array($embedded[$postalHref] ?? null)) {
@@ -211,6 +214,10 @@ foreach (array_slice($data['items'] ?? [], 0, $type === 'locality' ? 50 : 10) as
             'box_number' => (string) ($item['boxNumber'] ?? ''),
             'postal_code' => (string) ($postalData['postCode'] ?? ''),
             'city' => $name($municipalityData['name'] ?? null),
+            'lambert72_x' => is_numeric($lambert72['x'] ?? null) ? (string) $lambert72['x'] : '',
+            'lambert72_y' => is_numeric($lambert72['y'] ?? null) ? (string) $lambert72['y'] : '',
+            'wgs84_latitude' => is_numeric($wgs84['lat'] ?? null) ? (string) $wgs84['lat'] : '',
+            'wgs84_longitude' => is_numeric($wgs84['long'] ?? null) ? (string) $wgs84['long'] : '',
         ];
     }
 }

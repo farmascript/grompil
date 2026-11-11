@@ -41,6 +41,7 @@ $arrSubst = array (
   'address_lookup_no_results' => 'Aucune suggestion officielle trouvée. Vérifiez l’orthographe ou saisissez l’adresse manuellement.',
   'address_postal_reminder' => 'Choisissez une rue et un numéro pour récupérer le code postal.',
   'address_title' => 'Adresse',
+  'address_google_maps' => 'Ouvrir dans Google Maps',
   'address_type_residential' => 'Adresse résidentielle',
   'address_type_postal' => 'Adresse postale',
   'address_type_headquarters' => 'Siège social',

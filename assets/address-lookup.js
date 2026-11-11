@@ -21,13 +21,18 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
     const fields = Object.fromEntries([...group.querySelectorAll('[data-address-role]')].map((input) => [input.dataset.addressRole, input]));
     const streetId = group.querySelector('[data-address-street-id]');
     const referenceId = group.querySelector('[data-address-reference-id]');
+    const coordinateFields = Object.fromEntries([...group.querySelectorAll('[data-address-coordinate]')]
+        .map((input) => [input.dataset.addressCoordinate, input]));
     const municipalityNis = group.querySelector('[data-address-nis-code]');
     const status = group.querySelector('[data-address-status]');
     const lists = new Map();
     const timers = new Map();
     const requestSequence = new Map();
 
-    const clearReference = () => { if (referenceId) referenceId.value = ''; };
+    const clearReference = () => {
+        if (referenceId) referenceId.value = '';
+        Object.values(coordinateFields).forEach((input) => { input.value = ''; });
+    };
     const setStatus = (message = '') => {
         if (!status) return;
         status.textContent = message;
@@ -250,6 +255,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         fields.postal.value = item.postal_code;
         fields.city.value = item.city;
         if (referenceId) referenceId.value = item.id;
+        Object.entries(coordinateFields).forEach(([key, input]) => { input.value = item[key] || ''; });
         setStatus('');
     }, (items) => {
         const postalCodes = [...new Set(items.map((item) => item.postal_code?.trim()).filter(Boolean))];

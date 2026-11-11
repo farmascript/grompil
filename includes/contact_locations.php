@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-11-07 14:57:26
- * @date_mut: Sat 2026-11-07 16:06:44
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -71,7 +71,8 @@ function grompil_user_primary_address(string $userCode): array
     $empty = grompil_empty_address();
     $result = db_query_params(
         'contacts.user_primary_address',
-        "SELECT street, house_number, box_number, postal_code, city, country_code, address_reference_id
+        "SELECT street, house_number, box_number, postal_code, city, country_code, address_reference_id,
+                lambert72_x, lambert72_y, wgs84_latitude, wgs84_longitude
          FROM dt_user_locations
          WHERE user_code = $1 AND address_type_key = 'residential' AND is_primary AND is_active
          LIMIT 1",
@@ -92,7 +93,8 @@ function grompil_company_head_office(int $companyId): array
     $empty = grompil_empty_address();
     $result = db_query_params(
         'contacts.company_head_office',
-        "SELECT street, house_number, box_number, postal_code, city, country_code, address_reference_id
+        "SELECT street, house_number, box_number, postal_code, city, country_code, address_reference_id,
+                lambert72_x, lambert72_y, wgs84_latitude, wgs84_longitude
          FROM dt_company_locations
          WHERE company_id = $1 AND address_type_key = 'headquarters' AND is_primary AND is_active
          LIMIT 1",
@@ -112,7 +114,45 @@ function grompil_empty_address(): array
     return [
         'street' => '', 'house_number' => '', 'box_number' => '', 'postal_code' => '',
         'city' => '', 'country_code' => 'BE', 'address_reference_id' => '',
+        'lambert72_x' => '', 'lambert72_y' => '', 'wgs84_latitude' => '', 'wgs84_longitude' => '',
     ];
+}
+
+/**
+ * Validate and normalize one coordinate received from an address form.
+ *
+ * @param mixed $value Submitted coordinate.
+ * @param float $minimum Inclusive minimum.
+ * @param float $maximum Inclusive maximum.
+ * @param int $precision Decimal places to keep.
+ * @return ?string
+ */
+function grompil_address_coordinate(mixed $value, float $minimum, float $maximum, int $precision): ?string
+{
+    $value = trim((string) ($value ?? ''));
+    if ($value === '' || !is_numeric($value)) {
+        return null;
+    }
+    $number = (float) $value;
+    return is_finite($number) && $number >= $minimum && $number <= $maximum
+        ? number_format($number, $precision, '.', '')
+        : null;
+}
+
+/**
+ * Build a Google Maps search URL from stored WGS84 coordinates.
+ *
+ * @param mixed $latitude Latitude.
+ * @param mixed $longitude Longitude.
+ * @return ?string
+ */
+function grompil_google_maps_url(mixed $latitude, mixed $longitude): ?string
+{
+    $latitude = grompil_address_coordinate($latitude, -90, 90, 7);
+    $longitude = grompil_address_coordinate($longitude, -180, 180, 7);
+    return $latitude === null || $longitude === null
+        ? null
+        : 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($latitude . ',' . $longitude);
 }
 
 /**
@@ -141,18 +181,25 @@ function grompil_save_user_primary_address(string $userCode, ?int $companyId, ar
         'contacts.save_user_primary_address',
         "INSERT INTO dt_user_locations (
             user_code, company_id, address_type_key, street, house_number, box_number,
-            postal_code, city, country_code, address_reference_id, is_primary, is_active
-         ) VALUES ($1, $2, 'residential', $3, $4, $5, $6, $7, $8, $9, TRUE, TRUE)
+            postal_code, city, country_code, address_reference_id, lambert72_x, lambert72_y,
+            wgs84_latitude, wgs84_longitude, is_primary, is_active
+         ) VALUES ($1, $2, 'residential', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, TRUE)
          ON CONFLICT (user_code, address_type_key) WHERE is_primary AND is_active DO UPDATE
          SET company_id = EXCLUDED.company_id, street = EXCLUDED.street,
              house_number = EXCLUDED.house_number, box_number = EXCLUDED.box_number,
              postal_code = EXCLUDED.postal_code, city = EXCLUDED.city,
              country_code = EXCLUDED.country_code, address_reference_id = EXCLUDED.address_reference_id,
+             lambert72_x = EXCLUDED.lambert72_x, lambert72_y = EXCLUDED.lambert72_y,
+             wgs84_latitude = EXCLUDED.wgs84_latitude, wgs84_longitude = EXCLUDED.wgs84_longitude,
              is_primary = TRUE, is_active = TRUE, updated_at = now()",
         [
             $userCode, $companyId, $address['street'] ?? '', $address['house_number'] ?? '',
             $address['box_number'] ?? '', $address['postal_code'] ?? '', $address['city'] ?? '',
             $address['country_code'] ?? 'BE', $address['address_reference_id'] ?? '',
+            grompil_address_coordinate($address['lambert72_x'] ?? '', -1000000, 1000000, 3),
+            grompil_address_coordinate($address['lambert72_y'] ?? '', -1000000, 1000000, 3),
+            grompil_address_coordinate($address['wgs84_latitude'] ?? '', -90, 90, 7),
+            grompil_address_coordinate($address['wgs84_longitude'] ?? '', -180, 180, 7),
         ]
     );
     return $result !== false;
@@ -171,18 +218,25 @@ function grompil_save_company_head_office(int $companyId, array $address): bool
         'contacts.save_company_head_office',
         "INSERT INTO dt_company_locations (
             company_id, address_type_key, street, house_number, box_number,
-            postal_code, city, country_code, address_reference_id, is_primary, is_public, is_active
-         ) VALUES ($1, 'headquarters', $2, $3, $4, $5, $6, $7, $8, TRUE, TRUE, TRUE)
+            postal_code, city, country_code, address_reference_id, lambert72_x, lambert72_y,
+            wgs84_latitude, wgs84_longitude, is_primary, is_public, is_active
+         ) VALUES ($1, 'headquarters', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, TRUE, TRUE, TRUE)
          ON CONFLICT (company_id, address_type_key) WHERE is_primary AND is_active DO UPDATE
          SET street = EXCLUDED.street, house_number = EXCLUDED.house_number,
              box_number = EXCLUDED.box_number, postal_code = EXCLUDED.postal_code,
              city = EXCLUDED.city, country_code = EXCLUDED.country_code,
              address_reference_id = EXCLUDED.address_reference_id,
+             lambert72_x = EXCLUDED.lambert72_x, lambert72_y = EXCLUDED.lambert72_y,
+             wgs84_latitude = EXCLUDED.wgs84_latitude, wgs84_longitude = EXCLUDED.wgs84_longitude,
              is_primary = TRUE, is_public = TRUE, is_active = TRUE, updated_at = now()",
         [
             $companyId, $address['street'] ?? '', $address['house_number'] ?? '',
             $address['box_number'] ?? '', $address['postal_code'] ?? '', $address['city'] ?? '',
             $address['country_code'] ?? 'BE', $address['address_reference_id'] ?? '',
+            grompil_address_coordinate($address['lambert72_x'] ?? '', -1000000, 1000000, 3),
+            grompil_address_coordinate($address['lambert72_y'] ?? '', -1000000, 1000000, 3),
+            grompil_address_coordinate($address['wgs84_latitude'] ?? '', -90, 90, 7),
+            grompil_address_coordinate($address['wgs84_longitude'] ?? '', -180, 180, 7),
         ]
     );
     return $result !== false;

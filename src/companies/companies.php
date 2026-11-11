@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:45:51
- * @date_mut: Sat 2026-11-07 17:28:50
+ * @date_mut: Wed 2026-11-11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -64,6 +64,10 @@ $fields = [
     'postal_code' => trim((string) ($_POST['postal_code'] ?? '')),
     'city' => trim((string) ($_POST['city'] ?? '')),
     'address_reference_id' => trim((string) ($_POST['address_reference_id'] ?? '')),
+    'lambert72_x' => grompil_address_coordinate($_POST['lambert72_x'] ?? '', -1000000, 1000000, 3) ?? '',
+    'lambert72_y' => grompil_address_coordinate($_POST['lambert72_y'] ?? '', -1000000, 1000000, 3) ?? '',
+    'wgs84_latitude' => grompil_address_coordinate($_POST['wgs84_latitude'] ?? '', -90, 90, 7) ?? '',
+    'wgs84_longitude' => grompil_address_coordinate($_POST['wgs84_longitude'] ?? '', -180, 180, 7) ?? '',
     'country_code' => strtoupper(trim((string) ($_POST['country_code'] ?? 'BE'))),
     'default_language' => strtoupper(trim((string) ($_POST['default_language'] ?? 'NL'))),
     'store_theme' => trim((string) ($_POST['store_theme'] ?? 'default')),
@@ -235,12 +239,13 @@ $companyResult = $companiesQuery(
     "SELECT c.*, location.postal_code, location.city, count(cu.user_code) AS users_count
      FROM bt_companies AS c
      LEFT JOIN LATERAL (
-        SELECT postal_code, city FROM dt_company_locations
+        SELECT postal_code, city, wgs84_latitude, wgs84_longitude FROM dt_company_locations
         WHERE company_id = c.id AND address_type_key = 'headquarters' AND is_active
         LIMIT 1
      ) AS location ON TRUE
      LEFT JOIN ct_company_users AS cu ON cu.company_id = c.id
-     GROUP BY c.id, location.postal_code, location.city ORDER BY c.name"
+     GROUP BY c.id, location.postal_code, location.city, location.wgs84_latitude, location.wgs84_longitude
+     ORDER BY c.name"
 );
 $rows = '';
 while ($companyResult && $company = pg_fetch_assoc($companyResult)) {
@@ -261,7 +266,9 @@ while ($companyResult && $company = pg_fetch_assoc($companyResult)) {
             (string) $company['city'],
         ], static fn (string $value): bool => $value !== '')),
         'company_slug' => (string) $company['slug'],
-        'company_location' => trim((string) $company['postal_code'] . ' ' . (string) $company['city']),
+        'company_location' => e(trim((string) $company['postal_code'] . ' ' . (string) $company['city']))
+            . (($mapUrl = grompil_google_maps_url($company['wgs84_latitude'], $company['wgs84_longitude'])) !== null
+                ? '<br><a href="' . e($mapUrl) . '" target="_blank" rel="noopener noreferrer">' . e(fn_t('address_google_maps')) . '</a>' : ''),
         'company_language' => (string) $company['default_language'],
         'company_users_count' => (string) $company['users_count'],
         'company_status' => fn_t($company['is_active'] === 't' ? 'active' : 'inactive'),
@@ -324,6 +331,8 @@ echo fn_templateRender('companies.html', [
     'postal_code_value' => (string) $fields['postal_code'],
     'city_value' => (string) $fields['city'],
     'address_reference_id_value' => (string) $fields['address_reference_id'],
+    'lambert72_x_value' => (string) $fields['lambert72_x'], 'lambert72_y_value' => (string) $fields['lambert72_y'],
+    'wgs84_latitude_value' => (string) $fields['wgs84_latitude'], 'wgs84_longitude_value' => (string) $fields['wgs84_longitude'],
     'country_code_value' => (string) $fields['country_code'],
     '_address_fields_html' => fn_templateRender('address_fields.html', [
         'address_prefix' => 'company-address',
@@ -332,6 +341,8 @@ echo fn_templateRender('companies.html', [
         'address_postal_reminder' => fn_t('address_postal_reminder'),
         'address_country_code_value' => (string) $fields['country_code'],
         'address_reference_id_value' => (string) $fields['address_reference_id'],
+        'lambert72_x_value' => (string) $fields['lambert72_x'], 'lambert72_y_value' => (string) $fields['lambert72_y'],
+        'wgs84_latitude_value' => (string) $fields['wgs84_latitude'], 'wgs84_longitude_value' => (string) $fields['wgs84_longitude'],
         'street_reference_id_value' => '',
         'street_value' => (string) $fields['street'],
         'house_number_value' => (string) $fields['house_number'],

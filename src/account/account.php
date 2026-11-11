@@ -102,6 +102,7 @@ $loadUserAddresses = static function () use ($accountQuery, $userCode): array {
         'account.addresses.list',
         'SELECT id, address_type_key, label, street, house_number, box_number,
                 postal_code, city, country_code, address_reference_id,
+                lambert72_x, lambert72_y, wgs84_latitude, wgs84_longitude,
                 is_primary, sort_order
          FROM dt_user_locations
          WHERE user_code = $1 AND is_active
@@ -113,6 +114,9 @@ $loadUserAddresses = static function () use ($accountQuery, $userCode): array {
         $row['id'] = (int) $row['id'];
         $row['sort_order'] = (int) $row['sort_order'];
         $row['is_primary'] = $row['is_primary'] === 't';
+        foreach (['lambert72_x', 'lambert72_y', 'wgs84_latitude', 'wgs84_longitude'] as $coordinateField) {
+            $row[$coordinateField] = (string) ($row[$coordinateField] ?? '');
+        }
         $rows[] = $row;
     }
     return $rows;
@@ -131,7 +135,8 @@ $addressFormMessage = '';
 $addressFormValues = [
     'id' => 0, 'address_type_key' => 'residential', 'label' => '', 'street' => '',
     'house_number' => '', 'box_number' => '', 'postal_code' => '', 'city' => '',
-    'country_code' => 'BE', 'address_reference_id' => '', 'sort_order' => 0,
+    'country_code' => 'BE', 'address_reference_id' => '',
+    'lambert72_x' => '', 'lambert72_y' => '', 'wgs84_latitude' => '', 'wgs84_longitude' => '', 'sort_order' => 0,
     'is_primary' => false,
 ];
 $editAddressId = filter_var($_GET['edit_address'] ?? null, FILTER_VALIDATE_INT);
@@ -210,6 +215,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'city' => trim((string) ($_POST['city'] ?? '')),
                 'country_code' => strtoupper(trim((string) ($_POST['country_code'] ?? 'BE'))),
                 'address_reference_id' => trim((string) ($_POST['address_reference_id'] ?? '')),
+                'lambert72_x' => grompil_address_coordinate($_POST['lambert72_x'] ?? '', -1000000, 1000000, 3) ?? '',
+                'lambert72_y' => grompil_address_coordinate($_POST['lambert72_y'] ?? '', -1000000, 1000000, 3) ?? '',
+                'wgs84_latitude' => grompil_address_coordinate($_POST['wgs84_latitude'] ?? '', -90, 90, 7) ?? '',
+                'wgs84_longitude' => grompil_address_coordinate($_POST['wgs84_longitude'] ?? '', -180, 180, 7) ?? '',
                 'sort_order' => filter_var($_POST['sort_order'] ?? '', FILTER_VALIDATE_INT),
                 'is_primary' => isset($_POST['is_primary']),
             ];
@@ -267,17 +276,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'UPDATE dt_user_locations
                          SET address_type_key = $1, label = $2, street = $3, house_number = $4,
                              box_number = $5, postal_code = $6, city = $7, country_code = $8,
-                             address_reference_id = $9, sort_order = $10, is_primary = $11,
+                             address_reference_id = $9, lambert72_x = $10, lambert72_y = $11,
+                             wgs84_latitude = $12, wgs84_longitude = $13,
+                             sort_order = $14, is_primary = $15,
                              is_active = TRUE, updated_at = now()
-                         WHERE id = $12 AND user_code = $13 AND is_active
+                         WHERE id = $16 AND user_code = $17 AND is_active
                          RETURNING id',
                         [
                             $addressFormValues['address_type_key'], $addressFormValues['label'],
                             $addressFormValues['street'], $addressFormValues['house_number'],
                             $addressFormValues['box_number'], $addressFormValues['postal_code'],
                             $addressFormValues['city'], $addressFormValues['country_code'],
-                            $addressFormValues['address_reference_id'], $addressFormValues['sort_order'],
-                            $makePrimary ? 'true' : 'false', $addressId, $userCode,
+                            $addressFormValues['address_reference_id'],
+                            $addressFormValues['lambert72_x'] !== '' ? $addressFormValues['lambert72_x'] : null,
+                            $addressFormValues['lambert72_y'] !== '' ? $addressFormValues['lambert72_y'] : null,
+                            $addressFormValues['wgs84_latitude'] !== '' ? $addressFormValues['wgs84_latitude'] : null,
+                            $addressFormValues['wgs84_longitude'] !== '' ? $addressFormValues['wgs84_longitude'] : null,
+                            $addressFormValues['sort_order'], $makePrimary ? 'true' : 'false', $addressId, $userCode,
                         ]
                     );
                     $savedAddress = $savedAddress && pg_affected_rows($savedAddress) === 1
@@ -287,8 +302,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'account.address_insert',
                         'INSERT INTO dt_user_locations (
                             user_code, company_id, address_type_key, label, street, house_number, box_number,
-                            postal_code, city, country_code, address_reference_id, sort_order, is_primary, is_active
-                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE)
+                            postal_code, city, country_code, address_reference_id, lambert72_x, lambert72_y,
+                            wgs84_latitude, wgs84_longitude, sort_order, is_primary, is_active
+                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, TRUE)
                          RETURNING id',
                         [
                             $userCode, $user['company_id'], $addressFormValues['address_type_key'],
@@ -296,6 +312,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $addressFormValues['house_number'], $addressFormValues['box_number'],
                             $addressFormValues['postal_code'], $addressFormValues['city'],
                             $addressFormValues['country_code'], $addressFormValues['address_reference_id'],
+                            $addressFormValues['lambert72_x'] !== '' ? $addressFormValues['lambert72_x'] : null,
+                            $addressFormValues['lambert72_y'] !== '' ? $addressFormValues['lambert72_y'] : null,
+                            $addressFormValues['wgs84_latitude'] !== '' ? $addressFormValues['wgs84_latitude'] : null,
+                            $addressFormValues['wgs84_longitude'] !== '' ? $addressFormValues['wgs84_longitude'] : null,
                             $addressFormValues['sort_order'], $makePrimary ? 'true' : 'false',
                         ]
                     );
@@ -496,6 +516,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach (['street', 'house_number', 'box_number', 'postal_code', 'city', 'address_reference_id'] as $field) {
                     $address[$field] = trim((string) ($_POST[$field] ?? ''));
                 }
+                $address['lambert72_x'] = grompil_address_coordinate($_POST['lambert72_x'] ?? '', -1000000, 1000000, 3) ?? '';
+                $address['lambert72_y'] = grompil_address_coordinate($_POST['lambert72_y'] ?? '', -1000000, 1000000, 3) ?? '';
+                $address['wgs84_latitude'] = grompil_address_coordinate($_POST['wgs84_latitude'] ?? '', -90, 90, 7) ?? '';
+                $address['wgs84_longitude'] = grompil_address_coordinate($_POST['wgs84_longitude'] ?? '', -180, 180, 7) ?? '';
                 $address['country_code'] = strtoupper(trim((string) ($_POST['country_code'] ?? 'BE')));
             }
         }
@@ -679,6 +703,8 @@ $forcedProfileFieldsHtml = $mustChangePassword
             'address_postal_reminder' => fn_t('address_postal_reminder'),
             'address_country_code_value' => $address['country_code'],
             'address_reference_id_value' => $address['address_reference_id'],
+            'lambert72_x_value' => $address['lambert72_x'], 'lambert72_y_value' => $address['lambert72_y'],
+            'wgs84_latitude_value' => $address['wgs84_latitude'], 'wgs84_longitude_value' => $address['wgs84_longitude'],
             'street_reference_id_value' => '',
             'street_value' => $address['street'],
             'house_number_value' => $address['house_number'],
@@ -718,7 +744,10 @@ foreach ($addressRows as $index => $addressRow) {
         . ' <span class="text-secondary">(' . e($typeLabel) . ')</span>'
         . ($addressRow['is_primary'] ? ' <span class="badge text-bg-success">' . e(fn_t('account_address_default')) . '</span>' : '')
         . ($isSelected ? ' <span class="badge text-bg-secondary">' . e(fn_t('account_address_displayed')) . '</span>' : '')
-        . '<div>' . e($addressText) . '</div><div class="small text-secondary">'
+        . '<div>' . e($addressText) . '</div>'
+        . (($mapUrl = grompil_google_maps_url($addressRow['wgs84_latitude'], $addressRow['wgs84_longitude'])) !== null
+            ? '<div><a href="' . e($mapUrl) . '" target="_blank" rel="noopener noreferrer">' . e(fn_t('address_google_maps')) . '</a></div>' : '')
+        . '<div class="small text-secondary">'
         . e(fn_t('account_address_order')) . ': ' . (int) $addressRow['sort_order'] . '</div></div></div>'
         . '<div class="account-address-actions d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">'
         . '<a class="btn btn-sm btn-outline-secondary" href="account.php?address_id=' . (int) $addressRow['id'] . '#addresses">'
@@ -751,7 +780,10 @@ if ($selectedAddress !== null) {
     $selectedAddressHtml = '<div class="mt-2">'
         . '<strong>' . e($selectedAddress['label'] !== '' ? (string) $selectedAddress['label'] : $selectedTypeLabel) . '</strong>'
         . ' <span class="text-secondary">(' . e($selectedTypeLabel) . ')</span><br>'
-        . e($selectedAddressText) . '</div>';
+        . e($selectedAddressText)
+        . (($mapUrl = grompil_google_maps_url($selectedAddress['wgs84_latitude'], $selectedAddress['wgs84_longitude'])) !== null
+            ? '<br><a href="' . e($mapUrl) . '" target="_blank" rel="noopener noreferrer">' . e(fn_t('address_google_maps')) . '</a>' : '')
+        . '</div>';
 }
 $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex="-1" aria-labelledby="account-address-modal-title"'
     . ' aria-hidden="true" data-auto-open="' . ($addressModalOpen ? 'true' : 'false') . '">'
@@ -779,6 +811,8 @@ $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex
         'address_postal_reminder' => fn_t('address_postal_reminder'),
         'address_country_code_value' => $addressFormValues['country_code'],
         'address_reference_id_value' => $addressFormValues['address_reference_id'],
+        'lambert72_x_value' => $addressFormValues['lambert72_x'], 'lambert72_y_value' => $addressFormValues['lambert72_y'],
+        'wgs84_latitude_value' => $addressFormValues['wgs84_latitude'], 'wgs84_longitude_value' => $addressFormValues['wgs84_longitude'],
         'street_reference_id_value' => '', 'street_value' => $addressFormValues['street'],
         'house_number_value' => $addressFormValues['house_number'], 'box_number_value' => $addressFormValues['box_number'],
         'postal_code_value' => $addressFormValues['postal_code'], 'city_value' => $addressFormValues['city'],

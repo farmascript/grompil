@@ -15,6 +15,8 @@ The user's login email is a contact row with `contact_type_key = 'email'`, `purp
 
 Company contact and address rows have an `is_public` flag. Public database reads are limited to rows explicitly marked public for an active, public company. A company's headquarters address is marked public because the company directory already showed its city; other contacts and locations default to private. Company administrators and platform operators can read and manage records in their authorized scope.
 
+Address rows can also store coordinates returned by the official BeSt address lookup: `lambert72_x` and `lambert72_y` (Belgian Lambert 72), plus `wgs84_latitude` and `wgs84_longitude` (WGS84). The application uses WGS84 to show a Google Maps link for addresses with coordinates. Coordinates remain `NULL` when the source does not provide them, such as manually entered addresses. Existing databases need `scripts/20261111-150000_address_coordinates.sql`; saved addresses gain coordinates when selected again from the official suggestions and saved.
+
 ## Existing database migration
 
 1. Run `schema.sql`. It creates the lookup types and four `dt_*` tables, and makes the legacy user email column nullable so the old application remains usable during rollout.

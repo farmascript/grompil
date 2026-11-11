@@ -421,6 +421,12 @@ CREATE TABLE IF NOT EXISTS dt_user_locations (
     city VARCHAR(100) NOT NULL DEFAULT '',
     country_code CHAR(2) NOT NULL DEFAULT 'BE' CHECK (country_code ~ '^[A-Z]{2}$'),
     address_reference_id TEXT NOT NULL DEFAULT '',
+    lambert72_x NUMERIC(12,3),
+    lambert72_y NUMERIC(12,3),
+    wgs84_latitude NUMERIC(10,7) CONSTRAINT dt_user_locations_wgs84_latitude_range_check
+        CHECK (wgs84_latitude IS NULL OR wgs84_latitude BETWEEN -90 AND 90),
+    wgs84_longitude NUMERIC(10,7) CONSTRAINT dt_user_locations_wgs84_longitude_range_check
+        CHECK (wgs84_longitude IS NULL OR wgs84_longitude BETWEEN -180 AND 180),
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INTEGER NOT NULL DEFAULT 0,
@@ -450,6 +456,12 @@ CREATE TABLE IF NOT EXISTS dt_company_locations (
     city VARCHAR(100) NOT NULL DEFAULT '',
     country_code CHAR(2) NOT NULL DEFAULT 'BE' CHECK (country_code ~ '^[A-Z]{2}$'),
     address_reference_id TEXT NOT NULL DEFAULT '',
+    lambert72_x NUMERIC(12,3),
+    lambert72_y NUMERIC(12,3),
+    wgs84_latitude NUMERIC(10,7) CONSTRAINT dt_company_locations_wgs84_latitude_range_check
+        CHECK (wgs84_latitude IS NULL OR wgs84_latitude BETWEEN -90 AND 90),
+    wgs84_longitude NUMERIC(10,7) CONSTRAINT dt_company_locations_wgs84_longitude_range_check
+        CHECK (wgs84_longitude IS NULL OR wgs84_longitude BETWEEN -180 AND 180),
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     is_public BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,

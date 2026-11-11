@@ -41,6 +41,7 @@ $arrSubst = array (
   'address_lookup_no_results' => 'Geen officiële suggesties gevonden. Controleer de spelling of voer het adres handmatig in.',
   'address_postal_reminder' => 'Kies een straat en huisnummer om de postcode op te halen.',
   'address_title' => 'Adres',
+  'address_google_maps' => 'Open in Google Maps',
   'address_type_residential' => 'Woonadres',
   'address_type_postal' => 'Postadres',
   'address_type_headquarters' => 'Hoofdzetel',

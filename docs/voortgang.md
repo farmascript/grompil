@@ -19,6 +19,16 @@
 
 ## 11 november 2026
 
+### Adrescoördinaten en Google Maps
+
+- De gedeelde adreszoekfunctie neemt nu Lambert 72 en WGS84-coördinaten over uit de officiële BeSt-adressuggestie.
+- Coördinaten worden opgeslagen bij gebruikers- en bedrijfsadressen. Als WGS84 beschikbaar is, toont het adresoverzicht een Google Maps-link.
+- Handmatig ingevoerde adressen zonder broncoördinaten blijven geldig; daarvoor verschijnt geen kaartlink.
+- Voer na deployment `scripts/20261111-150000_address_coordinates.sql` uit op elke database. Bestaande adressen krijgen coördinaten wanneer ze opnieuw via de officiële adressuggestie worden geselecteerd en opgeslagen.
+- Applicatieversie bijgewerkt naar `0.16.32`.
+
+## 11 november 2026
+
 ### Adresinvoer: gemeente vóór postcode
 
 - In de gedeelde adresvelden-template staat nu Gemeente vóór Postcode. De veld- en tabvolgorde sluit zo aan op de adreszoeklogica, waarbij een gekozen gemeente de postcode invult.
