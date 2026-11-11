@@ -675,3 +675,7 @@
 - De postcode wordt bij een straat- en huisnummercombinatie automatisch ingevuld zodra BeSt precies één postcode teruggeeft. Bij keuze van een officieel adres worden postcode en gemeente uit de adresbron ingevuld.
 - De API-respons haalt de postcode ook op uit de embedded `hasPostalInfo` gegevens wanneer die niet rechtstreeks in `hasPostalInfo` staan. Vertalingen bijgewerkt in NL, FR, EN en DE; voer de vertaalworkflow uit. Softwareversie verhoogd naar 0.16.29.
 
+### Aanvulling: terug naar de volledige adressenlijst na opslaan
+
+- Na het opslaan van een adres opent de adresbeheerder opnieuw met alle adressen zichtbaar, in plaats van terug te keren naar het accountoverzicht. De bewerkstand blijft gesloten. Softwareversie verhoogd naar 0.16.30.
+

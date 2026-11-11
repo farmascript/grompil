@@ -151,6 +151,9 @@ if (isset($_GET['add_address'])) {
     $addressFormOpen = true;
     $addressFormValues['sort_order'] = $nextAddressSortOrder($addressRows);
 }
+if (isset($_GET['manage_addresses'])) {
+    $addressModalOpen = true;
+}
 $selectedAddressId = filter_var($_GET['address_id'] ?? null, FILTER_VALIDATE_INT);
 $selectedAddress = null;
 if ($selectedAddressId !== false && $selectedAddressId !== null && $selectedAddressId > 0) {
@@ -306,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $accountQuery('account.address_save.rollback', 'ROLLBACK');
                 }
                 if ($saved) {
-                    redirect('account.php#addresses');
+                    redirect('account.php?manage_addresses=1#addresses');
                 }
                 $addressFormMessage = '<div class="alert alert-danger" role="alert">'
                     . e(fn_t('account_address_save_failed')) . '</div>';
