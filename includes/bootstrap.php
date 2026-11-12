@@ -173,12 +173,21 @@ function current_user(): ?array
             u.approval_status,
             r.name AS role_name,
             r.level AS role_level,
-            r.permissions
+            r.permissions,
+            company_role.permissions AS company_role_permissions
          FROM bt_users AS u
          LEFT JOIN dt_user_contacts AS login_contact
            ON login_contact.user_code = u.user_code
           AND login_contact.is_login_email AND login_contact.is_active
          JOIN ft_roles AS r ON r.id = u.role_id
+         LEFT JOIN ct_company_users AS company_membership
+           ON company_membership.user_code = u.user_code
+          AND company_membership.company_id = u.company_id
+          AND company_membership.is_active
+          AND company_membership.approval_status = \'approved\'
+         LEFT JOIN ct_company_roles AS company_role
+           ON company_role.id = company_membership.company_role_id
+          AND company_role.company_id = company_membership.company_id
          WHERE u.user_code = $1',
         [(string) $_SESSION['user_code']]
     );
@@ -198,7 +207,18 @@ function current_user(): ?array
     $user['role_id'] = (int) $user['role_id'];
     $user['role_level'] = (int) $user['role_level'];
     $user['permissions'] = json_decode($user['permissions'], true) ?: [];
+    $user['company_role_permissions'] = json_decode((string) ($user['company_role_permissions'] ?? '[]'), true) ?: [];
     if (is_platform_operator($user) && ($_SESSION['platform_mfa_verified'] ?? false) !== true) {
+        $_SESSION = [];
+        session_destroy();
+        return null;
+    }
+    $activeCompanyId = (int) ($_SESSION['active_company_id'] ?? 0);
+    if ($user['company_id'] !== null
+        && grompil_company_role_requires_mfa($user['company_role_permissions'])
+        && (($_SESSION['company_mfa_verified'] ?? false) !== true
+            || (int) ($_SESSION['company_mfa_company_id'] ?? 0) !== $activeCompanyId
+            || (string) ($_SESSION['company_mfa_user_code'] ?? '') !== (string) $user['user_code'])) {
         $_SESSION = [];
         session_destroy();
         return null;
@@ -210,7 +230,7 @@ function current_user(): ?array
         return null;
     }
     set_database_tenant_context(
-        (int) ($_SESSION['active_company_id'] ?? 0),
+        $activeCompanyId,
         (string) $user['user_code'],
         is_platform_operator($user)
     );

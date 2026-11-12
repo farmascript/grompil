@@ -54,7 +54,7 @@ Stel de webroot in op deze map en configureer PHP via je webserver. Voor lokaal 
 
 ## Inbegrepen
 
-De login gebruikt password_hash() en password_verify(), parameterized queries, CSRF-tokens, beschermde sessiecookies, sessie-ID-vernieuwing en een tijdelijke rem op herhaalde mislukte inlogpogingen. De login-cookie en PHP-sessie zijn maximaal 30 dagen geldig; uitloggen verwijdert de cookie direct. Startrollen zijn Beheerder, Apotheker en Medewerker. Beheerders kunnen gebruikersrollen en rolrechten aanpassen.
+De login gebruikt password_hash() en password_verify(), parameterized queries, CSRF-tokens, beschermde sessiecookies, sessie-ID-vernieuwing en een tijdelijke rem op herhaalde mislukte inlogpogingen. Platformbeheerders en bedrijfsrollen met gevoelige beheerrechten gebruiken verplicht TOTP-MFA. Zie [docs/platform-login-security.md](docs/platform-login-security.md) voor de rechten, installatie en herstelprocedure. De login-cookie en PHP-sessie zijn maximaal 30 dagen geldig; uitloggen verwijdert de cookie direct. Startrollen zijn Beheerder, Apotheker en Medewerker. Beheerders kunnen gebruikersrollen en rolrechten aanpassen.
 
 ## Versienummer
 

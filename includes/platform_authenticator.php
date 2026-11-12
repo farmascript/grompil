@@ -1,6 +1,7 @@
 <?php
 /**
- * Platform administrator TOTP helpers.
+ * TOTP helpers for platform and company administrator accounts.
+ * @date_mut: Thu 2026-11-12 14:15:48
  * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:platform_authenticator
  */
 
@@ -115,9 +116,9 @@ function platform_management_ip_allowed(?string $address = null, string $context
 }
 
 /** Return the active encrypted TOTP secret for a platform account, if configured. */
-function grompil_platform_totp_ciphertext(string $userCode): ?string
+function grompil_platform_totp_ciphertext(string $userCode, int $companyId = 0, bool $platformOperator = true): ?string
 {
-    set_database_tenant_context(0, $userCode, true);
+    set_database_tenant_context($companyId, $userCode, $platformOperator);
     $result = grompil_platform_authenticator_query(
         'platform_authenticator.read_secret',
         'SELECT secret_ciphertext FROM st_platform_totp_credentials WHERE user_code = $1 AND enabled_at IS NOT NULL',
@@ -131,9 +132,9 @@ function grompil_platform_totp_ciphertext(string $userCode): ?string
 }
 
 /** Generate single-use recovery codes and persist only password hashes. */
-function grompil_create_totp_recovery_codes(string $userCode): array
+function grompil_create_totp_recovery_codes(string $userCode, int $companyId = 0, bool $platformOperator = true): array
 {
-    set_database_tenant_context(0, $userCode, true);
+    set_database_tenant_context($companyId, $userCode, $platformOperator);
     $codes = [];
     for ($index = 0; $index < 10; $index++) {
         $codes[] = strtoupper(bin2hex(random_bytes(8)));
@@ -156,12 +157,17 @@ function grompil_create_totp_recovery_codes(string $userCode): array
 }
 
 /** Verify and consume one single-use recovery code. */
-function grompil_consume_totp_recovery_code(string $userCode, string $code): bool
+function grompil_consume_totp_recovery_code(
+    string $userCode,
+    string $code,
+    int $companyId = 0,
+    bool $platformOperator = true
+): bool
 {
     if (!preg_match('/^[A-F0-9]{16}$/i', $code)) {
         return false;
     }
-    set_database_tenant_context(0, $userCode, true);
+    set_database_tenant_context($companyId, $userCode, $platformOperator);
     $result = grompil_platform_authenticator_query(
         'platform_authenticator.list_recovery_codes',
         'SELECT code_hash FROM st_platform_totp_recovery_codes WHERE user_code = $1 AND used_at IS NULL',

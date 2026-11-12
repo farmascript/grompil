@@ -1,7 +1,7 @@
 <?php
 /**
- * Completes the platform administrator password plus TOTP login.
- * @date_mut: Sun 2026-11-08 13:33:54
+ * Completes the password plus TOTP login for platform and company administrators.
+ * @date_mut: Thu 2026-11-12 14:15:48
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:authenticator
  */
 
@@ -21,38 +21,65 @@ if (current_user() !== null) {
 }
 
 $userCode = (string) ($_SESSION['mfa_pending_user_code'] ?? '');
+$companyId = (int) ($_SESSION['mfa_pending_company_id'] ?? 0);
+$platformOperator = ($_SESSION['mfa_pending_platform_operator'] ?? false) === true;
+$totpLabel = (string) ($_SESSION['mfa_pending_totp_label'] ?? ($platformOperator ? 'platform beh' : 'company beh'));
 $authVersion = (int) ($_SESSION['mfa_pending_auth_version'] ?? -1);
 $email = (string) ($_SESSION['mfa_pending_email'] ?? '');
 $attemptEmail = (string) ($_SESSION['mfa_pending_attempt_email'] ?? '');
 $loginIp = (string) ($_SESSION['mfa_pending_ip'] ?? '');
 $currentIp = grompil_client_ip_address();
-if ($userCode === '' || $email === '' || $attemptEmail === '' || $loginIp === '' || $currentIp !== $loginIp) {
-    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+if ($userCode === '' || $email === '' || $attemptEmail === '' || $loginIp === '' || $currentIp !== $loginIp
+    || (!$platformOperator && $companyId < 1) || ($platformOperator && $companyId !== 0)) {
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     redirect('login.php');
 }
 
-set_database_tenant_context(0, $userCode, true);
-$accountResult = $authenticatorQuery(
-    'account_authenticator.load_platform_account',
-    'SELECT u.is_active, u.approval_status,
-            COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version,
-            r.name AS role_name, r.level AS role_level, r.permissions
-     FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id
-     WHERE u.user_code = $1 AND u.company_id IS NULL',
-    [$userCode]
-);
+set_database_tenant_context($companyId, $userCode, $platformOperator);
+$accountResult = $platformOperator
+    ? $authenticatorQuery(
+        'account_authenticator.load_platform_account',
+        'SELECT u.is_active, u.approval_status,
+                COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version,
+                r.name AS role_name, r.level AS role_level, r.permissions
+         FROM bt_users AS u JOIN ft_roles AS r ON r.id = u.role_id
+         WHERE u.user_code = $1 AND u.company_id IS NULL',
+        [$userCode]
+    )
+    : $authenticatorQuery(
+        'account_authenticator.load_company_admin',
+        'SELECT u.is_active, u.approval_status,
+                COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version,
+                company_role.permissions AS company_role_permissions
+         FROM bt_users AS u
+         JOIN ct_company_users AS membership
+           ON membership.user_code = u.user_code AND membership.company_id = u.company_id
+         JOIN ct_company_roles AS company_role
+           ON company_role.id = membership.company_role_id AND company_role.company_id = membership.company_id
+         WHERE u.user_code = $1 AND u.company_id = $2
+           AND membership.is_active AND membership.approval_status = \'approved\'',
+        [$userCode, $companyId]
+    );
 $account = $accountResult ? pg_fetch_assoc($accountResult) : false;
-$accountIsPlatform = $account && $account['is_active'] === 't'
+$requiredCompanyPermissions = $account
+    ? (json_decode((string) ($account['company_role_permissions'] ?? '[]'), true) ?: [])
+    : [];
+$accountIsEligible = $account && $account['is_active'] === 't'
     && $account['approval_status'] === 'approved'
     && (int) $account['auth_version'] === $authVersion
-    && is_platform_operator([
-        'company_id' => null,
-        'role_level' => (int) $account['role_level'],
-        'role_name' => (string) $account['role_name'],
-        'permissions' => json_decode((string) $account['permissions'], true) ?: [],
-    ]);
-if (!$accountIsPlatform || !platform_management_ip_allowed($currentIp, $userCode)) {
-    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+    && ($platformOperator
+        ? is_platform_operator([
+            'company_id' => null,
+            'role_level' => (int) $account['role_level'],
+            'role_name' => (string) $account['role_name'],
+            'permissions' => json_decode((string) $account['permissions'], true) ?: [],
+        ])
+        : grompil_company_role_requires_mfa($requiredCompanyPermissions));
+$ipStillAllowed = $platformOperator
+    ? platform_management_ip_allowed($currentIp, $userCode)
+    : company_management_ip_allowed($companyId, $currentIp);
+if (!$accountIsEligible || !$ipStillAllowed) {
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     redirect('login.php');
 }
 
@@ -64,7 +91,7 @@ try {
     grompil_totp_encryption_key();
     grompil_totp_library_ready();
     if (!$isVerifiedSetup) {
-        $encryptedSecret = grompil_platform_totp_ciphertext($userCode);
+        $encryptedSecret = grompil_platform_totp_ciphertext($userCode, $companyId, $platformOperator);
         if ($encryptedSecret === null) {
             if ($setupSecret === '') {
                 $setup = OTPHP\TOTP::generate(new OTPHP\InternalClock(), 20)
@@ -72,7 +99,7 @@ try {
                     ->withDigits(6)
                     ->withDigest('sha1')
                     ->withIssuer('gromPil')
-                    ->withLabel('Platformbeheerder ' . $userCode);
+                    ->withLabel($totpLabel);
                 $setupSecret = $setup->getSecret();
                 $_SESSION['mfa_enroll_secret'] = $setupSecret;
             }
@@ -85,26 +112,33 @@ try {
     $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_unavailable')) . '</div>';
 }
 
-$attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $loginIp): int {
+$attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $loginIp, $companyId): int {
     $result = $authenticatorQuery(
         'account_authenticator.count_attempts',
         "SELECT count(*) AS total FROM st_login_attempts
-         WHERE company_id = 0 AND email = $1 AND ip_address = $2
+         WHERE company_id = $1 AND email = $2 AND ip_address = $3
            AND attempted_at > now() - interval '15 minutes'",
-        [$attemptEmail, $loginIp]
+        [$companyId, $attemptEmail, $loginIp]
     );
     $row = $result ? pg_fetch_assoc($result) : false;
     return $row ? (int) $row['total'] : 0;
 };
 
-$completeLogin = static function () use ($authenticatorQuery, $userCode, $authVersion, $attemptEmail, $loginIp): never {
-    $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM st_login_attempts WHERE company_id = 0 AND email = $1 AND ip_address = $2', [$attemptEmail, $loginIp]);
+$completeLogin = static function () use ($authenticatorQuery, $userCode, $authVersion, $attemptEmail, $loginIp, $companyId, $platformOperator): never {
+    $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM st_login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3', [$companyId, $attemptEmail, $loginIp]);
     session_regenerate_id(true);
-    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
-    unset($_SESSION['active_company_id']);
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+    unset($_SESSION['active_company_id'], $_SESSION['platform_mfa_verified'], $_SESSION['company_mfa_verified'], $_SESSION['company_mfa_company_id'], $_SESSION['company_mfa_user_code']);
     $_SESSION['user_code'] = $userCode;
     $_SESSION['auth_version'] = $authVersion;
-    $_SESSION['platform_mfa_verified'] = true;
+    if ($platformOperator) {
+        $_SESSION['platform_mfa_verified'] = true;
+    } else {
+        $_SESSION['active_company_id'] = $companyId;
+        $_SESSION['company_mfa_verified'] = true;
+        $_SESSION['company_mfa_company_id'] = $companyId;
+        $_SESSION['company_mfa_user_code'] = $userCode;
+    }
     $_SESSION['last_activity_at'] = time();
     $signedInUser = current_user();
     if ($signedInUser === null) {
@@ -136,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $validCode = grompil_totp($secret, $email)->verify($code, null, 5);
             }
             if (!$validCode && $encryptedSecret !== null) {
-                $validCode = grompil_consume_totp_recovery_code($userCode, $code);
+                $validCode = grompil_consume_totp_recovery_code($userCode, $code, $companyId, $platformOperator);
             }
         } catch (Throwable $error) {
             error_log('Platform authenticator code verification failed: ' . $error->getMessage());
@@ -156,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$stored) {
                     throw new RuntimeException('Authenticator credentials could not be stored.');
                 }
-                $recoveryCodes = grompil_create_totp_recovery_codes($userCode);
+                $recoveryCodes = grompil_create_totp_recovery_codes($userCode, $companyId, $platformOperator);
                 if (!$authenticatorQuery('account_authenticator.enroll.commit', 'COMMIT')) {
                     throw new RuntimeException('Authenticator enrollment could not be committed.');
                 }
@@ -174,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($validCode) {
             $completeLogin();
         } else {
-            $authenticatorQuery('account_authenticator.record_attempt', 'INSERT INTO st_login_attempts (company_id, email, ip_address) VALUES (0, $1, $2)', [$attemptEmail, $loginIp]);
+            $authenticatorQuery('account_authenticator.record_attempt', 'INSERT INTO st_login_attempts (company_id, email, ip_address) VALUES ($1, $2, $3)', [$companyId, $attemptEmail, $loginIp]);
             $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_invalid')) . '</div>';
         }
     }
@@ -195,7 +229,7 @@ $qrScriptsHtml = '';
 if (!$isVerifiedSetup && $encryptedSecret === null && $setupSecret !== '') {
     $qrHtml = '';
     try {
-        $provisioningUri = grompil_totp($setupSecret, 'Platformbeheerder ' . $userCode)->getProvisioningUri();
+        $provisioningUri = grompil_totp($setupSecret, $totpLabel)->getProvisioningUri();
         $qrLabel = fn_t('platform_mfa_qr_label');
         $qrHtml = '<div class="text-center my-3 d-none" data-authenticator-qr-wrapper><div class="d-inline-block border rounded p-2 bg-white"'
             . ' data-authenticator-qr data-otpauth-uri="' . e($provisioningUri) . '"'

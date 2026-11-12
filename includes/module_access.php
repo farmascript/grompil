@@ -57,6 +57,20 @@ function grompil_module_access_rules(): array
 }
 
 /**
+ * Require TOTP for company roles that can administer users, roles, or settings.
+ *
+ * @param array $permissions Company-role permission identifiers.
+ * @return bool
+ */
+function grompil_company_role_requires_mfa(array $permissions): bool
+{
+    return (bool) array_intersect(
+        ['company.users.manage', 'company.roles.manage', 'company.settings.manage', 'company.translations.manage'],
+        $permissions
+    );
+}
+
+/**
  * Return web entry points for the platform administrator's module inventory.
  * Root PHP files are public URL entry points; registered nested modules are
  * added as well. CLI setup and the local secrets file are intentionally omitted.

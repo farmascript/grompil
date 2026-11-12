@@ -1068,15 +1068,27 @@ ALTER TABLE st_platform_totp_credentials ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS platform_totp_credentials_platform_only ON st_platform_totp_credentials;
 CREATE POLICY platform_totp_credentials_platform_only ON st_platform_totp_credentials
     FOR ALL
-    USING (current_setting('grompil.platform_operator', true) = 'true')
-    WITH CHECK (current_setting('grompil.platform_operator', true) = 'true');
+    USING (
+        current_setting('grompil.platform_operator', true) = 'true'
+        OR user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    )
+    WITH CHECK (
+        current_setting('grompil.platform_operator', true) = 'true'
+        OR user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    );
 
 ALTER TABLE st_platform_totp_recovery_codes ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS platform_totp_recovery_codes_platform_only ON st_platform_totp_recovery_codes;
 CREATE POLICY platform_totp_recovery_codes_platform_only ON st_platform_totp_recovery_codes
     FOR ALL
-    USING (current_setting('grompil.platform_operator', true) = 'true')
-    WITH CHECK (current_setting('grompil.platform_operator', true) = 'true');
+    USING (
+        current_setting('grompil.platform_operator', true) = 'true'
+        OR user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    )
+    WITH CHECK (
+        current_setting('grompil.platform_operator', true) = 'true'
+        OR user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    );
 
 -- Password reset support.
 ALTER TABLE bt_users ADD COLUMN IF NOT EXISTS auth_version BIGINT NOT NULL DEFAULT 0 CHECK (auth_version >= 0);

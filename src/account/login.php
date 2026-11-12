@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sat 2026-11-07 14:54:17
+ * @date_mut: Thu 2026-11-12 14:15:48
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -155,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         $isPlatformLogin = !$loginCompany && is_platform_operator($account);
         $ipAllowed = true;
+        $requiresCompanyMfa = false;
 
         if ($isPlatformLogin) {
             $ipAllowed = platform_management_ip_allowed($ipAddress);
@@ -173,6 +174,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['user_code'], $_SESSION['auth_version'], $_SESSION['active_company_id']);
                 unset($_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
                 $_SESSION['mfa_pending_user_code'] = (string) $user['user_code'];
+                $_SESSION['mfa_pending_company_id'] = 0;
+                $_SESSION['mfa_pending_platform_operator'] = true;
+                $_SESSION['mfa_pending_totp_label'] = 'platform beh';
                 $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
                 $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
                 $_SESSION['mfa_pending_attempt_email'] = $email;
@@ -183,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_database_tenant_context((int) $loginCompany['id'], (string) $user['user_code'], false);
             $membershipResult = $loginQuery(
                 'login.check_company_membership',
-                'SELECT cr.level
+                'SELECT cr.level, cr.permissions
                  FROM ct_company_users AS cu
                  JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
                  WHERE cu.company_id = $1 AND cu.user_code = $2
@@ -194,6 +198,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($membership && (int) $membership['level'] > 0 && (int) $membership['level'] < 200
                 && !company_management_ip_allowed((int) $loginCompany['id'], $ipAddress)) {
                 $ipAllowed = false;
+            }
+            $companyPermissions = $membership
+                ? (json_decode((string) $membership['permissions'], true) ?: [])
+                : [];
+            $requiresCompanyMfa = $membership !== false
+                && grompil_company_role_requires_mfa($companyPermissions);
+            if ($ipAllowed && $requiresCompanyMfa) {
+                try {
+                    grompil_totp_encryption_key();
+                    grompil_totp_library_ready();
+                } catch (Throwable $error) {
+                    error_log('Company administrator authenticator configuration is unavailable: ' . $error->getMessage());
+                    $ipAllowed = false;
+                    $loginErrorKey = 'platform_mfa_unavailable';
+                }
+            }
+            if ($ipAllowed && $requiresCompanyMfa) {
+                session_regenerate_id(true);
+                unset($_SESSION['user_code'], $_SESSION['auth_version'], $_SESSION['active_company_id']);
+                unset($_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+                $_SESSION['mfa_pending_user_code'] = (string) $user['user_code'];
+                $_SESSION['mfa_pending_company_id'] = (int) $loginCompany['id'];
+                $_SESSION['mfa_pending_platform_operator'] = false;
+                $_SESSION['mfa_pending_totp_label'] = (string) $loginCompany['slug'] . ' beh';
+                $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
+                $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
+                $_SESSION['mfa_pending_attempt_email'] = $email;
+                $_SESSION['mfa_pending_ip'] = $ipAddress;
+                redirect('authenticator.php');
             }
         }
 
@@ -206,7 +239,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
             unset($_SESSION['active_company_id']);
             unset($_SESSION['platform_mfa_verified']);
+            unset($_SESSION['company_mfa_verified'], $_SESSION['company_mfa_company_id'], $_SESSION['company_mfa_user_code']);
             unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+            unset($_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label']);
             $_SESSION['user_code'] = (string) $user['user_code'];
             $_SESSION['auth_version'] = (int) $user['auth_version'];
             $_SESSION['last_activity_at'] = time();

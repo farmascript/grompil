@@ -3,6 +3,8 @@
 ## Gedrag
 
 - Platformbeheerders (globale rollen level 1–100) melden zich aan met wachtwoord en daarna een TOTP-code uit Google Authenticator, Microsoft Authenticator of een compatibele app.
+- Bedrijfsaccounts met de rechten `company.users.manage`, `company.roles.manage`, `company.settings.manage` of `company.translations.manage` gebruiken eveneens verplicht TOTP. Een account krijgt dit pas nadat het bij de eerste MFA-aanmelding de QR-code heeft gekoppeld en de eerste code heeft bevestigd. Operationele rechten zoals alleen `pharmacy.dispense` activeren MFA niet.
+- De authenticator toont voor een bedrijfsbeheerder de issuer en het korte label `helder beh` (samen: `gromPil helder beh` voor bedrijfssleuf `helder`). Het label wordt per bedrijfssleuf samengesteld.
 - De eerste platformaanmelding na activering begeleidt de beheerder bij het koppelen van een authenticator. Het instelscherm toont een scanbare QR-code en daarnaast de sleutel voor handmatige invoer. Eenmalige herstelcodes verschijnen nadat de eerste TOTP-code is bevestigd.
 - De QR-code wordt lokaal in de browser gegenereerd; de TOTP-instellingslink wordt niet naar een externe QR-dienst gestuurd.
 - De TOTP-sleutel wordt versleuteld opgeslagen. De versleutelingssleutel staat uitsluitend in het genegeerde `settings_local.php`-bestand.
@@ -26,10 +28,10 @@ Voer dit op iedere installatie afzonderlijk uit. Gebruik per installatie een eig
 
 3. Herhaal dit voor de testinstallatie met een andere sleutel. Houd de sleutel buiten de repository en maak er een beveiligde back-up van. Verlies van de sleutel maakt opgeslagen TOTP-sleutels onleesbaar.
 4. De lokale Composer-update heeft `composer.json`, `composer.lock` en de lokale `vendor/` bijgewerkt. Voer op de testserver na synchronisatie in de projectmap `composer install --no-dev --prefer-dist --optimize-autoloader` uit; `vendor/` staat niet in Git.
-5. Voer `migrations/20261031-090000_platform_mfa.sql` op de lokale database uit.
-6. Voer na het aanmaken van de tabellen het passende `schema_grant_*.sql`-bestand uit. De grantbestanden geven de applicatierol toegang tot de twee nieuwe MFA-tabellen.
-7. Synchroniseer de code naar de testsite, installeer daar de Composer-afhankelijkheden, vul de eigen testsleutel in `settings_local.php` in en voer de migratie en test-grants uit.
-8. Meld lokaal en daarna op test aan als platformbeheerder. Koppel de authenticator en bewaar de herstelcodes.
+5. Voer `migrations/20261031-090000_platform_mfa.sql` op een bestaande database uit als dat nog niet is gebeurd. Nieuwe databases krijgen de MFA-tabellen via `schema.sql`.
+6. Voer `migrations/20261112-141548_company_admin_mfa.sql` als database-eigenaar uit op bestaande databases. Deze wijziging laat de applicatierol alleen de eigen TOTP- en herstelcoderegels lezen en beheren. De bestaande `schema_grant_*.sql`-bestanden verlenen al de benodigde tabelrechten; opnieuw uitvoeren is hiervoor niet nodig.
+7. Synchroniseer daarna de code naar de testsite, installeer daar de Composer-afhankelijkheden indien nodig en vul de eigen testsleutel in `settings_local.php` in.
+8. Meld lokaal en daarna op test aan als platformbeheerder en als bedrijfsbeheerder met een van de genoemde beheerdersrechten. Koppel de authenticator en bewaar de herstelcodes.
 
 Voer de migratie en grants niet uit op productie tot de testuitrol is gecontroleerd.
 
