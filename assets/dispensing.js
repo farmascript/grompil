@@ -42,7 +42,7 @@
         } else {
             for (const patient of results) {
                 const url = new URL(page.dataset.patientEndpoint, window.location.href);
-                url.searchParams.set('patient', String(patient.patient_code || ''));
+                url.searchParams.set('patient', String(patient.customer_code || ''));
                 url.searchParams.set('mode', 'patient');
                 const link = document.createElement('a');
                 link.className = 'list-group-item list-group-item-action patient-suggestion';
@@ -51,7 +51,7 @@
                 title.textContent = String(patient.patient_name || '');
                 const code = document.createElement('span');
                 code.className = 'badge text-bg-light ms-2';
-                code.textContent = String(patient.patient_code || '');
+                code.textContent = String(patient.customer_code || '');
                 const address = document.createElement('span');
                 address.className = 'd-block small text-secondary';
                 address.textContent = String(patient.patient_address || '');

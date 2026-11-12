@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 22:45:51
- * @date_mut: Wed 2026-11-11
+ * @date_mut: Thu 2026-11-12
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -35,6 +35,9 @@ $publicEnabled = false;
 $companyId = (int) ($_GET['edit'] ?? $_POST['id'] ?? 0);
 $numberStatusOptions = dd_varia_get_options('company_number_status', '_root');
 $allNumberStatusOptions = dd_varia_get_options('company_number_status', '_root', true);
+$companyClassOptions = dd_varia_get_options('company_classification', '_root');
+$companyClassIds = array_column($companyClassOptions, 'id', 'key');
+$companyClassKeys = array_keys($companyClassIds);
 $activeNumberStatusKeys = array_column($numberStatusOptions, 'key');
 $existingNumberStatuses = [];
 if ($companyId > 0) {
@@ -52,6 +55,7 @@ $initialAdminEmail = strtolower(trim((string) ($_POST['initial_admin_email'] ?? 
 $fields = [
     'slug' => trim((string) ($_POST['slug'] ?? '')),
     'name' => trim((string) ($_POST['name'] ?? '')),
+    'company_classification_key' => trim((string) ($_POST['company_classification_key'] ?? 'pharmacy')),
     'enterprise_number' => trim((string) ($_POST['enterprise_number'] ?? '')),
     'enterprise_number_status' => trim((string) ($_POST['enterprise_number_status'] ?? 'unknown')),
     'vat_number' => trim((string) ($_POST['vat_number'] ?? '')),
@@ -104,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $valid = preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $fields['slug']) === 1
             && strlen($fields['slug']) <= 80
             && $fields['name'] !== ''
+            && in_array($fields['company_classification_key'], $companyClassKeys, true)
             && (function_exists('mb_strlen') ? mb_strlen($fields['name']) <= 160 : strlen($fields['name']) <= 640)
             && in_array($fields['default_language'], $languages, true)
             && preg_match('/^[A-Z]{2}$/', $fields['country_code']) === 1
@@ -130,12 +135,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $transaction = (bool) $companiesQuery('companies.update.begin', 'BEGIN');
                 $result = $transaction ? $companiesQuery(
                     'companies.update',
-                    'UPDATE bt_companies SET slug=$1, name=$2, enterprise_number=$3, enterprise_number_status=$4,
-                        vat_number=$5, vat_number_status=$6, default_language=$7, store_theme=$8,
-                        store_logo_file=$9, store_hero_image_file=$10, is_active=$11, is_public=$12,
-                        updated_at=now() WHERE id=$13',
+                    'UPDATE bt_companies SET slug=$1, name=$2, company_classification_id=$3, enterprise_number=$4, enterprise_number_status=$5,
+                        vat_number=$6, vat_number_status=$7, default_language=$8, store_theme=$9,
+                        store_logo_file=$10, store_hero_image_file=$11, is_active=$12, is_public=$13,
+                        updated_at=now() WHERE id=$14',
                     [
-                        $fields['slug'], $fields['name'], $fields['enterprise_number'], $fields['enterprise_number_status'],
+                        $fields['slug'], $fields['name'], $companyClassIds[$fields['company_classification_key']], $fields['enterprise_number'], $fields['enterprise_number_status'],
                         $fields['vat_number'], $fields['vat_number_status'], $fields['default_language'],
                         $fields['store_theme'], $fields['store_logo_file'], $fields['store_hero_image_file'],
                         $isActive, $isPublic, $companyId,
@@ -156,12 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insert = $transaction ? $companiesQuery(
                     'companies.create.insert',
                     'INSERT INTO bt_companies (
-                        slug, name, enterprise_number, enterprise_number_status, vat_number, vat_number_status,
+                        slug, name, company_classification_id, enterprise_number, enterprise_number_status, vat_number, vat_number_status,
                         default_language, store_theme, store_logo_file, store_hero_image_file,
                         is_active, is_public
-                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id',
+                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id',
                     [
-                        $fields['slug'], $fields['name'], $fields['enterprise_number'], $fields['enterprise_number_status'],
+                        $fields['slug'], $fields['name'], $companyClassIds[$fields['company_classification_key']], $fields['enterprise_number'], $fields['enterprise_number_status'],
                         $fields['vat_number'], $fields['vat_number_status'], $fields['default_language'],
                         $fields['store_theme'], $fields['store_logo_file'], $fields['store_hero_image_file'],
                         $isActive, $isPublic,
@@ -192,6 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result) {
                 $fields = array_fill_keys(array_keys($fields), '');
                 $fields['country_code'] = 'BE';
+                $fields['company_classification_key'] = 'pharmacy';
                 $fields['default_language'] = 'NL';
                 $fields['enterprise_number_status'] = 'unknown';
                 $fields['vat_number_status'] = 'unknown';
@@ -205,7 +211,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $editing = null;
 if (isset($_GET['edit'])) {
-    $editResult = $companiesQuery('companies.load_edit', 'SELECT * FROM bt_companies WHERE id = $1', [(int) $_GET['edit']]);
+    $editResult = $companiesQuery(
+        'companies.load_edit',
+        'SELECT c.*, classification."key" AS company_classification_key
+         FROM bt_companies c
+         JOIN ft_dd_varia classification ON classification.id = c.company_classification_id
+         WHERE c.id = $1 AND classification.list_key = $2',
+        [(int) $_GET['edit'], 'company_classification']
+    );
     $editing = $editResult ? pg_fetch_assoc($editResult) : null;
     if ($editing) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -240,15 +253,17 @@ if (isset($_GET['edit'])) {
 
 $companyResult = $companiesQuery(
     'companies.list',
-    "SELECT c.*, location.postal_code, location.city, count(cu.user_code) AS users_count
+    "SELECT c.*, classification.\"key\" AS company_classification_key,
+            location.postal_code, location.city, count(cu.user_code) AS users_count
      FROM bt_companies AS c
+     JOIN ft_dd_varia AS classification ON classification.id = c.company_classification_id
      LEFT JOIN LATERAL (
         SELECT postal_code, city, wgs84_latitude, wgs84_longitude FROM dt_company_locations
         WHERE company_id = c.id AND address_type_key = 'headquarters' AND is_active
         LIMIT 1
      ) AS location ON TRUE
      LEFT JOIN ct_company_users AS cu ON cu.company_id = c.id
-     GROUP BY c.id, location.postal_code, location.city, location.wgs84_latitude, location.wgs84_longitude
+     GROUP BY c.id, classification.\"key\", location.postal_code, location.city, location.wgs84_latitude, location.wgs84_longitude
      ORDER BY c.name"
 );
 $rows = '';
@@ -261,6 +276,8 @@ while ($companyResult && $company = pg_fetch_assoc($companyResult)) {
         . '" type="submit">' . e(fn_t($isPublic ? 'company_public_hide' : 'company_public_show')) . '</button></form>';
     $rows .= fn_templateRender('companies_row.html', [
         'company_name' => (string) $company['name'],
+        'company_classification' => (string) ($company['company_classification_key'] === 'pharmacy'
+            ? fn_t('company_classification_pharmacy') : fn_t('company_classification_business')),
         'company_search' => implode(' ', array_filter([
             (string) $company['name'],
             (string) $company['slug'],
@@ -310,12 +327,20 @@ $renderNumberStatusOptions = static function (string $selected, ?string $existin
 };
 
 page_start(fn_t('companies_heading'), $currentUser);
+$companyClassOptionsHtml = '';
+foreach ($companyClassOptions as $classOption) {
+    $classKey = (string) $classOption['key'];
+    $companyClassOptionsHtml .= '<option value="' . e($classKey) . '"'
+        . ($fields['company_classification_key'] === $classKey ? ' selected' : '') . '>'
+        . e((string) $classOption['label']) . '</option>';
+}
 echo fn_templateRender('companies.html', [
     '_message_html' => $messageKey === '' ? '' : '<div class="alert alert-info" role="status">' . e(fn_t($messageKey)) . '</div>',
     'form_title' => fn_t($editing ? 'company_edit' : 'company_new'),
     'company_id' => (string) ($editing['id'] ?? ''),
     'slug_value' => (string) $fields['slug'],
     'name_value' => (string) $fields['name'],
+    '_company_classification_options_html' => $companyClassOptionsHtml,
     'enterprise_number_value' => (string) $fields['enterprise_number'],
     '_enterprise_number_status_options_html' => $renderNumberStatusOptions(
         (string) $fields['enterprise_number_status'],

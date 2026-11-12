@@ -27,6 +27,12 @@
                         <input class="form-control" id="company-name" name="name" maxlength="160" required value="@name_value@">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label" for="company-classification">@company_classification_label@</label>
+                        <select class="form-select" id="company-classification" name="company_classification_key" required>
+                            @_company_classification_options_html@
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label" for="company-slug">
                             @company_slug_label@
                         </label>
@@ -146,6 +152,9 @@
                             <tr>
                                 <th>
                                     @company_name_label@
+                                </th>
+                                <th>
+                                    @company_classification_label@
                                 </th>
                                 <th>
                                     @company_city_label@

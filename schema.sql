@@ -287,6 +287,59 @@ SELECT DISTINCT item.list_key, '_root', '@dd_varia_root_' || item.list_key || '@
 FROM ft_dd_varia AS item
 ON CONFLICT (list_key, "key") DO NOTHING;
 
+INSERT INTO ft_dd_varia (list_key, "key", content, parent_id, info, sort_order)
+VALUES ('company_classification', '_root', '@dd_varia_root_company_classification@', NULL,
+        'Root for company classifications.', 0)
+ON CONFLICT (list_key, "key") DO NOTHING;
+WITH root AS (
+    SELECT id FROM ft_dd_varia WHERE list_key = 'company_classification' AND "key" = '_root'
+)
+INSERT INTO ft_dd_varia (list_key, "key", content, parent_id, info, sort_order)
+SELECT 'company_classification', seed.item_key, '@' || seed.translation_key || '@', root.id,
+       seed.info, seed.sort_order
+FROM root
+CROSS JOIN (VALUES
+    ('pharmacy', 'company_classification_pharmacy', 'Pharmacy; customers are patients.', 10),
+    ('business', 'company_classification_business', 'Business; customers are clients.', 20)
+) AS seed(item_key, translation_key, info, sort_order)
+ON CONFLICT (list_key, "key") DO NOTHING;
+
+ALTER TABLE bt_companies ADD COLUMN IF NOT EXISTS company_classification_id BIGINT;
+UPDATE bt_companies
+SET company_classification_id = (
+    SELECT id FROM ft_dd_varia
+    WHERE list_key = 'company_classification' AND "key" = 'pharmacy'
+)
+WHERE company_classification_id IS NULL;
+ALTER TABLE bt_companies ALTER COLUMN company_classification_id SET NOT NULL;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bt_companies_classification_fk') THEN
+        ALTER TABLE bt_companies ADD CONSTRAINT bt_companies_classification_fk
+            FOREIGN KEY (company_classification_id) REFERENCES ft_dd_varia(id) ON DELETE RESTRICT;
+    END IF;
+END;
+$$;
+CREATE OR REPLACE FUNCTION grompil_validate_company_classification()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM ft_dd_varia
+        WHERE id = NEW.company_classification_id
+          AND list_key = 'company_classification'
+          AND parent_id IS NOT NULL
+          AND is_active
+    ) THEN
+        RAISE EXCEPTION 'Company classification must be an active child in company_classification.' USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS bt_companies_classification_guard ON bt_companies;
+CREATE TRIGGER bt_companies_classification_guard
+    BEFORE INSERT OR UPDATE ON bt_companies
+    FOR EACH ROW EXECUTE FUNCTION grompil_validate_company_classification();
+
 UPDATE ft_dd_varia AS item
 SET parent_id = root.id, updated_at = now()
 FROM ft_dd_varia AS root
@@ -443,13 +496,13 @@ CREATE INDEX IF NOT EXISTS dt_user_locations_lookup_idx
     ON dt_user_locations(user_code, is_active, sort_order, id);
 
 -- Company-scoped patient master records for pharmacy workflows.
-CREATE TABLE IF NOT EXISTS bt_patients (
+CREATE TABLE IF NOT EXISTS bt_customers (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     company_id BIGINT NOT NULL REFERENCES bt_companies(id) ON DELETE RESTRICT,
-    patient_code VARCHAR(6) NOT NULL UNIQUE
-        CHECK (patient_code ~ '^[A-Z0-9]{6}$'
-           AND length(regexp_replace(patient_code, '[A-Z]', '', 'g')) = 3
-           AND length(regexp_replace(patient_code, '[0-9]', '', 'g')) = 3),
+    customer_code VARCHAR(6) NOT NULL UNIQUE
+        CHECK (customer_code ~ '^[A-Z0-9]{6}$'
+           AND length(regexp_replace(customer_code, '[A-Z]', '', 'g')) = 3
+           AND length(regexp_replace(customer_code, '[0-9]', '', 'g')) = 3),
     name_first VARCHAR(120) NOT NULL,
     name_last VARCHAR(120) NOT NULL,
     date_of_birth DATE,
@@ -458,15 +511,15 @@ CREATE TABLE IF NOT EXISTS bt_patients (
     updated_by_user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (company_id, patient_code)
+    UNIQUE (company_id, customer_code)
 );
-CREATE INDEX IF NOT EXISTS bt_patients_company_name_idx
-    ON bt_patients (company_id, lower(name_last), lower(name_first)) WHERE is_active;
+CREATE INDEX IF NOT EXISTS bt_customers_company_name_idx
+    ON bt_customers (company_id, lower(name_last), lower(name_first)) WHERE is_active;
 
-CREATE TABLE IF NOT EXISTS dt_patient_locations (
+CREATE TABLE IF NOT EXISTS dt_customer_locations (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     company_id BIGINT NOT NULL,
-    patient_code VARCHAR(6) NOT NULL,
+    customer_code VARCHAR(6) NOT NULL,
     address_type_key VARCHAR(80) NOT NULL DEFAULT 'residential',
     label VARCHAR(160) NOT NULL DEFAULT '',
     street VARCHAR(160) NOT NULL DEFAULT '',
@@ -487,27 +540,27 @@ CREATE TABLE IF NOT EXISTS dt_patient_locations (
     updated_by_user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    FOREIGN KEY (company_id, patient_code) REFERENCES bt_patients(company_id, patient_code) ON DELETE RESTRICT
+    FOREIGN KEY (company_id, customer_code) REFERENCES bt_customers(company_id, customer_code) ON DELETE RESTRICT
 );
-CREATE UNIQUE INDEX IF NOT EXISTS dt_patient_locations_one_primary_idx
-    ON dt_patient_locations (company_id, patient_code) WHERE is_primary AND is_active;
-CREATE INDEX IF NOT EXISTS dt_patient_locations_lookup_idx
-    ON dt_patient_locations (company_id, patient_code, is_active, sort_order, id);
+CREATE UNIQUE INDEX IF NOT EXISTS dt_customer_locations_one_primary_idx
+    ON dt_customer_locations (company_id, customer_code) WHERE is_primary AND is_active;
+CREATE INDEX IF NOT EXISTS dt_customer_locations_lookup_idx
+    ON dt_customer_locations (company_id, customer_code, is_active, sort_order, id);
 
-CREATE TABLE IF NOT EXISTS st_patient_audit_log (
+CREATE TABLE IF NOT EXISTS st_customer_audit_log (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     company_id BIGINT NOT NULL REFERENCES bt_companies(id) ON DELETE RESTRICT,
-    patient_code VARCHAR(6) NOT NULL,
-    entity_type VARCHAR(24) NOT NULL CHECK (entity_type IN ('patient', 'location')),
+    customer_code VARCHAR(6) NOT NULL,
+    entity_type VARCHAR(24) NOT NULL CHECK (entity_type IN ('customer', 'location')),
     action VARCHAR(12) NOT NULL CHECK (action IN ('insert', 'update')),
     changed_by_user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE RESTRICT,
     changed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     before_data JSONB,
     after_data JSONB NOT NULL,
-    FOREIGN KEY (company_id, patient_code) REFERENCES bt_patients(company_id, patient_code) ON DELETE RESTRICT
+    FOREIGN KEY (company_id, customer_code) REFERENCES bt_customers(company_id, customer_code) ON DELETE RESTRICT
 );
-CREATE INDEX IF NOT EXISTS st_patient_audit_log_patient_idx
-    ON st_patient_audit_log (company_id, patient_code, changed_at DESC);
+CREATE INDEX IF NOT EXISTS st_customer_audit_log_customer_idx
+    ON st_customer_audit_log (company_id, customer_code, changed_at DESC);
 
 CREATE TABLE IF NOT EXISTS dt_company_locations (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -1168,23 +1221,23 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION grompil_protect_patient_identity()
+CREATE OR REPLACE FUNCTION grompil_protect_customer_identity()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF TG_OP = 'DELETE' THEN
-        RAISE EXCEPTION 'Patient records cannot be deleted; set is_active = false instead.' USING ERRCODE = '55000';
+        RAISE EXCEPTION 'Customer records cannot be deleted; set is_active = false instead.' USING ERRCODE = '55000';
     END IF;
-    IF NEW.patient_code IS DISTINCT FROM OLD.patient_code OR NEW.company_id IS DISTINCT FROM OLD.company_id THEN
-        RAISE EXCEPTION 'Patient code and company are immutable after creation.' USING ERRCODE = '55000';
+    IF NEW.customer_code IS DISTINCT FROM OLD.customer_code OR NEW.company_id IS DISTINCT FROM OLD.company_id THEN
+        RAISE EXCEPTION 'Customer code and company are immutable after creation.' USING ERRCODE = '55000';
     END IF;
     RETURN NEW;
 END;
 $$;
-DROP TRIGGER IF EXISTS bt_patients_identity_guard ON bt_patients;
-CREATE TRIGGER bt_patients_identity_guard BEFORE UPDATE OR DELETE ON bt_patients
-    FOR EACH ROW EXECUTE FUNCTION grompil_protect_patient_identity();
+DROP TRIGGER IF EXISTS bt_customers_identity_guard ON bt_customers;
+CREATE TRIGGER bt_customers_identity_guard BEFORE UPDATE OR DELETE ON bt_customers
+    FOR EACH ROW EXECUTE FUNCTION grompil_protect_customer_identity();
 
-CREATE OR REPLACE FUNCTION grompil_audit_patient_change()
+CREATE OR REPLACE FUNCTION grompil_audit_customer_change()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
     actor_code VARCHAR(6);
@@ -1192,15 +1245,15 @@ DECLARE
 BEGIN
     actor_code := NULLIF(current_setting('grompil.user_code', true), '');
     IF actor_code IS NULL THEN
-        RAISE EXCEPTION 'Patient changes require an authenticated user context.' USING ERRCODE = '42501';
+        RAISE EXCEPTION 'Customer changes require an authenticated user context.' USING ERRCODE = '42501';
     END IF;
     row_data := CASE WHEN TG_OP = 'DELETE' THEN to_jsonb(OLD) ELSE to_jsonb(NEW) END;
-    INSERT INTO st_patient_audit_log (
-        company_id, patient_code, entity_type, action, changed_by_user_code, before_data, after_data
+    INSERT INTO st_customer_audit_log (
+        company_id, customer_code, entity_type, action, changed_by_user_code, before_data, after_data
     ) VALUES (
         (row_data->>'company_id')::BIGINT,
-        row_data->>'patient_code',
-        CASE WHEN TG_TABLE_NAME = 'bt_patients' THEN 'patient' ELSE 'location' END,
+        row_data->>'customer_code',
+        CASE WHEN TG_TABLE_NAME = 'bt_customers' THEN 'customer' ELSE 'location' END,
         lower(TG_OP), actor_code,
         CASE WHEN TG_OP = 'UPDATE' THEN to_jsonb(OLD) ELSE NULL END,
         row_data
@@ -1211,23 +1264,23 @@ BEGIN
     RETURN NEW;
 END;
 $$;
-DROP TRIGGER IF EXISTS bt_patients_audit ON bt_patients;
-CREATE TRIGGER bt_patients_audit AFTER INSERT OR UPDATE ON bt_patients
-    FOR EACH ROW EXECUTE FUNCTION grompil_audit_patient_change();
-DROP TRIGGER IF EXISTS dt_patient_locations_audit ON dt_patient_locations;
-CREATE TRIGGER dt_patient_locations_audit AFTER INSERT OR UPDATE ON dt_patient_locations
-    FOR EACH ROW EXECUTE FUNCTION grompil_audit_patient_change();
+DROP TRIGGER IF EXISTS bt_customers_audit ON bt_customers;
+CREATE TRIGGER bt_customers_audit AFTER INSERT OR UPDATE ON bt_customers
+    FOR EACH ROW EXECUTE FUNCTION grompil_audit_customer_change();
+DROP TRIGGER IF EXISTS dt_customer_locations_audit ON dt_customer_locations;
+CREATE TRIGGER dt_customer_locations_audit AFTER INSERT OR UPDATE ON dt_customer_locations
+    FOR EACH ROW EXECUTE FUNCTION grompil_audit_customer_change();
 
-ALTER TABLE bt_patients ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dt_patient_locations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE st_patient_audit_log ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS bt_patients_company_scope ON bt_patients;
-CREATE POLICY bt_patients_company_scope ON bt_patients FOR ALL
+ALTER TABLE bt_customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dt_customer_locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE st_customer_audit_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS bt_customers_company_scope ON bt_customers;
+CREATE POLICY bt_customers_company_scope ON bt_customers FOR ALL
     USING (
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND (current_setting('grompil.platform_operator', true) = 'true' OR EXISTS (
             SELECT 1 FROM ct_company_users cu
-            WHERE cu.company_id = bt_patients.company_id
+            WHERE cu.company_id = bt_customers.company_id
               AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         ))
@@ -1236,18 +1289,18 @@ CREATE POLICY bt_patients_company_scope ON bt_patients FOR ALL
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND (current_setting('grompil.platform_operator', true) = 'true' OR EXISTS (
             SELECT 1 FROM ct_company_users cu
-            WHERE cu.company_id = bt_patients.company_id
+            WHERE cu.company_id = bt_customers.company_id
               AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         ))
     );
-DROP POLICY IF EXISTS dt_patient_locations_company_scope ON dt_patient_locations;
-CREATE POLICY dt_patient_locations_company_scope ON dt_patient_locations FOR ALL
+DROP POLICY IF EXISTS dt_customer_locations_company_scope ON dt_customer_locations;
+CREATE POLICY dt_customer_locations_company_scope ON dt_customer_locations FOR ALL
     USING (
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND (current_setting('grompil.platform_operator', true) = 'true' OR EXISTS (
             SELECT 1 FROM ct_company_users cu
-            WHERE cu.company_id = dt_patient_locations.company_id
+            WHERE cu.company_id = dt_customer_locations.company_id
               AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         ))
@@ -1256,24 +1309,24 @@ CREATE POLICY dt_patient_locations_company_scope ON dt_patient_locations FOR ALL
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND (current_setting('grompil.platform_operator', true) = 'true' OR EXISTS (
             SELECT 1 FROM ct_company_users cu
-            WHERE cu.company_id = dt_patient_locations.company_id
+            WHERE cu.company_id = dt_customer_locations.company_id
               AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         ))
     );
-DROP POLICY IF EXISTS st_patient_audit_log_company_scope ON st_patient_audit_log;
-CREATE POLICY st_patient_audit_log_company_scope ON st_patient_audit_log FOR SELECT
+DROP POLICY IF EXISTS st_customer_audit_log_company_scope ON st_customer_audit_log;
+CREATE POLICY st_customer_audit_log_company_scope ON st_customer_audit_log FOR SELECT
     USING (
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND (current_setting('grompil.platform_operator', true) = 'true' OR EXISTS (
             SELECT 1 FROM ct_company_users cu
-            WHERE cu.company_id = st_patient_audit_log.company_id
+            WHERE cu.company_id = st_customer_audit_log.company_id
               AND cu.user_code = NULLIF(current_setting('grompil.user_code', true), '')
               AND cu.is_active AND cu.approval_status = 'approved'
         ))
     );
-DROP POLICY IF EXISTS st_patient_audit_log_insert ON st_patient_audit_log;
-CREATE POLICY st_patient_audit_log_insert ON st_patient_audit_log FOR INSERT
+DROP POLICY IF EXISTS st_customer_audit_log_insert ON st_customer_audit_log;
+CREATE POLICY st_customer_audit_log_insert ON st_customer_audit_log FOR INSERT
     WITH CHECK (
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND changed_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
