@@ -663,6 +663,7 @@ $arrSubst = array (
   'patient_search_results' => 'Patients correspondants',
   'patient_search_prompt' => 'Rechercher par nom ou code patient.',
   'patient_search_minimum' => 'Saisissez au moins trois caractères.',
+  'patient_search_button' => 'Rechercher',
   'patient_search_empty' => 'Aucun patient trouvé.',
   'patient_search_regex' => 'Regex',
   'patient_regex_invalid' => 'Expression régulière invalide. Vérifiez le motif de recherche.',

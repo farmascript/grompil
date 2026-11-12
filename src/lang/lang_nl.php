@@ -663,6 +663,7 @@ $arrSubst = array (
   'patient_search_results' => 'Gevonden patiënten',
   'patient_search_prompt' => 'Zoek op naam of patiëntcode.',
   'patient_search_minimum' => 'Geef minstens drie tekens in.',
+  'patient_search_button' => 'Zoeken',
   'patient_search_empty' => 'Geen patiënten gevonden.',
   'patient_search_regex' => 'Regex',
   'patient_regex_invalid' => 'Ongeldige regex. Controleer het zoekpatroon.',

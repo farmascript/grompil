@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 12:20:00
+ * @date_mut: Thu 2026-11-12 12:31:46
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -443,7 +443,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_no_products' => fn_t('dispense_no_products'),
     'dispense_product_error' => fn_t('dispense_product_error'),
     'dispense_product_count' => fn_t('dispense_product_count'),
-    'dispense_search' => fn_t('search'),
+    'dispense_search' => fn_t('patient_search_button'),
     'dispense_new_patient' => fn_t('patient_add'),
     'dispense_patient_matches' => fn_t('patient_search_results'),
     'dispense_patient_search_prompt' => fn_t('patient_search_prompt'),
