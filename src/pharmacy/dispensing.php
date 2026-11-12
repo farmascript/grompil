@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 16:43:00
+ * @date_mut: Thu 2026-11-12 17:33:37
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -67,6 +67,10 @@ $dispenseMode = (string) ($_GET['mode'] ?? 'patient') === 'walk_in' ? 'walk_in' 
 $messageKey = '';
 $editingPatientCode = '';
 $openPatientModal = false;
+$newPatientModalRequested = (string) ($_GET['new_patient'] ?? '') === '1';
+if ($newPatientModalRequested) {
+    $openPatientModal = true;
+}
 
 if (isset($_GET['product_suggest']) && (string) $_GET['product_suggest'] === '1') {
     header('Content-Type: application/json; charset=utf-8');
@@ -351,7 +355,7 @@ try {
         );
         $selectedPatient = pg_fetch_assoc($result) ?: null;
     }
-    if (isset($_GET['edit']) && $_GET['edit'] === '1' && $selectedPatient !== null) {
+    if (!$newPatientModalRequested && isset($_GET['edit']) && $_GET['edit'] === '1' && $selectedPatient !== null) {
         $editingPatientCode = $selectedPatientCode;
         $openPatientModal = true;
     }
@@ -677,6 +681,8 @@ $patientEditButtonHtml = $selectedPatient
     : '';
 $addPatientButtonHtml = fn_templateRender('dispensing_add_patient_button.html', [
     'patient_add' => $customerText('patient_add'),
+    'patient_add_url' => e(fn_appBaseHref() . 'dispense.php?mode=patient&new_patient=1'
+        . ($selectedPatientCode !== '' ? '&patient=' . rawurlencode($selectedPatientCode) : '')),
 ]);
 $patientModeUrl = fn_appBaseHref() . 'dispense.php?mode=patient';
 $walkInModeUrl = fn_appBaseHref() . 'dispense.php?mode=walk_in';
@@ -759,7 +765,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.13',
+    'asset_version' => '0.18.14',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
