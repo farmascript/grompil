@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 11:07:02
+ * @date_mut: Thu 2026-11-12 11:41:07
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -241,7 +241,7 @@ $patientAddress = $selectedPatient ? trim(implode(', ', array_filter([
     trim((string) ($selectedPatient['postal_code'] ?? '') . ' ' . (string) ($selectedPatient['city'] ?? '')),
     (string) ($selectedPatient['country_code'] ?? ''),
 ]))) : '';
-$patientFormValues = $selectedPatient ?? [];
+$patientFormValues = $editingPatientCode !== '' ? ($selectedPatient ?? []) : [];
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $patientFormValues = array_replace($patientFormValues, [
         'name_first' => (string) ($_POST['name_first'] ?? ''),
@@ -305,6 +305,9 @@ $patientFeedback = $query === ''
     : (mb_strlen($query) < 2
         ? fn_t('patient_search_minimum')
         : ($patientMatches === [] ? fn_t('patient_search_empty') : ''));
+$patientCountHtml = mb_strlen($query) >= 2
+    ? '<span class="badge text-bg-secondary">' . count($patientMatches) . '</span>'
+    : '';
 $patientTitleHtml = $selectedPatient
     ? fn_templateRender('dispensing_patient_title.html', [
         'patient_initials' => strtoupper(mb_substr((string) $selectedPatient['name_first'], 0, 1) . mb_substr((string) $selectedPatient['name_last'], 0, 1)),
@@ -355,6 +358,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_edit_patient' => fn_t('patient_edit'),
     'dispense_product_search' => fn_t('dispense_product_search'),
     'dispense_product_help' => fn_t('dispense_product_help'),
+    'dispense_patient_required' => fn_t('dispense_patient_required'),
     'dispense_current_items' => fn_t('dispense_current_items'),
     'dispense_empty_basket' => fn_t('dispense_empty_basket'),
     'dispense_quantity' => fn_t('dispense_quantity'),
@@ -375,13 +379,17 @@ echo fn_templateRender('dispensing.html', [
     'dispense_employee_initials' => $initials,
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
-    'dispense_patient_count' => (string) count($patientMatches),
     'dispense_product_endpoint' => fn_appBaseHref() . 'sam-products.php',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '2',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
     '_dispense_patient_search_feedback_html' => $patientFeedback !== ''
         ? fn_templateRender('dispensing_patient_feedback.html', ['patient_feedback' => $patientFeedback])
+        : '',
+    '_dispense_patient_count_html' => $patientCountHtml,
+    '_dispense_product_search_disabled' => $selectedPatient === null ? 'disabled' : '',
+    '_dispense_patient_required_html' => $selectedPatient === null
+        ? fn_templateRender('dispensing_patient_required.html', ['dispense_patient_required' => fn_t('dispense_patient_required')])
         : '',
     '_dispense_patient_results_html' => $patientResultRows,
     '_dispense_patient_modal_form_html' => $patientModalForm,

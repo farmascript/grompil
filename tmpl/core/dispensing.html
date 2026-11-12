@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="@_asset_base_href@assets/dispensing.css?v=0.17.0">
+<link rel="stylesheet" href="@_asset_base_href@assets/dispensing.css?v=0.17.1">
 <div class="dispense-page" data-dispense-page data-product-endpoint="@dispense_product_endpoint@" data-min-chars="@dispense_product_min_chars@" data-modal-open="@_dispense_patient_modal_open@" data-lang="@dispense_language@" data-text-add="@dispense_add@" data-text-no-products="@dispense_no_products@" data-text-product-error="@dispense_product_error@" data-text-empty-basket="@dispense_empty_basket@" data-text-remove="@dispense_remove@" data-text-quantity="@dispense_quantity@" data-text-product-count="@dispense_product_count@">
     @_dispense_alert_html@
     <header class="dispense-brandbar">
@@ -35,7 +35,7 @@
                     <input class="form-control" id="patient-search" name="q" type="search" minlength="2" maxlength="100" value="@dispense_query_value@" placeholder="@dispense_patient_search@" autocomplete="off">
                     <button class="btn btn-outline-primary" type="submit">@dispense_search@</button>
                 </form>
-                <div class="patient-results-heading">@dispense_patient_matches@ <span class="badge text-bg-secondary">@dispense_patient_count@</span></div>
+                <div class="patient-results-heading">@dispense_patient_matches@ @_dispense_patient_count_html@</div>
                 <div class="list-group patient-results"> @_dispense_patient_results_html@ </div>
                 @_dispense_patient_search_feedback_html@
                 <div class="patient-panel-footer">@_dispense_patient_add_open_html@</div>
@@ -46,7 +46,8 @@
                 <div class="dispense-statusline"><span class="status-pill">@dispense_logged_in@</span><span class="status-pill status-muted">@dispense_price_unavailable@</span></div>
                 <div class="product-search-wrap">
                     <label class="form-label" for="dispense-product-search">@dispense_product_search@</label>
-                    <input class="form-control" id="dispense-product-search" type="search" maxlength="200" autocomplete="off" aria-autocomplete="list" aria-controls="dispense-product-suggestions" aria-expanded="false" placeholder="@dispense_product_search@" data-product-search>
+                    <input class="form-control" id="dispense-product-search" type="search" maxlength="200" autocomplete="off" aria-autocomplete="list" aria-controls="dispense-product-suggestions" aria-expanded="false" placeholder="@dispense_product_search@" data-product-search @_dispense_product_search_disabled@>
+                    @_dispense_patient_required_html@
                     <div class="list-group product-suggestions d-none" id="dispense-product-suggestions" role="listbox" data-product-suggestions></div>
                 </div>
                 <div class="basket-table-wrap">
@@ -73,4 +74,4 @@
         <div class="modal-body">@_dispense_patient_modal_form_html@</div>
     </div></div>
 </div>
-<script src="@_asset_base_href@assets/dispensing.js?v=0.17.0" defer></script>
+<script src="@_asset_base_href@assets/dispensing.js?v=0.17.1" defer></script>

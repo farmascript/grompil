@@ -687,6 +687,7 @@ $arrSubst = array (
   'dispense_no_patient' => 'No patient selected',
   'dispense_product_search' => 'Find a medicine',
   'dispense_product_help' => 'Search the current SAM catalogue. Select a result to add it temporarily to the basket.',
+  'dispense_patient_required' => 'Select a patient first to add medicines to this dispensing.',
   'dispense_current_items' => 'Current dispensing',
   'dispense_empty_basket' => 'No products selected yet.',
   'dispense_quantity' => 'Quantity',

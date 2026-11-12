@@ -687,6 +687,7 @@ $arrSubst = array (
   'dispense_no_patient' => 'Geen patiënt geselecteerd',
   'dispense_product_search' => 'Geneesmiddel zoeken',
   'dispense_product_help' => 'Zoek in de actuele SAM-catalogus. Selecteer een resultaat om het tijdelijk aan de mand toe te voegen.',
+  'dispense_patient_required' => 'Selecteer eerst een patiënt om geneesmiddelen aan deze aflevering toe te voegen.',
   'dispense_current_items' => 'Huidige aflevering',
   'dispense_empty_basket' => 'Nog geen producten geselecteerd.',
   'dispense_quantity' => 'Aantal',
