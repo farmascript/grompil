@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 16:00:00
+ * @date_mut: Thu 2026-11-12 16:24:13
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -158,7 +158,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $addressLabel = trim((string) ($_POST['address_label'] ?? ''));
     $addressSortOrder = max(0, (int) ($_POST['address_sort_order'] ?? 0));
     $addressIsPrimary = isset($_POST['location_is_primary']);
-    $addAnotherAddress = isset($_POST['add_another_address']);
+    $addAnotherAddress = (string) ($_POST['add_another_address'] ?? '') === '1';
     if ($addAnotherAddress) {
         $locationId = 0;
     }
@@ -279,7 +279,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 );
             }
             db_query_raw('patients.transaction.commit', 'COMMIT');
-            redirect('dispense.php?patient=' . rawurlencode($patientCode) . '&saved=1');
+            $redirectUrl = 'dispense.php?patient=' . rawurlencode($patientCode) . '&saved=1';
+            if ($action === 'update_patient') {
+                $redirectUrl .= '&edit=1';
+            }
+            redirect($redirectUrl);
         } catch (Throwable $error) {
             try {
                 db_query_raw('patients.transaction.rollback', 'ROLLBACK');
@@ -459,6 +463,14 @@ if ($newAddressMode) {
             : ($addressField === 'address_sort_order' ? '' : '');
     }
     $patientFormValues['country_code'] = 'BE';
+    $nextAddressOrderResult = db_query_params(
+        'customers.location.next_order_for_form',
+        'SELECT COALESCE(MAX(sort_order), 0) + 10 AS next_order
+         FROM dt_customer_locations WHERE company_id=$1 AND customer_code=$2',
+        [$companyId, $editingPatientCode]
+    );
+    $nextAddressOrder = pg_fetch_result($nextAddressOrderResult, 0, 'next_order');
+    $patientFormValues['address_sort_order'] = (string) ($nextAddressOrder ?: 10);
 }
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $patientFormValues = array_replace($patientFormValues, [
@@ -729,7 +741,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.6',
+    'asset_version' => '0.18.7',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
