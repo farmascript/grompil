@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Wed 2026-11-11
+ * @date_mut: Thu 2026-11-12 16:50:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -33,6 +33,13 @@ function address_api_error(int $status, string $message): never
     http_response_code($status);
     echo json_encode(['error' => $message], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+/** Remove the BeSt version timestamp from an address URI, retaining its stable identifier. */
+function address_api_canonical_address_id(mixed $id): string
+{
+    $id = trim((string) $id);
+    return preg_replace('~(/id/adres/[0-9]+)/[0-9]{4}-[0-9]{2}-[0-9]{2}T[^/?#]+$~', '$1', $id) ?? $id;
 }
 
 /**
@@ -207,7 +214,7 @@ foreach (array_slice($data['items'] ?? [], 0, $type === 'locality' ? 50 : 10) as
             }
         }
         $items[] = [
-            'id' => (string) ($item['id'] ?? ''),
+            'id' => address_api_canonical_address_id($item['id'] ?? ''),
             'label' => trim($name($streetData['name'] ?? null) . ' ' . (string) ($item['houseNumber'] ?? '') . (!empty($item['boxNumber']) ? ' bus ' . $item['boxNumber'] : '') . ', ' . (string) ($postalData['postCode'] ?? '') . ' ' . $name($municipalityData['name'] ?? null)),
             'street' => $name($streetData['name'] ?? null),
             'house_number' => (string) ($item['houseNumber'] ?? ''),
