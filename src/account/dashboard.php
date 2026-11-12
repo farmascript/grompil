@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:56
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Thu 2026-11-12 13:57:10
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -26,9 +26,15 @@ if (!$company['is_platform_operator']
 }
 page_start(fn_t('nav_dashboard'), $user);
 
-$modules = ['module_inventory', 'module_refills', 'module_team'];
 $cards = '';
-foreach ($modules as $module) {
+if (grompil_can_access_module('dispense.php', $user, $company)) {
+    $cards .= fn_templateRender('dashboard_dispensing.html', [
+        'dispense_dashboard_title' => fn_t('dispense_dashboard_title'),
+        'dispense_dashboard_description' => fn_t('dispense_dashboard_description'),
+        'dispense_dashboard_action' => fn_t('dispense_dashboard_action'),
+    ]);
+}
+foreach (['module_inventory', 'module_refills', 'module_team'] as $module) {
     $cards .= fn_templateRender('dashboard_module.html', ['module_name' => fn_t($module)]);
 }
 
