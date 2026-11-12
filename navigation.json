@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.16.34",
+    "applicationVersion": "0.17.0",
     "defaultLanguage": "nl",
     "languages": [
         "nl",
@@ -541,6 +541,20 @@
                 }
             },
             "sequence_number": 16,
+            "action": "manage"
+        },
+        {
+            "id": 74269,
+            "module": "dispense.php",
+            "group": "company",
+            "public_visibility": false,
+            "i18n": {
+                "nl": { "title": "Afleveren", "description": "Patiënten en SAM-producten gebruiken in de apotheekwerkruimte.", "keywords": ["apotheek", "patiënt", "geneesmiddel"] },
+                "fr": { "title": "Délivrance", "description": "Gérer les patients et utiliser les produits SAM dans l’espace de travail de la pharmacie.", "keywords": ["pharmacie", "patient", "médicament"] },
+                "en": { "title": "Dispensing", "description": "Use patient records and SAM products in the pharmacy workspace.", "keywords": ["pharmacy", "patient", "medicine"] },
+                "de": { "title": "Abgabe", "description": "Patientendaten und SAM-Produkte im Arbeitsbereich der Apotheke verwenden.", "keywords": ["Apotheke", "Patient", "Arzneimittel"] }
+            },
+            "sequence_number": 17,
             "action": "manage"
         }
     ],

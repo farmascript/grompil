@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Thu 2026-11-12 11:07:02
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -49,6 +49,7 @@ function grompil_module_access_rules(): array
         'company_members.php' => ['company_permission' => 'company.users.manage', 'platform_without_company' => true],
         'customers.php' => ['company_permission' => 'company.users.manage'],
         'sam-products.php' => [],
+        'dispense.php' => ['company_permission' => 'pharmacy.dispense'],
         'company_roles.php' => ['company_permission' => 'company.roles.manage'],
         'company_translations.php' => ['company_permission' => 'company.translations.manage'],
         'company_security.php' => ['company_permission' => 'company.settings.manage'],

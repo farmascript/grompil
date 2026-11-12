@@ -1,0 +1,17 @@
+<form method="post" action="dispense.php" class="row g-3">
+    <input type="hidden" name="csrf_token" value="@csrf_token@">
+    <input type="hidden" name="action" value="@patient_form_action@">
+    <input type="hidden" name="patient_code" value="@patient_code@">
+    <input type="hidden" name="location_id" value="@patient_location_id@">
+    <div class="col-md-6"><label class="form-label" for="patient-first-name">@patient_first_name@</label><input class="form-control" id="patient-first-name" name="name_first" maxlength="120" required value="@patient_first_name_value@"></div>
+    <div class="col-md-6"><label class="form-label" for="patient-last-name">@patient_last_name@</label><input class="form-control" id="patient-last-name" name="name_last" maxlength="120" required value="@patient_last_name_value@"></div>
+    <div class="col-md-6"><label class="form-label" for="patient-dob">@patient_birth_date@</label><input class="form-control" id="patient-dob" name="date_of_birth" type="date" max="@patient_date_max@" value="@patient_birth_date_value@"></div>
+    <div class="col-12"><hr><p class="small text-secondary mb-0">@patient_address_optional@</p></div>
+    <div class="col-md-8"><label class="form-label" for="patient-street">@address_street@</label><input class="form-control" id="patient-street" name="street" maxlength="160" value="@patient_street_value@"></div>
+    <div class="col-md-2"><label class="form-label" for="patient-house">@address_house_number@</label><input class="form-control" id="patient-house" name="house_number" maxlength="32" value="@patient_house_number_value@"></div>
+    <div class="col-md-2"><label class="form-label" for="patient-box">@address_box_number@</label><input class="form-control" id="patient-box" name="box_number" maxlength="32" value="@patient_box_number_value@"></div>
+    <div class="col-md-3"><label class="form-label" for="patient-postal">@address_postal_code@</label><input class="form-control" id="patient-postal" name="postal_code" maxlength="20" value="@patient_postal_code_value@"></div>
+    <div class="col-md-7"><label class="form-label" for="patient-city">@address_city@</label><input class="form-control" id="patient-city" name="city" maxlength="100" value="@patient_city_value@"></div>
+    <div class="col-md-2"><label class="form-label" for="patient-country">@address_country@</label><input class="form-control" id="patient-country" name="country_code" maxlength="2" pattern="[A-Za-z]{2}" value="@patient_country_value@"></div>
+    <div class="col-12 d-flex justify-content-end"><button class="btn btn-primary" type="submit">@save@</button></div>
+</form>

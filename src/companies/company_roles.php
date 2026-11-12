@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:49
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Thu 2026-11-12 11:07:02
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -32,6 +32,7 @@ $permissionCatalog = [
     'company.roles.manage' => 'company_permission_roles',
     'company.settings.manage' => 'company_permission_settings',
     'company.translations.manage' => 'company_permission_translations',
+    'pharmacy.dispense' => 'company_permission_dispense',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
