@@ -1,5 +1,5 @@
-<link rel="stylesheet" href="@_asset_base_href@assets/dispensing.css?v=0.17.8">
-<div class="dispense-page" data-dispense-page data-product-endpoint="@dispense_product_endpoint@" data-patient-endpoint="@dispense_patient_endpoint@" data-min-chars="@dispense_product_min_chars@" data-patient-min-chars="@dispense_patient_min_chars@" data-modal-open="@_dispense_patient_modal_open@" data-lang="@dispense_language@" data-text-add="@dispense_add@" data-text-no-products="@dispense_no_products@" data-text-product-error="@dispense_product_error@" data-text-empty-basket="@dispense_empty_basket@" data-text-remove="@dispense_remove@" data-text-quantity="@dispense_quantity@" data-text-product-count="@dispense_product_count@" data-text-patient-prompt="@dispense_patient_search_prompt@" data-text-patient-no-results="@dispense_patient_no_results@" data-text-patient-unavailable="@dispense_patient_lookup_unavailable@" data-text-patient-minimum="@dispense_patient_search_minimum@">
+<link rel="stylesheet" href="@_asset_base_href@assets/dispensing.css?v=@asset_version@">
+<div class="dispense-page" data-dispense-page data-dispense-mode="@dispense_mode@" data-patient-code="@dispense_patient_code@" data-product-endpoint="@dispense_product_endpoint@" data-patient-endpoint="@dispense_patient_endpoint@" data-min-chars="@dispense_product_min_chars@" data-patient-min-chars="@dispense_patient_min_chars@" data-modal-open="@_dispense_patient_modal_open@" data-lang="@dispense_language@" data-text-add="@dispense_add@" data-text-no-products="@dispense_no_products@" data-text-product-error="@dispense_product_error@" data-text-empty-basket="@dispense_empty_basket@" data-text-remove="@dispense_remove@" data-text-quantity="@dispense_quantity@" data-text-product-count="@dispense_product_count@" data-text-patient-prompt="@dispense_patient_search_prompt@" data-text-patient-no-results="@dispense_patient_no_results@" data-text-patient-unavailable="@dispense_patient_lookup_unavailable@" data-text-patient-minimum="@dispense_patient_search_minimum@">
     @_dispense_alert_html@
     <header class="dispense-brandbar">
         <div class="d-flex align-items-center gap-2">
@@ -19,7 +19,7 @@
     <section class="dispense-patientbar">
         <div class="dispense-selected-patient">@_dispense_patient_title_html@</div>
         @_dispense_patient_detail_html@
-        <div class="ms-auto d-flex gap-2">@_dispense_patient_edit_button_html@ @_dispense_patient_add_open_html@</div>
+        <div class="ms-auto d-flex gap-2">@_dispense_patient_edit_button_html@ @_dispense_patient_actions_html@</div>
     </section>
 
     <main class="dispense-main">
@@ -28,24 +28,11 @@
             <span class="concept-badge">@dispense_concept@</span>
         </div>
         <div class="dispense-columns">
-            <section class="dispense-panel patient-panel">
-                <div class="panel-heading"><div><h2>@dispense_patient_search@</h2><p>@dispense_select_patient@</p></div></div>
-                <div class="patient-search-wrap">
-                    <form method="get" action="dispense.php" class="patient-search-form" data-patient-search-form>
-                        <label class="visually-hidden" for="patient-search">@dispense_patient_search@</label>
-                        <input class="form-control" id="patient-search" name="q" type="search" minlength="3" maxlength="100" value="@dispense_query_value@" placeholder="@dispense_patient_search@" autocomplete="off" aria-autocomplete="list" aria-controls="patient-suggestions" aria-expanded="false" data-patient-search-input>
-                        <button class="btn btn-outline-primary" type="submit">@dispense_search@</button>
-                        <label class="form-check patient-regex-check"><input class="form-check-input" type="checkbox" name="regex" value="1" @_dispense_regex_checked@ data-patient-regex><span class="form-check-label">@dispense_patient_search_regex@</span></label>
-                    </form>
-                    <div class="list-group patient-suggestions @_dispense_patient_suggestion_class@" id="patient-suggestions" role="listbox" data-patient-suggestions>@_dispense_patient_results_html@</div>
-                </div>
-                <div class="form-text mt-2" aria-live="polite" data-patient-search-status>@dispense_patient_search_feedback@</div>
-                <div class="patient-panel-footer">@_dispense_patient_add_open_html@</div>
-            </section>
+            @_dispense_patient_panel_html@
 
             <section class="dispense-panel current-dispense-panel">
                 <div class="panel-heading"><div><h2>@dispense_current_items@</h2><p>@dispense_product_help@</p></div><span class="badge text-bg-light" data-basket-count>0</span></div>
-                <div class="dispense-statusline"><span class="status-pill">@dispense_logged_in@</span><span class="status-pill status-muted">@dispense_price_unavailable@</span></div>
+                <div class="dispense-statusline"><span class="status-pill">@dispense_logged_in@</span><span class="status-pill">@dispense_mode_label@</span><span class="status-pill status-muted">@dispense_price_unavailable@</span></div>
                 <div class="product-search-wrap">
                     <label class="form-label" for="dispense-product-search">@dispense_product_search@</label>
                     <input class="form-control" id="dispense-product-search" type="search" maxlength="200" autocomplete="off" aria-autocomplete="list" aria-controls="dispense-product-suggestions" aria-expanded="false" placeholder="@dispense_product_search@" data-product-search @_dispense_product_search_disabled@>
@@ -76,4 +63,4 @@
         <div class="modal-body">@_dispense_patient_modal_form_html@</div>
     </div></div>
 </div>
-<script src="@_asset_base_href@assets/dispensing.js?v=0.17.8" defer></script>
+<script src="@_asset_base_href@assets/dispensing.js?v=@asset_version@" defer></script>

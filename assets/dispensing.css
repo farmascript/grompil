@@ -3,3 +3,4 @@
 .dispense-selected-patient{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}.dispense-selected-patient>.patient-avatar{flex:0 0 44px;width:44px;height:44px}.dispense-selected-patient>.badge{font-family:monospace}
 
 .patient-search-wrap{position:relative}.patient-search-form{flex-wrap:wrap;align-items:center}.patient-search-form>[data-patient-search-input]{flex:1 1 140px;min-width:0}.patient-regex-check{display:flex;align-items:center;gap:.35rem;margin:0;font-size:.76rem;white-space:nowrap}.patient-regex-check .form-check-input{margin:0}.patient-suggestions{position:absolute;z-index:12;top:calc(100% + .25rem);left:0;right:0;max-height:42vh;overflow:auto;box-shadow:0 10px 24px #132b3a25}.patient-suggestion{font-size:.86rem;white-space:normal}.patient-suggestion strong{font-weight:700}
+.walkin-panel{background:#f8fbfa}

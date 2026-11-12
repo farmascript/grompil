@@ -8,7 +8,9 @@ The pharmacy workbench is available at `dispense.php`. It requires an active com
 - The current primary address is stored in `dt_patient_locations`.
 - Database triggers record create and update events, actor codes, timestamps, and before/after snapshots in `st_patient_audit_log`. Patient codes and company ownership cannot be changed, and patient rows cannot be physically deleted. A dedicated authorized deactivation workflow can be added when needed.
 - Search and edits are scoped to the active company. PostgreSQL row-level security provides a second tenant boundary.
-- The product picker reads the existing SAM catalogue through `sam-products.php`. Its basket is browser-only and is discarded when the page closes or reloads.
+- The workbench has two explicit modes: patient-linked dispensing and walk-in sale without a patient. Product search in patient mode requires a valid active patient from the current company; walk-in mode does not attach products to any patient.
+- The dispensing product-search endpoint checks the selected mode and, in patient mode, verifies the patient in the active company before searching the SAM catalogue. The separate `sam-products.php` endpoint remains available to its other authorized tools.
+- The basket is currently browser-only and is discarded when the page closes or reloads. Checkout and saving a sale are not connected yet, including for walk-in sales.
 - Electronic prescriptions, live stock, safety checks, reimbursement, prices, and checkout are not connected. Their controls are deliberately disabled.
 
 Page layout lives in `tmpl/core/dispensing*.html`; translations live in the four `src/lang/lang_*.php` files. `src/pharmacy/dispensing.php` handles access checks, database operations, and view data. Styling and browser behavior are in `assets/dispensing.css` and `assets/dispensing.js`.

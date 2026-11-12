@@ -1,0 +1,17 @@
+<section class="dispense-panel patient-panel">
+    <div class="panel-heading"><div><h2>@dispense_patient_search@</h2><p>@dispense_select_patient@</p></div></div>
+    <div class="patient-search-wrap">
+        <form method="get" action="dispense.php" class="patient-search-form" data-patient-search-form>
+            <input type="hidden" name="mode" value="patient">
+            <label class="visually-hidden" for="patient-search">@dispense_patient_search@</label>
+            <input class="form-control" id="patient-search" name="q" type="search" minlength="3" maxlength="100" value="@dispense_query_value@" placeholder="@dispense_patient_search@" autocomplete="off" aria-autocomplete="list" aria-controls="patient-suggestions" aria-expanded="false" data-patient-search-input>
+            <button class="btn btn-outline-primary" type="submit">@dispense_search@</button>
+            <label class="form-check patient-regex-check"><input class="form-check-input" type="checkbox" name="regex" value="1" @_dispense_regex_checked@ data-patient-regex><span class="form-check-label">@dispense_patient_search_regex@</span></label>
+        </form>
+        <div class="list-group patient-suggestions @_dispense_patient_suggestion_class@" id="patient-suggestions" role="listbox" data-patient-suggestions>@_dispense_patient_results_html@</div>
+    </div>
+    <div class="form-text mt-2" aria-live="polite" data-patient-search-status>@dispense_patient_search_feedback@</div>
+    <div class="patient-panel-footer d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="@dispense_walkin_mode_url@">@dispense_walkin_title@</a>
+    </div>
+</section>

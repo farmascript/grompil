@@ -43,6 +43,7 @@
             for (const patient of results) {
                 const url = new URL(page.dataset.patientEndpoint, window.location.href);
                 url.searchParams.set('patient', String(patient.patient_code || ''));
+                url.searchParams.set('mode', 'patient');
                 const link = document.createElement('a');
                 link.className = 'list-group-item list-group-item-action patient-suggestion';
                 link.href = url.href;
@@ -258,7 +259,12 @@
             requestController = new AbortController();
             try {
                 const url = new URL(page.dataset.productEndpoint, window.location.href);
+                url.searchParams.set('product_suggest', '1');
                 url.searchParams.set('q', query);
+                url.searchParams.set('mode', page.dataset.dispenseMode || 'patient');
+                if (page.dataset.dispenseMode === 'patient' && page.dataset.patientCode) {
+                    url.searchParams.set('patient', page.dataset.patientCode);
+                }
                 const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin', signal: requestController.signal });
                 if (!response.ok) throw new Error('search_failed');
                 showResults(await response.json());

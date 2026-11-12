@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 12:31:46
+ * @date_mut: Thu 2026-11-12 16:00:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -26,9 +26,81 @@ if ($company === null || !grompil_can_access_module('dispense.php', $currentUser
 
 $companyId = (int) $company['id'];
 $actorCode = (string) $currentUser['user_code'];
+$dispenseMode = (string) ($_GET['mode'] ?? 'patient') === 'walk_in' ? 'walk_in' : 'patient';
 $messageKey = '';
 $editingPatientCode = '';
 $openPatientModal = false;
+
+if (isset($_GET['product_suggest']) && (string) $_GET['product_suggest'] === '1') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, private');
+    $rawQuery = $_GET['q'] ?? '';
+    $productQuery = is_scalar($rawQuery) ? trim((string) $rawQuery) : '';
+    if ($productQuery === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'query_required']);
+        exit;
+    }
+    if ($dispenseMode === 'patient') {
+        $productPatientCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
+        if (preg_match('/^[A-Z0-9]{6}$/D', $productPatientCode) !== 1) {
+            http_response_code(409);
+            echo json_encode(['error' => 'patient_required']);
+            exit;
+        }
+        try {
+            $patientCheck = db_query_params(
+                'dispensing.product_search_patient_check',
+                'SELECT 1 FROM bt_patients WHERE company_id=$1 AND patient_code=$2 AND is_active',
+                [$companyId, $productPatientCode]
+            );
+        } catch (Throwable $error) {
+            error_log('Dispensing product patient check failed: ' . get_class($error));
+            http_response_code(503);
+            echo json_encode(['error' => 'patient_check_unavailable']);
+            exit;
+        }
+        if (pg_num_rows($patientCheck) !== 1) {
+            http_response_code(403);
+            echo json_encode(['error' => 'patient_unavailable']);
+            exit;
+        }
+    }
+    require_once GROMPIL_ROOT . '/includes/sam_products.php';
+    $maximumResults = grompil_sam_product_search_limit();
+    $rawLimit = $_GET['limit'] ?? $maximumResults;
+    $limit = is_scalar($rawLimit) && filter_var($rawLimit, FILTER_VALIDATE_INT) !== false
+        ? min($maximumResults, max(1, (int) $rawLimit))
+        : $maximumResults;
+    $rawStatuses = $_GET['status'] ?? null;
+    $statuses = array_key_exists('status_filter', $_GET)
+        ? (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : [])
+        : (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : null);
+    try {
+        $totalCount = 0;
+        $matches = grompil_sam_product_search($productQuery, $limit, $statuses, $totalCount);
+    } catch (Throwable $error) {
+        error_log('Dispensing product lookup failed: ' . $error->getMessage());
+        http_response_code(503);
+        echo json_encode(['error' => 'search_unavailable']);
+        exit;
+    }
+    $results = array_map(static fn(array $row): array => [
+        'match_type' => $row['match_type'], 'cnk' => $row['cnk'],
+        'amp_code' => $row['amp_code'], 'ampp_code' => $row['ampp_code'],
+        'amp_status' => $row['amp_status'], 'ampp_status' => $row['ampp_status'],
+        'official_name' => $row['official_name'], 'name_nl' => $row['name_nl'],
+        'name_fr' => $row['name_fr'], 'prescription_name_nl' => $row['prescription_name_nl'],
+        'prescription_name_fr' => $row['prescription_name_fr'], 'pack_display_nl' => $row['pack_display_nl'],
+        'pack_display_fr' => $row['pack_display_fr'], 'atc_code' => $row['atc_code'],
+        'atc_class_path' => $row['atc_class_path'],
+    ], $matches);
+    echo json_encode([
+        'query' => $productQuery, 'count' => count($results), 'total_count' => $totalCount,
+        'has_more' => $totalCount > count($results), 'results' => $results,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    exit;
+}
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     verify_csrf();
@@ -153,7 +225,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 $query = trim((string) ($_GET['q'] ?? ''));
 $regexSearch = (string) ($_GET['regex'] ?? '') === '1';
 $patientSuggestionRequest = (string) ($_GET['patient_suggest'] ?? '') === '1';
-$selectedPatientCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
+$selectedPatientCode = $dispenseMode === 'patient' ? strtoupper(trim((string) ($_GET['patient'] ?? ''))) : '';
 if ($selectedPatientCode === '' && $editingPatientCode !== '') {
     $selectedPatientCode = $editingPatientCode;
 }
@@ -186,7 +258,7 @@ try {
         $editingPatientCode = $selectedPatientCode;
         $openPatientModal = true;
     }
-    if (mb_strlen($query) >= 3) {
+    if ($dispenseMode === 'patient' && mb_strlen($query) >= 3) {
         $searchPattern = $regexSearch ? $query : '%' . $query . '%';
         $searchPredicate = $regexSearch
             ? "(p.patient_code ~* $2 OR (p.name_first || ' ' || p.name_last) ~* $2
@@ -219,7 +291,7 @@ try {
     $messageKey = $messageKey !== '' ? $messageKey : ($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable');
 }
 
-if ($patientSuggestionRequest) {
+if ($patientSuggestionRequest && $dispenseMode === 'patient') {
     header('Content-Type: application/json; charset=UTF-8');
     if ($messageKey !== '') {
         http_response_code($regexSearch ? 400 : 503);
@@ -409,7 +481,9 @@ $patientTitleHtml = $selectedPatient
         'patient_name' => trim($selectedPatient['name_first'] . ' ' . $selectedPatient['name_last']),
         'patient_code' => (string) $selectedPatient['patient_code'],
     ])
-    : fn_templateRender('dispensing_no_patient_title.html');
+    : ($dispenseMode === 'walk_in'
+        ? fn_templateRender('dispensing_walkin_title.html', ['dispense_walkin_title' => fn_t('dispense_walkin_title')])
+        : fn_templateRender('dispensing_no_patient_title.html'));
 $companyBrandHtml = $companyLogo !== ''
     ? fn_templateRender('dispensing_company_logo.html', [
         'company_logo_url' => $companyLogo, 'company_name' => (string) $companyIdentity['name'],
@@ -426,10 +500,35 @@ $patientEditButtonHtml = $selectedPatient
 $addPatientButtonHtml = fn_templateRender('dispensing_add_patient_button.html', [
     'patient_add' => fn_t('patient_add'),
 ]);
+$patientModeUrl = fn_appBaseHref() . 'dispense.php?mode=patient';
+$walkInModeUrl = fn_appBaseHref() . 'dispense.php?mode=walk_in';
+$modeSwitchHtml = $dispenseMode === 'walk_in'
+    ? '<a class="btn btn-outline-primary" href="' . e($patientModeUrl) . '">' . e(fn_t('dispense_patient_mode')) . '</a>'
+    : '';
+$patientPanelHtml = $dispenseMode === 'walk_in'
+    ? fn_templateRender('dispensing_walkin_panel.html', [
+        'dispense_walkin_title' => fn_t('dispense_walkin_title'),
+        'dispense_walkin_help' => fn_t('dispense_walkin_help'),
+    ])
+    : fn_templateRender('dispensing_patient_panel.html', [
+        'dispense_patient_search' => fn_t('dispense_patient_search'),
+        'dispense_select_patient' => fn_t('dispense_select_patient'),
+        'dispense_query_value' => e($query),
+        'dispense_search' => fn_t('patient_search_button'),
+        'dispense_patient_search_regex' => fn_t('patient_search_regex'),
+        '_dispense_regex_checked' => $regexSearch ? 'checked' : '',
+        '_dispense_patient_suggestion_class' => $patientSuggestionClass,
+        '_dispense_patient_results_html' => $patientResultRows,
+        'dispense_patient_search_feedback' => e($patientFeedback),
+        'dispense_walkin_title' => fn_t('dispense_walkin_title'),
+        'dispense_walkin_mode_url' => e($walkInModeUrl),
+    ]);
 
 page_start(fn_t('dispense_title'), $currentUser);
 echo fn_templateRender('dispensing.html', [
     'dispense_title' => fn_t('dispense_title'),
+    'dispense_mode' => $dispenseMode,
+    'dispense_patient_code' => $selectedPatient ? (string) $selectedPatient['patient_code'] : '',
     'dispense_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
     'dispense_intro' => fn_t('dispense_intro'),
     'dispense_concept' => fn_t('dispense_concept'),
@@ -458,6 +557,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_product_search' => fn_t('dispense_product_search'),
     'dispense_product_help' => fn_t('dispense_product_help'),
     'dispense_patient_required' => fn_t('dispense_patient_required'),
+    'dispense_mode_label' => fn_t($dispenseMode === 'walk_in' ? 'dispense_walkin_title' : 'dispense_patient_mode'),
     'dispense_current_items' => fn_t('dispense_current_items'),
     'dispense_empty_basket' => fn_t('dispense_empty_basket'),
     'dispense_quantity' => fn_t('dispense_quantity'),
@@ -479,7 +579,8 @@ echo fn_templateRender('dispensing.html', [
     'dispense_employee_initials' => $initials,
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
-    'dispense_product_endpoint' => fn_appBaseHref() . 'sam-products.php',
+    'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
+    'asset_version' => '0.18.2',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
@@ -487,8 +588,8 @@ echo fn_templateRender('dispensing.html', [
         ? fn_templateRender('dispensing_patient_feedback.html', ['patient_feedback' => $patientFeedback])
         : '',
     '_dispense_patient_count_html' => '',
-    '_dispense_product_search_disabled' => $selectedPatient === null ? 'disabled' : '',
-    '_dispense_patient_required_html' => $selectedPatient === null
+    '_dispense_product_search_disabled' => $selectedPatient === null && $dispenseMode !== 'walk_in' ? 'disabled' : '',
+    '_dispense_patient_required_html' => $selectedPatient === null && $dispenseMode !== 'walk_in'
         ? fn_templateRender('dispensing_patient_required.html', ['dispense_patient_required' => fn_t('dispense_patient_required')])
         : '',
     '_dispense_patient_results_html' => $patientResultRows,
@@ -502,11 +603,16 @@ echo fn_templateRender('dispensing.html', [
             '_patient_metadata_html' => $patientMetadata,
             'patient_audit_line' => $auditLine,
         ])
-        : fn_templateRender('dispensing_no_patient_detail.html'),
+        : ($dispenseMode === 'walk_in'
+            ? ''
+            : fn_templateRender('dispensing_no_patient_detail.html', [
+                'dispense_select_patient' => fn_t('dispense_select_patient'),
+            ])),
     '_dispense_patient_title_html' => $patientTitleHtml,
     '_dispense_patient_edit_button_html' => $patientEditButtonHtml,
     '_dispense_brand_html' => $companyBrandHtml,
     '_dispense_alert_html' => $messageHtml,
-    '_dispense_patient_add_open_html' => $addPatientButtonHtml,
+    '_dispense_patient_actions_html' => $dispenseMode === 'walk_in' ? $modeSwitchHtml : $addPatientButtonHtml,
+    '_dispense_patient_panel_html' => $patientPanelHtml,
 ]);
 page_end();
