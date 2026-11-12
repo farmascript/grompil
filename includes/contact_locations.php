@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-11-07 14:57:26
- * @date_mut: Wed 2026-11-11
+ * @date_mut: Thu 2026-11-12
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -162,9 +162,12 @@ function grompil_google_maps_url(mixed $latitude, mixed $longitude): ?string
  * @param mixed $longitude Longitude.
  * @return string
  */
-function grompil_google_maps_link(mixed $latitude, mixed $longitude): string
+function grompil_google_maps_link(mixed $latitude, mixed $longitude, string $address = ''): string
 {
     $url = grompil_google_maps_url($latitude, $longitude);
+    if ($url === null && trim($address) !== '') {
+        $url = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode(trim($address));
+    }
     if ($url === null) {
         return '';
     }

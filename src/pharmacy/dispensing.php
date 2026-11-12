@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 11:42:18
+ * @date_mut: Thu 2026-11-12 12:02:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -45,6 +45,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $city = trim((string) ($_POST['city'] ?? ''));
     $countryCode = strtoupper(trim((string) ($_POST['country_code'] ?? 'BE')));
     $locationId = max(0, (int) ($_POST['location_id'] ?? 0));
+    $addressReferenceId = trim((string) ($_POST['address_reference_id'] ?? ''));
+    $lambert72X = grompil_address_coordinate($_POST['lambert72_x'] ?? '', -1000000, 1000000, 3);
+    $lambert72Y = grompil_address_coordinate($_POST['lambert72_y'] ?? '', -1000000, 1000000, 3);
+    $wgs84Latitude = grompil_address_coordinate($_POST['wgs84_latitude'] ?? '', -90, 90, 7);
+    $wgs84Longitude = grompil_address_coordinate($_POST['wgs84_longitude'] ?? '', -180, 180, 7);
+    $addressSelection = [
+        'street' => $street, 'house_number' => $houseNumber, 'postal_code' => $postalCode,
+        'city' => $city, 'country_code' => $countryCode, 'address_reference_id' => $addressReferenceId,
+    ];
     $addressHasContent = implode('', [$street, $houseNumber, $boxNumber, $postalCode, $city]) !== '';
     $parsedBirthDate = $birthDate === '' ? false : DateTimeImmutable::createFromFormat('!Y-m-d', $birthDate);
     $dateValid = $birthDate === '' || ($parsedBirthDate !== false
@@ -54,7 +63,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         && $lastName !== '' && mb_strlen($lastName) <= 120
         && $dateValid && preg_match('/^[A-Z]{2}$/D', $countryCode) === 1
         && mb_strlen($street) <= 160 && mb_strlen($houseNumber) <= 32
-        && mb_strlen($boxNumber) <= 32 && mb_strlen($postalCode) <= 20 && mb_strlen($city) <= 100;
+        && mb_strlen($boxNumber) <= 32 && mb_strlen($postalCode) <= 20 && mb_strlen($city) <= 100
+        && grompil_address_selection_allowed($addressSelection, isset($_POST['manual_address_without_coordinates']));
 
     if (in_array($action, ['create_patient', 'update_patient'], true) && $valid) {
         try {
@@ -100,9 +110,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     'patients.location.update',
                     'UPDATE dt_patient_locations
                      SET street=$1, house_number=$2, box_number=$3, postal_code=$4, city=$5,
-                         country_code=$6, updated_by_user_code=$7, updated_at=now()
-                     WHERE id=$8 AND company_id=$9 AND patient_code=$10 AND is_active',
-                    [$street, $houseNumber, $boxNumber, $postalCode, $city, $countryCode, $actorCode, $locationId, $companyId, $patientCode]
+                         country_code=$6, address_reference_id=$7, lambert72_x=$8, lambert72_y=$9,
+                         wgs84_latitude=$10, wgs84_longitude=$11, updated_by_user_code=$12, updated_at=now()
+                     WHERE id=$13 AND company_id=$14 AND patient_code=$15 AND is_active',
+                    [$street, $houseNumber, $boxNumber, $postalCode, $city, $countryCode, $addressReferenceId,
+                        $lambert72X, $lambert72Y, $wgs84Latitude, $wgs84Longitude, $actorCode, $locationId, $companyId, $patientCode]
                 );
                 if (pg_affected_rows($location) !== 1) {
                     throw new RuntimeException('Patient address was not found in the active company.');
@@ -112,9 +124,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     'patients.location.create',
                     'INSERT INTO dt_patient_locations (
                         company_id, patient_code, street, house_number, box_number, postal_code, city,
-                        country_code, is_primary, is_active, created_by_user_code, updated_by_user_code
-                     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE,TRUE,$9,$9)',
-                    [$companyId, $patientCode, $street, $houseNumber, $boxNumber, $postalCode, $city, $countryCode, $actorCode]
+                        country_code, address_reference_id, lambert72_x, lambert72_y, wgs84_latitude,
+                        wgs84_longitude, is_primary, is_active, created_by_user_code, updated_by_user_code
+                     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,TRUE,TRUE,$14,$14)',
+                    [$companyId, $patientCode, $street, $houseNumber, $boxNumber, $postalCode, $city, $countryCode,
+                        $addressReferenceId, $lambert72X, $lambert72Y, $wgs84Latitude, $wgs84Longitude, $actorCode]
                 );
             }
             db_query_raw('patients.transaction.commit', 'COMMIT');
@@ -149,7 +163,8 @@ try {
             'patients.load_selected',
             'SELECT p.patient_code, p.name_first, p.name_last, p.date_of_birth,
                     l.id AS location_id, l.street, l.house_number, l.box_number, l.postal_code,
-                    l.city, l.country_code, l.wgs84_latitude, l.wgs84_longitude,
+                    l.city, l.country_code, l.address_reference_id, l.lambert72_x, l.lambert72_y,
+                    l.wgs84_latitude, l.wgs84_longitude,
                     p.created_at, p.updated_at, creator.display_name AS created_by_name,
                     updater.display_name AS updated_by_name
              FROM bt_patients p
@@ -208,6 +223,11 @@ if ($editingPatientCode !== '' && $selectedPatient === null) {
         'postal_code' => (string) ($_POST['postal_code'] ?? ''),
         'city' => (string) ($_POST['city'] ?? ''),
         'country_code' => (string) ($_POST['country_code'] ?? 'BE'),
+        'address_reference_id' => (string) ($_POST['address_reference_id'] ?? ''),
+        'lambert72_x' => (string) ($_POST['lambert72_x'] ?? ''),
+        'lambert72_y' => (string) ($_POST['lambert72_y'] ?? ''),
+        'wgs84_latitude' => (string) ($_POST['wgs84_latitude'] ?? ''),
+        'wgs84_longitude' => (string) ($_POST['wgs84_longitude'] ?? ''),
     ];
 }
 
@@ -254,6 +274,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         'postal_code' => (string) ($_POST['postal_code'] ?? ''),
         'city' => (string) ($_POST['city'] ?? ''),
         'country_code' => (string) ($_POST['country_code'] ?? 'BE'),
+        'address_reference_id' => (string) ($_POST['address_reference_id'] ?? ''),
+        'lambert72_x' => (string) ($_POST['lambert72_x'] ?? ''),
+        'lambert72_y' => (string) ($_POST['lambert72_y'] ?? ''),
+        'wgs84_latitude' => (string) ($_POST['wgs84_latitude'] ?? ''),
+        'wgs84_longitude' => (string) ($_POST['wgs84_longitude'] ?? ''),
     ]);
 }
 $formAction = $editingPatientCode !== '' ? 'update_patient' : 'create_patient';
@@ -266,12 +291,30 @@ $patientModalForm = fn_templateRender('dispensing_patient_form.html', [
     'patient_first_name_value' => (string) ($patientFormValues['name_first'] ?? ''),
     'patient_last_name_value' => (string) ($patientFormValues['name_last'] ?? ''),
     'patient_birth_date_value' => (string) ($patientFormValues['date_of_birth'] ?? ''),
-    'patient_street_value' => (string) ($patientFormValues['street'] ?? ''),
-    'patient_house_number_value' => (string) ($patientFormValues['house_number'] ?? ''),
-    'patient_box_number_value' => (string) ($patientFormValues['box_number'] ?? ''),
-    'patient_postal_code_value' => (string) ($patientFormValues['postal_code'] ?? ''),
-    'patient_city_value' => (string) ($patientFormValues['city'] ?? ''),
     'patient_country_value' => (string) ($patientFormValues['country_code'] ?? 'BE'),
+    '_patient_address_fields_html' => fn_templateRender('address_fields.html', [
+        'address_prefix' => 'patient-address',
+        'address_title' => fn_t('address_title'),
+        'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
+        'address_lookup_no_results' => fn_t('address_lookup_no_results'),
+        'address_postal_reminder' => fn_t('address_postal_reminder'),
+        'address_select_required' => fn_t('address_select_required'),
+        'address_manual_prompt' => fn_t('address_manual_prompt'),
+        'address_manual_required' => fn_t('address_manual_required'),
+        'address_manual_confirm' => fn_t('address_manual_confirm'),
+        'address_country_code_value' => (string) ($patientFormValues['country_code'] ?? 'BE'),
+        'address_reference_id_value' => (string) ($patientFormValues['address_reference_id'] ?? ''),
+        'lambert72_x_value' => (string) ($patientFormValues['lambert72_x'] ?? ''),
+        'lambert72_y_value' => (string) ($patientFormValues['lambert72_y'] ?? ''),
+        'wgs84_latitude_value' => (string) ($patientFormValues['wgs84_latitude'] ?? ''),
+        'wgs84_longitude_value' => (string) ($patientFormValues['wgs84_longitude'] ?? ''),
+        'street_reference_id_value' => '',
+        'street_value' => (string) ($patientFormValues['street'] ?? ''),
+        'house_number_value' => (string) ($patientFormValues['house_number'] ?? ''),
+        'box_number_value' => (string) ($patientFormValues['box_number'] ?? ''),
+        'postal_code_value' => (string) ($patientFormValues['postal_code'] ?? ''),
+        'city_value' => (string) ($patientFormValues['city'] ?? ''),
+    ]),
     'patient_date_max' => date('Y-m-d'),
 ]);
 
@@ -286,7 +329,8 @@ if ($selectedPatient) {
         'patient_address' => $patientAddress !== '' ? $patientAddress : fn_t('patient_no_address'),
         '_patient_map_link_html' => grompil_google_maps_link(
             $selectedPatient['wgs84_latitude'] ?? null,
-            $selectedPatient['wgs84_longitude'] ?? null
+            $selectedPatient['wgs84_longitude'] ?? null,
+            $patientAddress
         ),
     ]);
 }
