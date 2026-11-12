@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 11:41:07
+ * @date_mut: Thu 2026-11-12 11:42:18
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -284,6 +284,10 @@ if ($selectedPatient) {
             ? fn_templateRender('dispensing_patient_birth_date.html', ['patient_birth_date_value' => $dob])
             : '',
         'patient_address' => $patientAddress !== '' ? $patientAddress : fn_t('patient_no_address'),
+        '_patient_map_link_html' => grompil_google_maps_link(
+            $selectedPatient['wgs84_latitude'] ?? null,
+            $selectedPatient['wgs84_longitude'] ?? null
+        ),
     ]);
 }
 $auditLine = $selectedPatient
