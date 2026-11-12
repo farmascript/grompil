@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Wed 2026-11-11
+ * @date_mut: Thu 2026-11-12
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -60,12 +60,33 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         let list = lists.get(input);
         if (!list) {
             list = document.createElement('div');
-            list.className = 'address-suggestions list-group position-absolute w-100 shadow-sm';
+            list.className = 'address-suggestions list-group shadow-sm';
             list.setAttribute('role', 'listbox');
             list.id = `address-suggestions-${++addressSuggestionListId}`;
             list.tabIndex = -1;
-            input.parentElement.classList.add('position-relative');
-            input.parentElement.append(list);
+            document.body.append(list);
+            const positionList = () => {
+                if (list.hidden || !list.childElementCount) return;
+                const rect = input.getBoundingClientRect();
+                const containerRect = group.getBoundingClientRect();
+                const gap = 4;
+                const below = Math.max(0, window.innerHeight - rect.bottom - gap - 8);
+                const above = Math.max(0, rect.top - gap - 8);
+                const placeBelow = below >= 160 || below >= above;
+                const available = placeBelow ? below : above;
+                const maxHeight = Math.max(0, Math.min(288, window.innerHeight * 0.45, available));
+                const width = Math.min(containerRect.width, window.innerWidth - 16);
+                list.style.left = `${Math.max(8, Math.min(containerRect.left, window.innerWidth - width - 8))}px`;
+                list.style.width = `${width}px`;
+                list.style.maxHeight = `${maxHeight}px`;
+                list.style.height = `${Math.min(list.scrollHeight, maxHeight)}px`;
+                list.style.top = placeBelow
+                    ? `${rect.bottom + gap}px`
+                    : `${Math.max(8, rect.top - list.offsetHeight - gap)}px`;
+            };
+            list.updatePosition = positionList;
+            window.addEventListener('resize', positionList);
+            window.addEventListener('scroll', positionList, true);
             input.setAttribute('role', 'combobox');
             input.setAttribute('aria-autocomplete', 'list');
             input.setAttribute('aria-haspopup', 'listbox');
@@ -152,6 +173,7 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
             list.append(button);
         });
         if (!items.length) list.replaceChildren();
+        if (items.length) requestAnimationFrame(() => list.updatePosition?.());
     };
     const schedule = (role, type, minimum, params, onSelect, onResults = null) => {
         const input = fields[role];
@@ -299,7 +321,12 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
                 const items = await search('address', query);
                 if (items.length) {
                     setStatus(status?.dataset.selectRequired || '');
-                    show(fields.house, items, selectOfficialAddress);
+                    const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
+                    show(fields.house, items, (item) => {
+                        selectOfficialAddress(item);
+                        if (submitter?.isConnected) form.requestSubmit(submitter);
+                        else form.requestSubmit();
+                    });
                     fields.house.focus();
                     return;
                 }

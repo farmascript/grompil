@@ -77,7 +77,8 @@ body {
 }
 
 .address-suggestions {
-    z-index: 1050;
+    position: fixed;
+    z-index: 1080;
     max-height: min(18rem, 45vh);
     overflow-y: auto;
     overscroll-behavior: contain;
