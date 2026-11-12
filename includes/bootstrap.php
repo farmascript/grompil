@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Thu 2026-11-12 11:26:42
+ * @date_mut: Thu 2026-11-12 12:02:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -163,6 +163,7 @@ function current_user(): ?array
         'SELECT
             u.user_code,
             u.display_name,
+            u.acronym,
             login_contact.contact_value AS email,
             u.company_id,
             u.role_id,

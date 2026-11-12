@@ -238,6 +238,11 @@ $companyResult = db_query_params(
 );
 $companyIdentity = pg_fetch_assoc($companyResult) ?: ['id' => $companyId, 'name' => $company['name'], 'store_logo_file' => ''];
 $companyLogo = fn_companyStoreImageUrl($companyIdentity, 'store_logo_file');
+$employeeDisplayName = (string) $currentUser['display_name'];
+$employeeAcronym = trim((string) ($currentUser['acronym'] ?? ''));
+$employeeTooltip = $employeeAcronym !== ''
+    ? $employeeDisplayName . ' - ' . $employeeAcronym
+    : $employeeDisplayName;
 $nameParts = preg_split('/\s+/u', trim((string) $currentUser['display_name']), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 $initials = strtoupper(mb_substr($nameParts[0] ?? '?', 0, 1) . mb_substr($nameParts[count($nameParts) - 1] ?? '', 0, 1));
 
@@ -424,6 +429,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_patient_modal_title' => $patientModalTitle,
     'dispense_company' => (string) $companyIdentity['name'],
     'dispense_employee' => (string) $currentUser['display_name'],
+    'dispense_employee_title' => $employeeTooltip,
     'dispense_employee_initials' => $initials,
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
