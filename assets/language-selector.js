@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Tue 2026-10-20 21:21:08
+ * @date_mut: Thu 2026-11-12 17:34:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -34,6 +34,11 @@ document.querySelectorAll('[data-language-parameter]').forEach((selector) => {
     selector.addEventListener('change', () => {
         const url = new URL(window.location.href);
         url.searchParams.set(selector.dataset.languageParameter, selector.value);
+        if (url.pathname.endsWith('/dispense.php')) {
+            ['edit', 'new_address', 'new_patient', 'location', 'saved'].forEach((parameter) => {
+                url.searchParams.delete(parameter);
+            });
+        }
         try {
             sessionStorage.setItem(languageScrollTargetKey, url.toString());
             sessionStorage.setItem(languageScrollYKey, String(window.scrollY));

@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 17:33:37
+ * @date_mut: Thu 2026-11-12 17:34:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -765,7 +765,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.14',
+    'asset_version' => '0.18.15',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
