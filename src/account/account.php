@@ -37,7 +37,7 @@ $mfaCompanyId = $mfaIsPlatformOperator ? 0 : (int) ($user['company_id'] ?? 0);
 $mfaCompany = $mfaIsPlatformOperator ? null : current_company_context($user);
 $mfaProvisioningLabel = $mfaIsPlatformOperator
     ? 'platform beh'
-    : (string) ($mfaCompany['slug'] ?? 'company') . ' beh';
+    : trim((string) ($mfaCompany['slug'] ?? 'company') . ' ' . trim((string) ($user['acronym'] ?? '')));
 $mfaRoleRequiresAuthenticator = $mfaIsPlatformOperator
     || grompil_company_role_requires_mfa($user['company_role_permissions'] ?? []);
 $mfaSessionVerified = $mfaIsPlatformOperator
@@ -568,7 +568,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $profileValid = false;
                 }
                 $acronymLength = function_exists('mb_strlen') ? mb_strlen($acronym) : strlen($acronym);
-                if ($profileValid && ($acronymLength > 80 || preg_match('/[\x00-\x1F\x7F]/', $acronym))) {
+                if ($profileValid && $mfaRoleRequiresAuthenticator && !$mfaIsPlatformOperator && $acronym === '') {
+                    $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_required')) . '</div>';
+                    $profileValid = false;
+                } elseif ($profileValid && ($acronymLength > 80 || preg_match('/[\x00-\x1F\x7F]/', $acronym))) {
                     $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_invalid')) . '</div>';
                     $profileValid = false;
                 } elseif ($profileValid) {
@@ -642,6 +645,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $length = function_exists('mb_strlen') ? mb_strlen($acronym) : strlen($acronym);
         if ($displayName === '' || $displayNameLength > 255 || preg_match('/[\x00-\x1F\x7F]/', $displayName)) {
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('account_profile_invalid')) . '</div>';
+        } elseif ($mfaRoleRequiresAuthenticator && !$mfaIsPlatformOperator && $acronym === '') {
+            $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_required')) . '</div>';
         } elseif ($length > 80 || preg_match('/[\x00-\x1F\x7F]/', $acronym)) {
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_invalid')) . '</div>';
         } else {
@@ -722,7 +727,8 @@ $forcedProfileFieldsHtml = $mustChangePassword
         . '<div class="mb-3"><label class="form-label" for="setup-display-name">' . e(fn_t('display_name')) . '</label>'
         . '<input class="form-control" id="setup-display-name" name="display_name" maxlength="255" required value="' . e($displayName) . '"></div>'
         . '<div class="mb-3"><label class="form-label" for="setup-acronym">' . e(fn_t('acronym')) . '</label>'
-        . '<input class="form-control" id="setup-acronym" name="acronym" maxlength="80" autocomplete="username" value="' . e($acronym) . '">'
+        . '<input class="form-control" id="setup-acronym" name="acronym" maxlength="80" autocomplete="username" value="' . e($acronym) . '"'
+        . ($mfaRoleRequiresAuthenticator && !$mfaIsPlatformOperator ? ' required' : '') . '>'
         . '<div class="form-text">' . e(fn_t('acronym_help')) . '</div></div>'
         . fn_templateRender('address_fields.html', [
             'address_prefix' => 'account-setup-address',
@@ -937,6 +943,7 @@ echo fn_templateRender('account.html', [
     'display_name_value' => $displayName,
     'acronym_help' => fn_t('acronym_help'),
     'acronym_value' => $acronym,
+    '_acronym_required_attr' => $mfaRoleRequiresAuthenticator && !$mfaIsPlatformOperator ? 'required' : '',
     'acronym_save' => fn_t('save'),
     '_profile_form_hidden' => $mustChangePassword ? 'hidden' : '',
     '_forced_profile_fields_html' => $forcedProfileFieldsHtml,

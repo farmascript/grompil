@@ -17,6 +17,17 @@
 
 # Voortgang Grompil
 
+## 12 november 2026
+
+### MFA-label voor bedrijfsbeheerders
+
+- De authenticator-accountnaam bevat nu de bedrijfs-slug en het acroniem van de beheerder, bijvoorbeeld `gromPil helder suppo`.
+- Bedrijfsbeheerders met MFA-plicht moeten een acroniem hebben. Bij de eerste MFA-aanmelding wordt een ontbrekend acroniem eerst gevraagd; bestaande accountinstellingen laten het daarna niet meer leeg maken. De bestaande unieke index en servercontrole bewaken uniciteit binnen het bedrijf.
+- De platformbeheerder behoudt zijn aparte QR-label.
+- `scripts/reset_company_authenticators_once.sql` wist eenmalig TOTP-geheimen en herstelcodes van bedrijfsaccounts. Platformaccounts met `company_id IS NULL` blijven behouden. Alleen uitvoeren op lokale en testdatabase, en niet opnieuw nadat de authenticatoren opnieuw zijn ingesteld.
+- Nieuwe vertalingen staan in NL, FR, EN en DE. Voer `php scripts/translations_1_import.php` en daarna `php scripts/translations_2_export.php` uit op de lokale en testomgeving.
+- Applicatieversie bijgewerkt naar `0.18.1`.
+
 ## 11 november 2026
 
 ### Officiële adreskeuze en Maps-icoon

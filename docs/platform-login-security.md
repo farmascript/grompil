@@ -4,7 +4,7 @@
 
 - Platformbeheerders (globale rollen level 1–100) melden zich aan met wachtwoord en daarna een TOTP-code uit Google Authenticator, Microsoft Authenticator of een compatibele app.
 - Bedrijfsaccounts met de rechten `company.users.manage`, `company.roles.manage`, `company.settings.manage` of `company.translations.manage` gebruiken eveneens verplicht TOTP. Een account krijgt dit pas nadat het bij de eerste MFA-aanmelding de QR-code heeft gekoppeld en de eerste code heeft bevestigd. Operationele rechten zoals alleen `pharmacy.dispense` activeren MFA niet.
-- De authenticator toont voor een bedrijfsbeheerder de issuer en het korte label `helder beh` (samen: `gromPil helder beh` voor bedrijfssleuf `helder`). Het label wordt per bedrijfssleuf samengesteld.
+- De authenticator toont voor een bedrijfsbeheerder de issuer, bedrijfs-slug en het verplichte bedrijfsacroniem, bijvoorbeeld `gromPil helder suppo`. Het acroniem is maximaal 80 tekens en uniek binnen het bedrijf.
 - De eerste platformaanmelding na activering begeleidt de beheerder bij het koppelen van een authenticator. Het instelscherm toont een scanbare QR-code en daarnaast de sleutel voor handmatige invoer. Eenmalige herstelcodes verschijnen nadat de eerste TOTP-code is bevestigd.
 - De QR-code wordt lokaal in de browser gegenereerd; de TOTP-instellingslink wordt niet naar een externe QR-dienst gestuurd.
 - De TOTP-sleutel wordt versleuteld opgeslagen. De versleutelingssleutel staat uitsluitend in het genegeerde `settings_local.php`-bestand.
@@ -31,7 +31,8 @@ Voer dit op iedere installatie afzonderlijk uit. Gebruik per installatie een eig
 5. Voer `migrations/20261031-090000_platform_mfa.sql` op een bestaande database uit als dat nog niet is gebeurd. Nieuwe databases krijgen de MFA-tabellen via `schema.sql`.
 6. Voer `migrations/20261112-141548_company_admin_mfa.sql` als database-eigenaar uit op bestaande databases. Deze wijziging laat de applicatierol alleen de eigen TOTP- en herstelcoderegels lezen en beheren. De bestaande `schema_grant_*.sql`-bestanden verlenen al de benodigde tabelrechten; opnieuw uitvoeren is hiervoor niet nodig.
 7. Synchroniseer daarna de code naar de testsite, installeer daar de Composer-afhankelijkheden indien nodig en vul de eigen testsleutel in `settings_local.php` in.
-8. Meld lokaal en daarna op test aan als platformbeheerder en als bedrijfsbeheerder met een van de genoemde beheerdersrechten. Koppel de authenticator en bewaar de herstelcodes.
+8. Gebruik indien nodig `scripts/reset_company_authenticators_once.sql` op de lokale en testdatabase om de bedrijfs-authenticators opnieuw te koppelen. Dit eenmalige script verwijdert alleen bedrijfs-TOTP-sleutels en herstelcodes; platformaccounts met `company_id IS NULL` blijven behouden. Voer het niet opnieuw uit nadat gebruikers hun authenticator hebben ingesteld.
+9. Meld lokaal en daarna op test aan als platformbeheerder en als bedrijfsbeheerder met een van de genoemde beheerdersrechten. Koppel de authenticator en bewaar de herstelcodes.
 
 Voer de migratie en grants niet uit op productie tot de testuitrol is gecontroleerd.
 

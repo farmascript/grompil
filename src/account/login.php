@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userResult = $loginCompany
             ? $loginQuery(
                 'login.find_company_user',
-                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.company_id,
+                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.company_id, u.acronym,
                         COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version
                  FROM bt_users AS u
                  LEFT JOIN dt_user_contacts AS uc
@@ -176,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['mfa_pending_user_code'] = (string) $user['user_code'];
                 $_SESSION['mfa_pending_company_id'] = 0;
                 $_SESSION['mfa_pending_platform_operator'] = true;
+                unset($_SESSION['mfa_pending_company_slug']);
                 $_SESSION['mfa_pending_totp_label'] = 'platform beh';
                 $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
                 $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
@@ -221,7 +222,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['mfa_pending_user_code'] = (string) $user['user_code'];
                 $_SESSION['mfa_pending_company_id'] = (int) $loginCompany['id'];
                 $_SESSION['mfa_pending_platform_operator'] = false;
-                $_SESSION['mfa_pending_totp_label'] = (string) $loginCompany['slug'] . ' beh';
+                $_SESSION['mfa_pending_company_slug'] = (string) $loginCompany['slug'];
+                $_SESSION['mfa_pending_totp_label'] = trim((string) $loginCompany['slug'] . ' ' . (string) $user['acronym']);
                 $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
                 $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
                 $_SESSION['mfa_pending_attempt_email'] = $email;
@@ -241,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unset($_SESSION['platform_mfa_verified']);
             unset($_SESSION['company_mfa_verified'], $_SESSION['company_mfa_company_id'], $_SESSION['company_mfa_user_code']);
             unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
-            unset($_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label']);
+            unset($_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_company_slug'], $_SESSION['mfa_pending_totp_label']);
             $_SESSION['user_code'] = (string) $user['user_code'];
             $_SESSION['auth_version'] = (int) $user['auth_version'];
             $_SESSION['last_activity_at'] = time();

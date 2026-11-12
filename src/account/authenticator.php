@@ -31,7 +31,7 @@ $loginIp = (string) ($_SESSION['mfa_pending_ip'] ?? '');
 $currentIp = grompil_client_ip_address();
 if ($userCode === '' || $email === '' || $attemptEmail === '' || $loginIp === '' || $currentIp !== $loginIp
     || (!$platformOperator && $companyId < 1) || ($platformOperator && $companyId !== 0)) {
-    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_company_slug'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     redirect('login.php');
 }
 
@@ -50,7 +50,7 @@ $accountResult = $platformOperator
         'account_authenticator.load_company_admin',
         'SELECT u.is_active, u.approval_status,
                 COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version,
-                company_role.permissions AS company_role_permissions
+                company_role.permissions AS company_role_permissions, u.acronym
          FROM bt_users AS u
          JOIN ct_company_users AS membership
            ON membership.user_code = u.user_code AND membership.company_id = u.company_id
@@ -64,6 +64,10 @@ $account = $accountResult ? pg_fetch_assoc($accountResult) : false;
 $requiredCompanyPermissions = $account
     ? (json_decode((string) ($account['company_role_permissions'] ?? '[]'), true) ?: [])
     : [];
+$companyAcronym = trim((string) ($account['acronym'] ?? ''));
+$needsCompanyAcronym = !$platformOperator && $companyAcronym === '';
+$acronymInput = trim((string) ($_POST['acronym'] ?? $companyAcronym));
+$totpLabel = $platformOperator ? 'platform beh' : trim((string) ($_SESSION['mfa_pending_company_slug'] ?? 'company') . ' ' . $companyAcronym);
 $accountIsEligible = $account && $account['is_active'] === 't'
     && $account['approval_status'] === 'approved'
     && (int) $account['auth_version'] === $authVersion
@@ -79,7 +83,7 @@ $ipStillAllowed = $platformOperator
     ? platform_management_ip_allowed($currentIp, $userCode)
     : company_management_ip_allowed($companyId, $currentIp);
 if (!$accountIsEligible || !$ipStillAllowed) {
-    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_company_slug'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     redirect('login.php');
 }
 
@@ -127,7 +131,7 @@ $attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $log
 $completeLogin = static function () use ($authenticatorQuery, $userCode, $authVersion, $attemptEmail, $loginIp, $companyId, $platformOperator): never {
     $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM st_login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3', [$companyId, $attemptEmail, $loginIp]);
     session_regenerate_id(true);
-    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
+    unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_company_slug'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     unset($_SESSION['active_company_id'], $_SESSION['platform_mfa_verified'], $_SESSION['company_mfa_verified'], $_SESSION['company_mfa_company_id'], $_SESSION['company_mfa_user_code']);
     $_SESSION['user_code'] = $userCode;
     $_SESSION['auth_version'] = $authVersion;
@@ -154,12 +158,44 @@ $completeLogin = static function () use ($authenticatorQuery, $userCode, $authVe
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $action = (string) ($_POST['action'] ?? 'verify_code');
+    if ($action === 'save_acronym' && $needsCompanyAcronym) {
+        $acronymLength = function_exists('mb_strlen') ? mb_strlen($acronymInput) : strlen($acronymInput);
+        if ($acronymInput === '' || $acronymLength > 80 || preg_match('/[\x00-\x1F\x7F]/', $acronymInput)) {
+            $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t($acronymInput === '' ? 'acronym_required' : 'acronym_invalid')) . '</div>';
+        } else {
+            $conflict = $authenticatorQuery(
+                'account_authenticator.check_company_acronym',
+                'SELECT other.user_code FROM bt_users AS other
+                 WHERE other.company_id = $1 AND other.user_code <> $2
+                   AND (lower(other.acronym) = lower($3)
+                     OR EXISTS (SELECT 1 FROM dt_user_contacts contact
+                                WHERE contact.user_code = other.user_code AND contact.is_login_email
+                                  AND contact.is_active AND lower(contact.contact_value) = lower($3)))
+                 LIMIT 1',
+                [$companyId, $userCode, $acronymInput]
+            );
+            if (!$conflict || pg_num_rows($conflict) > 0) {
+                $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_taken')) . '</div>';
+            } else {
+                $saved = $authenticatorQuery(
+                    'account_authenticator.save_company_acronym',
+                    'UPDATE bt_users SET acronym = $1, updated_at = now()
+                     WHERE company_id = $2 AND user_code = $3',
+                    [$acronymInput, $companyId, $userCode]
+                );
+                if ($saved && pg_affected_rows($saved) === 1) {
+                    redirect('authenticator.php');
+                }
+                $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('acronym_save_failed')) . '</div>';
+            }
+        }
+    }
     if ($action === 'continue' && $isVerifiedSetup) {
         $completeLogin();
     }
     if ($attemptCount() >= 5) {
         $errorHtml = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_mfa_locked')) . '</div>';
-    } elseif (!$isVerifiedSetup && in_array($action, ['verify_code', 'complete_setup'], true)) {
+    } elseif (!$needsCompanyAcronym && !$isVerifiedSetup && in_array($action, ['verify_code', 'complete_setup'], true)) {
         $code = strtoupper(preg_replace('/\s+/', '', trim((string) ($_POST['code'] ?? ''))));
         $validCode = false;
         try {
@@ -226,7 +262,12 @@ if ($isVerifiedSetup) {
 
 $setupHtml = '';
 $qrScriptsHtml = '';
-if (!$isVerifiedSetup && $encryptedSecret === null && $setupSecret !== '') {
+if ($needsCompanyAcronym) {
+    $setupHtml = '<div class="alert alert-info"><p>' . e(fn_t('platform_mfa_acronym_instructions')) . '</p>'
+        . '<label class="form-label" for="mfa-company-acronym">' . e(fn_t('acronym')) . '</label>'
+        . '<input class="form-control" id="mfa-company-acronym" name="acronym" maxlength="80" required autocomplete="username" value="'
+        . e($acronymInput) . '"></div>';
+} elseif (!$isVerifiedSetup && $encryptedSecret === null && $setupSecret !== '') {
     $qrHtml = '';
     try {
         $provisioningUri = grompil_totp($setupSecret, $totpLabel)->getProvisioningUri();
@@ -249,12 +290,12 @@ if (!$isVerifiedSetup && $encryptedSecret === null && $setupSecret !== '') {
 echo fn_templateRender('login_authenticator.html', [
     'html_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
     'platform_mfa_title' => fn_t($isVerifiedSetup ? 'platform_mfa_recovery_title' : 'platform_mfa_title'),
-    'platform_mfa_instructions' => fn_t($isVerifiedSetup ? 'platform_mfa_recovery_help' : 'platform_mfa_instructions'),
+    'platform_mfa_instructions' => fn_t($isVerifiedSetup ? 'platform_mfa_recovery_help' : ($needsCompanyAcronym ? 'platform_mfa_acronym_instructions' : 'platform_mfa_instructions')),
     'platform_mfa_code_label' => fn_t('platform_mfa_code_label'),
-    'platform_mfa_verify' => fn_t($isVerifiedSetup ? 'platform_mfa_continue' : 'platform_mfa_verify'),
+    'platform_mfa_verify' => fn_t($isVerifiedSetup ? 'platform_mfa_continue' : ($needsCompanyAcronym ? 'acronym_save' : 'platform_mfa_verify')),
     'platform_mfa_login_link' => fn_t('platform_mfa_login_link'),
-    'platform_mfa_action' => e($isVerifiedSetup ? 'continue' : 'verify_code'),
-    '_code_input_html' => $isVerifiedSetup
+    'platform_mfa_action' => e($isVerifiedSetup ? 'continue' : ($needsCompanyAcronym ? 'save_acronym' : 'verify_code')),
+    '_code_input_html' => ($isVerifiedSetup || $needsCompanyAcronym)
         ? ''
         : '<div class="mb-3"><label class="form-label" for="authenticator-code">' . e(fn_t('platform_mfa_code_label'))
                 . '</label><input class="form-control form-control-lg" id="authenticator-code" name="code" type="text" inputmode="text" autocapitalize="characters" autocomplete="one-time-code" pattern="[0-9A-Fa-f ]{6,16}" maxlength="16" required autofocus></div>',
