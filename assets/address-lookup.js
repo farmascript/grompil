@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Thu 2026-11-12
+ * @date_mut: Thu 2026-11-12 17:19:20
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -301,6 +301,46 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         }
     });
 
+    const hasCompleteOfficialAddressQuery = () => Boolean(
+        getValue('street') && getValue('house') && (getValue('postal') || getValue('city'))
+    );
+    let activeAddressSearch = null;
+    const findCurrentOfficialAddresses = () => {
+        const query = {
+            postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
+            nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
+            street_id: streetId?.value ?? '', house_number: getValue('house'),
+        };
+        const signature = JSON.stringify(query);
+        if (activeAddressSearch?.signature === signature) return activeAddressSearch.promise;
+        cancelSearch(fields.house);
+        const promise = search('address', query).finally(() => {
+            if (activeAddressSearch?.signature === signature) activeAddressSearch = null;
+        });
+        activeAddressSearch = { signature, promise };
+        return promise;
+    };
+    const showOfficialAddresses = (items, submitter = null) => {
+        show(fields.house, items, (item) => {
+            selectOfficialAddress(item);
+            if (submitter?.isConnected) form?.requestSubmit(submitter);
+            else if (group.dataset.addressAutosave === '1') {
+                const addressForm = group.closest('form');
+                if (addressForm) addressForm.requestSubmit();
+            }
+        });
+    };
+    fields.house?.addEventListener('change', async () => {
+        if (!hasCompleteOfficialAddressQuery() || (referenceId?.value.trim() ?? '') !== '' || manualConfirm?.checked) return;
+        try {
+            const items = await findCurrentOfficialAddresses();
+            if (items.length) showOfficialAddresses(items);
+            else setStatus(status?.dataset.noResults || '');
+        } catch (error) {
+            setStatus(error.message);
+        }
+    });
+
     if (manualConfirm) {
         manualConfirm.addEventListener('change', () => {
             if (manualConfirm.checked) setStatus('');
@@ -317,22 +357,13 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         if (checkingAddressBeforeSubmit) return;
         checkingAddressBeforeSubmit = true;
         cancelSearch(fields.house);
-        const query = {
-            postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
-            nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
-            street_id: streetId?.value ?? '', house_number: getValue('house'),
-        };
         try {
-            if (getValue('house') && getValue('street') && (getValue('postal') || getValue('city'))) {
-                const items = await search('address', query);
+            if (hasCompleteOfficialAddressQuery()) {
+                const items = await findCurrentOfficialAddresses();
                 if (items.length) {
                     setStatus(status?.dataset.selectRequired || '');
                     const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
-                    show(fields.house, items, (item) => {
-                        selectOfficialAddress(item);
-                        if (submitter?.isConnected) form.requestSubmit(submitter);
-                        else form.requestSubmit();
-                    });
+                    showOfficialAddresses(items, submitter);
                     fields.house.focus();
                     return;
                 }
