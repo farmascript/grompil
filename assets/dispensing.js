@@ -12,6 +12,113 @@
     const rows = document.querySelector('[data-basket-rows]');
     const count = document.querySelector('[data-basket-count]');
     const summary = document.querySelector('[data-basket-summary]');
+
+    const patientInput = document.querySelector('[data-patient-search-input]');
+    const patientForm = document.querySelector('[data-patient-search-form]');
+    const patientSuggestions = document.querySelector('[data-patient-suggestions]');
+    const patientStatus = document.querySelector('[data-patient-search-status]');
+    const patientRegex = document.querySelector('[data-patient-regex]');
+    let patientTimer = 0;
+    let patientRequestController = null;
+
+    function hidePatientSuggestions() {
+        if (!patientSuggestions || !patientInput) return;
+        patientSuggestions.classList.add('d-none');
+        patientSuggestions.replaceChildren();
+        patientInput.setAttribute('aria-expanded', 'false');
+    }
+
+    function setPatientStatus(message) {
+        if (patientStatus) patientStatus.textContent = message;
+    }
+
+    function showPatientSuggestions(results) {
+        patientSuggestions.replaceChildren();
+        if (!results.length) {
+            const empty = document.createElement('div');
+            empty.className = 'list-group-item small text-secondary';
+            empty.textContent = page.dataset.textPatientNoResults || '';
+            patientSuggestions.append(empty);
+        } else {
+            for (const patient of results) {
+                const url = new URL(page.dataset.patientEndpoint, window.location.href);
+                url.searchParams.set('patient', String(patient.patient_code || ''));
+                const link = document.createElement('a');
+                link.className = 'list-group-item list-group-item-action patient-suggestion';
+                link.href = url.href;
+                const title = document.createElement('strong');
+                title.textContent = String(patient.patient_name || '');
+                const code = document.createElement('span');
+                code.className = 'badge text-bg-light ms-2';
+                code.textContent = String(patient.patient_code || '');
+                const address = document.createElement('span');
+                address.className = 'd-block small text-secondary';
+                address.textContent = String(patient.patient_address || '');
+                link.append(title, code, address);
+                patientSuggestions.append(link);
+            }
+        }
+        patientSuggestions.classList.remove('d-none');
+        patientInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function schedulePatientSearch() {
+        if (!patientInput || !patientSuggestions) return;
+        window.clearTimeout(patientTimer);
+        if (patientRequestController) patientRequestController.abort();
+        const query = patientInput.value.trim();
+        const minimum = Number(page.dataset.patientMinChars || 3);
+        if (query.length < minimum) {
+            hidePatientSuggestions();
+            setPatientStatus(query.length ? (page.dataset.textPatientMinimum || '') : (page.dataset.textPatientPrompt || ''));
+            return;
+        }
+        setPatientStatus('');
+        patientTimer = window.setTimeout(async () => {
+            patientRequestController = new AbortController();
+            try {
+                const url = new URL(page.dataset.patientEndpoint, window.location.href);
+                url.searchParams.set('patient_suggest', '1');
+                url.searchParams.set('q', query);
+                if (patientRegex?.checked) url.searchParams.set('regex', '1');
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                    signal: patientRequestController.signal,
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || page.dataset.textPatientUnavailable || '');
+                showPatientSuggestions(data.results || []);
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                showPatientSuggestions([]);
+                if (patientSuggestions.firstElementChild) {
+                    patientSuggestions.firstElementChild.className = 'list-group-item small text-danger';
+                    patientSuggestions.firstElementChild.textContent = error.message || page.dataset.textPatientUnavailable || '';
+                }
+            }
+        }, 220);
+    }
+
+    if (patientInput && patientForm && patientSuggestions) {
+        patientInput.addEventListener('input', schedulePatientSearch);
+        patientRegex?.addEventListener('change', schedulePatientSearch);
+        patientForm.addEventListener('submit', (event) => {
+            if (patientInput.value.trim().length < Number(page.dataset.patientMinChars || 3)) {
+                event.preventDefault();
+                setPatientStatus(page.dataset.textPatientMinimum || '');
+            }
+        });
+        patientInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') hidePatientSuggestions();
+        });
+        document.addEventListener('click', (event) => {
+            if (!patientSuggestions.contains(event.target) && event.target !== patientInput) {
+                hidePatientSuggestions();
+            }
+        });
+    }
+
     if (!input || !suggestions || !rows) return;
 
     const t = {

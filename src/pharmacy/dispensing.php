@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 12:02:00
+ * @date_mut: Thu 2026-11-12 12:19:30
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -151,6 +151,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 }
 
 $query = trim((string) ($_GET['q'] ?? ''));
+$regexSearch = (string) ($_GET['regex'] ?? '') === '1';
+$patientSuggestionRequest = (string) ($_GET['patient_suggest'] ?? '') === '1';
 $selectedPatientCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
 if ($selectedPatientCode === '' && $editingPatientCode !== '') {
     $selectedPatientCode = $editingPatientCode;
@@ -184,7 +186,16 @@ try {
         $editingPatientCode = $selectedPatientCode;
         $openPatientModal = true;
     }
-    if (mb_strlen($query) >= 2) {
+    if (mb_strlen($query) >= 3) {
+        $searchPattern = $regexSearch ? $query : '%' . $query . '%';
+        $searchPredicate = $regexSearch
+            ? "(p.patient_code ~* $2 OR (p.name_first || ' ' || p.name_last) ~* $2
+                OR (p.name_last || ' ' || p.name_first) ~* $2)"
+            : "(p.patient_code = upper($2) OR lower(p.name_first || ' ' || p.name_last) LIKE lower($3)
+                OR lower(p.name_last || ' ' || p.name_first) LIKE lower($3))";
+        $searchParams = $regexSearch
+            ? [$companyId, $searchPattern]
+            : [$companyId, $query, $searchPattern];
         $result = db_query_params(
             'patients.search',
             "SELECT p.patient_code, p.name_first, p.name_last, p.date_of_birth,
@@ -195,11 +206,9 @@ try {
                 WHERE company_id=p.company_id AND patient_code=p.patient_code AND is_active
                 ORDER BY is_primary DESC, sort_order, id LIMIT 1
              ) l ON TRUE
-             WHERE p.company_id=$1 AND p.is_active
-               AND (p.patient_code=$2 OR lower(p.name_first || ' ' || p.name_last) LIKE lower($3)
-                    OR lower(p.name_last || ' ' || p.name_first) LIKE lower($3))
+             WHERE p.company_id=$1 AND p.is_active AND $searchPredicate
              ORDER BY lower(p.name_last), lower(p.name_first), p.patient_code LIMIT 20",
-            [$companyId, strtoupper($query), '%' . $query . '%']
+            $searchParams
         );
         while ($row = pg_fetch_assoc($result)) {
             $patientMatches[] = $row;
@@ -207,7 +216,34 @@ try {
     }
 } catch (Throwable $error) {
     error_log('Patient lookup failed: ' . get_class($error));
-    $messageKey = $messageKey !== '' ? $messageKey : 'patient_lookup_unavailable';
+    $messageKey = $messageKey !== '' ? $messageKey : ($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable');
+}
+
+if ($patientSuggestionRequest) {
+    header('Content-Type: application/json; charset=UTF-8');
+    if ($messageKey !== '') {
+        http_response_code($regexSearch ? 400 : 503);
+        echo json_encode([
+            'error' => fn_t($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable'),
+            'results' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    } else {
+        $suggestions = [];
+        foreach ($patientMatches as $patient) {
+            $address = trim(implode(' ', array_filter([
+                trim((string) ($patient['street'] ?? '') . ' ' . (string) ($patient['house_number'] ?? '')),
+                (string) ($patient['postal_code'] ?? ''),
+                (string) ($patient['city'] ?? ''),
+            ])));
+            $suggestions[] = [
+                'patient_code' => (string) $patient['patient_code'],
+                'patient_name' => trim((string) $patient['name_first'] . ' ' . (string) $patient['name_last']),
+                'patient_address' => $address !== '' ? $address : fn_t('patient_no_address'),
+            ];
+        }
+        echo json_encode(['results' => $suggestions], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    }
+    exit;
 }
 
 if ($editingPatientCode !== '' && $selectedPatient === null) {
@@ -355,12 +391,10 @@ $messageHtml = $messageKey !== ''
 
 $patientFeedback = $query === ''
     ? fn_t('patient_search_prompt')
-    : (mb_strlen($query) < 2
+    : (mb_strlen($query) < 3
         ? fn_t('patient_search_minimum')
         : ($patientMatches === [] ? fn_t('patient_search_empty') : ''));
-$patientCountHtml = mb_strlen($query) >= 2
-    ? '<span class="badge text-bg-secondary">' . count($patientMatches) . '</span>'
-    : '';
+$patientSuggestionClass = $patientMatches !== [] ? '' : 'd-none';
 $patientTitleHtml = $selectedPatient
     ? fn_templateRender('dispensing_patient_title.html', [
         'patient_initials' => strtoupper(mb_substr((string) $selectedPatient['name_first'], 0, 1) . mb_substr((string) $selectedPatient['name_last'], 0, 1)),
@@ -405,6 +439,10 @@ echo fn_templateRender('dispensing.html', [
     'dispense_new_patient' => fn_t('patient_add'),
     'dispense_patient_matches' => fn_t('patient_search_results'),
     'dispense_patient_search_prompt' => fn_t('patient_search_prompt'),
+    'dispense_patient_search_feedback' => $patientFeedback,
+    'dispense_patient_search_minimum' => '3',
+    'dispense_patient_search_regex' => fn_t('patient_search_regex'),
+    'dispense_patient_lookup_unavailable' => fn_t('patient_lookup_unavailable'),
     'dispense_patient_no_results' => fn_t('patient_search_empty'),
     'dispense_patient' => fn_t('dispense_patient'),
     'dispense_select_patient' => fn_t('dispense_select_patient'),
@@ -435,17 +473,20 @@ echo fn_templateRender('dispensing.html', [
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'sam-products.php',
     'dispense_product_min_chars' => '3',
-    'dispense_patient_min_chars' => '2',
+    'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
     '_dispense_patient_search_feedback_html' => $patientFeedback !== ''
         ? fn_templateRender('dispensing_patient_feedback.html', ['patient_feedback' => $patientFeedback])
         : '',
-    '_dispense_patient_count_html' => $patientCountHtml,
+    '_dispense_patient_count_html' => '',
     '_dispense_product_search_disabled' => $selectedPatient === null ? 'disabled' : '',
     '_dispense_patient_required_html' => $selectedPatient === null
         ? fn_templateRender('dispensing_patient_required.html', ['dispense_patient_required' => fn_t('dispense_patient_required')])
         : '',
     '_dispense_patient_results_html' => $patientResultRows,
+    '_dispense_patient_suggestion_class' => $patientSuggestionClass,
+    '_dispense_regex_checked' => $regexSearch ? 'checked' : '',
+    'dispense_patient_endpoint' => fn_appBaseHref() . 'dispense.php',
     '_dispense_patient_modal_form_html' => $patientModalForm,
     '_dispense_patient_modal_open' => $openPatientModal ? 'true' : 'false',
     '_dispense_patient_detail_html' => $selectedPatient
