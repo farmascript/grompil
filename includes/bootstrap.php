@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Thu 2026-11-12 11:07:02
+ * @date_mut: Thu 2026-11-12 11:26:42
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -431,7 +431,7 @@ function seed_company_roles(int $companyId): bool
                 CASE WHEN lower(r.name) = 'beheerder'
                      THEN '[\"company.users.manage\", \"company.roles.manage\", \"company.settings.manage\", \"company.translations.manage\"]'::jsonb
                      WHEN lower(r.name) = 'apotheker'
-                     THEN '["pharmacy.dispense"]'::jsonb
+                     THEN '[\"pharmacy.dispense\"]'::jsonb
                      ELSE '[]'::jsonb
                 END,
                 r.is_system
