@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Thu 2026-11-12 14:15:48
+ * @date_mut: Thu 2026-11-12 18:02:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -40,6 +40,10 @@ $mfaProvisioningLabel = $mfaIsPlatformOperator
     : trim((string) ($mfaCompany['slug'] ?? 'company') . ' ' . trim((string) ($user['acronym'] ?? '')));
 $mfaRoleRequiresAuthenticator = $mfaIsPlatformOperator
     || grompil_company_role_requires_mfa($user['company_role_permissions'] ?? []);
+$accountAcronymRequired = $mfaRoleRequiresAuthenticator && !$mfaIsPlatformOperator;
+$accountIntroKey = $accountAcronymRequired ? 'account_intro_acronym_required' : 'account_intro';
+$accountAcronymLabelKey = $accountAcronymRequired ? 'account_acronym_required_label' : 'acronym';
+$accountAcronymHelpKey = $accountAcronymRequired ? 'account_acronym_required_help' : 'acronym_help';
 $mfaSessionVerified = $mfaIsPlatformOperator
     ? ($_SESSION['platform_mfa_verified'] ?? false) === true
     : (($_SESSION['company_mfa_verified'] ?? false) === true
@@ -726,10 +730,10 @@ $forcedProfileFieldsHtml = $mustChangePassword
     ? '<input type="hidden" name="country_code" value="' . e($address['country_code']) . '">'
         . '<div class="mb-3"><label class="form-label" for="setup-display-name">' . e(fn_t('display_name')) . '</label>'
         . '<input class="form-control" id="setup-display-name" name="display_name" maxlength="255" required value="' . e($displayName) . '"></div>'
-        . '<div class="mb-3"><label class="form-label" for="setup-acronym">' . e(fn_t('acronym')) . '</label>'
+        . '<div class="mb-3"><label class="form-label" for="setup-acronym">' . e(fn_t($accountAcronymLabelKey)) . '</label>'
         . '<input class="form-control" id="setup-acronym" name="acronym" maxlength="80" autocomplete="username" value="' . e($acronym) . '"'
-        . ($mfaRoleRequiresAuthenticator && !$mfaIsPlatformOperator ? ' required' : '') . '>'
-        . '<div class="form-text">' . e(fn_t('acronym_help')) . '</div></div>'
+        . ($accountAcronymRequired ? ' required' : '') . '>'
+        . '<div class="form-text">' . e(fn_t($accountAcronymHelpKey)) . '</div></div>'
         . fn_templateRender('address_fields.html', [
             'address_prefix' => 'account-setup-address',
             'address_autosave' => '0',
@@ -939,13 +943,13 @@ if ($isAuthenticatorAccount && $authenticatorEnabled && !$mustChangePassword) {
 }
 echo fn_templateRender('account.html', [
     'account_title' => fn_t('account_title'),
-    'account_intro' => fn_t('account_intro'),
-    'acronym' => fn_t('acronym'),
+    'account_intro' => fn_t($accountIntroKey),
+    'acronym' => fn_t($accountAcronymLabelKey),
     'display_name' => fn_t('display_name'),
     'display_name_value' => $displayName,
-    'acronym_help' => fn_t('acronym_help'),
+    'acronym_help' => fn_t($accountAcronymHelpKey),
     'acronym_value' => $acronym,
-    '_acronym_required_attr' => $mfaRoleRequiresAuthenticator && !$mfaIsPlatformOperator ? 'required' : '',
+    '_acronym_required_attr' => $accountAcronymRequired ? 'required' : '',
     'acronym_save' => fn_t('save'),
     '_profile_form_hidden' => $mustChangePassword ? 'hidden' : '',
     '_forced_profile_fields_html' => $forcedProfileFieldsHtml,
