@@ -83,6 +83,19 @@ body {
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
+    background-color: #f1f5f3;
+    border: 1px solid #cbd8d2;
+}
+
+.address-suggestions .list-group-item {
+    background-color: #f1f5f3;
+}
+
+.address-suggestions .list-group-item:hover,
+.address-suggestions .list-group-item:focus,
+.address-suggestions .list-group-item.active {
+    background-color: #dfeae5;
+    color: #183b32;
 }
 
 .eyebrow {
