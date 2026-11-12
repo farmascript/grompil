@@ -253,6 +253,7 @@ $arrSubst = array (
   'company_members_open' => 'Öffnen',
   'company_members_role' => 'Unternehmensrolle',
   'company_members_user' => 'Benutzer',
+  'company_members_acronym' => 'Akronym',
   'company_members_workflow_help' => 'Anträge von Mitarbeitern, die sich über diese Unternehmensseite registrieren, erscheinen unten mit dem Status Ausstehend. Weisen Sie dort eine Rolle zu und genehmigen Sie den Antrag. Die Liste bestehender Benutzer ist nur für Plattformadministratoren verfügbar.',
   'customers_heading' => 'Kunden',
   'customers_intro' => 'Kundenkonten dieses Unternehmens verwalten.',

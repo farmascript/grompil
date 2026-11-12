@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Sat 2026-11-07 14:54:17
+ * @date_mut: Thu 2026-11-12 17:45:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -324,7 +324,7 @@ if ($company !== null) {
 
     $membersResult = $companyMemberQuery(
         'company_members.list_members',
-        'SELECT u.user_code, u.display_name, contact.contact_value AS email, cu.is_active, cu.approval_status,
+        'SELECT u.user_code, u.display_name, u.acronym, contact.contact_value AS email, cu.is_active, cu.approval_status,
                 cu.company_role_id, cr.name AS role_name
          FROM ct_company_users AS cu
          JOIN bt_users AS u ON u.user_code = cu.user_code
@@ -373,6 +373,7 @@ if ($company !== null) {
         $memberRows .= fn_templateRender('company_member_row.html', [
             'display_name' => (string) $member['display_name'],
             'user_email' => (string) $member['email'],
+            'user_acronym' => trim((string) ($member['acronym'] ?? '')) !== '' ? (string) $member['acronym'] : '—',
             'role_name' => (string) $member['role_name'],
             'status_name' => fn_t($isPending ? 'approval_pending' : ($active ? 'active' : 'inactive')),
             '_member_actions_html' => $actions,

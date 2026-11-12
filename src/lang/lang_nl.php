@@ -253,6 +253,7 @@ $arrSubst = array (
   'company_members_open' => 'Openen',
   'company_members_role' => 'rol',
   'company_members_user' => 'Gebruiker',
+  'company_members_acronym' => 'Acroniem',
   'company_members_workflow_help' => 'Aanvragen van medewerkers die zich via deze bedrijfspagina registreren, verschijnen hieronder met de status In afwachting. Wijs daar een rol toe en keur de aanvraag goed. De lijst met bestaande gebruikers is alleen beschikbaar voor platformbeheerders.',
   'customers_heading' => 'Klanten',
   'customers_intro' => 'Beheer de klantaccounts van dit bedrijf.',

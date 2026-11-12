@@ -253,6 +253,7 @@ $arrSubst = array (
   'company_members_open' => 'Open',
   'company_members_role' => 'Company role',
   'company_members_user' => 'User',
+  'company_members_acronym' => 'Acronym',
   'company_members_workflow_help' => 'Requests from staff who register through this company page appear below as Pending. Assign a role there and approve the request. The existing-user list is only available to platform administrators.',
   'customers_heading' => 'Customers',
   'customers_intro' => 'Manage this company’s customer accounts.',

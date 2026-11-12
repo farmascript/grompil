@@ -253,6 +253,7 @@ $arrSubst = array (
   'company_members_open' => 'Ouvrir',
   'company_members_role' => 'Rôle dans l’entreprise',
   'company_members_user' => 'Utilisateur',
+  'company_members_acronym' => 'Acronyme',
   'company_members_workflow_help' => 'Les demandes du personnel inscrit via cette page apparaissent ci-dessous avec le statut En attente. Attribuez un rôle et approuvez-les. La liste des utilisateurs existants est réservée à l’administration de la plateforme.',
   'customers_heading' => 'Clients',
   'customers_intro' => 'Gérer les comptes clients de cette entreprise.',
