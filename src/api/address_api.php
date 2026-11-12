@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Thu 2026-11-12 17:11:09
+ * @date_mut: Thu 2026-11-12 17:19:20
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -177,12 +177,16 @@ foreach (array_slice($data['items'] ?? [], 0, $type === 'locality' ? 50 : 10) as
     if ($type === 'postal') {
         $items[] = ['id' => (string) ($item['id'] ?? ''), 'label' => trim($postalCode . ' ' . $name($item['name'] ?? null)), 'postal_code' => $postalCode, 'city' => $name($item['name'] ?? null)];
     } elseif ($type === 'municipality' || ($type === 'locality' && $postalCode === '')) {
+        $municipalityNisCode = (string) ($item['nisCode'] ?? $item['objectId'] ?? '');
+        if ($municipalityNisCode === '' && preg_match('~/([0-9]+)$~', (string) ($item['id'] ?? ''), $nisMatch) === 1) {
+            $municipalityNisCode = $nisMatch[1];
+        }
         $items[] = [
             'id' => (string) ($item['id'] ?? ''),
             'label' => $name($item['name'] ?? null),
             'city' => $name($item['name'] ?? null),
             'postal_code' => $postalCode,
-            'nis_code' => (string) ($item['nisCode'] ?? ''),
+            'nis_code' => ctype_digit($municipalityNisCode) ? $municipalityNisCode : '',
         ];
     } elseif ($type === 'locality') {
         $localityName = $name($item['name'] ?? null);
