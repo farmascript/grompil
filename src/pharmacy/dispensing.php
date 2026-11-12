@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 12:19:30
+ * @date_mut: Thu 2026-11-12 12:20:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -362,10 +362,18 @@ $patientModalForm = fn_templateRender('dispensing_patient_form.html', [
 $patientMetadata = '';
 if ($selectedPatient) {
     $dob = trim((string) ($selectedPatient['date_of_birth'] ?? ''));
+    $birthDate = $dob !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $dob) : false;
+    $today = new DateTimeImmutable('today');
+    $age = $birthDate !== false && $birthDate->format('Y-m-d') === $dob && $birthDate <= $today
+        ? (string) $birthDate->diff($today)->y
+        : '';
     $patientMetadata = fn_templateRender('dispensing_patient_detail.html', [
         'patient_code' => (string) $selectedPatient['patient_code'],
         '_patient_birth_date_html' => $dob !== ''
-            ? fn_templateRender('dispensing_patient_birth_date.html', ['patient_birth_date_value' => $dob])
+            ? fn_templateRender('dispensing_patient_birth_date.html', [
+                'patient_birth_date_value' => $dob,
+                'patient_age_value' => $age !== '' ? '(' . $age . ')' : '',
+            ])
             : '',
         'patient_address' => $patientAddress !== '' ? $patientAddress : fn_t('patient_no_address'),
         '_patient_map_link_html' => grompil_google_maps_link(
