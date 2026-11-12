@@ -59,6 +59,31 @@ ID, then rolls back by default. The first run checks connectivity, CSV
 compatibility, staging permissions, and data quality without changing the
 live tables.
 
+The runner can discover and fetch the latest full export automatically. SAM's
+version endpoint is queried with the selected XSD version (default `6`). If
+that version is not already cached, the ZIP is downloaded to a temporary file,
+checked with `unzip -t`, and then moved into the cache. A matching, valid cached
+archive is reused on later runs. The cache is one replaceable “latest” ZIP under
+`~/sam/download/`, so daily runs do not accumulate one full archive per day.
+
+Start with a check-only run:
+
+```bash
+bash scripts/sam_sync_full_test.sh --latest-full
+```
+
+After reviewing a successful check-only run, use `--apply` to publish the
+snapshot:
+
+```bash
+bash scripts/sam_sync_full_test.sh --latest-full --apply
+```
+
+Set `SAM_XSD_VERSION` to override XSD 6 or `SAM_DOWNLOAD_DIR` to change the
+cache directory. The latest-version endpoint is
+`samv2-full-getLastVersion?xsd=6`; the corresponding archive URL uses
+`samv2-download?type=FULL&xsd=6&version=<version>`.
+
 On the test server, configure `PGHOST`, `PGDATABASE`, `PGUSER`, and a protected
 `.pgpass` file (or `PGPASSFILE`). Point `--source-dir` at a directory with
 exactly one `AMP-*.xml` and one `REF-*.xml` from the same full SAM export:

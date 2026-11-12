@@ -10,9 +10,12 @@ PHP_BIN="${PHP_BIN:-php}"
 PSQL_BIN="${PSQL_BIN:-psql}"
 SAM_LOG_DIR="${SAM_LOG_DIR:-${HOME:?HOME must be set}/sam/logs}"
 SAM_TMP_DIR="${SAM_TMP_DIR:-$HOME/sam/tmp}"
+SAM_DOWNLOAD_DIR="${SAM_DOWNLOAD_DIR:-$HOME/sam/download}"
+SAM_XSD_VERSION="${SAM_XSD_VERSION:-6}"
 SOURCE_DIR=""
 ARCHIVE_FILE=""
 DOWNLOAD_URL=""
+LATEST_FULL=0
 APPLY=0
 
 usage() {
@@ -21,6 +24,7 @@ Usage:
   bash scripts/sam_sync_full_test.sh --source-dir /path/to/full-sam-files [--apply]
   bash scripts/sam_sync_full_test.sh --archive /path/to/full-export.zip [--apply]
   bash scripts/sam_sync_full_test.sh --download-url https://.../full-export.zip [--apply]
+  bash scripts/sam_sync_full_test.sh --latest-full [--apply]
 
 The source must contain exactly one AMP-*.xml and one REF-*.xml full export.
 By default the script imports into temporary staging tables, validates the data,
@@ -53,6 +57,10 @@ while (($#)); do
             ARCHIVE_FILE="$2"
             shift 2
             ;;
+        --latest-full)
+            LATEST_FULL=1
+            shift
+            ;;
         --apply)
             APPLY=1
             shift
@@ -72,17 +80,22 @@ SOURCE_COUNT=0
 [[ -z "$SOURCE_DIR" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
 [[ -z "$ARCHIVE_FILE" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
 [[ -z "$DOWNLOAD_URL" ]] || SOURCE_COUNT=$((SOURCE_COUNT + 1))
-((SOURCE_COUNT == 1)) || { usage >&2; die "Provide exactly one of --source-dir, --archive, or --download-url."; }
+((LATEST_FULL == 0)) || SOURCE_COUNT=$((SOURCE_COUNT + 1))
+((SOURCE_COUNT == 1)) || { usage >&2; die "Provide exactly one input: --source-dir, --archive, --download-url, or --latest-full."; }
 
 for command in "$PHP_BIN" "$PSQL_BIN" find sort wc grep sed mktemp date head tr cat mkdir basename sleep kill; do
     command -v "$command" >/dev/null 2>&1 || die "Required command is unavailable: $command"
 done
 
-if [[ -n "$DOWNLOAD_URL" ]]; then
-    command -v curl >/dev/null 2>&1 || die "curl is required for --download-url."
+if [[ -n "$DOWNLOAD_URL" || "$LATEST_FULL" -eq 1 ]]; then
+    command -v curl >/dev/null 2>&1 || die "curl is required for download input."
 fi
-if [[ -n "$DOWNLOAD_URL" || -n "$ARCHIVE_FILE" ]]; then
+if [[ -n "$DOWNLOAD_URL" || -n "$ARCHIVE_FILE" || "$LATEST_FULL" -eq 1 ]]; then
     command -v unzip >/dev/null 2>&1 || die "unzip is required for ZIP input."
+fi
+if ((LATEST_FULL)); then
+    [[ "$SAM_XSD_VERSION" =~ ^[0-9]+$ ]] || die "SAM_XSD_VERSION must contain digits only."
+    mkdir -p -- "$SAM_DOWNLOAD_DIR"
 fi
 
 [[ -n "${PGHOST:-}" && -n "${PGDATABASE:-}" && -n "${PGUSER:-}" ]] || \
@@ -104,9 +117,13 @@ flock -n 9 || die "Another SAM sync run is already active."
 RUN_ID="$(date -u '+%Y%m%dT%H%M%SZ')"
 LOG_FILE="$SAM_LOG_DIR/sam-full-sync-$RUN_ID.log"
 WORK_DIR="$(mktemp -d "$SAM_TMP_DIR/grompil-sam-sync.XXXXXXXX")"
+DOWNLOAD_PART=""
+VERSION_PART=""
 exec 8>&1
 cleanup() {
     local status=$?
+    [[ -z "${DOWNLOAD_PART:-}" ]] || rm -f -- "$DOWNLOAD_PART"
+    [[ -z "${VERSION_PART:-}" ]] || rm -f -- "$VERSION_PART"
     if [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" && "$WORK_DIR" == "$SAM_TMP_DIR"/grompil-sam-sync.* ]]; then
         rm -rf -- "$WORK_DIR"
     fi
@@ -150,7 +167,38 @@ printf 'Temporary work directory: %s\n' "$WORK_DIR"
 
 EXPORT_DIR="$WORK_DIR/export"
 mkdir -p -- "$EXPORT_DIR"
-if [[ -n "$DOWNLOAD_URL" ]]; then
+if ((LATEST_FULL)); then
+    VERSION_URL="https://www.vas.ehealth.fgov.be/websamcivics/samcivics/download/samv2-full-getLastVersion?xsd=${SAM_XSD_VERSION}"
+    printf 'Checking the latest SAM full export version for XSD %s...\n' "$SAM_XSD_VERSION"
+    LATEST_VERSION="$(curl --fail --silent --show-error --location --retry 2 --connect-timeout 30 "$VERSION_URL" | tr -d '[:space:]')"
+    [[ "$LATEST_VERSION" =~ ^[0-9]+$ ]] || die "SAM returned an unexpected latest-version response: $LATEST_VERSION"
+
+    ARCHIVE_FILE="$SAM_DOWNLOAD_DIR/samv2_full_xsd${SAM_XSD_VERSION}_latest.zip"
+    VERSION_FILE="$ARCHIVE_FILE.version"
+    DOWNLOAD_URL="https://www.vas.ehealth.fgov.be/websamcivics/samcivics/download/samv2-download?type=FULL&xsd=${SAM_XSD_VERSION}&version=${LATEST_VERSION}"
+    CACHED_VERSION=""
+    [[ -r "$VERSION_FILE" ]] && CACHED_VERSION="$(tr -d '[:space:]' < "$VERSION_FILE")"
+
+    if [[ "$CACHED_VERSION" == "$LATEST_VERSION" && -s "$ARCHIVE_FILE" ]] && unzip -tq "$ARCHIVE_FILE"; then
+        printf 'Latest SAM version %s is already cached; reusing %s.\n' "$LATEST_VERSION" "$ARCHIVE_FILE"
+    else
+        printf 'Downloading SAM full export version %s for XSD %s...\n' "$LATEST_VERSION" "$SAM_XSD_VERSION"
+        DOWNLOAD_PART="$(mktemp "$SAM_DOWNLOAD_DIR/.samv2_full_xsd${SAM_XSD_VERSION}.XXXXXX.part")"
+        curl --fail --location --retry 3 --connect-timeout 30 --output "$DOWNLOAD_PART" "$DOWNLOAD_URL"
+        [[ -s "$DOWNLOAD_PART" ]] || die "Downloaded SAM archive is empty."
+        printf 'Downloaded archive size: %s bytes\n' "$(wc -c < "$DOWNLOAD_PART" | tr -d ' ')"
+        unzip -tq "$DOWNLOAD_PART" || die "Downloaded SAM ZIP failed its integrity check."
+
+        mv -f -- "$DOWNLOAD_PART" "$ARCHIVE_FILE"
+        DOWNLOAD_PART=""
+        VERSION_PART="$(mktemp "$SAM_DOWNLOAD_DIR/.samv2_full_xsd${SAM_XSD_VERSION}.version.XXXXXX")"
+        printf '%s\n' "$LATEST_VERSION" > "$VERSION_PART"
+        mv -f -- "$VERSION_PART" "$VERSION_FILE"
+        VERSION_PART=""
+        printf 'Cached SAM full export version %s at %s.\n' "$LATEST_VERSION" "$ARCHIVE_FILE"
+    fi
+fi
+if [[ -n "$DOWNLOAD_URL" && "$LATEST_FULL" -eq 0 ]]; then
     ARCHIVE="$WORK_DIR/sam-full-export.zip"
     printf 'Downloading SAM full export archive...\n'
     curl --fail --location --retry 2 --connect-timeout 30 --output "$ARCHIVE" "$DOWNLOAD_URL"
