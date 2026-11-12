@@ -732,6 +732,7 @@ $forcedProfileFieldsHtml = $mustChangePassword
         . '<div class="form-text">' . e(fn_t('acronym_help')) . '</div></div>'
         . fn_templateRender('address_fields.html', [
             'address_prefix' => 'account-setup-address',
+            'address_autosave' => '0',
             'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
             'address_lookup_no_results' => fn_t('address_lookup_no_results'),
             'address_postal_reminder' => fn_t('address_postal_reminder'),
@@ -842,6 +843,7 @@ $addressModalHtml = '<div class="modal fade" id="account-address-modal" tabindex
     . e((string) $addressFormValues['label']) . '"></div></div>'
     . fn_templateRender('address_fields.html', [
         'address_prefix' => 'account-address-manager',
+        'address_autosave' => '0',
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_postal_reminder' => fn_t('address_postal_reminder'),

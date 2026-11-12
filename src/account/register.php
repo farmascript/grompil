@@ -233,6 +233,7 @@ echo fn_templateRender('registration.html', [
     '_cookie_footer_html' => fn_templateRender('cookie_footer.html'),
     '_address_fields_html' => fn_templateRender('address_fields.html', [
         'address_prefix' => 'register-address',
+        'address_autosave' => '0',
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
         'address_postal_reminder' => fn_t('address_postal_reminder'),

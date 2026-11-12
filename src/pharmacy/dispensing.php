@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 16:24:13
+ * @date_mut: Thu 2026-11-12 16:31:18
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -562,6 +562,7 @@ $patientModalForm = fn_templateRender('dispensing_patient_form.html', [
     'patient_country_value' => (string) ($patientFormValues['country_code'] ?? 'BE'),
     '_patient_address_fields_html' => fn_templateRender('address_fields.html', [
         'address_prefix' => 'patient-address',
+        'address_autosave' => '1',
         'address_title' => fn_t('address_title'),
         'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
         'address_lookup_no_results' => fn_t('address_lookup_no_results'),
@@ -741,7 +742,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.7',
+    'asset_version' => '0.18.8',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',

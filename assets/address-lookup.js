@@ -286,7 +286,13 @@ document.querySelectorAll('[data-address-fields]').forEach((group) => {
         postal_code: getValue('postal'), city: getValue('postal') ? '' : getValue('city'), street: getValue('street'),
         nis_code: getValue('postal') ? '' : (municipalityNis?.value ?? ''),
         street_id: streetId?.value ?? '', house_number: getValue('house'),
-    }), selectOfficialAddress, (items) => {
+    }), (item) => {
+        selectOfficialAddress(item);
+        if (group.dataset.addressAutosave === '1') {
+            const addressForm = group.closest('form');
+            if (addressForm) requestAnimationFrame(() => addressForm.requestSubmit());
+        }
+    }, (items) => {
         const postalCodes = [...new Set(items.map((item) => item.postal_code?.trim()).filter(Boolean))];
         if (postalCodes.length === 1 && fields.postal && !getValue('postal')) {
             fields.postal.value = postalCodes[0];
