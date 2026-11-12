@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Thu 2026-11-12 16:50:00
+ * @date_mut: Thu 2026-11-12 17:11:09
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -146,13 +146,23 @@ switch ($type) {
 $url = $baseUrl . $path . '?' . http_build_query($parameters);
 $traceId = bin2hex(random_bytes(16));
 $data = address_api_http($url, ['Accept: application/json', 'BelGov-Trace-Id: ' . $traceId]);
-if ($type === 'locality' && empty($data['items'])) {
-    // Postal-area names are only supplied for Flanders. Fall back to official
-    // municipality names elsewhere, where the user can continue with streets.
-    $fallbackUrl = $baseUrl . '/municipalities?' . http_build_query([
-        'status' => 'current', 'pageSize' => 10, 'name' => '*' . $query . '*',
+if ($type === 'locality') {
+    // Postal-area names can differ from the official municipality name. Search
+    // both so a match such as Knokke-Heist remains available when postal areas
+    // already return results such as Heist-Aan-Zee/Ramskapelle.
+    $municipalityUrl = $baseUrl . '/municipalities?' . http_build_query([
+        'status' => 'current', 'pageSize' => 50, 'name' => '*' . $query . '*',
     ]);
-    $data = address_api_http($fallbackUrl, ['Accept: application/json', 'BelGov-Trace-Id: ' . $traceId]);
+    $municipalityData = address_api_http($municipalityUrl, ['Accept: application/json', 'BelGov-Trace-Id: ' . $traceId]);
+    $postalItems = is_array($data['items'] ?? null) ? $data['items'] : [];
+    $municipalityItems = is_array($municipalityData['items'] ?? null) ? $municipalityData['items'] : [];
+    $combinedItems = [];
+    $itemCount = max(count($postalItems), count($municipalityItems));
+    for ($index = 0; $index < $itemCount; $index++) {
+        if (isset($postalItems[$index])) $combinedItems[] = $postalItems[$index];
+        if (isset($municipalityItems[$index])) $combinedItems[] = $municipalityItems[$index];
+    }
+    $data['items'] = $combinedItems;
 }
 $items = [];
 $language = strtolower((string) ($_SESSION['language'] ?? 'NL'));
