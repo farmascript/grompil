@@ -87,6 +87,10 @@ body {
     border: 1px solid #cbd8d2;
 }
 
+.address-suggestions:empty {
+    display: none;
+}
+
 .address-suggestions .list-group-item {
     background-color: #f1f5f3;
 }

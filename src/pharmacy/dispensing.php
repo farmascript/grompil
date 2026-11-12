@@ -729,7 +729,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.5',
+    'asset_version' => '0.18.6',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
