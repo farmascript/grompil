@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 16:31:18
+ * @date_mut: Thu 2026-11-12 16:39:45
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -289,12 +289,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 db_query_raw('patients.transaction.rollback', 'ROLLBACK');
             } catch (Throwable) {
             }
-            error_log('Patient record save failed: ' . get_class($error));
+            error_log(sprintf(
+                'Patient record save failed [action=%s, code=%s]: %s',
+                $action,
+                get_class($error),
+                substr(preg_replace('/\\s+/', ' ', $error->getMessage()) ?? '', 0, 500)
+            ));
             $messageKey = 'patient_save_failed';
             $editingPatientCode = $action === 'update_patient' ? $patientCode : '';
             $openPatientModal = true;
         }
     } else {
+        error_log(sprintf(
+            'Patient form validation rejected [action=%s, address=%s, reference=%s, manual=%s, type_allowed=%s, name_valid=%s, date_valid=%s].',
+            $action,
+            $addressHasContent ? 'yes' : 'no',
+            $addressReferenceId !== '' ? 'yes' : 'no',
+            isset($_POST['manual_address_without_coordinates']) ? 'yes' : 'no',
+            in_array($addressTypeKey, $customerAddressTypeKeys, true) ? 'yes' : 'no',
+            $firstName !== '' && mb_strlen($firstName) <= 120 && $lastName !== '' && mb_strlen($lastName) <= 120 ? 'yes' : 'no',
+            $dateValid ? 'yes' : 'no'
+        ));
         $messageKey = 'patient_form_invalid';
         $openPatientModal = true;
         $editingPatientCode = $action === 'update_patient' ? $patientCode : '';
@@ -742,7 +757,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.8',
+    'asset_version' => '0.18.9',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',

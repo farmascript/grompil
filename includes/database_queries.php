@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-11-04
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Thu 2026-11-12 16:39:45
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -58,9 +58,14 @@ function db_query_params(string $operation, string $sql, array $params = [], ?Pg
     }
 
     if (!$result) {
+        $databaseError = trim((string) pg_last_error($connection));
+        $databaseError = preg_split('/\\R/', $databaseError, 2)[0] ?? '';
+        $databaseError = preg_replace('/"[^"]*"|\'[^\']*\'/u', '[redacted]', $databaseError) ?? '';
+        $databaseError = preg_replace('/\\s+/', ' ', $databaseError) ?? '';
         error_log(sprintf(
-            'Database query failed [%s] (PostgreSQL error; SQLSTATE unavailable).',
-            $operation
+            'Database query failed [%s] (PostgreSQL error; SQLSTATE unavailable): %s',
+            $operation,
+            substr($databaseError, 0, 500)
         ));
         throw new GrompilDatabaseQueryException('Database query failed: ' . $operation);
     }
@@ -101,9 +106,14 @@ function db_query_raw(string $operation, string $sql, ?PgSql\Connection $connect
     }
 
     if (!$result) {
+        $databaseError = trim((string) pg_last_error($connection));
+        $databaseError = preg_split('/\\R/', $databaseError, 2)[0] ?? '';
+        $databaseError = preg_replace('/"[^"]*"|\'[^\']*\'/u', '[redacted]', $databaseError) ?? '';
+        $databaseError = preg_replace('/\\s+/', ' ', $databaseError) ?? '';
         error_log(sprintf(
-            'Database query failed [%s] (PostgreSQL error; SQLSTATE unavailable).',
-            $operation
+            'Database query failed [%s] (PostgreSQL error; SQLSTATE unavailable): %s',
+            $operation,
+            substr($databaseError, 0, 500)
         ));
         throw new GrompilDatabaseQueryException('Database query failed: ' . $operation);
     }
