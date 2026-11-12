@@ -1,7 +1,7 @@
 <?php
 /**
  * Completes the password plus TOTP login for platform and company administrators.
- * @date_mut: Thu 2026-11-12 14:15:48
+ * @date_mut: Thu 2026-11-12 21:25:00
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:authenticator
  */
 
@@ -131,6 +131,7 @@ $attemptCount = static function () use ($authenticatorQuery, $attemptEmail, $log
 $completeLogin = static function () use ($authenticatorQuery, $userCode, $authVersion, $attemptEmail, $loginIp, $companyId, $platformOperator): never {
     $authenticatorQuery('account_authenticator.clear_attempts', 'DELETE FROM st_login_attempts WHERE company_id = $1 AND email = $2 AND ip_address = $3', [$companyId, $attemptEmail, $loginIp]);
     session_regenerate_id(true);
+    $_SESSION['bookmark_sync_nonce'] = bin2hex(random_bytes(16));
     unset($_SESSION['mfa_pending_user_code'], $_SESSION['mfa_pending_company_id'], $_SESSION['mfa_pending_platform_operator'], $_SESSION['mfa_pending_company_slug'], $_SESSION['mfa_pending_totp_label'], $_SESSION['mfa_pending_auth_version'], $_SESSION['mfa_pending_email'], $_SESSION['mfa_pending_attempt_email'], $_SESSION['mfa_pending_ip'], $_SESSION['mfa_pending_verified'], $_SESSION['mfa_enroll_secret'], $_SESSION['mfa_recovery_codes_display']);
     unset($_SESSION['active_company_id'], $_SESSION['platform_mfa_verified'], $_SESSION['company_mfa_verified'], $_SESSION['company_mfa_company_id'], $_SESSION['company_mfa_user_code']);
     $_SESSION['user_code'] = $userCode;

@@ -6,8 +6,9 @@ Grompil Bookmarks adds two folders to the browser bookmarks bar:
 - **My navigator** contains the user's URL Manager layout and links.
 
 The extension only replaces the contents of the two folders it manages. Other
-browser bookmarks are left untouched. Synchronization starts only when the user
-clicks **Sync bookmarks**.
+browser bookmarks are left untouched. After sign-in, or after changing company
+or language, it refreshes those folders automatically. A manual sync is also
+available from the extension popup.
 
 ## Supported browsers
 
@@ -26,14 +27,16 @@ be confirmed separately.
 4. Choose this directory, the one containing `manifest.json`.
 5. Pin **Grompil Bookmarks** to the browser toolbar if desired.
 
-## Sync the bookmark folders
+## Automatic and manual synchronization
 
-1. Sign in to the desired Grompil installation.
-2. Open **Navigation** in Grompil, or open the URL Manager directly, for
-   example `https://test.grompil.com/url-manager/index.html`.
-3. Select the company and language you want to use in the URL Manager.
-4. Open the **Grompil Bookmarks** extension and click **Sync bookmarks**.
-5. Show the bookmarks bar if needed (usually `Ctrl+Shift+B`).
+Sign in to Grompil in a supported browser. The extension refreshes the folders
+when an authenticated page opens after sign-in, or when the active company or
+language changes. It uses the access permissions and URL Manager layout for
+that signed-in session.
+
+To refresh manually, open Navigation or the URL Manager and click
+**Sync bookmarks** in the extension popup. Show the bookmarks bar if needed
+(usually `Ctrl+Shift+B`).
 
 The extension stores the IDs of its generated folders locally so it can replace
 those folders during the next sync. Do not put personal bookmarks inside the

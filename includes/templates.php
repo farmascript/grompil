@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Thu 2026-11-12 21:25:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -587,6 +587,15 @@ function fn_companyStoreThemeOptions(string $selected = 'default'): string
 function page_start(string $title, array $user): void
 {
     $company = current_company_context($user);
+    if (!isset($_SESSION['bookmark_sync_nonce']) || !is_string($_SESSION['bookmark_sync_nonce'])
+        || preg_match('/^[a-f0-9]{32}$/', $_SESSION['bookmark_sync_nonce']) !== 1) {
+        $_SESSION['bookmark_sync_nonce'] = bin2hex(random_bytes(16));
+    }
+    $bookmarkSyncMeta = '<meta name="grompil-bookmark-sync" content="'
+        . e((string) $_SESSION['bookmark_sync_nonce']) . '" data-base-href="'
+        . e(fn_appBaseHref()) . '" data-company-id="'
+        . e((string) ($company['id'] ?? 0)) . '" data-language="'
+        . e(strtolower((string) ($_SESSION['language'] ?? 'NL'))) . '">';
     $isPlatformOperator = is_platform_operator($user);
     $GLOBALS['grompilPageFooterShowIp'] = $isPlatformOperator
         || ($company !== null && has_company_permission('company.settings.manage', $company, $user));
@@ -625,7 +634,11 @@ function page_start(string $title, array $user): void
         $platformChooseCompanyButton = '<a class="btn btn-outline-secondary btn-sm" href="'
             . e(fn_appBaseHref() . 'select-company.php') . '">' . e(fn_t('company_select')) . '</a>';
     }
-    echo fn_templateRender('html_head.html', ['_page_title' => e($title . ' · Grompil'), 'html_language' => strtolower((string) ($_SESSION['language'] ?? 'NL'))]);
+    echo fn_templateRender('html_head.html', [
+        '_page_title' => e($title . ' · Grompil'),
+        'html_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
+        '_bookmark_sync_meta_html' => $bookmarkSyncMeta,
+    ]);
     echo fn_templateRender('header.html', [
         '_app_version' => e(fn_appVersion()),
         '_csrf_field_html' => csrf_field(),

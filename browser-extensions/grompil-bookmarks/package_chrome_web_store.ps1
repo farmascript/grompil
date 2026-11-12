@@ -14,7 +14,7 @@ if (Test-Path -LiteralPath $packagePath) {
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::Open($packagePath, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
-    $packageFiles = @('manifest.json', 'popup.html', 'popup.css', 'popup.js') | ForEach-Object {
+    $packageFiles = @('manifest.json', 'popup.html', 'popup.css', 'popup.js', 'bookmark-sync.js', 'background.js', 'content-script.js') | ForEach-Object {
         Join-Path $extensionDirectory $_
     }
     $packageFiles += Get-ChildItem -LiteralPath (Join-Path $extensionDirectory 'icons') -File | Select-Object -ExpandProperty FullName

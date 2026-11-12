@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Thu 2026-11-12 14:15:48
+ * @date_mut: Thu 2026-11-12 21:25:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -239,6 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 [$attemptCompanyId, $email, $ipAddress]
             );
             session_regenerate_id(true);
+            $_SESSION['bookmark_sync_nonce'] = bin2hex(random_bytes(16));
             unset($_SESSION['active_company_id']);
             unset($_SESSION['platform_mfa_verified']);
             unset($_SESSION['company_mfa_verified'], $_SESSION['company_mfa_company_id'], $_SESSION['company_mfa_user_code']);

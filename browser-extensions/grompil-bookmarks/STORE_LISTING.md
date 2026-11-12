@@ -11,8 +11,9 @@ Add permitted Grompil modules and your URL Manager links to the browser bookmark
 ## Detailed description
 
 Grompil Bookmarks puts your Grompil workspace within easy reach. After you sign
-in and open Grompil Navigation or the URL Manager, choose **Sync bookmarks** to
-create or refresh two folders on your bookmarks bar:
+in to Grompil, the extension automatically creates or refreshes two folders on
+your bookmarks bar. It refreshes them again when you switch company or language.
+You can also choose **Sync bookmarks** manually in the extension popup:
 
 - **Grompil functions** lists the modules available to your signed-in account.
 - **My navigator** mirrors your URL Manager pages, groups, and links.
@@ -22,8 +23,8 @@ access information from that same Grompil website. It creates bookmarks on your
 device and remembers only the IDs of the folders it created, so it can update
 those folders next time. It does not send bookmark data to third-party services.
 
-Sync is started manually. Existing bookmarks outside the two Grompil folders
-are not modified.
+Only the two Grompil folders are changed. Existing bookmarks outside those
+folders are not modified.
 
 ## Category
 
@@ -43,10 +44,11 @@ Lieven Maus
 
 | Permission | Justification |
 | --- | --- |
-| `activeTab` | After the user clicks the extension, inspect the active tab to locate the Grompil URL Manager and its current language and company context. |
-| `scripting` | Run the extension's packaged code in the active URL Manager page to retrieve its authenticated navigation data and access list from the same Grompil origin. |
+| Host access to Grompil | Detect authenticated Grompil page context changes and request navigation/access data from the same Grompil origin to refresh bookmarks automatically. |
+| `activeTab` | Let the user start a manual sync from the extension popup in the active Grompil URL Manager tab. |
+| `scripting` | Run the packaged reader in the active URL Manager page for manual sync and in the authenticated Grompil page for automatic sync. |
 | `bookmarks` | Create and refresh the two bookmark folders requested by the user. The extension removes only folder IDs it previously created and stored. |
-| `storage` | Store the IDs of those generated folders locally, separated by Grompil site origin, so the extension can refresh them on a later manual sync. |
+| `storage` | Store the IDs of generated folders by site origin and a temporary session marker to avoid repeating the same automatic sync on every page load. |
 
 ## Data use declaration draft
 

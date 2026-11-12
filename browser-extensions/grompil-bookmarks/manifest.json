@@ -1,9 +1,29 @@
 {
   "manifest_version": 3,
   "name": "Grompil Bookmarks",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "minimum_chrome_version": "102",
   "description": "Add your permitted Grompil modules and navigation links to your browser bookmarks.",
   "permissions": ["activeTab", "scripting", "bookmarks", "storage"],
+  "host_permissions": [
+    "https://grompil.com/*",
+    "https://*.grompil.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [{
+    "matches": [
+      "https://grompil.com/*",
+      "https://*.grompil.com/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ],
+    "js": ["content-script.js"],
+    "run_at": "document_idle"
+  }],
   "icons": {
     "16": "icons/grompil-16.png",
     "48": "icons/grompil-48.png",
