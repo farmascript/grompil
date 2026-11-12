@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 16:39:45
+ * @date_mut: Thu 2026-11-12 16:43:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -242,7 +242,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                          updated_by_user_code=$16, updated_at=now()
                      WHERE id=$17 AND company_id=$18 AND customer_code=$19 AND is_active',
                     [$addressTypeKey, $addressLabel, $street, $houseNumber, $boxNumber, $postalCode, $city, $countryCode,
-                        $addressReferenceId, $lambert72X, $lambert72Y, $wgs84Latitude, $wgs84Longitude, $addressIsPrimary,
+                        $addressReferenceId, $lambert72X, $lambert72Y, $wgs84Latitude, $wgs84Longitude,
+                        $addressIsPrimary ? 'true' : 'false',
                         $addressSortOrder, $actorCode, $locationId, $companyId, $patientCode]
                 );
                 if (pg_affected_rows($location) !== 1) {
@@ -275,7 +276,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,TRUE,$17,$18,$18)',
                     [$companyId, $patientCode, $addressTypeKey, $addressLabel, $street, $houseNumber, $boxNumber, $postalCode, $city,
                         $countryCode, $addressReferenceId, $lambert72X, $lambert72Y, $wgs84Latitude, $wgs84Longitude,
-                        $makePrimary, $addressSortOrder > 0 ? $addressSortOrder : (int) $locationStats['next_order'], $actorCode]
+                        $makePrimary ? 'true' : 'false',
+                        $addressSortOrder > 0 ? $addressSortOrder : (int) $locationStats['next_order'], $actorCode]
                 );
             }
             db_query_raw('patients.transaction.commit', 'COMMIT');
@@ -757,7 +759,7 @@ echo fn_templateRender('dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.9',
+    'asset_version' => '0.18.10',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
