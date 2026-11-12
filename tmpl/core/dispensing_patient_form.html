@@ -1,19 +1,23 @@
-<form method="post" action="dispense.php" class="row g-3">
+<form method="post" action="dispense.php" class="customer-edit-form">
     <input type="hidden" name="csrf_token" value="@csrf_token@">
     <input type="hidden" name="action" value="@patient_form_action@">
     <input type="hidden" name="customer_code" value="@customer_code@">
     <input type="hidden" name="location_id" value="@patient_location_id@">
     <input type="hidden" name="add_another_address" value="@_patient_add_address_value@">
     <input type="hidden" name="country_code" value="@patient_country_value@">
-    @_customer_addresses_html@
-    <div class="col-md-6"><label class="form-label" for="patient-first-name">@patient_first_name@</label><input class="form-control" id="patient-first-name" name="name_first" maxlength="120" required value="@patient_first_name_value@"></div>
-    <div class="col-md-6"><label class="form-label" for="patient-last-name">@patient_last_name@</label><input class="form-control" id="patient-last-name" name="name_last" maxlength="120" required value="@patient_last_name_value@"></div>
-    <div class="col-md-6"><label class="form-label" for="patient-dob">@patient_birth_date@</label><input class="form-control" id="patient-dob" name="date_of_birth" type="date" max="@patient_date_max@" value="@patient_birth_date_value@"></div>
-    <div class="col-12"><hr></div>
-    @_patient_address_fields_html@
-    <div class="col-md-6"><label class="form-label" for="patient-address-type">@account_address_type@</label><select class="form-select" id="patient-address-type" name="address_type_key">@_customer_address_type_options_html@</select></div>
-    <div class="col-md-6"><label class="form-label" for="patient-address-label">@account_address_label@</label><input class="form-control" id="patient-address-label" name="address_label" maxlength="160" value="@patient_address_label_value@"></div>
-    <div class="col-md-4"><label class="form-label" for="patient-address-order">@account_address_order@</label><input class="form-control" id="patient-address-order" name="address_sort_order" type="number" min="0" step="10" value="@patient_address_sort_order_value@"></div>
-    <div class="col-md-8 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" id="patient-location-primary" name="location_is_primary" type="checkbox" @_patient_location_primary_checked@><label class="form-check-label" for="patient-location-primary">@account_address_make_default@</label></div></div>
-    <div class="col-12 d-flex justify-content-end"><button class="btn btn-primary" type="submit">@save@</button></div>
+    <div class="row g-3">
+        @_customer_addresses_html@
+        <div class="col-md-6"><label class="form-label" for="patient-first-name">@patient_first_name@</label><input class="form-control" id="patient-first-name" name="name_first" maxlength="120" required value="@patient_first_name_value@"></div>
+        <div class="col-md-6"><label class="form-label" for="patient-last-name">@patient_last_name@</label><input class="form-control" id="patient-last-name" name="name_last" maxlength="120" required value="@patient_last_name_value@"></div>
+        <div class="col-md-6"><label class="form-label" for="patient-dob">@patient_birth_date@</label><input class="form-control" id="patient-dob" name="date_of_birth" type="date" max="@patient_date_max@" value="@patient_birth_date_value@"></div>
+    </div>
+    <div class="row g-3 customer-address-editor">
+        <div class="col-12"><hr class="my-0"></div>
+        @_patient_address_fields_html@
+        <div class="col-md-6"><label class="form-label" for="patient-address-type">@account_address_type@</label><select class="form-select" id="patient-address-type" name="address_type_key">@_customer_address_type_options_html@</select></div>
+        <div class="col-md-6"><label class="form-label" for="patient-address-label">@account_address_label@</label><input class="form-control" id="patient-address-label" name="address_label" maxlength="160" value="@patient_address_label_value@"></div>
+        <div class="col-md-4"><label class="form-label" for="patient-address-order">@account_address_order@</label><input class="form-control" id="patient-address-order" name="address_sort_order" type="number" min="0" step="10" value="@patient_address_sort_order_value@"></div>
+        <div class="col-md-8 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" id="patient-location-primary" name="location_is_primary" type="checkbox" @_patient_location_primary_checked@><label class="form-check-label" for="patient-location-primary">@account_address_make_default@</label></div></div>
+    </div>
+    <div class="d-flex justify-content-end mt-3"><button class="btn btn-primary" type="submit">@save@</button></div>
 </form>
