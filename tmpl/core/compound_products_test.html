@@ -1,0 +1,25 @@
+<div class="mb-4">
+    <h1 class="h2">@compound_products_test_title@</h1>
+    <p class="text-secondary">@compound_products_test_intro@</p>
+</div>
+
+<section class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" action="compound-products-test.php" class="row g-3 align-items-end">
+            <div class="col-md-9">
+                <label class="form-label" for="compound-products-query">@compound_products_test_query_label@</label>
+                <input class="form-control" id="compound-products-query" name="q" type="search" maxlength="200" value="@compound_products_test_query_value@" autocomplete="off">
+                <div class="form-text">@compound_products_test_help@</div>
+            </div>
+            <div class="col-md-3 d-grid">
+                <button class="btn btn-primary" type="submit">@compound_products_test_search@</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@_compound_products_test_feedback_html@
+<section class="mb-4">
+    @_compound_products_test_results_heading_html@
+    @_compound_products_test_results_html@
+</section>

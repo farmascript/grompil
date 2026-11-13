@@ -1,7 +1,7 @@
 window.GROMPIL_NAVIGATION = {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.18.19",
+    "applicationVersion": "0.18.21",
     "defaultLanguage": "nl",
     "languages": [
         "nl",
@@ -541,6 +541,36 @@ window.GROMPIL_NAVIGATION = {
                 }
             },
             "sequence_number": 16,
+            "action": "manage"
+        },
+        {
+            "id": 74270,
+            "module": "compound-products-test.php",
+            "group": "platform",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "Magistrale grondstoffen testen",
+                    "description": "Doorzoek de grondstoffencatalogus en bekijk de gekoppelde bronidentificaties en RIZIV-terugbetalingsgegevens.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Tester les matières premières magistrales",
+                    "description": "Rechercher dans le catalogue des matières premières et consulter les identifiants de source et données de remboursement INAMI associés.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Test compounding raw materials",
+                    "description": "Search the raw-material catalogue and view its linked source identifiers and RIZIV reimbursement data.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Magistrale Rohstoffe testen",
+                    "description": "Den Rohstoffkatalog durchsuchen und verknüpfte Quellenkennungen sowie RIZIV-Erstattungsdaten anzeigen.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 18,
             "action": "manage"
         }
     ],

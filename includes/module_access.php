@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sat 2026-10-24
- * @date_mut: Thu 2026-11-12 11:07:02
+ * @date_mut: Fri 2026-11-13
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -37,6 +37,11 @@ function grompil_module_access_rules(): array
             'platform_operator_only' => true,
         ],
         'sam-products-test.php' => [
+            'permission' => 'companies.manage',
+            'level_range' => [1, 100],
+            'platform_operator_only' => true,
+        ],
+        'compound-products-test.php' => [
             'permission' => 'companies.manage',
             'level_range' => [1, 100],
             'platform_operator_only' => true,
