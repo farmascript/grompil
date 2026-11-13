@@ -519,6 +519,9 @@
         if (!base) return '#';
         try {
             const url = new URL(modulePath.split('/').map(encodeURIComponent).join('/'), base.endsWith('/') ? base : `${base}/`);
+            if (modulePath === 'index.php' && logoutContext?.companySlug) {
+                url.searchParams.set('c', logoutContext.companySlug);
+            }
             if (['navigation_preferences.php', 'platform_navigation_preferences.php'].includes(modulePath)) {
                 url.searchParams.set('application', state.catalog?.application || 'grompil');
             }
