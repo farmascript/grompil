@@ -33,6 +33,22 @@ BEGIN
     END IF;
 END;
 $$;
+DO $$
+BEGIN
+    IF to_regclass('public.xt_compounding_raw_materials') IS NOT NULL THEN
+        EXECUTE 'GRANT SELECT ON public.xt_compounding_raw_materials TO grompil_app';
+        EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON public.xt_compounding_raw_materials FROM grompil_app';
+    END IF;
+    IF to_regclass('public.xt_compounding_raw_material_sources') IS NOT NULL THEN
+        EXECUTE 'GRANT SELECT ON public.xt_compounding_raw_material_sources TO grompil_app';
+        EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON public.xt_compounding_raw_material_sources FROM grompil_app';
+    END IF;
+    IF to_regclass('public.xt_compounding_reimbursement_codes') IS NOT NULL THEN
+        EXECUTE 'GRANT SELECT ON public.xt_compounding_reimbursement_codes TO grompil_app';
+        EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON public.xt_compounding_reimbursement_codes FROM grompil_app';
+    END IF;
+END;
+$$;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO grompil_app;
