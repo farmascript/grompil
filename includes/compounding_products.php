@@ -27,17 +27,26 @@ require_once __DIR__ . '/bootstrap.php';
  * @param int|null $totalCount Receives the total number of matching materials.
  * @return list<array<string, mixed>>
  */
-function grompil_compounding_product_search(string $query, int $limit = 20, ?int &$totalCount = null): array
+function grompil_compounding_product_search(
+    string $query,
+    int $limit = 20,
+    ?int &$totalCount = null,
+    ?int $rawMaterialId = null
+): array
 {
     $query = trim($query);
     $totalCount = 0;
-    if ($query === '' || strlen($query) > 200) {
+    $rawMaterialId = $rawMaterialId !== null && $rawMaterialId > 0 ? $rawMaterialId : null;
+    if (($query === '' && $rawMaterialId === null) || strlen($query) > 200) {
         return [];
     }
 
     $limit = max(1, min($limit, 100));
     $isCnk = preg_match('/^[0-9 .-]+$/', $query) === 1;
-    if ($isCnk) {
+    if ($rawMaterialId !== null) {
+        $matchSql = 'm.id = $3';
+        $params = [$query, $limit, $rawMaterialId];
+    } elseif ($isCnk) {
         $cnk = preg_replace('/[ .-]/', '', $query) ?? '';
         if ($cnk === '' || strlen($cnk) > 7) {
             return [];

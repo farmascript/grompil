@@ -5,10 +5,14 @@
 
 <section class="card shadow-sm mb-4">
     <div class="card-body">
-        <form method="get" action="compound-products-test.php" class="row g-3 align-items-end">
+        <form method="get" action="compound-products-test.php" class="row g-3 align-items-end" data-compound-search-form data-search-url="@compound_products_test_search_url@" data-search-limit="@compound_products_test_search_limit@" data-search-error="@compound_products_test_search_error@" data-search-more="@compound_products_test_search_more@" data-language="@compound_products_test_language@">
+            <input type="hidden" name="raw_material_id" value="@compound_products_test_raw_material_id@" data-selected-material>
             <div class="col-md-9">
                 <label class="form-label" for="compound-products-query">@compound_products_test_query_label@</label>
-                <input class="form-control" id="compound-products-query" name="q" type="search" maxlength="200" value="@compound_products_test_query_value@" autocomplete="off">
+                <div class="position-relative">
+                    <input class="form-control" id="compound-products-query" name="q" type="search" maxlength="200" value="@compound_products_test_query_value@" autocomplete="off" aria-autocomplete="list" aria-controls="compound-products-suggestions" aria-expanded="false" data-compound-search-input>
+                    <div class="list-group position-absolute top-100 start-0 mt-1 shadow w-100 d-none z-3 overflow-auto" style="max-height: min(60vh, 30rem)" id="compound-products-suggestions" role="listbox" data-compound-suggestions></div>
+                </div>
                 <div class="form-text">@compound_products_test_help@</div>
             </div>
             <div class="col-md-3 d-grid">
@@ -17,6 +21,8 @@
         </form>
     </div>
 </section>
+
+<script src="@_asset_base_href@assets/compound-products-test.js?v=0.18.22" defer></script>
 
 @_compound_products_test_feedback_html@
 <section class="mb-4">

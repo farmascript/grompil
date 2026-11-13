@@ -20,6 +20,7 @@ FILES=(
     'company_security.php'
     'company_translations.php'
     'compound-products-test.php'
+    'compound-products.php'
     'customers.php'
     'dashboard.php'
     'dd-varia.php'

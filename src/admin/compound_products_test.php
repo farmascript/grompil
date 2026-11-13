@@ -24,12 +24,16 @@ require_once GROMPIL_ROOT . '/includes/compounding_products.php';
 
 $rawQuery = $_GET['q'] ?? '';
 $query = is_scalar($rawQuery) ? trim((string) $rawQuery) : '';
+$rawMaterialIdInput = $_GET['raw_material_id'] ?? '';
+$rawMaterialId = is_scalar($rawMaterialIdInput) && ctype_digit((string) $rawMaterialIdInput)
+    ? (int) $rawMaterialIdInput
+    : null;
 $matches = [];
 $totalCount = 0;
 $searchError = false;
-if ($query !== '') {
+if ($query !== '' || $rawMaterialId !== null) {
     try {
-        $matches = grompil_compounding_product_search($query, 50, $totalCount);
+        $matches = grompil_compounding_product_search($query, 50, $totalCount, $rawMaterialId);
     } catch (Throwable $error) {
         error_log('Compounding product test lookup failed: ' . $error->getMessage());
         $searchError = true;
@@ -103,6 +107,12 @@ echo fn_templateRender('compound_products_test.html', [
     'compound_products_test_help' => fn_t('compound_products_test_help'),
     'compound_products_test_search' => fn_t('compound_products_test_search'),
     'compound_products_test_query_value' => $query,
+    'compound_products_test_raw_material_id' => $rawMaterialId !== null ? (string) $rawMaterialId : '',
+    'compound_products_test_search_limit' => '20',
+    'compound_products_test_search_url' => e(fn_appBaseHref() . 'compound-products.php'),
+    'compound_products_test_search_error' => e(fn_t('compound_products_test_unavailable')),
+    'compound_products_test_search_more' => e(fn_t('compound_products_test_showing_results')),
+    'compound_products_test_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
     '_compound_products_test_feedback_html' => $searchError
         ? '<div class="alert alert-danger" role="alert">' . e(fn_t('compound_products_test_unavailable')) . '</div>'
         : ($query !== '' && $matches === [] ? '<div class="alert alert-info" role="status">' . e(fn_t('compound_products_test_no_results')) . '</div>' : ''),

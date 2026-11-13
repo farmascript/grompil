@@ -73,3 +73,11 @@ technical values are retained in the original JSON payload because the
 workbook encodes some of these fields as source codes rather than human-readable
 Dutch and French text. Consult the current RIZIV legal source when interpreting
 reimbursement eligibility.
+
+The RIZIV workbook's layout document maps these numeric identifiers to readable
+chapter and paragraph labels. For example, `54` means Chapter IV and `54040`
+means Chapter IV, §4. The list number is therefore a legal-list reference, not
+a description of the raw material itself. The current mapping is documented in
+the RIZIV [reference-file layout](https://www.riziv.fgov.be/SiteCollectionDocuments/magistrale_bereidingen_detailregistratie_referentiebestand.pdf);
+the chapter's current eligibility rules are in the [official reimbursement
+list](https://www.riziv.fgov.be/nl/thema-s/verzorging-kosten-en-terugbetaling/wat-het-ziekenfonds-terugbetaalt/geneesmiddelen/geneesmiddel-terugbetalen/magistrale-bereidingen).
