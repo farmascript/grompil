@@ -20,7 +20,7 @@
     window.name = 'grompil-url-manager';
 
     const DB_NAME = 'grompil-url-manager';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     const STORE = 'state';
     const MODULE_LIST_PAGE_ID = 'platform:module-list';
     const $ = (selector) => document.querySelector(selector);
@@ -139,8 +139,20 @@
     function openDatabase() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onupgradeneeded = () => request.result.createObjectStore(STORE);
-            request.onsuccess = () => resolve(request.result);
+            request.onupgradeneeded = () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+            };
+            request.onsuccess = () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains(STORE)) {
+                    db.close();
+                    reject(new DOMException(`IndexedDB object store "${STORE}" is missing.`, 'NotFoundError'));
+                    return;
+                }
+                db.onversionchange = () => db.close();
+                resolve(db);
+            };
             request.onerror = () => reject(request.error);
         });
     }
