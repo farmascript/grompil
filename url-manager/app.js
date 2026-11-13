@@ -177,7 +177,10 @@
                 tx.onerror = () => reject(tx.error);
             });
             db.close();
-        } catch (error) { toast('Opslaan in de browser is mislukt.'); }
+        } catch (error) {
+            console.error('Grompil URL Manager: browser storage write failed.', error);
+            toast('Opslaan in de browser is mislukt.');
+        }
         if (syncRemote && remoteSync.enabled && remoteSync.canEdit) await saveRemotePreferences();
     }
 
