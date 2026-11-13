@@ -264,7 +264,8 @@ while ($usersResult && $user = pg_fetch_assoc($usersResult)) {
         'display_name' => (string) $user['display_name'],
         'user_email' => (string) $user['email'],
         'approval_status' => fn_t('approval_' . $user['approval_status']),
-        'last_login' => $user['last_login_at'] !== null ? (string) $user['last_login_at'] : fn_t('never'),
+        'last_login' => $user['last_login_at'] !== null
+            ? fn_formatDateDisplay((string) $user['last_login_at']) : fn_t('never'),
         '_form_html' => $form,
         '_role_control_html' => $roleControl,
         '_status_control_html' => $statusControl,

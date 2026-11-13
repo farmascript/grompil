@@ -622,7 +622,7 @@ if ($selectedPatient) {
             ? 'company_customer_code_label_pharmacy' : 'company_customer_code_label_business'),
         '_patient_birth_date_html' => $dob !== ''
             ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_birth_date.html', [
-                'patient_birth_date_value' => $dob,
+                'patient_birth_date_value' => fn_formatDateDisplay($dob),
                 'patient_age_value' => $age !== '' ? '(' . $age . ')' : '',
             ])
             : '',
@@ -636,8 +636,8 @@ if ($selectedPatient) {
 }
 $auditLine = $selectedPatient
     ? str_replace(['{creator}', '{created}', '{updater}', '{updated}'], [
-        (string) ($selectedPatient['created_by_name'] ?? ''), (string) ($selectedPatient['created_at'] ?? ''),
-        (string) ($selectedPatient['updated_by_name'] ?? ''), (string) ($selectedPatient['updated_at'] ?? ''),
+        (string) ($selectedPatient['created_by_name'] ?? ''), fn_formatDateDisplay((string) ($selectedPatient['created_at'] ?? '')),
+        (string) ($selectedPatient['updated_by_name'] ?? ''), fn_formatDateDisplay((string) ($selectedPatient['updated_at'] ?? '')),
     ], $customerText('patient_audit_line'))
     : '';
 $messageHtml = $messageKey !== ''

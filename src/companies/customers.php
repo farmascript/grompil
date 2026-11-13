@@ -112,16 +112,6 @@ if ($customerCodeValid) {
 
 $details = '';
 if ($selectedCustomer !== null) {
-    $dateLabel = static function (?string $value): string {
-        if ($value === null || $value === '') {
-            return fn_t('never');
-        }
-        try {
-            return (new DateTimeImmutable($value))->format('Y-m-d H:i');
-        } catch (Throwable $exception) {
-            return $value;
-        }
-    };
     $details = fn_templateRender('customer_details.html', [
         'customer_name' => (string) $selectedCustomer['display_name'],
         'customer_email' => (string) $selectedCustomer['email'],
@@ -131,8 +121,9 @@ if ($selectedCustomer !== null) {
         'customer_approval_status' => fn_t('approval_' . (string) $selectedCustomer['approval_status']),
         'customer_company_status' => fn_t($selectedCustomer['company_active'] === 't' ? 'active' : 'inactive'),
         'customer_company_approval_status' => fn_t('approval_' . (string) $selectedCustomer['company_approval_status']),
-        'customer_created_at' => $dateLabel((string) $selectedCustomer['created_at']),
-        'customer_last_login_at' => $dateLabel($selectedCustomer['last_login_at'] === null ? null : (string) $selectedCustomer['last_login_at']),
+        'customer_created_at' => fn_formatDateDisplay((string) $selectedCustomer['created_at']),
+        'customer_last_login_at' => $selectedCustomer['last_login_at'] === null
+            ? fn_t('never') : fn_formatDateDisplay((string) $selectedCustomer['last_login_at']),
         'customers_detail_heading' => fn_t('customers_detail_heading'),
         'customers_email' => fn_t('email'),
         'customers_acronym' => fn_t('acronym'),

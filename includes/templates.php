@@ -306,6 +306,44 @@ function fn_t(string $key): string
 }
 
 /**
+ * Format a date or timestamp for compact, localized display in the GUI.
+ * Timestamp offsets are kept as supplied; the function does not convert time zones.
+ *
+ * @param ?string $value A database date or timestamp.
+ * @return string
+ */
+function fn_formatDateDisplay(?string $value): string
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    try {
+        $date = new DateTimeImmutable($value);
+    } catch (Throwable $exception) {
+        return $value;
+    }
+
+    $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
+    $weekdayNames = [
+        'NL' => ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'],
+        'FR' => ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'],
+        'EN' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        'DE' => ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+    ];
+    $weekdays = $weekdayNames[$language] ?? $weekdayNames['EN'];
+    $weekday = $weekdays[(int) $date->format('N') - 1];
+    $formatted = $weekday . ' ' . $date->format('d-m-Y');
+
+    if (preg_match('/(?:T|\s)\d{2}:\d{2}/', $value) === 1) {
+        $formatted .= ' ' . $date->format('H:i');
+    }
+
+    return $formatted;
+}
+
+/**
  * Render the language selector control.
  *
  * @param string $class The CSS class attribute for the control.
