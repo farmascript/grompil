@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Thu 2026-11-12 21:25:00
+ * @date_mut: Fri 2026-11-13 00:00:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -428,6 +428,74 @@ function fn_templateRender(string $file, array $values = []): string
 }
 
 /**
+ * Return the selected template variant for a module.
+ *
+ * Deployment settings use an English internal identifier such as
+ * `dispensing_template` => `wide`. Missing or invalid choices use `standard`.
+ *
+ * @param string $module The module identifier.
+ * @return string
+ */
+function fn_moduleTemplateVariant(string $module): string
+{
+    if (preg_match('/^[a-z][a-z0-9_-]{0,63}$/D', $module) !== 1) {
+        return 'standard';
+    }
+
+    static $deploymentSettings = null;
+    if ($deploymentSettings === null) {
+        try {
+            $deploymentSettings = grompil_deployment_settings(dirname(__DIR__));
+        } catch (Throwable $exception) {
+            error_log('Could not read module template setting: ' . $exception->getMessage());
+            $deploymentSettings = [];
+        }
+    }
+
+    $variant = $deploymentSettings[$module . '_template'] ?? 'standard';
+    if (!is_string($variant) || preg_match('/^[a-z][a-z0-9_-]{0,63}$/D', $variant) !== 1) {
+        return 'standard';
+    }
+
+    $variantDirectory = dirname(__DIR__) . '/tmpl/modules/' . $module . '/' . $variant;
+    return is_dir($variantDirectory) ? $variant : 'standard';
+}
+
+/**
+ * Render a module template from its selected variant, falling back to standard.
+ *
+ * Variant templates may override only the components they change. Missing
+ * components inherit the standard version, so designers can work incrementally.
+ *
+ * @param string $module The module identifier.
+ * @param string $file The template filename.
+ * @param array $values The values used to render the template.
+ * @return string
+ */
+function fn_moduleTemplateRender(string $module, string $file, array $values = []): string
+{
+    if (
+        preg_match('/^[a-z][a-z0-9_-]{0,63}$/D', $module) !== 1
+        || basename($file) !== $file
+        || preg_match('/^[A-Za-z0-9_-]+\.html$/D', $file) !== 1
+    ) {
+        grompil_show_error(500, 72805, 'Een paginaonderdeel kon niet worden geladen. Neem contact op met de beheerder.', 'Pagina niet beschikbaar');
+    }
+
+    $moduleDirectory = dirname(__DIR__) . '/tmpl/modules/' . $module;
+    $variant = fn_moduleTemplateVariant($module);
+    $templatePath = $moduleDirectory . '/' . $variant . '/' . $file;
+    if (!is_file($templatePath) && $variant !== 'standard') {
+        $templatePath = $moduleDirectory . '/standard/' . $file;
+    }
+    if (!is_file($templatePath)) {
+        grompil_show_error(500, 72805, 'Een paginaonderdeel kon niet worden geladen. Neem contact op met de beheerder.', 'Pagina niet beschikbaar');
+    }
+
+    return fn_templateRenderPath($templatePath, $values);
+}
+
+/**
  * Return the application base path as an HTML href prefix.
  *
  * @return string
@@ -584,7 +652,7 @@ function fn_companyStoreThemeOptions(string $selected = 'default'): string
  * @param array $user The authenticated user record.
  * @return void
  */
-function page_start(string $title, array $user): void
+function page_start(string $title, array $user, bool $fullWidth = false): void
 {
     $company = current_company_context($user);
     if (!isset($_SESSION['bookmark_sync_nonce']) || !is_string($_SESSION['bookmark_sync_nonce'])
@@ -640,6 +708,7 @@ function page_start(string $title, array $user): void
         '_bookmark_sync_meta_html' => $bookmarkSyncMeta,
     ]);
     echo fn_templateRender('header.html', [
+        '_main_container_class' => $fullWidth ? 'container-fluid' : 'container',
         '_app_version' => e(fn_appVersion()),
         '_csrf_field_html' => csrf_field(),
         '_logout_company_field_html' => $company !== null

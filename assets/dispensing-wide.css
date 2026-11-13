@@ -1,0 +1,25 @@
+/* The wide variant uses the full viewport while keeping the same responsive panels. */
+.dispense-layout-wide .dispense-main {
+    padding-inline: clamp(1rem, 2.25vw, 2.75rem);
+}
+
+.dispense-layout-wide .dispense-columns {
+    grid-template-columns: minmax(300px, 0.95fr) minmax(480px, 1.45fr) minmax(280px, 0.8fr);
+    gap: clamp(1rem, 1.4vw, 1.5rem);
+}
+
+.dispense-layout-wide .dispense-panel {
+    padding: clamp(1rem, 1.25vw, 1.35rem);
+}
+
+@media (max-width: 1100px) {
+    .dispense-layout-wide .dispense-columns {
+        grid-template-columns: minmax(260px, 0.8fr) minmax(380px, 1.2fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .dispense-layout-wide .dispense-columns {
+        grid-template-columns: 1fr;
+    }
+}
