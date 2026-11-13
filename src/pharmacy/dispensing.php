@@ -523,7 +523,7 @@ if ($editingPatientCode !== '') {
     $addressRows = db_query_params(
         'customers.addresses_for_edit',
         'SELECT id, address_type_key, label, street, house_number, box_number, postal_code, city,
-                country_code, is_primary, sort_order
+                country_code, wgs84_latitude, wgs84_longitude, is_primary, sort_order
          FROM dt_customer_locations
          WHERE company_id=$1 AND customer_code=$2 AND is_active
          ORDER BY is_primary DESC, sort_order, id',
@@ -545,9 +545,16 @@ if ($editingPatientCode !== '') {
             (string) $addressRow['label'],
             $addressText,
         ], static fn(string $part): bool => $part !== '')));
-        $customerAddressesHtml .= '<a class="d-block small py-1' . ($selectedAddress ? ' fw-semibold' : '') . '" href="'
+        $customerAddressesHtml .= '<div class="d-flex align-items-center gap-2">'
+            . '<a class="flex-grow-1 small py-1' . ($selectedAddress ? ' fw-semibold' : '') . '" href="'
             . e($addressHref) . '">#' . (int) $addressRow['sort_order'] . ' · ' . e($addressDescription)
-            . ($addressRow['is_primary'] === 't' ? ' · ' . e(fn_t('address_default_badge')) : '') . '</a>';
+            . ($addressRow['is_primary'] === 't' ? ' · ' . e(fn_t('address_default_badge')) : '') . '</a>'
+            . grompil_google_maps_link(
+                $addressRow['wgs84_latitude'],
+                $addressRow['wgs84_longitude'],
+                $addressText
+            )
+            . '</div>';
     }
     $customerAddressesHtml .= '<a class="btn btn-sm btn-outline-secondary mt-2" href="dispense.php?patient='
         . rawurlencode($editingPatientCode) . '&amp;edit=1&amp;new_address=1">' . e(fn_t('customer_address_add')) . '</a></div></div>';
