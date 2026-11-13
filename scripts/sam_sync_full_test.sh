@@ -288,7 +288,7 @@ CREATE TEMP TABLE sam_stage_atc (LIKE public.xt_sam_atc_classifications INCLUDIN
 CREATE TEMP TABLE sam_stage_cmp (LIKE public.xt_sam_compounding_catalog INCLUDING DEFAULTS);
 \\copy sam_stage_products (sam_export_version, sam_id, validity_date, amp_code, ampp_code, cnk, delivery_environment, cnk_code_type, amp_status, ampp_status, official_name, name_nl, name_fr, prescription_name_nl, prescription_name_fr, medicine_type, delivery_modus_codes_json, delivery_modus_specification_codes_json, amp_data_json, ampp_data_json, dmpp_data_json, pack_display_nl, pack_display_fr) FROM '$PRODUCT_CSV' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
 \\copy sam_stage_atc (atc_code, description) FROM '$ATC_CSV' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
-\\copy sam_stage_cmp (sam_export_version, sam_id, entity_type, product_id, code, code_type, data_version, valid_from, valid_to, preferred_name_nl, preferred_name_fr, preferred_name_la, synonyms_json, source_payload_json) FROM '$CMP_CSV' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+\\copy sam_stage_cmp (sam_export_version, sam_id, entity_type, product_id, code, code_type, data_version, valid_from, valid_to, preferred_name_nl, preferred_name_fr, preferred_name_la, synonyms_json, source_payload_json) FROM '$CMP_CSV' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8', NULL '\\N')
 DO \$body\$
 BEGIN
     IF (SELECT count(*) FROM sam_stage_products) = 0 THEN

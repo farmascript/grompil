@@ -145,8 +145,8 @@ while ($reader->read()) {
         $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         fputcsv($output, [
             $exportVersion, $samId, $entityType, $productId,
-            $code === '' ? null : $code, $codeType === '' ? null : $codeType,
-            $dataIndex + 1, $validFrom, $validTo,
+            $code === '' ? '\\N' : $code, $codeType === '' ? '\\N' : $codeType,
+            $dataIndex + 1, $validFrom ?? '\\N', $validTo ?? '\\N',
             $preferred['nl'], $preferred['fr'], $preferred['la'], $synonymsJson, $payloadJson,
         ], ',', '"', '');
         $rows++;
