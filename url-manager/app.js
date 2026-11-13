@@ -1,7 +1,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Wed 2026-11-11
+ * @date_mut: Fri 2026-11-13
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -243,9 +243,12 @@
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ csrfToken: remoteSync.csrfToken, configuration: state.personal }),
-                cache: 'no-store',
+                cache: 'no-store', credentials: 'same-origin',
             });
-            if (!response.ok) throw new Error('preferences_not_saved');
+            if (!response.ok) {
+                const detail = (await response.text()).slice(0, 500);
+                throw new Error(`preferences_not_saved (HTTP ${response.status}${detail ? `: ${detail}` : ''})`);
+            }
             const result = await response.json();
             remoteSync.updatedAt = result.updatedAt || remoteSync.updatedAt;
             remoteSyncErrorShown = false;
@@ -253,6 +256,7 @@
         try {
             await remoteWrite;
         } catch (error) {
+            console.error('Grompil URL Manager: company preference save failed.', error);
             if (!remoteSyncErrorShown) toast('Opslaan op de server is niet gelukt. De browserkopie is wel bewaard.');
             remoteSyncErrorShown = true;
         }
@@ -285,9 +289,10 @@
             render();
             return;
         }
+        let syncStage = 'request';
         try {
             const response = await fetch(`../navigation_preferences.php?application=${encodeURIComponent(remoteSync.application)}`, {
-                headers: { 'Accept': 'application/json' }, cache: 'no-store',
+                headers: { 'Accept': 'application/json' }, cache: 'no-store', credentials: 'same-origin',
             });
             if (response.status === 401) {
                 remoteSync.enabled = false;
@@ -313,12 +318,17 @@
                 return;
             }
             if (!response.ok) {
+                const detail = (await response.text()).slice(0, 500);
+                console.error('Grompil URL Manager: company preference endpoint returned an error.', {
+                    status: response.status, statusText: response.statusText, detail,
+                });
                 remoteSync.storageStatus = 'unavailable';
                 render();
                 if (!remoteSyncErrorShown) toast('Serveropslag is nog niet beschikbaar. Voer de navigatievoorkeuren-migratie uit.');
                 remoteSyncErrorShown = true;
                 return;
             }
+            syncStage = 'response-json';
             const result = await response.json();
             if (!result.authenticated || !result.csrfToken) {
                 remoteSync.enabled = false;
@@ -338,6 +348,7 @@
             let companyLocalState = null;
             let legacyLocalState = null;
             if (remoteSync.companyId) {
+                syncStage = 'local-company-storage';
                 const db = await openDatabase();
                 companyLocalState = await new Promise((resolve, reject) => {
                     const request = db.transaction(STORE).objectStore(STORE).get(storageStateKey());
@@ -359,6 +370,7 @@
                 }
             }
             if (result.configuration && typeof result.configuration === 'object') {
+                syncStage = 'save-local-copy';
                 const remoteTimestamp = Date.parse(result.updatedAt || '') || 0;
                 const localTimestamp = Date.parse(remoteSync.updatedAt || '') || 0;
                 if (!remoteSync.updatedAt || remoteTimestamp > localTimestamp) {
@@ -389,8 +401,12 @@
             } else if (!companyLocalState) {
                 await saveState(false);
             }
+            syncStage = 'render';
             render();
         } catch (error) {
+            console.error('Grompil URL Manager: company preference sync failed.', {
+                stage: syncStage, error,
+            });
             remoteSync.storageStatus = 'unavailable';
             render();
             if (!remoteSyncErrorShown) toast('De server voor bedrijfsnavigatie is niet bereikbaar.');
