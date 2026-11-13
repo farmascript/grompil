@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Wed 2026-10-14 19:35:57
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Fri 2026-11-13 10:10:14
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -23,6 +23,7 @@ $permissionCatalog = [
     'users.manage' => 'perm_users_manage',
     'roles.manage' => 'perm_roles_manage',
     'translations.manage' => 'perm_translations_manage',
+    'pharmacy.dispense' => 'company_permission_dispense',
 ];
 $messageKey = '';
 
