@@ -64,12 +64,17 @@ function columnLetters(int $number): string
     return $letters;
 }
 
+function trimUnicodeWhitespace(string $value): string
+{
+    return preg_replace('/^[\s\p{Z}]+|[\s\p{Z}]+$/u', '', $value) ?? trim($value);
+}
+
 function cellValue(DOMElement $cell, array $sharedStrings): string
 {
     $type = $cell->getAttribute('t');
     $valueNode = $cell->getElementsByTagNameNS('http://schemas.openxmlformats.org/spreadsheetml/2006/main', 'v')->item(0);
     if ($type === 'inlineStr') {
-        return trim($cell->textContent);
+        return trimUnicodeWhitespace($cell->textContent);
     }
     if (!$valueNode instanceof DOMElement) {
         return '';
@@ -77,7 +82,7 @@ function cellValue(DOMElement $cell, array $sharedStrings): string
     $value = trim($valueNode->textContent);
     if ($type === 's') {
         $index = (int) $value;
-        return $sharedStrings[$index] ?? '';
+        return trimUnicodeWhitespace($sharedStrings[$index] ?? '');
     }
     return $value;
 }
