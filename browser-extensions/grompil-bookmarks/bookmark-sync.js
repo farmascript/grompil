@@ -206,7 +206,9 @@
     async function getBookmarksBarId() {
         const tree = await browserApi(chrome.bookmarks, chrome.bookmarks.getTree);
         const roots = tree[0]?.children || [];
-        const bar = roots.find((node) => node.id === '1' || node.folderType === 'bookmarks-bar') || roots[0];
+        const bar = roots.find((node) => node.folderType === 'bookmarks-bar')
+            || roots.find((node) => node.id === '1')
+            || roots[0];
         if (!bar) throw new Error('The bookmarks bar could not be found.');
         return bar.id;
     }
@@ -218,27 +220,58 @@
         }
     }
 
+    async function getExistingFolder(id) {
+        if (!id) return null;
+        try {
+            const folders = await browserApi(chrome.bookmarks, chrome.bookmarks.get, id);
+            const folder = folders?.[0];
+            return folder && !folder.url ? folder : null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function replaceBookmarkFolderContents(folderId, tree) {
+        const children = await browserApi(chrome.bookmarks, chrome.bookmarks.getChildren, folderId);
+        for (const child of children) {
+            await browserApi(chrome.bookmarks, chrome.bookmarks.removeTree, child.id);
+        }
+        await createBookmarkTree(folderId, tree.children);
+    }
+
     async function syncBookmarks(payload) {
         const trees = buildTrees(payload);
-        const originKey = `${storagePrefix}${new URL(payload.baseUrl).origin}`;
+        const originKey = `grompil-bookmarks:${new URL(payload.baseUrl).origin}`;
         const generatedKey = `${originKey}:folders`;
         const previous = await browserApi(chrome.storage.local, chrome.storage.local.get, generatedKey);
+        const previousIds = previous[generatedKey] || [];
         const barId = await getBookmarksBarId();
-        const created = [];
+        const folderIds = [];
+        const newlyCreated = [];
         try {
             for (let index = 0; index < trees.length; index++) {
-                const folder = await browserApi(chrome.bookmarks, chrome.bookmarks.create, { parentId: barId, title: trees[index].title, index });
-                created.push(folder.id);
-                await createBookmarkTree(folder.id, trees[index].children);
+                let folder = await getExistingFolder(previousIds[index]);
+                if (folder) {
+                    await browserApi(chrome.bookmarks, chrome.bookmarks.update, folder.id, { title: trees[index].title });
+                } else {
+                    folder = await browserApi(chrome.bookmarks, chrome.bookmarks.create, {
+                        parentId: barId,
+                        title: trees[index].title,
+                        index,
+                    });
+                    newlyCreated.push(folder.id);
+                }
+                folderIds.push(folder.id);
+                await replaceBookmarkFolderContents(folder.id, trees[index]);
             }
         } catch (error) {
-            for (const id of created) {
+            for (const id of newlyCreated) {
                 try { await browserApi(chrome.bookmarks, chrome.bookmarks.removeTree, id); } catch { /* Clean up any partial menu. */ }
             }
             throw error;
         }
-        await removeOldFolders(previous[generatedKey], created);
-        await browserApi(chrome.storage.local, chrome.storage.local.set, { [generatedKey]: created });
+        await removeOldFolders(previousIds, folderIds);
+        await browserApi(chrome.storage.local, chrome.storage.local.set, { [generatedKey]: folderIds });
         return trees.reduce((sum, tree) => sum + countBookmarks(tree), 0);
     }
 
