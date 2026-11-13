@@ -176,7 +176,8 @@ foreach ($rows as $rowNumber => $row) {
     }
     if (!preg_match('/^\d{1,7}$/', $cnkRaw)) {
         fclose($output);
-        fail("Unexpected CNK value on workbook row {$rowNumber}.");
+        $cnkDiagnostic = json_encode($cnkRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        fail("Unexpected CNK value in cell A{$rowNumber} on workbook row {$rowNumber}: {$cnkDiagnostic}");
     }
     $cnk = str_pad($cnkRaw, 7, '0', STR_PAD_LEFT);
     $nameFr = trim($row[3] ?? '');
