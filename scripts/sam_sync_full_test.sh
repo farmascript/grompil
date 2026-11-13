@@ -26,9 +26,9 @@ Usage:
   bash scripts/sam_sync_full_test.sh --download-url https://.../full-export.zip [--apply]
   bash scripts/sam_sync_full_test.sh --latest-full [--apply]
 
-The source must contain exactly one AMP-*.xml and one REF-*.xml full export.
+The source must contain exactly one AMP-*.xml, REF-*.xml, and CMP-*.xml full export.
 By default the script imports into temporary staging tables, validates the data,
-and rolls back. Add --apply to replace the SAM product and ATC snapshots.
+and rolls back. Add --apply to replace the SAM product, ATC, and CMP snapshots.
 
 Database connection is read from standard libpq environment variables and
 .pgpass/PGPASSFILE (the script never prompts for a password).
@@ -232,13 +232,17 @@ find_one_export() {
 
 AMP_XML="$(find_one_export AMP)"
 REF_XML="$(find_one_export REF)"
+CMP_XML="$(find_one_export CMP)"
 PRODUCT_CSV="$WORK_DIR/sam_public_catalog.csv"
 ATC_CSV="$WORK_DIR/sam_atc_classifications.csv"
+CMP_CSV="$WORK_DIR/sam_compounding_catalog.csv"
 AMP_REPORT="$WORK_DIR/amp-extract.log"
 REF_REPORT="$WORK_DIR/ref-extract.log"
+CMP_REPORT="$WORK_DIR/cmp-extract.log"
 
 printf 'AMP source: %s (%s bytes)\n' "$(basename -- "$AMP_XML")" "$(wc -c < "$AMP_XML" | tr -d ' ')"
 printf 'REF source: %s (%s bytes)\n' "$(basename -- "$REF_XML")" "$(wc -c < "$REF_XML" | tr -d ' ')"
+printf 'CMP source: %s (%s bytes)\n' "$(basename -- "$CMP_XML")" "$(wc -c < "$CMP_XML" | tr -d ' ')"
 
 run_with_heartbeat "AMP catalog extraction (large XML file)" \
     "$PHP_BIN" "$SCRIPT_DIR/sam_public_catalog_export.php" "$AMP_XML" "$PRODUCT_CSV" >"$AMP_REPORT" 2>&1 || {
@@ -250,19 +254,29 @@ run_with_heartbeat "ATC classification extraction" \
     cat "$REF_REPORT" >&2
     die "ATC CSV extraction failed."
 }
+run_with_heartbeat "CMP formula and ingredient extraction" \
+    "$PHP_BIN" "$SCRIPT_DIR/sam_compounding_catalog_export.php" "$CMP_XML" "$CMP_CSV" >"$CMP_REPORT" 2>&1 || {
+    cat "$CMP_REPORT" >&2
+    die "CMP catalog CSV extraction failed."
+}
 cat "$AMP_REPORT"
 cat "$REF_REPORT"
+cat "$CMP_REPORT"
 
 grep -Fq 'XML parsing warnings: 0' "$AMP_REPORT" || die "AMP XML reported parsing warnings; refusing import."
-[[ -s "$PRODUCT_CSV" && -s "$ATC_CSV" ]] || die "One of the extracted CSV files is empty."
+grep -Fq 'XML parsing warnings: 0' "$CMP_REPORT" || die "CMP XML reported parsing warnings; refusing import."
+[[ -s "$PRODUCT_CSV" && -s "$ATC_CSV" && -s "$CMP_CSV" ]] || die "One of the extracted CSV files is empty."
 AMP_SAM_ID="$(sed -n 's/^SAM ID: //p' "$AMP_REPORT" | head -n 1)"
 REF_SAM_ID="$(sed -n 's/^SAM ID: //p' "$REF_REPORT" | head -n 1)"
+CMP_SAM_ID="$(sed -n 's/^SAM ID: //p' "$CMP_REPORT" | head -n 1)"
 [[ -n "$AMP_SAM_ID" && "$AMP_SAM_ID" != '(onbekend)' ]] || die "AMP export has no SAM ID."
 [[ "$AMP_SAM_ID" == "$REF_SAM_ID" ]] || die "AMP and REF exports do not share a SAM ID ($AMP_SAM_ID vs $REF_SAM_ID)."
+[[ "$AMP_SAM_ID" == "$CMP_SAM_ID" ]] || die "AMP and CMP exports do not share a SAM ID ($AMP_SAM_ID vs $CMP_SAM_ID)."
 [[ "$AMP_SAM_ID" =~ ^[A-Za-z0-9._-]+$ ]] || die "SAM ID contains unexpected characters."
 
 printf 'Extracted product CSV size: %s bytes\n' "$(wc -c < "$PRODUCT_CSV" | tr -d ' ')"
 printf 'Extracted ATC CSV size: %s bytes\n' "$(wc -c < "$ATC_CSV" | tr -d ' ')"
+printf 'Extracted CMP CSV size: %s bytes\n' "$(wc -c < "$CMP_CSV" | tr -d ' ')"
 printf 'Validated matching SAM ID: %s\n' "$AMP_SAM_ID"
 
 PSQL_ARGS=(-X --no-password --set=ON_ERROR_STOP=1)
@@ -271,8 +285,10 @@ cat > "$PSQL_FILE" <<SQL
 BEGIN;
 CREATE TEMP TABLE sam_stage_products (LIKE public.xt_sam_public_products INCLUDING DEFAULTS);
 CREATE TEMP TABLE sam_stage_atc (LIKE public.xt_sam_atc_classifications INCLUDING DEFAULTS);
+CREATE TEMP TABLE sam_stage_cmp (LIKE public.xt_sam_compounding_catalog INCLUDING DEFAULTS);
 \\copy sam_stage_products (sam_export_version, sam_id, validity_date, amp_code, ampp_code, cnk, delivery_environment, cnk_code_type, amp_status, ampp_status, official_name, name_nl, name_fr, prescription_name_nl, prescription_name_fr, medicine_type, delivery_modus_codes_json, delivery_modus_specification_codes_json, amp_data_json, ampp_data_json, dmpp_data_json, pack_display_nl, pack_display_fr) FROM '$PRODUCT_CSV' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
 \\copy sam_stage_atc (atc_code, description) FROM '$ATC_CSV' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+\\copy sam_stage_cmp (sam_export_version, sam_id, entity_type, product_id, code, code_type, data_version, valid_from, valid_to, preferred_name_nl, preferred_name_fr, preferred_name_la, synonyms_json, source_payload_json) FROM '$CMP_CSV' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
 DO \$body\$
 BEGIN
     IF (SELECT count(*) FROM sam_stage_products) = 0 THEN
@@ -302,12 +318,32 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'SAM ATC staging table has duplicate codes';
     END IF;
+    IF (SELECT count(*) FROM sam_stage_cmp) = 0 THEN
+        RAISE EXCEPTION 'SAM CMP staging table is empty';
+    END IF;
+    IF (SELECT count(DISTINCT sam_id) FROM sam_stage_cmp) <> 1
+       OR (SELECT min(sam_id) FROM sam_stage_cmp) <> '$AMP_SAM_ID' THEN
+        RAISE EXCEPTION 'SAM CMP CSV contains inconsistent or unexpected SAM IDs';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM sam_stage_cmp
+        GROUP BY entity_type, product_id, data_version HAVING count(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'SAM CMP staging table has duplicate source identities';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM sam_stage_cmp
+        WHERE product_id IS NULL OR btrim(product_id) = '' OR entity_type NOT IN ('FORMULA', 'INGREDIENT')
+    ) THEN
+        RAISE EXCEPTION 'SAM CMP staging table has missing or invalid key fields';
+    END IF;
 END
 \$body\$;
 
 SELECT '$AMP_SAM_ID' AS validated_sam_id,
        (SELECT count(*) FROM sam_stage_products) AS products_to_load,
-       (SELECT count(*) FROM sam_stage_atc) AS atc_rows_to_load;
+       (SELECT count(*) FROM sam_stage_atc) AS atc_rows_to_load,
+       (SELECT count(*) FROM sam_stage_cmp) AS cmp_rows_to_load;
 SQL
 
 if ((APPLY)); then
@@ -329,10 +365,21 @@ FROM sam_stage_products;
 DELETE FROM public.xt_sam_atc_classifications;
 INSERT INTO public.xt_sam_atc_classifications (atc_code, description)
 SELECT atc_code, description FROM sam_stage_atc;
+DELETE FROM public.xt_sam_compounding_catalog;
+INSERT INTO public.xt_sam_compounding_catalog (
+    sam_export_version, sam_id, entity_type, product_id, code, code_type, data_version,
+    valid_from, valid_to, preferred_name_nl, preferred_name_fr, preferred_name_la,
+    synonyms_json, source_payload_json
+)
+SELECT sam_export_version, sam_id, entity_type, product_id, code, code_type, data_version,
+       valid_from, valid_to, preferred_name_nl, preferred_name_fr, preferred_name_la,
+       synonyms_json, source_payload_json
+FROM sam_stage_cmp;
 COMMIT;
 SELECT '$AMP_SAM_ID' AS published_sam_id,
        (SELECT count(*) FROM public.xt_sam_public_products) AS published_products,
-       (SELECT count(*) FROM public.xt_sam_atc_classifications) AS published_atc_rows;
+       (SELECT count(*) FROM public.xt_sam_atc_classifications) AS published_atc_rows,
+       (SELECT count(*) FROM public.xt_sam_compounding_catalog) AS published_cmp_rows;
 SQL
     "$PSQL_BIN" "${PSQL_ARGS[@]}" --file="$PSQL_FILE"
     printf 'Snapshot published successfully.\n'

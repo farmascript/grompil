@@ -52,12 +52,34 @@ the SAM product CSV.
 
 ## Full snapshot synchronization
 
-`scripts/sam_sync_full_test.sh` is a Bash runner for a complete AMP + REF
-snapshot. It calls the existing PHP extractors, stages both CSV files in one
-PostgreSQL transaction, validates row counts, source keys and the shared SAM
-ID, then rolls back by default. The first run checks connectivity, CSV
-compatibility, staging permissions, and data quality without changing the
-live tables.
+`scripts/sam_sync_full_test.sh` is the single Bash entrypoint for the daily
+SAM full snapshot workflow. It currently processes AMP (public products), REF
+(ATC classifications), and CMP (compounding formulas and ingredients). Each
+XML format has a small PHP extractor; the Bash runner handles the shared
+download, validation, staging, and atomic publication. The other files in the
+SAM archive are not yet imported and will be added as their target structures
+and mappings are defined.
+
+The runner stages all three CSVs in one PostgreSQL transaction, validates
+non-empty data, source keys and the shared SAM ID, then rolls back by default.
+The first run checks connectivity, CSV compatibility, staging permissions, and
+data quality without changing the live tables. With `--apply`, all three
+snapshots are replaced in one transaction; a failure rolls the whole publish
+back, leaving the prior published data intact.
+
+CMP data is kept in `xt_sam_compounding_catalog` as a versioned source mirror.
+It preserves formula and ingredient identities, code metadata, validity dates,
+multilingual names/synonyms, and the original source data slice. It is
+deliberately separate from the canonical compounding-material and RIZIV
+reimbursement tables; later analysis can map/merge the overlaps without
+discarding source details.
+
+Before the runner can be used, create the new CMP table using
+`scripts/schema_xt_sam_compounding_catalog.sql` and run the corresponding
+`schema_grant_local.sql`, `schema_grant_test.sql`, or
+`schema_grant_production.sql` as appropriate. The application role needs
+`SELECT`, `INSERT`, and `DELETE` on the CMP mirror for search and snapshot
+replacement.
 
 The runner can discover and fetch the latest full export automatically. SAM's
 version endpoint is queried with the selected XSD version (default `6`). If
@@ -86,7 +108,8 @@ cache directory. The latest-version endpoint is
 
 On the test server, configure `PGHOST`, `PGDATABASE`, `PGUSER`, and a protected
 `.pgpass` file (or `PGPASSFILE`). Point `--source-dir` at a directory with
-exactly one `AMP-*.xml` and one `REF-*.xml` from the same full SAM export:
+exactly one `AMP-*.xml`, one `REF-*.xml`, and one `CMP-*.xml` from the same
+full SAM export:
 
 ```bash
 bash scripts/sam_sync_full_test.sh --source-dir /path/to/sam-export
@@ -106,13 +129,12 @@ bash scripts/sam_sync_full_test.sh --download-url 'https://.../full-export.zip'
 ```
 
 Only after a successful check-only run, add `--apply` to replace
-`xt_sam_public_products` and `xt_sam_atc_classifications`. The deletes and
-inserts run in one transaction, so an error rolls back and leaves the previous
-catalog intact. The database role needs `DELETE` and `INSERT` privileges on
-both tables. Temporary extraction files and CSV files are removed at exit. Run
-logs are kept under `~/sam/logs/`, and temporary work files are created under
-`~/sam/tmp/`. These locations can be overridden with `SAM_LOG_DIR` and
-`SAM_TMP_DIR`.
+`xt_sam_public_products`, `xt_sam_atc_classifications`, and
+`xt_sam_compounding_catalog`. The database role needs `DELETE` and `INSERT`
+privileges on each snapshot table. Temporary extraction files and CSV files are
+removed at exit. Run logs are kept under `~/sam/logs/`, and temporary work
+files are created under `~/sam/tmp/`. These locations can be overridden with
+`SAM_LOG_DIR` and `SAM_TMP_DIR`.
 
 The hosting Bash environment may not support process substitution through
 `/dev/fd`. See [Bash scripts on shared hosting](bash-on-shared-hosting.md) for

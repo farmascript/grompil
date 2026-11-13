@@ -24,6 +24,9 @@ BEGIN
     IF to_regclass('public.xt_sam_atc_classifications') IS NOT NULL THEN
         EXECUTE 'GRANT SELECT ON public.xt_sam_atc_classifications TO grompil_app';
     END IF;
+    IF to_regclass('public.xt_sam_compounding_catalog') IS NOT NULL THEN
+        EXECUTE 'GRANT SELECT, INSERT, DELETE ON public.xt_sam_compounding_catalog TO grompil_app';
+    END IF;
 END;
 $$;
 DO $$
