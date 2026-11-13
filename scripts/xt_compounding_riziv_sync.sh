@@ -121,8 +121,11 @@ else
     cp -- "$SOURCE_XLSX" "$ARCHIVED_XLSX"
 fi
 if [[ -e "$ARCHIVED_CSV" ]]; then
-    [[ "$(sha256sum "$ARCHIVED_CSV" | cut -d ' ' -f 1)" == "$(sha256sum "$CSV_FILE" | cut -d ' ' -f 1)" ]] || \
-        die "A different extracted CSV is already archived for effective date $SOURCE_VERSION."
+    if [[ "$(sha256sum "$ARCHIVED_CSV" | cut -d ' ' -f 1)" != "$(sha256sum "$CSV_FILE" | cut -d ' ' -f 1)" ]]; then
+        # The archived source workbook was verified above. The CSV is a derived
+        # artifact, so regenerate it when exporter serialization changes.
+        cp -- "$CSV_FILE" "$ARCHIVED_CSV"
+    fi
 else
     cp -- "$CSV_FILE" "$ARCHIVED_CSV"
 fi

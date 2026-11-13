@@ -31,8 +31,10 @@ temporary-table creation and does not read or change the permanent tables.
 
 The script creates `~/sam/compounding/download`, `results`, `tmp` and `logs`.
 It keeps the downloaded workbook and extracted CSV by RIZIV effective date.
-An already archived version is never silently overwritten; if RIZIV replaces a
-file without changing its effective date, the script stops for review.
+An already archived workbook is never silently overwritten; if RIZIV replaces a
+workbook without changing its effective date, the script stops for review. The
+CSV is a derived file: when its serialization changes, it is regenerated from
+the verified archived workbook.
 
 Set the database connection explicitly in your shell, just as for the SAM
 workflow:

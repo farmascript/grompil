@@ -164,7 +164,7 @@ $columns = [
     'source_version', 'valid_from', 'cnk', 'chapter_code', 'list_number',
     'name_fr', 'name_nl', 'synonyms_fr_json', 'synonyms_nl_json', 'source_payload_json',
 ];
-fputcsv($output, $columns);
+fputcsv($output, $columns, ',', '"', '');
 
 $rowsWritten = 0;
 $seenKeys = [];
@@ -227,7 +227,7 @@ foreach ($rows as $rowNumber => $row) {
         json_encode($synonymsNl, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
         json_encode($sourcePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
     ];
-    fputcsv($output, $csvRow);
+    fputcsv($output, $csvRow, ',', '"', '');
     $rowsWritten++;
 }
 fclose($output);
