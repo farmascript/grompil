@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Fri 2026-11-13
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -10,7 +10,7 @@
  * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
  * @info_email: info@grompil.com
  *
- * @description: Manages IP access rules for company administration.
+ * @description: Manages company settings, including IP access rules and the dispensing layout.
  *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:companies:company_security
  */
@@ -31,11 +31,46 @@ if (!$canManage) {
 $companyId = (int) $company['id'];
 $currentIp = grompil_client_ip_address();
 $message = '';
+$templateOptions = array_values(array_filter(
+    dd_varia_get_options('dispensing_templates', '_root'),
+    static function (array $option): bool {
+        $key = (string) ($option['key'] ?? '');
+        return preg_match('/^[a-z][a-z0-9_-]{0,63}$/D', $key) === 1
+            && is_dir(GROMPIL_ROOT . '/tmpl/modules/dispensing/' . $key);
+    }
+));
+$selectedTemplate = 'standard';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $action = (string) ($_POST['action'] ?? '');
-    if ($action === 'restrict_current_ip') {
+    if ($action === 'save_dispensing_template') {
+        $requestedTemplate = (string) ($_POST['dispensing_template'] ?? '');
+        $allowedTemplates = array_column($templateOptions, 'key');
+        if (!in_array($requestedTemplate, $allowedTemplates, true)) {
+            $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('company_template_invalid')) . '</div>';
+        } else {
+            try {
+                $savedTemplate = db_query_params(
+                    'company_settings.dispensing_template.save',
+                    'INSERT INTO ct_company_preferences (company_id, dispensing_template_key, updated_at)
+                     VALUES ($1, $2, now())
+                     ON CONFLICT (company_id) DO UPDATE
+                     SET dispensing_template_key = EXCLUDED.dispensing_template_key,
+                         updated_at = now()',
+                    [$companyId, $requestedTemplate]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $savedTemplate = false;
+            }
+            if ($savedTemplate) {
+                $selectedTemplate = $requestedTemplate;
+                $message = '<div class="alert alert-success" role="status">' . e(fn_t('company_template_saved')) . '</div>';
+            } else {
+                $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('company_template_save_failed')) . '</div>';
+            }
+        }
+    } elseif ($action === 'restrict_current_ip') {
         if ($currentIp === '') {
             $message = '<div class="alert alert-danger" role="alert">The IP address of this connection could not be determined.</div>';
         } else {
@@ -97,6 +132,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 try {
+    $templateResult = db_query_params(
+        'company_settings.dispensing_template.current',
+        'SELECT preference.dispensing_template_key
+         FROM ct_company_preferences AS preference
+         WHERE preference.company_id = $1',
+        [$companyId]
+    );
+    $templateRow = $templateResult ? pg_fetch_assoc($templateResult) : false;
+    if (is_array($templateRow)) {
+        $storedTemplate = (string) $templateRow['dispensing_template_key'];
+        if (in_array($storedTemplate, array_column($templateOptions, 'key'), true)) {
+            $selectedTemplate = $storedTemplate;
+        }
+    }
+} catch (GrompilDatabaseQueryException) {
+    // Keep the standard variant selected if no preference is available.
+}
+
+try {
     $rulesResult = db_query_params(
         'company_security.list_restrictions',
         "SELECT host(network) AS address
@@ -113,12 +167,34 @@ while ($rulesResult && $row = pg_fetch_assoc($rulesResult)) {
     $allowedIps[] = (string) $row['address'];
 }
 
-page_start('Company administration IP access', $user);
+page_start(fn_t('company_settings_title'), $user);
 ?>
 <main class="container py-4 flex-grow-1">
-    <h1 class="h2 mb-2">Company administration IP access</h1>
-    <p class="text-secondary">Control which IP addresses users of <?= e((string) $company['name']) ?> can use to sign in and access company administration. The public website remains available to visitors.</p>
+    <h1 class="h2 mb-2"><?= e(fn_t('company_settings_title')) ?></h1>
+    <p class="text-secondary"><?= e(fn_t('company_settings_intro')) ?> <?= e((string) $company['name']) ?></p>
     <?= $message ?>
+
+    <section class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h2 class="h5"><?= e(fn_t('company_template_heading')) ?></h2>
+            <p class="text-secondary"><?= e(fn_t('company_template_help')) ?></p>
+            <form method="post" class="row g-3 align-items-end">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="save_dispensing_template">
+                <div class="col-md-8">
+                    <label class="form-label" for="dispensing-template"><?= e(fn_t('company_template_label')) ?></label>
+                    <select class="form-select" id="dispensing-template" name="dispensing_template" required>
+                        <?php foreach ($templateOptions as $option): ?>
+                            <option value="<?= e((string) $option['key']) ?>" <?= $selectedTemplate === (string) $option['key'] ? 'selected' : '' ?>><?= e((string) $option['label']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-success" type="submit"><?= e(fn_t('save')) ?></button>
+                </div>
+            </form>
+        </div>
+    </section>
 
     <section class="card shadow-sm mt-4">
         <div class="card-body">

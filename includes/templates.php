@@ -430,29 +430,50 @@ function fn_templateRender(string $file, array $values = []): string
 /**
  * Return the selected template variant for a module.
  *
- * Deployment settings use an English internal identifier such as
- * `dispensing_template` => `wide`. Missing or invalid choices use `standard`.
+ * The dispensing variant is selected per company in ct_company_preferences.
+ * Missing, inactive, or unavailable choices use `standard`.
  *
  * @param string $module The module identifier.
+ * @param ?int $companyId Optional company identifier; defaults to the active company.
  * @return string
  */
-function fn_moduleTemplateVariant(string $module): string
+function fn_moduleTemplateVariant(string $module, ?int $companyId = null): string
 {
     if (preg_match('/^[a-z][a-z0-9_-]{0,63}$/D', $module) !== 1) {
         return 'standard';
     }
 
-    static $deploymentSettings = null;
-    if ($deploymentSettings === null) {
-        try {
-            $deploymentSettings = grompil_deployment_settings(dirname(__DIR__));
-        } catch (Throwable $exception) {
-            error_log('Could not read module template setting: ' . $exception->getMessage());
-            $deploymentSettings = [];
+    $variant = 'standard';
+    if ($module === 'dispensing') {
+        $companyId ??= (int) ($_SESSION['active_company_id'] ?? 0);
+        static $companyVariants = [];
+        if ($companyId > 0) {
+            if (!array_key_exists($companyId, $companyVariants)) {
+                try {
+                    $result = db_query_params(
+                        'module_template.company_variant',
+                        'SELECT preference.dispensing_template_key
+                         FROM ct_company_preferences AS preference
+                         JOIN ft_dd_varia AS lookup_item
+                           ON lookup_item.list_key = preference.dispensing_template_list_key
+                          AND lookup_item."key" = preference.dispensing_template_key
+                          AND lookup_item.is_active
+                         WHERE preference.company_id = $1',
+                        [$companyId]
+                    );
+                    $row = $result ? pg_fetch_assoc($result) : false;
+                    $companyVariants[$companyId] = is_array($row)
+                        ? (string) $row['dispensing_template_key']
+                        : 'standard';
+                } catch (Throwable $exception) {
+                    error_log('Could not read company template variant: ' . $exception->getMessage());
+                    $companyVariants[$companyId] = 'standard';
+                }
+            }
+            $variant = $companyVariants[$companyId];
         }
     }
 
-    $variant = $deploymentSettings[$module . '_template'] ?? 'standard';
     if (!is_string($variant) || preg_match('/^[a-z][a-z0-9_-]{0,63}$/D', $variant) !== 1) {
         return 'standard';
     }

@@ -722,3 +722,9 @@
 - Naast de knop ‘blad toevoegen’ staat nu een toegankelijk info-icoon dat de DokuWiki-hulppagina in de `users`-namespace opent in een nieuw tabblad. De link volgt de ingestelde DokuWiki-basis-URL en de geselecteerde taal.
 - De hulppagina gebruikt ID `384727` (`doc:grompil:users:384727`). Softwareversie verhoogd naar 0.16.31.
 
+### Aanvulling: afleverlayout per bedrijf
+
+- De beschikbare layouts (`standard`, `wide`) staan als kindwaarden in `ft_dd_varia`, lijst `dispensing_templates`; de zichtbare namen zijn vertaalbaar.
+- Een bedrijfsbeheerder met `company.settings.manage` kiest de layout via de bedrijfsinstellingen. De keuze wordt per bedrijf bewaard in `ct_company_preferences` en toegepast door de aflevermodule. Zonder opgeslagen keuze gebruikt de module `standard`.
+- Bestaande databases krijgen de tabel en keuzewaarden via `migrations/20261113-090000_company_dispensing_template.sql`; voer daarna het toepasselijke `schema_grant_*.sql` uit. Softwareversie verhoogd naar 0.16.32.
+

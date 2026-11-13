@@ -11,6 +11,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ft_access_ip_allowlist TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON st_kbo_lookup_attempts TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON bt_companies, ct_company_users, ct_company_pages TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ct_company_navigation_preferences TO grompil_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ct_company_preferences TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ft_platform_navigation_preferences TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ft_platform_system_settings TO grompil_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON st_platform_totp_credentials, st_platform_totp_recovery_codes TO grompil_app;
