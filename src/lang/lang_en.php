@@ -530,6 +530,7 @@ $arrSubst = array (
   'perm_roles_manage' => 'Manage roles',
   'perm_translations_manage' => 'Manage translations',
   'perm_users_manage' => 'Manage users',
+  'perm_companies_manage' => 'Manage companies',
   'permissions' => 'Administrative permissions',
   'company_already_created' => 'This company has already been created.',
   'company_create_button' => 'Create this company',

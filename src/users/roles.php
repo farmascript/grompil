@@ -23,6 +23,7 @@ $permissionCatalog = [
     'users.manage' => 'perm_users_manage',
     'roles.manage' => 'perm_roles_manage',
     'translations.manage' => 'perm_translations_manage',
+    'companies.manage' => 'perm_companies_manage',
     'pharmacy.dispense' => 'company_permission_dispense',
 ];
 $messageKey = '';
