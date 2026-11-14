@@ -2,8 +2,8 @@
 
 Grompil Bookmarks adds two folders to the browser bookmarks bar:
 
-- **Grompil functions** contains modules the signed-in user is allowed to open.
-- **My navigator** contains the user's URL Manager layout and links.
+- **gromPil-functions** contains modules the signed-in user is allowed to open.
+- **gromPil-navigator** contains the user's URL Manager layout and links.
 
 The extension only replaces the contents of the two folders it manages. Other
 browser bookmarks are left untouched. After sign-in, or after changing company
@@ -44,7 +44,7 @@ two folders managed by the extension.
 
 ## Store publication files
 
-See `STORE_LISTING.md`, `PRIVACY_POLICY.html`, and `SUBMISSION_CHECKLIST.md` for
+See `STORE_LISTING.md`, `privacy-policy.html`, and `SUBMISSION_CHECKLIST.md` for
 the English Chrome Web Store submission materials and remaining publication
 steps. The privacy policy must be published at a public HTTPS URL before the
 listing is submitted.

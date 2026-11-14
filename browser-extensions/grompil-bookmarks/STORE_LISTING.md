@@ -15,8 +15,8 @@ in to Grompil, the extension automatically creates or refreshes two folders on
 your bookmarks bar. It refreshes them again when you switch company or language.
 You can also choose **Sync bookmarks** manually in the extension popup:
 
-- **Grompil functions** lists the modules available to your signed-in account.
-- **My navigator** mirrors your URL Manager pages, groups, and links.
+- **gromPil-functions** lists the modules available to your signed-in account.
+- **gromPil-navigator** mirrors your URL Manager pages, groups, and links.
 
 The extension uses your current Grompil session to retrieve navigation and
 access information from that same Grompil website. It creates bookmarks on your

@@ -7,7 +7,20 @@
 
 body { width: 330px; margin: 0; }
 main { padding: 18px; }
-h1 { margin: 0 0 10px; font-size: 19px; }
+h1 { margin: 0 0 3px; font-size: 19px; }
+.version { margin: 0 0 12px; color: #60716d; font-size: 12px; font-weight: 600; }
+label { display: block; margin: 0 0 5px; font-size: 12px; font-weight: 650; }
+select {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0 0 4px;
+    border: 1px solid #bacac4;
+    border-radius: 6px;
+    padding: 7px 8px;
+    color: inherit;
+    background: #fff;
+    font: inherit;
+}
 p { margin: 0 0 14px; }
 button {
     width: 100%;
@@ -24,3 +37,15 @@ button:disabled { opacity: .6; cursor: wait; }
 .note { margin-top: 13px; color: #60716d; font-size: 12px; }
 #status { min-height: 20px; margin: 10px 0 0; color: #305f50; }
 #status[data-error="true"] { color: #a12735; }
+
+#bookmark-folder-search {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0 0 9px;
+    border: 1px solid #bacac4;
+    border-radius: 6px;
+    padding: 7px 8px;
+    color: inherit;
+    background: #fff;
+    font: inherit;
+}

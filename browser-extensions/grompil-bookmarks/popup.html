@@ -9,10 +9,16 @@
 <body>
     <main>
         <h1>Grompil Bookmarks</h1>
+        <p id="version" class="version"></p>
+        <label for="bookmark-folder-search">Find a folder</label>
+        <input id="bookmark-folder-search" type="search" placeholder="Type to filter folders…" autocomplete="off">
+        <label for="bookmark-folder">Folder used for the Bookmark Bar</label>
+        <select id="bookmark-folder" aria-label="Folder used for the Bookmark Bar"></select>
+        <p class="note">Choose the same folder selected in Vivaldi settings, then sync.</p>
         <p>After you sign in to Grompil or switch company, language, or access context, your bookmark folders sync automatically.</p>
         <p class="note">When you sync, this extension reads permitted modules and URL Manager links from the Grompil site open in this tab. It uses them only to create bookmarks and does not send them to third parties.</p>
         <button id="sync" type="button">Sync bookmarks</button>
-        <p class="note">You can also sync manually here. Only the two folders managed by this extension are replaced; your other bookmarks stay in place.</p>
+        <p class="note">You can also sync manually here. Only the two Grompil folders are refreshed; your other bookmarks stay in place.</p>
         <p id="status" role="status" aria-live="polite"></p>
     </main>
     <script src="bookmark-sync.js"></script>

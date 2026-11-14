@@ -7,12 +7,12 @@
 - Grompil extension icons in 16, 48, and 128 pixel sizes.
 - Store screenshot 1 in `store-assets/screenshot-1.jpg` (1280 × 800).
 - Draft store copy and permission justifications in `STORE_LISTING.md`.
-- English privacy policy in `PRIVACY_POLICY.html`.
+- English privacy policy in `privacy-policy.html`.
 - English installation and sync instructions in `README.md`.
 
 ## Complete in the Chrome Web Store dashboard
 
-1. Publish `PRIVACY_POLICY.html` at a public HTTPS URL and enter that URL in the
+1. Publish `privacy-policy.html` at a public HTTPS URL and enter that URL in the
    privacy policy field.
 2. Upload `store-assets/screenshot-1.jpg` as the first store screenshot. Add a
    second screenshot of the extension popup if desired.

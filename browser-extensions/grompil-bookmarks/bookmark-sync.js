@@ -2,6 +2,7 @@
 
 (() => {
     const storagePrefix = 'grompil-bookmarks:';
+    const bookmarkBarFolderStorageKey = storagePrefix + 'bookmark-bar-folder-id';
 
     function browserApi(owner, method, ...args) {
         return new Promise((resolve, reject) => {
@@ -181,11 +182,11 @@
         }
 
         const labels = {
-            nl: ['Grompil-functies', 'Mijn navigator'],
-            fr: ['Fonctions Grompil', 'Mon navigateur'],
-            en: ['Grompil functions', 'My navigator'],
-            de: ['Grompil-Funktionen', 'Mein Navigator'],
-        }[language] || ['Grompil-functies', 'Mijn navigator'];
+            nl: ['gromPil-functies', 'gromPil-navigator'],
+            fr: ['gromPil-fonctions', 'gromPil-navigateur'],
+            en: ['gromPil-functions', 'gromPil-navigator'],
+            de: ['gromPil-Funktionen', 'gromPil-Navigator'],
+        }[language] || ['gromPil-functies', 'gromPil-navigator'];
         return [
             { title: labels[0], children: fixedNodes.filter((node) => node.children.length > 0) },
             { title: labels[1], children: pageTrees.filter((page) => page.children.length > 0).map((page) => ({ title: page.title, children: page.children })) },
@@ -203,14 +204,82 @@
         }
     }
 
+    function findBookmarkFolder(nodes, predicate) {
+        for (const node of nodes || []) {
+            if (predicate(node)) return node;
+            const nested = findBookmarkFolder(node.children, predicate);
+            if (nested) return nested;
+        }
+        return null;
+    }
+
     async function getBookmarksBarId() {
+        const selected = await browserApi(chrome.storage.local, chrome.storage.local.get, bookmarkBarFolderStorageKey);
+        const savedFolder = await getExistingFolder(selected[bookmarkBarFolderStorageKey]);
+        if (savedFolder) return savedFolder.id;
+
         const tree = await browserApi(chrome.bookmarks, chrome.bookmarks.getTree);
         const roots = tree[0]?.children || [];
-        const bar = roots.find((node) => node.folderType === 'bookmarks-bar')
-            || roots.find((node) => node.id === '1')
-            || roots[0];
-        if (!bar) throw new Error('The bookmarks bar could not be found.');
+        const bookmarkBarNames = new Set([
+            'bookmark bar',
+            'bookmarks bar',
+            'bookmark toolbar',
+            'bookmarks toolbar',
+            'bladwijzerbalk',
+            'barre de favoris',
+            'barre des favoris',
+            'lesezeichenleiste',
+            'barra de marcadores',
+            'barra de favoritos',
+        ]);
+        const bar = findBookmarkFolder(roots, (node) => node.folderType === 'bookmarks-bar')
+            || findBookmarkFolder(roots, (node) => bookmarkBarNames.has(String(node.title || '').trim().toLocaleLowerCase()))
+            || roots.find((node) => node.id === '1' && !node.title);
+        if (!bar) throw new Error('Choose the folder used for the Bookmark Bar in the extension popup.');
         return bar.id;
+    }
+
+    async function getBookmarkFolders() {
+        const tree = await browserApi(chrome.bookmarks, chrome.bookmarks.getTree);
+        const rootFolders = tree[0]?.children || [];
+        const folders = [];
+        const bookmarkBarNames = new Set([
+            'bookmark bar', 'bookmarks bar', 'bookmark toolbar', 'bookmarks toolbar',
+            'bladwijzerbalk', 'barre de favoris', 'barre des favoris', 'lesezeichenleiste',
+            'barra de marcadores', 'barra de favoritos',
+        ]);
+        const addFolders = (nodes, parentPath = []) => {
+            for (const node of nodes || []) {
+                if (typeof node.url === 'string') continue;
+                const rawTitle = String(node.title || '').trim();
+                const normalizedTitle = rawTitle.toLocaleLowerCase();
+                const isBookmarksBar = node.folderType === 'bookmarks-bar'
+                    || bookmarkBarNames.has(normalizedTitle)
+                    || (node.id === '1' && !rawTitle);
+                const title = rawTitle || (isBookmarksBar ? 'Bookmarks bar' : 'Unnamed folder');
+                const path = [...parentPath, title];
+                const isBaseFolder = parentPath.length === 0;
+                folders.push({
+                    id: node.id,
+                    title,
+                    path: path.join(' / '),
+                    isBookmarksBar,
+                    isBaseFolder,
+                });
+                addFolders(node.children || [], path);
+            }
+        };
+        addFolders(rootFolders);
+        return folders.sort((left, right) => Number(right.isBookmarksBar) - Number(left.isBookmarksBar)
+            || Number(right.isBaseFolder) - Number(left.isBaseFolder)
+            || left.path.localeCompare(right.path, undefined, { sensitivity: 'base' }));
+    }
+
+    async function setBookmarkBarFolder(id) {
+        const folder = await getExistingFolder(id);
+        if (!folder) throw new Error('Select an existing bookmark folder.');
+        await browserApi(chrome.storage.local, chrome.storage.local.set, { [bookmarkBarFolderStorageKey]: folder.id });
+        return folder.id;
     }
 
     async function removeOldFolders(oldIds, keepIds = []) {
@@ -253,6 +322,9 @@
                 let folder = await getExistingFolder(previousIds[index]);
                 if (folder) {
                     await browserApi(chrome.bookmarks, chrome.bookmarks.update, folder.id, { title: trees[index].title });
+                    if (folder.parentId !== barId) {
+                        folder = await browserApi(chrome.bookmarks, chrome.bookmarks.move, folder.id, { parentId: barId, index });
+                    }
                 } else {
                     folder = await browserApi(chrome.bookmarks, chrome.bookmarks.create, {
                         parentId: barId,
@@ -365,5 +437,5 @@
         return found.payload;
     }
 
-    globalThis.GrompilBookmarks = { readPayloadFromTab, syncBookmarks };
+    globalThis.GrompilBookmarks = { getBookmarkFolders, getBookmarksBarId, readPayloadFromTab, setBookmarkBarFolder, syncBookmarks };
 })();
