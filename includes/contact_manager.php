@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Sun 2026-11-15 18:42:41
- * @date_mut: Sun 2026-11-15 18:58:44
+ * @date_mut: Sun 2026-11-15 20:27:34
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -123,18 +123,21 @@ function grompil_contact_manager_handle_post(string $ownerType, int $companyId, 
 
         if ($action === 'add') {
             $purposeKey = 'contact_' . bin2hex(random_bytes(12));
+            $addSubqueryOwnerClause = $ownerType === 'customer'
+                ? 'customer_code = $9::VARCHAR(6) AND user_code IS NULL'
+                : 'user_code = $9::VARCHAR(6) AND customer_code IS NULL';
             $result = db_query_params(
                 'contact_manager.add',
                 'INSERT INTO dt_user_contacts (
                     company_id, user_code, customer_code, contact_type_key, purpose_key, contact_value,
                     label, is_login_email, is_primary, is_public, is_active, sort_order
                  ) VALUES (
-                    $1, ' . ($ownerType === 'user' ? '$2, NULL' : 'NULL, $2') . ', $3, $4, $5, $6,
+                    $1, ' . ($ownerType === 'user' ? '$2::VARCHAR(6), NULL' : 'NULL, $2::VARCHAR(6)') . ', $3, $4, $5, $6,
                     FALSE, $7::BOOLEAN, $8::BOOLEAN, TRUE,
                     COALESCE((SELECT MAX(sort_order) + 10 FROM dt_user_contacts
-                              WHERE company_id = $1 AND ' . $ownerClause . '), 10)
+                              WHERE company_id = $1 AND ' . $addSubqueryOwnerClause . '), 10)
                  )',
-                [$companyId, $ownerCode, $typeKey, $purposeKey, $value, $label, $isPrimary, $isPublic]
+                [$companyId, $ownerCode, $typeKey, $purposeKey, $value, $label, $isPrimary, $isPublic, $ownerCode]
             );
             return $result ? 'saved' : 'unavailable';
         }
