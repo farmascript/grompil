@@ -389,7 +389,7 @@ try {
     }
 } catch (Throwable $error) {
     error_log('Patient lookup failed: ' . get_class($error));
-    $messageKey$messageHtml = $messageKey !== '' ? $messageKey : ($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable');
+    $messageKey = $messageKey !== '' ? $messageKey : ($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable');
 }
 
 if ($patientSuggestionRequest && $dispenseMode === 'patient') {
