@@ -389,7 +389,7 @@ try {
     }
 } catch (Throwable $error) {
     error_log('Patient lookup failed: ' . get_class($error));
-    $messageKey = $messageKey !== '' ? $messageKey : ($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable');
+    $messageKey$messageHtml = $messageKey !== '' ? $messageKey : ($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable');
 }
 
 if ($patientSuggestionRequest && $dispenseMode === 'patient') {
@@ -647,6 +647,11 @@ $auditLine = $selectedPatient
         (string) ($selectedPatient['updated_by_name'] ?? ''), fn_formatDateDisplay((string) ($selectedPatient['updated_at'] ?? '')),
     ], $customerText('patient_audit_line'))
     : '';
+$auditParts = explode(';', $auditLine, 2);
+$auditTooltipText = e(trim($auditParts[0] ?? $auditLine));
+if (isset($auditParts[1])) {
+    $auditTooltipText .= '&#10;' . e(trim($auditParts[1]));
+}
 $messageHtml = $messageKey !== ''
     ? fn_moduleTemplateRender('dispensing', 'dispensing_alert.html', [
         'alert_type' => 'danger', 'alert_role' => 'alert', 'alert_message' => str_starts_with($messageKey, 'patient_')
@@ -666,6 +671,7 @@ $patientTitleHtml = $selectedPatient
     ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_title.html', [
         'patient_initials' => strtoupper(mb_substr((string) $selectedPatient['name_first'], 0, 1) . mb_substr((string) $selectedPatient['name_last'], 0, 1)),
         'patient_name' => trim($selectedPatient['name_first'] . ' ' . $selectedPatient['name_last']),
+        '_patient_audit_tooltip_text' => $auditTooltipText,
         'customer_code' => (string) $selectedPatient['customer_code'],
     ])
     : ($dispenseMode === 'walk_in'
@@ -773,7 +779,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.20',
+    'asset_version' => '0.18.21',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
@@ -794,7 +800,6 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     '_dispense_patient_detail_html' => $selectedPatient
         ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_audit.html', [
             '_patient_metadata_html' => $patientMetadata,
-            'patient_audit_line' => $auditLine,
         ])
         : ($dispenseMode === 'walk_in'
             ? ''
