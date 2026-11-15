@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Sun 2026-11-15 10:56:29
+ * @date_mut: Sun 2026-11-15 18:58:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -18,6 +18,7 @@
 declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+require_once GROMPIL_ROOT . '/includes/contact_manager.php';
 $currentUser = require_login();
 $company = require_company_context($currentUser);
 if ($company === null || !grompil_can_access_module('dispense.php', $currentUser, $company)) {
@@ -26,6 +27,15 @@ if ($company === null || !grompil_can_access_module('dispense.php', $currentUser
 
 $companyId = (int) $company['id'];
 $actorCode = (string) $currentUser['user_code'];
+$contactManagerModalOpen = (string) ($_GET['contacts'] ?? '') === '1';
+$contactManagerStatus = (string) ($_GET['contact_status'] ?? '');
+$contactAction = (string) ($_POST['contact_action'] ?? '');
+if (in_array($contactAction, ['add', 'update', 'delete'], true)) {
+    $contactOwnerCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
+    $contactManagerStatus = grompil_contact_manager_handle_post('customer', $companyId, $contactOwnerCode) ?? 'invalid';
+    redirect('dispense.php?patient=' . rawurlencode($contactOwnerCode)
+        . '&contacts=1&contact_status=' . rawurlencode($contactManagerStatus) . '#contact-manager-modal');
+}
 $companyIdentityResult = db_query_params(
     'dispense.company_identity',
     'SELECT c.id, c.name, c.store_logo_file, classification."key" AS company_classification_key
@@ -616,6 +626,9 @@ $patientModalForm = fn_moduleTemplateRender('dispensing', 'dispensing_patient_fo
 ]);
 
 $patientMetadata = '';
+$patientContactCount = 0;
+$contactManagerModalHtml = '';
+$patientContactButtonHtml = '';
 $patientIdentityTooltipText = '';
 $patientAge = '';
 if ($selectedPatient) {
@@ -631,6 +644,21 @@ if ($selectedPatient) {
     if ($dob !== '') {
         $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_birth_date') . ': ' . fn_formatDateDisplay($dob));
     }
+    if (isset($selectedPatient['created_at'])) {
+        $patientName = trim((string) $selectedPatient['name_first'] . ' ' . (string) $selectedPatient['name_last']);
+        $contactManagerActionUrl = 'dispense.php?patient=' . rawurlencode((string) $selectedPatient['customer_code'])
+            . '&contacts=1#contact-manager-modal';
+        $contactManagerData = grompil_contact_manager_render_modal(
+            'customer', $companyId, (string) $selectedPatient['customer_code'], $patientName,
+            $patientCodeLabel, $contactManagerActionUrl, $contactManagerStatus
+        );
+        $patientContactCount = $contactManagerData['count'];
+        $contactManagerModalHtml = $contactManagerData['html'];
+        $patientContactButtonHtml = fn_moduleTemplateRender('contacts', 'contact_manager_trigger.html', [
+            'contact_manager_count' => fn_t('contact_manager_count'),
+            'contact_manager_count_number' => (string) $patientContactCount,
+        ]);
+    }
     $patientMetadata = fn_moduleTemplateRender('dispensing', 'dispensing_patient_detail.html', [
         'patient_address' => $patientAddress !== '' ? $patientAddress : $customerText('patient_no_address'),
         '_patient_map_link_html' => grompil_google_maps_link(
@@ -638,6 +666,7 @@ if ($selectedPatient) {
             $selectedPatient['wgs84_longitude'] ?? null,
             $patientAddress
         ),
+        '_patient_contact_button_html' => $patientContactButtonHtml,
     ]);
 }
 $auditLine = $selectedPatient
@@ -779,7 +808,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.22',
+    'asset_version' => '0.18.23',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
@@ -807,6 +836,8 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
                 'dispense_select_patient' => $dispenseCustomerText('dispense_select_patient'),
             ])),
     '_dispense_patient_title_html' => $patientTitleHtml,
+    '_contact_manager_modal_html' => $contactManagerModalHtml,
+    '_contact_manager_modal_open' => $contactManagerModalOpen && $selectedPatient !== null ? 'true' : 'false',
     '_dispense_patient_edit_button_html' => $patientEditButtonHtml,
     '_dispense_brand_html' => $companyBrandHtml,
     '_dispense_alert_html' => $messageHtml,

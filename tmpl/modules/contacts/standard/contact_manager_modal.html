@@ -1,0 +1,24 @@
+<div class="modal fade" id="contact-manager-modal" tabindex="-1" aria-labelledby="contact-manager-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><div><h2 class="modal-title fs-5" id="contact-manager-modal-title">@contact_manager_title@</h2><div class="small text-secondary">@contact_manager_owner_name@ · @contact_manager_owner_label@: @contact_manager_owner_code@</div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@contact_manager_close@"></button></div>
+        <div class="modal-body">
+            <p class="text-secondary">@contact_manager_intro@</p>
+            @_contact_manager_feedback_html@
+            @_contact_manager_empty_html@
+            <div class="contact-manager-list">@_contact_manager_rows_html@</div>
+            <hr>
+            <h3 class="fs-6">@contact_manager_add_title@</h3>
+            <form method="post" action="@contact_manager_action_url@" class="contact-manager-row">
+                <input type="hidden" name="csrf_token" value="@csrf_token@">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3"><label class="form-label" for="contact-manager-new-type">@contact_manager_type@</label><select class="form-select" id="contact-manager-new-type" name="contact_type_key" required>@_contact_manager_type_options_html@</select></div>
+                    <div class="col-md-4"><label class="form-label" for="contact-manager-new-value">@contact_manager_value@</label><input class="form-control" id="contact-manager-new-value" name="contact_value" maxlength="1024" required></div>
+                    <div class="col-md-3"><label class="form-label" for="contact-manager-new-label">@contact_manager_label@</label><input class="form-control" id="contact-manager-new-label" name="label" maxlength="160"></div>
+                    <div class="col-md-2"><button class="btn btn-primary w-100" type="submit" name="contact_action" value="add">@contact_manager_add@</button></div>
+                    <div class="col-12 d-flex flex-wrap gap-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_primary" value="1" id="contact-manager-new-primary"><label class="form-check-label" for="contact-manager-new-primary">@contact_manager_primary@</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="is_public" value="1" id="contact-manager-new-public"><label class="form-check-label" for="contact-manager-new-public">@contact_manager_public@</label></div></div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@contact_manager_close@</button></div>
+    </div></div>
+</div>

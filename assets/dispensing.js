@@ -7,6 +7,10 @@
         bootstrap.Modal.getOrCreateInstance(modal).show();
     }
 
+    const contactModal = document.getElementById('contact-manager-modal');
+    if (contactModal && page.dataset.contactModalOpen === 'true' && window.bootstrap) {
+        bootstrap.Modal.getOrCreateInstance(contactModal).show();
+    }
     const input = document.querySelector('[data-product-search]');
     const suggestions = document.querySelector('[data-product-suggestions]');
     const rows = document.querySelector('[data-basket-rows]');

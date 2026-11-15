@@ -1,0 +1,10 @@
+<form method="post" action="@contact_manager_action_url@" class="contact-manager-row">
+    <input type="hidden" name="csrf_token" value="@csrf_token@"><input type="hidden" name="contact_id" value="@contact_id@">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3"><label class="form-label">@contact_manager_type@</label><select class="form-select" name="contact_type_key" required>@_contact_type_options_html@</select></div>
+        <div class="col-md-4"><label class="form-label">@contact_manager_value@</label><input class="form-control" name="contact_value" value="@contact_value@" maxlength="1024" required></div>
+        <div class="col-md-3"><label class="form-label">@contact_manager_label@</label><input class="form-control" name="label" value="@contact_label@" maxlength="160"></div>
+        <div class="col-md-2 d-flex gap-1"><button class="btn btn-primary flex-grow-1" type="submit" name="contact_action" value="update">@contact_manager_save@</button><button class="btn btn-outline-danger" type="submit" name="contact_action" value="delete" formnovalidate aria-label="@contact_manager_delete@" title="@contact_manager_delete@">×</button></div>
+        <div class="col-12 d-flex flex-wrap gap-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_primary" value="1" id="contact-primary-@contact_id@" @_contact_primary_checked@><label class="form-check-label" for="contact-primary-@contact_id@">@contact_manager_primary@</label></div><div class="form-check"><input class="form-check-input" type="checkbox" name="is_public" value="1" id="contact-public-@contact_id@" @_contact_public_checked@><label class="form-check-label" for="contact-public-@contact_id@">@contact_manager_public@</label></div></div>
+    </div>
+</form>
