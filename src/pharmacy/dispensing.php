@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Fri 2026-11-13 00:00:00
+ * @date_mut: Sun 2026-11-15 10:56:29
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -616,23 +616,22 @@ $patientModalForm = fn_moduleTemplateRender('dispensing', 'dispensing_patient_fo
 ]);
 
 $patientMetadata = '';
+$patientIdentityTooltipText = '';
+$patientAge = '';
 if ($selectedPatient) {
     $dob = trim((string) ($selectedPatient['date_of_birth'] ?? ''));
     $birthDate = $dob !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $dob) : false;
     $today = new DateTimeImmutable('today');
-    $age = $birthDate !== false && $birthDate->format('Y-m-d') === $dob && $birthDate <= $today
+    $patientAge = $birthDate !== false && $birthDate->format('Y-m-d') === $dob && $birthDate <= $today
         ? (string) $birthDate->diff($today)->y
         : '';
+    $patientCodeLabel = fn_t($companyIdentity['company_classification_key'] === 'pharmacy'
+        ? 'company_customer_code_label_pharmacy' : 'company_customer_code_label_business');
+    $patientIdentityTooltipText = e($patientCodeLabel . ': ' . (string) $selectedPatient['customer_code']);
+    if ($dob !== '') {
+        $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_birth_date') . ': ' . fn_formatDateDisplay($dob));
+    }
     $patientMetadata = fn_moduleTemplateRender('dispensing', 'dispensing_patient_detail.html', [
-        'customer_code' => (string) $selectedPatient['customer_code'],
-        'customer_code_label' => fn_t($companyIdentity['company_classification_key'] === 'pharmacy'
-            ? 'company_customer_code_label_pharmacy' : 'company_customer_code_label_business'),
-        '_patient_birth_date_html' => $dob !== ''
-            ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_birth_date.html', [
-                'patient_birth_date_value' => fn_formatDateDisplay($dob),
-                'patient_age_value' => $age !== '' ? '(' . $age . ')' : '',
-            ])
-            : '',
         'patient_address' => $patientAddress !== '' ? $patientAddress : $customerText('patient_no_address'),
         '_patient_map_link_html' => grompil_google_maps_link(
             $selectedPatient['wgs84_latitude'] ?? null,
@@ -672,7 +671,8 @@ $patientTitleHtml = $selectedPatient
         'patient_initials' => strtoupper(mb_substr((string) $selectedPatient['name_first'], 0, 1) . mb_substr((string) $selectedPatient['name_last'], 0, 1)),
         'patient_name' => trim($selectedPatient['name_first'] . ' ' . $selectedPatient['name_last']),
         '_patient_audit_tooltip_text' => $auditTooltipText,
-        'customer_code' => (string) $selectedPatient['customer_code'],
+        '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
+        '_patient_age_html' => $patientAge !== '' ? '<span class="text-secondary small">(' . e($patientAge) . ')</span>' : '',
     ])
     : ($dispenseMode === 'walk_in'
     ? fn_moduleTemplateRender('dispensing', 'dispensing_walkin_title.html', ['dispense_walkin_title' => $dispenseCustomerText('dispense_walkin_title')])
@@ -779,7 +779,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.21',
+    'asset_version' => '0.18.22',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
