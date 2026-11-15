@@ -9,4 +9,4 @@
 .patient-audit-tooltip .tooltip-inner{max-width:34rem;text-align:left;white-space:pre-line}
 
 
-.contact-manager-row{border:1px solid #dce4e8;border-radius:.6rem;padding:.85rem;margin-bottom:.65rem}.contact-manager-row .form-label{font-size:.78rem;font-weight:600}.contact-manager-trigger{display:inline-flex;align-items:center;gap:.3rem;vertical-align:middle}.contact-manager-trigger svg{flex:none}
+.contact-manager-row{border:1px solid #dce4e8;border-radius:.6rem;padding:.85rem;margin-bottom:.65rem}.contact-manager-row .form-label{font-size:.78rem;font-weight:600}.contact-manager-row .form-control,.contact-manager-row .form-select{background-color:var(--bs-tertiary-bg,#f8f9fa)}.contact-manager-trigger{display:inline-flex;align-items:center;gap:.3rem;vertical-align:middle}.contact-manager-trigger svg{flex:none}
