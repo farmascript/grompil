@@ -38,7 +38,8 @@ if (($_GET['ajax'] ?? '') === 'search') {
     $normalizedQuery = function_exists('mb_strtolower')
         ? mb_strtolower($query, 'UTF-8')
         : strtolower($query);
-    $prefix = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $normalizedQuery) . '%';
+    $escapedQuery = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $normalizedQuery);
+    $contains = '%' . $escapedQuery . '%';
     $exactUserCode = preg_match('/^[A-Z0-9]{6}$/i', $query) === 1 ? strtoupper($query) : '';
     try {
         $result = db_query_params(
@@ -56,7 +57,7 @@ if (($_GET['ajax'] ?? '') === 'search') {
                     OR lower(u.acronym) LIKE $2 OR u.user_code = NULLIF($3, ''))
              ORDER BY lower(u.display_name), u.user_code
              LIMIT 20",
-            [$companyId, $prefix, $exactUserCode]
+            [$companyId, $contains, $exactUserCode]
         );
     } catch (GrompilDatabaseQueryException) {
         $result = false;
