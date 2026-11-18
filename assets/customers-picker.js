@@ -23,6 +23,7 @@
     const customerCode = form.querySelector('#customer-code');
     const results = form.querySelector('#customer-search-results');
     const status = form.querySelector('#customer-search-status');
+    const customerDetails = document.querySelector('[data-customer-details]');
     let timer = 0;
     let requestController = null;
     let matches = [];
@@ -86,6 +87,7 @@
 
     input.addEventListener('input', () => {
         customerCode.value = '';
+        customerDetails?.classList.add('d-none');
         window.clearTimeout(timer);
         const query = input.value.trim();
         if (query.length < 2) {
