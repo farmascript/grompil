@@ -108,6 +108,13 @@
         }
     });
 
+    form.addEventListener('submit', (event) => {
+        if (customerCode.value) return;
+        event.preventDefault();
+        const query = input.value.trim();
+        if (query.length >= 2) searchCustomers(query);
+    });
+
     results.addEventListener('click', (event) => {
         const option = event.target.closest('button[data-customer-code]');
         if (!option) return;
