@@ -36,8 +36,8 @@
     }
 
     function selectCustomer(customer) {
-        customerCode.value = String(customer.user_code);
-        input.value = `${customer.name} · ${customer.email}`;
+        customerCode.value = String(customer.customer_code);
+        input.value = `${customer.name} · ${customer.customer_code}`;
         form.requestSubmit();
     }
 
@@ -53,12 +53,12 @@
             option.type = 'button';
             option.className = 'list-group-item list-group-item-action';
             option.setAttribute('role', 'option');
-            option.dataset.customerCode = String(customer.user_code);
+            option.dataset.customerCode = String(customer.customer_code);
             const name = document.createElement('strong');
             name.textContent = customer.name;
             const detail = document.createElement('span');
             detail.className = 'd-block small text-secondary';
-            detail.textContent = [customer.email, customer.acronym].filter(Boolean).join(' · ');
+            detail.textContent = customer.customer_code;
             option.append(name, detail);
             results.append(option);
         }
@@ -118,7 +118,7 @@
     results.addEventListener('click', (event) => {
         const option = event.target.closest('button[data-customer-code]');
         if (!option) return;
-        const customer = matches.find((match) => String(match.user_code) === option.dataset.customerCode);
+        const customer = matches.find((match) => String(match.customer_code) === option.dataset.customerCode);
         if (customer) selectCustomer(customer);
     });
 

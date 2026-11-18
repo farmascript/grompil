@@ -40,24 +40,20 @@ if (($_GET['ajax'] ?? '') === 'search') {
         : strtolower($query);
     $escapedQuery = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $normalizedQuery);
     $contains = '%' . $escapedQuery . '%';
-    $exactUserCode = preg_match('/^[A-Z0-9]{6}$/i', $query) === 1 ? strtoupper($query) : '';
+    $exactCustomerCode = preg_match('/^[A-Z0-9]{6}$/i', $query) === 1 ? strtoupper($query) : '';
     try {
         $result = db_query_params(
             'customers.search',
-            "SELECT u.user_code, u.display_name, contact.contact_value AS email, u.acronym
-             FROM bt_users AS u
-             JOIN dt_user_contacts AS contact
-               ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
-             JOIN ft_roles AS r ON r.id = u.role_id
-             JOIN ct_company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
-             JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
-             WHERE u.company_id = $1 AND cu.company_id = $1
-               AND r.level >= 200 AND cr.level >= 200
-               AND (lower(u.display_name) LIKE $2 OR lower(contact.contact_value) LIKE $2
-                    OR lower(u.acronym) LIKE $2 OR u.user_code = NULLIF($3, ''))
-             ORDER BY lower(u.display_name), u.user_code
+            "SELECT customer_code, name_first, name_last, date_of_birth, is_active
+             FROM bt_customers
+             WHERE company_id = $1
+               AND (lower(name_first) LIKE $2 OR lower(name_last) LIKE $2
+                    OR lower(name_first || ' ' || name_last) LIKE $2
+                    OR lower(name_last || ' ' || name_first) LIKE $2
+                    OR customer_code = NULLIF($3, ''))
+             ORDER BY lower(name_last), lower(name_first), customer_code
              LIMIT 20",
-            [$companyId, $contains, $exactUserCode]
+            [$companyId, $contains, $exactCustomerCode]
         );
     } catch (GrompilDatabaseQueryException) {
         $result = false;
@@ -70,10 +66,10 @@ if (($_GET['ajax'] ?? '') === 'search') {
     $matches = [];
     while ($row = pg_fetch_assoc($result)) {
         $matches[] = [
-            'user_code' => (string) $row['user_code'],
-            'name' => (string) $row['display_name'],
-            'email' => (string) $row['email'],
-            'acronym' => (string) ($row['acronym'] ?? ''),
+            'customer_code' => (string) $row['customer_code'],
+            'name' => trim((string) $row['name_first'] . ' ' . (string) $row['name_last']),
+            'date_of_birth' => (string) ($row['date_of_birth'] ?? ''),
+            'is_active' => $row['is_active'] === 't',
         ];
     }
     echo json_encode(['results' => $matches], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
@@ -88,18 +84,9 @@ if ($customerCodeValid) {
     try {
         $result = db_query_params(
             'customers.load_details',
-            "SELECT u.user_code, u.display_name, contact.contact_value AS email, u.acronym, u.is_active,
-                    u.approval_status, u.created_at, u.last_login_at,
-                    cu.is_active AS company_active, cu.approval_status AS company_approval_status,
-                    cr.name AS company_role
-             FROM bt_users AS u
-             JOIN dt_user_contacts AS contact
-               ON contact.user_code = u.user_code AND contact.is_login_email AND contact.is_active
-             JOIN ft_roles AS r ON r.id = u.role_id
-             JOIN ct_company_users AS cu ON cu.company_id = u.company_id AND cu.user_code = u.user_code
-             JOIN ct_company_roles AS cr ON cr.company_id = cu.company_id AND cr.id = cu.company_role_id
-             WHERE u.company_id = $1 AND cu.company_id = $1 AND u.user_code = $2
-               AND r.level >= 200 AND cr.level >= 200",
+            "SELECT customer_code, name_first, name_last, date_of_birth, is_active, created_at, updated_at
+             FROM bt_customers
+             WHERE company_id = $1 AND customer_code = $2",
             [$companyId, $customerCode]
         );
     } catch (GrompilDatabaseQueryException) {
@@ -114,27 +101,19 @@ if ($customerCodeValid) {
 $details = '';
 if ($selectedCustomer !== null) {
     $details = fn_templateRender('customer_details.html', [
-        'customer_name' => (string) $selectedCustomer['display_name'],
-        'customer_email' => (string) $selectedCustomer['email'],
-        'customer_acronym' => (string) ($selectedCustomer['acronym'] ?? ''),
-        'customer_role' => (string) $selectedCustomer['company_role'],
-        'customer_account_status' => fn_t($selectedCustomer['is_active'] === 't' ? 'active' : 'inactive'),
-        'customer_approval_status' => fn_t('approval_' . (string) $selectedCustomer['approval_status']),
-        'customer_company_status' => fn_t($selectedCustomer['company_active'] === 't' ? 'active' : 'inactive'),
-        'customer_company_approval_status' => fn_t('approval_' . (string) $selectedCustomer['company_approval_status']),
+        'customer_name' => trim((string) $selectedCustomer['name_first'] . ' ' . (string) $selectedCustomer['name_last']),
+        'customer_code' => (string) $selectedCustomer['customer_code'],
+        'customer_birth_date' => $selectedCustomer['date_of_birth'] === null
+            ? fn_t('customers_not_recorded') : fn_formatDateDisplay((string) $selectedCustomer['date_of_birth']),
+        'customer_status' => fn_t($selectedCustomer['is_active'] === 't' ? 'active' : 'inactive'),
         'customer_created_at' => fn_formatDateDisplay((string) $selectedCustomer['created_at']),
-        'customer_last_login_at' => $selectedCustomer['last_login_at'] === null
-            ? fn_t('never') : fn_formatDateDisplay((string) $selectedCustomer['last_login_at']),
+        'customer_updated_at' => fn_formatDateDisplay((string) $selectedCustomer['updated_at']),
         'customers_detail_heading' => fn_t('customers_detail_heading'),
-        'customers_email' => fn_t('email'),
-        'customers_acronym' => fn_t('acronym'),
-        'customers_role' => fn_t('col_role'),
-        'customers_account_status' => fn_t('customers_account_status'),
-        'customers_approval_status' => fn_t('col_approval'),
-        'customers_company_access' => fn_t('customers_company_access'),
-        'customers_company_approval' => fn_t('customers_company_approval'),
-        'customers_created_at' => fn_t('created_at'),
-        'customers_last_login' => fn_t('col_last_login'),
+        'customers_code' => fn_t('customers_code'),
+        'customers_birth_date' => fn_t('customer_birth_date'),
+        'customers_status' => fn_t('col_status'),
+        'customers_created_at' => fn_t('customers_created_at'),
+        'customers_updated_at' => fn_t('customers_updated_at'),
     ]);
 } elseif ($customerCode !== '') {
     $details = '<div class="alert alert-warning" role="status">' . e(fn_t('customers_not_found')) . '</div>';
