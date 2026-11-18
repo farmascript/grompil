@@ -727,8 +727,16 @@ function page_start(string $title, array $user, bool $fullWidth = false): void
     $GLOBALS['grompilPageFooterShowIp'] = $isPlatformOperator
         || ($company !== null && has_company_permission('company.settings.manage', $company, $user));
     $userName = trim((string) ($user['display_name'] ?? '')) ?: (string) ($user['email'] ?? '');
-    $roleName = (string) ($company['company_role_name'] ?? $user['role_name'] ?? '');
+    $roleName = trim((string) ($company['company_role_name'] ?? ''));
+    if ($roleName === '') {
+        $roleName = $isPlatformOperator
+            ? fn_t('manager_platform_operator')
+            : (string) ($user['role_name'] ?? '');
+    }
     $userContextLabel = trim($userName . ($roleName !== '' ? ' · ' . $roleName : ''));
+    $companyTooltip = $company !== null
+        ? e(fn_t('company_id_tooltip') . '#' . (string) $company['id'])
+        : '';
     $managerCatalogPath = __DIR__ . '/../url-manager/index.html';
     $managerCatalogVersion = is_file($managerCatalogPath)
         ? substr((string) hash_file('sha256', $managerCatalogPath), 0, 16)
@@ -783,10 +791,9 @@ function page_start(string $title, array $user, bool $fullWidth = false): void
         '_manager_href' => e(fn_appBaseHref() . 'url-manager/index.html?v=' . $managerCatalogVersion
             . '&lang=' . rawurlencode(strtolower((string) ($_SESSION['language'] ?? 'NL')))),
         '_company_badge_html' => $company !== null
-            ? '<span class="btn btn-success btn-sm company-context-badge" title="firma id: #'
-                . e((string) $company['id']) . '" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="firma id: #'
-                . e((string) $company['id']) . '">'
-                . ($isPlatformOperator ? 'Voor: ' : '') . e((string) $company['name']) . '</span>'
+            ? '<span class="btn btn-success btn-sm company-context-badge" title="' . $companyTooltip
+                . '" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . $companyTooltip . '">'
+                . ($isPlatformOperator ? e(fn_t('company_context_for')) : '') . e((string) $company['name']) . '</span>'
             : '',
         '_user_context_html' => $userContextLabel !== ''
             ? '<span class="small text-secondary user-context-label" aria-label="Ingelogd als ' . e($userContextLabel) . '">' . e($userContextLabel) . '</span>'
