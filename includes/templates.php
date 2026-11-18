@@ -783,8 +783,8 @@ function page_start(string $title, array $user, bool $fullWidth = false): void
         '_manager_href' => e(fn_appBaseHref() . 'url-manager/index.html?v=' . $managerCatalogVersion
             . '&lang=' . rawurlencode(strtolower((string) ($_SESSION['language'] ?? 'NL')))),
         '_company_badge_html' => $company !== null
-            ? '<span class="btn btn-success btn-sm company-context-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="'
-                . 'firma id: #'
+            ? '<span class="btn btn-success btn-sm company-context-badge" title="firma id: #'
+                . e((string) $company['id']) . '" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="firma id: #'
                 . e((string) $company['id']) . '">'
                 . ($isPlatformOperator ? 'Voor: ' : '') . e((string) $company['name']) . '</span>'
             : '',
