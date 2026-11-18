@@ -869,6 +869,6 @@ body {
 .cookie-footer[hidden]{display:none!important}.cookie-footer [data-cookie-footer-dismiss]{position:relative;z-index:1;pointer-events:auto}
 .app-footer{margin-top:2rem;padding:1rem 0;border-top:1px solid #dfe5e0;color:#6c757d;background:#fff;font-size:.8rem}
 .app-footer code{color:inherit}
-.company-context-badge{max-width:min(42vw,24rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+.company-context-badge{max-width:min(42vw,24rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:auto}
 .user-context-label{max-width:min(36vw,22rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:576px){.user-context-label{max-width:30vw;font-size:.7rem!important}}
 
