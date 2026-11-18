@@ -784,7 +784,7 @@ function page_start(string $title, array $user, bool $fullWidth = false): void
             . '&lang=' . rawurlencode(strtolower((string) ($_SESSION['language'] ?? 'NL')))),
         '_company_badge_html' => $company !== null
             ? '<span class="btn btn-success btn-sm company-context-badge" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="'
-                . ($isPlatformOperator ? 'Platformbeheer voor company #' : 'Actieve company #')
+                . 'firma id: #'
                 . e((string) $company['id']) . '">'
                 . ($isPlatformOperator ? 'Voor: ' : '') . e((string) $company['name']) . '</span>'
             : '',
