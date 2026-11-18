@@ -25,7 +25,7 @@ if (!defined('GROMPIL_ROOT')) {
 @NAV
 id: 16721 
 sequence_number: 8
-public_visibility: false
+public_visibility: true
 group: platform
 group_title: @nav_admin@
 action: manage
