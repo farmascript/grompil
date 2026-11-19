@@ -784,7 +784,7 @@ foreach (fn_dispensingShortcutSlots() as $shortcutSlot) {
     $functionKeysByLayer[$shortcutSlot['layer']] .= fn_moduleTemplateRender('dispensing', 'dispensing_function_key.html', [
         'shortcut_key_code' => $keyCode,
         'shortcut_action_key' => $actionKey,
-        'shortcut_action_config' => e((string) json_encode($actionConfig, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)),
+        'shortcut_action_config' => (string) json_encode($actionConfig, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
         'shortcut_aria_key' => $ariaKey,
         'shortcut_accessible_label' => $shortcutSlot['key_label'] . ': ' . $shortcutTitle . '. ' . $shortcutTooltip,
         'shortcut_key_label' => $shortcutSlot['key_label'],
@@ -858,7 +858,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.25',
+    'asset_version' => '0.18.26',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
