@@ -43,7 +43,27 @@ CREATE POLICY platform_dispensing_function_keys_admin_write ON ft_platform_dispe
     FOR ALL USING (current_setting('grompil.platform_operator', true) = 'true')
     WITH CHECK (current_setting('grompil.platform_operator', true) = 'true');
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON ft_platform_dispensing_function_keys TO grompil_app;
+DO $$
+DECLARE
+    application_role NAME;
+BEGIN
+    SELECT rolname INTO application_role
+    FROM pg_roles
+    WHERE rolname::text = current_database() || '_app'
+       OR rolname = 'grompil_app'
+    ORDER BY CASE WHEN rolname::text = current_database() || '_app' THEN 0 ELSE 1 END
+    LIMIT 1;
+
+    IF application_role IS NULL THEN
+        RAISE EXCEPTION 'Application database role not found (expected %_app or grompil_app)', current_database();
+    END IF;
+
+    EXECUTE format(
+        'GRANT SELECT, INSERT, UPDATE, DELETE ON ft_platform_dispensing_function_keys TO %I',
+        application_role
+    );
+END;
+$$;
 
 COMMENT ON TABLE ft_platform_dispensing_function_keys IS
     'Platform-managed allow-listed actions and multilingual labels for dispensing function-key shortcuts.';
