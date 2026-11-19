@@ -302,6 +302,14 @@
         }
 
         function runFunctionAction(actionKey) {
+            if (actionKey.startsWith('open_page:')) {
+                const modulePath = actionKey.slice('open_page:'.length);
+                if (/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*\.php$/.test(modulePath)) {
+                    window.location.assign(new URL(modulePath, window.location.href).href);
+                }
+                return;
+            }
+
             switch (actionKey) {
                 case 'focus_customer_search':
                     patientInput?.focus();

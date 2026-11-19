@@ -37,11 +37,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ? $postedShortcuts[$keyCode]
             : [];
         $actionKey = is_scalar($posted['action_key'] ?? null) ? (string) $posted['action_key'] : '';
+        $moduleTarget = is_scalar($posted['module_target'] ?? null) ? trim((string) $posted['module_target']) : '';
+        $moduleTargetValid = $actionKey !== 'open_module'
+            || in_array($moduleTarget, fn_dispensingShortcutModuleTargets(), true);
+        if ($actionKey === 'open_module' && $moduleTargetValid) {
+            $actionKey = 'open_page:' . $moduleTarget;
+        }
         $title = is_scalar($posted['title'] ?? null) ? trim((string) $posted['title']) : '';
         $tooltip = is_scalar($posted['tooltip'] ?? null) ? trim((string) $posted['tooltip']) : '';
         $titleLength = function_exists('mb_strlen') ? mb_strlen($title) : strlen($title);
         $tooltipLength = function_exists('mb_strlen') ? mb_strlen($tooltip) : strlen($tooltip);
-        if (!array_key_exists($actionKey, $actions) || $titleLength > 80 || $tooltipLength > 250) {
+        $isModuleAction = fn_dispensingShortcutModulePath($actionKey) !== null;
+        if (!$moduleTargetValid || (!array_key_exists($actionKey, $actions) && !$isModuleAction) || strlen($actionKey) > 80 || $titleLength > 80 || $tooltipLength > 250) {
             $valid = false;
         }
         $validated[$keyCode] = [
@@ -126,13 +133,20 @@ $actionOptions = '';
 foreach ($actions as $actionKey => $action) {
     $actionOptions .= '<option value="' . e($actionKey) . '">' . e(fn_t($action['title'])) . '</option>';
 }
+$moduleTargets = fn_dispensingShortcutModuleTargets();
+$moduleTargetOptions = '';
+foreach ($moduleTargets as $moduleTarget) {
+    $moduleTargetOptions .= '<option value="' . e($moduleTarget) . '"></option>';
+}
 $rowsByLayer = ['normal' => '', 'ctrl' => '', 'shift' => ''];
 foreach ($slots as $slot) {
     $keyCode = $slot['key_code'];
     $config = $configuration[$keyCode] ?? ['action_key' => 'none', 'labels' => []];
-    $actionKey = array_key_exists($config['action_key'] ?? '', $actions)
-        ? (string) $config['action_key']
-        : 'none';
+    $storedActionKey = (string) ($config['action_key'] ?? 'none');
+    $storedModuleTarget = fn_dispensingShortcutModulePath($storedActionKey);
+    $actionKey = $storedModuleTarget !== null
+        ? 'open_module'
+        : (array_key_exists($storedActionKey, $actions) ? $storedActionKey : 'none');
     $labels = $config['labels'][$language] ?? [];
     $labels = is_array($labels) ? $labels : [];
     $selectedOptions = str_replace(
@@ -144,6 +158,11 @@ foreach ($slots as $slot) {
         'shortcut_key_label' => e($slot['key_label']),
         'shortcut_key_code' => e($keyCode),
         '_shortcut_action_options_html' => $selectedOptions,
+        'shortcut_module_target_value' => e((string) ($storedModuleTarget ?? '')),
+        'shortcut_module_target_list' => 'dispensing-shortcut-module-targets',
+        'shortcut_module_target_aria_label' => e(fn_t('platform_dispensing_shortcuts_module_target')),
+        'platform_dispensing_shortcuts_module_target' => fn_t('platform_dispensing_shortcuts_module_target'),
+        'platform_dispensing_shortcuts_module_targets_help' => fn_t('platform_dispensing_shortcuts_module_targets_help'),
         'shortcut_title_value' => e((string) ($labels['title'] ?? '')),
         'shortcut_tooltip_value' => e((string) ($labels['tooltip'] ?? '')),
     ]);
@@ -159,6 +178,8 @@ echo fn_templateRender('platform_dispensing_shortcuts.html', [
     'platform_dispensing_shortcuts_shift' => fn_t('platform_dispensing_shortcuts_shift'),
     'platform_dispensing_shortcuts_key' => fn_t('platform_dispensing_shortcuts_key'),
     'platform_dispensing_shortcuts_action' => fn_t('platform_dispensing_shortcuts_action'),
+    'platform_dispensing_shortcuts_module_target' => fn_t('platform_dispensing_shortcuts_module_target'),
+    'platform_dispensing_shortcuts_module_targets_help' => fn_t('platform_dispensing_shortcuts_module_targets_help'),
     'platform_dispensing_shortcuts_title_label' => fn_t('platform_dispensing_shortcuts_title_label'),
     'platform_dispensing_shortcuts_tooltip' => fn_t('platform_dispensing_shortcuts_tooltip'),
     'platform_settings_save' => fn_t('save'),
@@ -168,5 +189,6 @@ echo fn_templateRender('platform_dispensing_shortcuts.html', [
     '_normal_rows_html' => $rowsByLayer['normal'],
     '_ctrl_rows_html' => $rowsByLayer['ctrl'],
     '_shift_rows_html' => $rowsByLayer['shift'],
+    '_module_target_options_html' => $moduleTargetOptions,
 ]);
 page_end();

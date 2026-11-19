@@ -759,18 +759,21 @@ $functionKeysByLayer = ['normal' => '', 'ctrl' => '', 'shift' => ''];
 foreach (fn_dispensingShortcutSlots() as $shortcutSlot) {
     $keyCode = $shortcutSlot['key_code'];
     $shortcut = $shortcutConfiguration[$keyCode] ?? ['action_key' => 'none', 'labels' => []];
-    $actionKey = array_key_exists($shortcut['action_key'] ?? '', $shortcutActions)
-        ? (string) $shortcut['action_key']
-        : 'none';
+    $storedActionKey = (string) ($shortcut['action_key'] ?? 'none');
+    $moduleTarget = fn_dispensingShortcutModulePath($storedActionKey);
+    $actionKey = $moduleTarget !== null
+        ? $storedActionKey
+        : (array_key_exists($storedActionKey, $shortcutActions) ? $storedActionKey : 'none');
+    $actionDefinitionKey = $moduleTarget !== null ? 'open_module' : $actionKey;
     $labels = $shortcut['labels'][$shortcutLanguage] ?? [];
     $labels = is_array($labels) ? $labels : [];
     $shortcutTitle = trim((string) ($labels['title'] ?? ''));
     if ($shortcutTitle === '') {
-        $shortcutTitle = fn_t($shortcutActions[$actionKey]['title']);
+        $shortcutTitle = fn_t($shortcutActions[$actionDefinitionKey]['title']);
     }
     $shortcutTooltip = trim((string) ($labels['tooltip'] ?? ''));
     if ($shortcutTooltip === '') {
-        $shortcutTooltip = fn_t($shortcutActions[$actionKey]['tooltip']);
+        $shortcutTooltip = fn_t($shortcutActions[$actionDefinitionKey]['tooltip']);
     }
     $ariaKey = $shortcutSlot['layer'] === 'ctrl'
         ? 'Control+F' . $shortcutSlot['number']
