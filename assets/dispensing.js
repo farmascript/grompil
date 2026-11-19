@@ -291,13 +291,39 @@
     if (functionBar) {
         const functionLayers = [...functionBar.querySelectorAll('[data-function-layer]')];
         const functionButtons = [...functionBar.querySelectorAll('[data-function-key]')];
+        const layerControls = functionBar.querySelector('[data-function-layer-controls]');
+        const layerSelectButtons = [...(layerControls?.querySelectorAll('[data-select-function-layer]') || [])];
+        const touchLayerSelection = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        let selectedTouchLayer = 'normal';
 
         function updateFunctionLayer(event = {}) {
+            const hasPhysicalModifier = event.ctrlKey || event.shiftKey;
             const layer = event.ctrlKey && !event.shiftKey
                 ? 'ctrl'
-                : (event.shiftKey && !event.ctrlKey ? 'shift' : 'normal');
+                : (event.shiftKey && !event.ctrlKey
+                    ? 'shift'
+                    : (touchLayerSelection && !hasPhysicalModifier ? selectedTouchLayer : 'normal'));
             for (const element of functionLayers) {
                 element.classList.toggle('d-none', element.dataset.functionLayer !== layer);
+            }
+            for (const button of layerSelectButtons) {
+                const isActive = button.dataset.selectFunctionLayer === layer;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            }
+        }
+
+        if (touchLayerSelection && layerControls) {
+            functionBar.classList.add('has-touch-controls');
+            layerControls.classList.remove('d-none');
+            for (const button of layerSelectButtons) {
+                button.addEventListener('click', () => {
+                    const requestedLayer = button.dataset.selectFunctionLayer;
+                    selectedTouchLayer = requestedLayer === selectedTouchLayer && requestedLayer !== 'normal'
+                        ? 'normal'
+                        : requestedLayer;
+                    updateFunctionLayer();
+                });
             }
         }
 
