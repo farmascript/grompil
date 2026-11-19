@@ -129,13 +129,6 @@ if ($configuration === false) {
     $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('platform_settings_unavailable')) . '</div>';
 }
 
-$actionOptions = '';
-foreach ($actions as $actionKey => $action) {
-    $actionOptions .= '<option value="' . e($actionKey)
-        . '" data-default-title="' . e(fn_t($action['title']))
-        . '" data-default-tooltip="' . e(fn_t($action['tooltip']))
-        . '">' . e(fn_t($action['title'])) . '</option>';
-}
 $moduleTargets = fn_dispensingShortcutModuleTargets();
 $moduleTargetOptions = '';
 foreach ($moduleTargets as $moduleTarget) {
@@ -153,11 +146,14 @@ foreach ($slots as $slot) {
     $actionDefaults = $actions[$actionKey] ?? $actions['none'];
     $labels = $config['labels'][$language] ?? [];
     $labels = is_array($labels) ? $labels : [];
-    $selectedOptions = str_replace(
-        'value="' . e($actionKey) . '">',
-        'value="' . e($actionKey) . '" selected>',
-        $actionOptions
-    );
+    $selectedOptions = '';
+    foreach ($actions as $optionKey => $action) {
+        $selected = $optionKey === $actionKey ? ' selected' : '';
+        $selectedOptions .= '<option value="' . e($optionKey) . '"'
+            . ' data-default-title="' . e(fn_t($action['title']))
+            . '" data-default-tooltip="' . e(fn_t($action['tooltip']))
+            . '"' . $selected . '>' . e(fn_t($action['title'])) . '</option>';
+    }
     $rowsByLayer[$slot['layer']] .= fn_templateRender('platform_dispensing_shortcut_row.html', [
         'shortcut_key_label' => e($slot['key_label']),
         'shortcut_key_code' => e($keyCode),
