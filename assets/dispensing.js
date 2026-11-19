@@ -286,4 +286,65 @@
     document.addEventListener('click', (event) => {
         if (!suggestions.contains(event.target) && event.target !== input) hideSuggestions();
     });
+
+    const functionBar = document.querySelector('[data-function-bar]');
+    if (functionBar) {
+        const functionLayers = [...functionBar.querySelectorAll('[data-function-layer]')];
+        const functionButtons = [...functionBar.querySelectorAll('[data-function-key]')];
+
+        function updateFunctionLayer(event = {}) {
+            const layer = event.ctrlKey && !event.shiftKey
+                ? 'ctrl'
+                : (event.shiftKey && !event.ctrlKey ? 'shift' : 'normal');
+            for (const element of functionLayers) {
+                element.classList.toggle('d-none', element.dataset.functionLayer !== layer);
+            }
+        }
+
+        function runFunctionAction(actionKey) {
+            switch (actionKey) {
+                case 'focus_customer_search':
+                    patientInput?.focus();
+                    break;
+                case 'focus_product_search':
+                    input.focus();
+                    break;
+                case 'open_customer_modal':
+                    if (modal && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modal).show();
+                    break;
+                case 'toggle_customer_regex':
+                    if (patientRegex) {
+                        patientRegex.checked = !patientRegex.checked;
+                        patientRegex.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    break;
+                case 'clear_product_search':
+                    input.value = '';
+                    hideSuggestions();
+                    input.focus();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        for (const button of functionButtons) {
+            button.addEventListener('click', () => runFunctionAction(button.dataset.actionKey));
+        }
+
+        document.addEventListener('keydown', (event) => {
+            updateFunctionLayer(event);
+            const functionKey = /^F(1[0-2]|[1-9])$/.exec(event.key);
+            if (!functionKey || event.altKey || event.metaKey || (event.ctrlKey && event.shiftKey)) return;
+            const prefix = event.ctrlKey ? 'CTRL_' : (event.shiftKey ? 'SHIFT_' : '');
+            const keyCode = `${prefix}F${functionKey[1]}`;
+            const shortcut = functionButtons.find((button) => button.dataset.keyCode === keyCode);
+            if (!shortcut || shortcut.dataset.actionKey === 'none') return;
+            event.preventDefault();
+            runFunctionAction(shortcut.dataset.actionKey);
+        }, true);
+
+        document.addEventListener('keyup', updateFunctionLayer);
+        window.addEventListener('blur', () => updateFunctionLayer());
+    }
 })();

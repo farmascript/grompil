@@ -1,0 +1,37 @@
+<!-- 594028 b-->
+
+<div class="mb-4">
+    <h1 class="h2">@platform_dispensing_shortcuts_title@</h1>
+    <p class="text-secondary">@platform_dispensing_shortcuts_intro@</p>
+</div>
+@_message_html@
+<form method="post" class="card shadow-sm">
+    @_csrf_field_html@
+    <div class="card-body">
+        <p class="text-secondary">@platform_dispensing_shortcuts_language@ <strong>@shortcut_label_language@</strong></p>
+        <div class="table-responsive mb-4">
+            <h2 class="h5">@platform_dispensing_shortcuts_normal@</h2>
+            <table class="table align-middle">
+                <thead><tr><th>@platform_dispensing_shortcuts_key@</th><th>@platform_dispensing_shortcuts_action@</th><th>@platform_dispensing_shortcuts_title_label@</th><th>@platform_dispensing_shortcuts_tooltip@</th></tr></thead>
+                <tbody>@_normal_rows_html@</tbody>
+            </table>
+        </div>
+        <div class="table-responsive mb-4">
+            <h2 class="h5">@platform_dispensing_shortcuts_ctrl@</h2>
+            <table class="table align-middle">
+                <thead><tr><th>@platform_dispensing_shortcuts_key@</th><th>@platform_dispensing_shortcuts_action@</th><th>@platform_dispensing_shortcuts_title_label@</th><th>@platform_dispensing_shortcuts_tooltip@</th></tr></thead>
+                <tbody>@_ctrl_rows_html@</tbody>
+            </table>
+        </div>
+        <div class="table-responsive mb-4">
+            <h2 class="h5">@platform_dispensing_shortcuts_shift@</h2>
+            <table class="table align-middle">
+                <thead><tr><th>@platform_dispensing_shortcuts_key@</th><th>@platform_dispensing_shortcuts_action@</th><th>@platform_dispensing_shortcuts_title_label@</th><th>@platform_dispensing_shortcuts_tooltip@</th></tr></thead>
+                <tbody>@_shift_rows_html@</tbody>
+            </table>
+        </div>
+        <button class="btn btn-primary" type="submit">@platform_settings_save@</button>
+    </div>
+</form>
+
+<!-- 594028 e-->

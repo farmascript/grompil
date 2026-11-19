@@ -32,6 +32,7 @@ $modules = [
     ['companies.manage', 'scripts/check_templates.php', 'template_check_heading', 'template_check_intro'],
     ['companies.manage', 'companies.php', 'nav_companies', 'admin_companies_description'],
     ['companies.manage', 'platform-settings.php', 'platform_settings_title', 'platform_settings_intro'],
+    ['companies.manage', 'platform-dispensing-keys.php', 'platform_dispensing_shortcuts_title', 'platform_dispensing_shortcuts_intro'],
     ['companies.manage', 'platform-security.php', 'platform_security_title', 'platform_security_intro'],
     ['companies.manage', 'dd-varia.php', 'dd_varia_title', 'dd_varia_intro'],
 ];

@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 require_once GROMPIL_ROOT . '/includes/contact_manager.php';
+require_once GROMPIL_ROOT . '/includes/dispensing_shortcuts.php';
 $currentUser = require_login();
 $company = require_company_context($currentUser);
 if ($company === null || !grompil_can_access_module('dispense.php', $currentUser, $company)) {
@@ -750,6 +751,50 @@ $patientPanelHtml = $dispenseMode === 'walk_in'
         'dispense_walkin_mode_url' => e($walkInModeUrl),
     ]);
 
+$shortcutConfiguration = fn_loadDispensingShortcutConfiguration();
+$shortcutConfiguration = $shortcutConfiguration === false ? [] : $shortcutConfiguration;
+$shortcutActions = fn_dispensingShortcutActions();
+$shortcutLanguage = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
+$functionKeysByLayer = ['normal' => '', 'ctrl' => '', 'shift' => ''];
+foreach (fn_dispensingShortcutSlots() as $shortcutSlot) {
+    $keyCode = $shortcutSlot['key_code'];
+    $shortcut = $shortcutConfiguration[$keyCode] ?? ['action_key' => 'none', 'labels' => []];
+    $actionKey = array_key_exists($shortcut['action_key'] ?? '', $shortcutActions)
+        ? (string) $shortcut['action_key']
+        : 'none';
+    $labels = $shortcut['labels'][$shortcutLanguage] ?? [];
+    $labels = is_array($labels) ? $labels : [];
+    $shortcutTitle = trim((string) ($labels['title'] ?? ''));
+    if ($shortcutTitle === '') {
+        $shortcutTitle = fn_t($shortcutActions[$actionKey]['title']);
+    }
+    $shortcutTooltip = trim((string) ($labels['tooltip'] ?? ''));
+    if ($shortcutTooltip === '') {
+        $shortcutTooltip = fn_t($shortcutActions[$actionKey]['tooltip']);
+    }
+    $ariaKey = $shortcutSlot['layer'] === 'ctrl'
+        ? 'Control+F' . $shortcutSlot['number']
+        : ($shortcutSlot['layer'] === 'shift'
+            ? 'Shift+F' . $shortcutSlot['number']
+            : 'F' . $shortcutSlot['number']);
+    $functionKeysByLayer[$shortcutSlot['layer']] .= fn_moduleTemplateRender('dispensing', 'dispensing_function_key.html', [
+        'shortcut_key_code' => $keyCode,
+        'shortcut_action_key' => $actionKey,
+        'shortcut_aria_key' => $ariaKey,
+        'shortcut_accessible_label' => $shortcutSlot['key_label'] . ': ' . $shortcutTitle . '. ' . $shortcutTooltip,
+        'shortcut_key_label' => $shortcutSlot['key_label'],
+        'shortcut_title' => $shortcutTitle,
+        'shortcut_tooltip' => $shortcutTooltip,
+    ]);
+}
+$functionBarHtml = fn_moduleTemplateRender('dispensing', 'dispensing_function_bar.html', [
+    'dispensing_shortcuts_bar_aria' => fn_t('dispensing_shortcuts_bar_aria'),
+    'dispensing_shortcuts_bar_help' => fn_t('dispensing_shortcuts_bar_help'),
+    '_normal_function_keys_html' => $functionKeysByLayer['normal'],
+    '_ctrl_function_keys_html' => $functionKeysByLayer['ctrl'],
+    '_shift_function_keys_html' => $functionKeysByLayer['shift'],
+]);
+
 $dispensingTemplateVariant = fn_moduleTemplateVariant('dispensing');
 page_start(fn_t('dispense_title'), $currentUser, $dispensingTemplateVariant === 'wide');
 echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
@@ -808,7 +853,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.24',
+    'asset_version' => '0.18.25',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
@@ -841,6 +886,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     '_dispense_patient_edit_button_html' => $patientEditButtonHtml,
     '_dispense_brand_html' => $companyBrandHtml,
     '_dispense_alert_html' => $messageHtml,
+    '_dispense_function_bar_html' => $functionBarHtml,
     '_dispense_patient_actions_html' => $dispenseMode === 'walk_in' ? $modeSwitchHtml : $addPatientButtonHtml,
     '_dispense_patient_panel_html' => $patientPanelHtml,
 ]);
