@@ -235,6 +235,26 @@
         hideSuggestions();
     }
 
+    function exactIdentifierProduct(data, query) {
+        const results = data.results || [];
+        if (results.length !== 1 || Number(data.total_count ?? results.length) !== 1) return null;
+
+        const product = results[0];
+        const matchType = String(product.match_type || '').toLowerCase();
+        const identifier = matchType === 'cnk'
+            ? String(product.cnk || '')
+            : (matchType === 'gtin' ? String(product.gtin || '') : '');
+        if (!identifier) return null;
+
+        const normalize = (value) => String(value).replace(/[\s.-]/g, '');
+        const normalizedQuery = normalize(query);
+        const normalizedIdentifier = normalize(identifier);
+        const validLength = matchType === 'cnk'
+            ? /^[0-9]{6,7}$/.test(normalizedQuery)
+            : /^[0-9]{8,14}$/.test(normalizedQuery);
+        return validLength && normalizedQuery === normalizedIdentifier ? product : null;
+    }
+
     function applyDispenseStatus() {
         if (!dispenseStatusSelect) return;
         const status = dispenseStatusSelect.value || 'prescription';
@@ -302,7 +322,14 @@
                 }
                 const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin', signal: requestController.signal });
                 if (!response.ok) throw new Error('search_failed');
-                showResults(await response.json());
+                const data = await response.json();
+                if (input.value.trim() !== query) return;
+                const exactProduct = exactIdentifierProduct(data, query);
+                if (exactProduct) {
+                    addProduct(exactProduct);
+                    return;
+                }
+                showResults(data);
             } catch (error) {
                 if (error.name === 'AbortError') return;
                 suggestions.replaceChildren();
