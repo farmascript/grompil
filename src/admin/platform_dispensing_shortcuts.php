@@ -93,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'tooltip' => $validated[$keyCode]['tooltip'],
             ];
             $labelsJson = json_encode($currentLabels, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-            $actionConfigJson = json_encode($validated[$keyCode]['action_config'], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            // action_config is constrained to a JSON object; an empty PHP array encodes as [] instead of {}.
+            $actionConfigJson = json_encode((object) $validated[$keyCode]['action_config'], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
             if (!is_string($labelsJson) || !is_string($actionConfigJson)) {
                 $saved = false;
                 break;
