@@ -144,11 +144,31 @@
     const basket = new Map();
     let timer = 0;
     let requestController = null;
+    let activeSuggestionIndex = -1;
+
+    function productSuggestionButtons() {
+        return [...suggestions.querySelectorAll('button.product-suggestion')];
+    }
+
+    function setActiveSuggestion(index) {
+        const buttons = productSuggestionButtons();
+        if (!buttons.length) return;
+        activeSuggestionIndex = Math.max(0, Math.min(index, buttons.length - 1));
+        buttons.forEach((button, buttonIndex) => {
+            const active = buttonIndex === activeSuggestionIndex;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        input.setAttribute('aria-activedescendant', buttons[activeSuggestionIndex].id);
+        buttons[activeSuggestionIndex].scrollIntoView({ block: 'nearest' });
+    }
 
     function hideSuggestions() {
         suggestions.classList.add('d-none');
         suggestions.replaceChildren();
+        activeSuggestionIndex = -1;
         input.setAttribute('aria-expanded', 'false');
+        input.removeAttribute('aria-activedescendant');
     }
 
     function renderBasket() {
@@ -272,10 +292,15 @@
 
     function showResults(data) {
         suggestions.replaceChildren();
-        for (const product of data.results || []) {
+        activeSuggestionIndex = -1;
+        for (const [index, product] of (data.results || []).entries()) {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'list-group-item list-group-item-action product-suggestion';
+            button.id = `dispense-product-option-${index}`;
+            button.setAttribute('role', 'option');
+            button.setAttribute('aria-selected', 'false');
+            button.tabIndex = -1;
             const title = document.createElement('strong');
             const productName = (language === 'fr' ? product.prescription_name_fr : product.prescription_name_nl)
                 || product.prescription_name_nl || product.prescription_name_fr || product.official_name || '';
@@ -340,6 +365,34 @@
                 suggestions.classList.remove('d-none');
             }
         }, 220);
+    });
+    input.addEventListener('keydown', (event) => {
+        const buttons = productSuggestionButtons();
+        if (event.key === 'Escape') {
+            if (!suggestions.classList.contains('d-none')) {
+                event.preventDefault();
+                hideSuggestions();
+            }
+            return;
+        }
+        if (suggestions.classList.contains('d-none') || buttons.length === 0) return;
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setActiveSuggestion(activeSuggestionIndex < 0 ? 0 : activeSuggestionIndex + 1);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setActiveSuggestion(activeSuggestionIndex < 0 ? buttons.length - 1 : activeSuggestionIndex - 1);
+        } else if (event.key === 'Home') {
+            event.preventDefault();
+            setActiveSuggestion(0);
+        } else if (event.key === 'End') {
+            event.preventDefault();
+            setActiveSuggestion(buttons.length - 1);
+        } else if (event.key === 'Enter' && activeSuggestionIndex >= 0) {
+            event.preventDefault();
+            buttons[activeSuggestionIndex].click();
+        }
     });
     document.addEventListener('click', (event) => {
         if (!suggestions.contains(event.target) && event.target !== input) hideSuggestions();
