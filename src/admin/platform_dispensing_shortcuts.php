@@ -10,7 +10,12 @@ require_once GROMPIL_ROOT . '/includes/dispensing_shortcuts.php';
 
 $currentUser = grompil_require_module_access('platform-dispensing-keys.php');
 if (current_company_context($currentUser) !== null || !is_platform_operator($currentUser)) {
-    grompil_show_error(403, 86143, fn_t('access_denied'), fn_t('access_denied'));
+    grompil_show_error(
+        403,
+        86142,
+        'Deze keuze is niet mogelijk zolang je voor een bedrijf werkt. Keer terug naar platformbeheer en probeer het opnieuw.',
+        'Keuze niet mogelijk'
+    );
 }
 
 $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
