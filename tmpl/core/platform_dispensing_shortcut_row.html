@@ -1,10 +1,12 @@
-<tr>
+<tr data-shortcut-row>
     <th scope="row"><kbd>@shortcut_key_label@</kbd></th>
     <td>
         <select class="form-select mb-1" name="shortcuts[@shortcut_key_code@][action_key]">@_shortcut_action_options_html@</select>
-        <input class="form-control form-control-sm" type="text" name="shortcuts[@shortcut_key_code@][module_target]" value="@shortcut_module_target_value@" list="@shortcut_module_target_list@" placeholder="@platform_dispensing_shortcuts_module_target@" aria-label="@shortcut_module_target_aria_label@">
-        <small class="text-secondary">@platform_dispensing_shortcuts_module_targets_help@</small>
+        <div class="@shortcut_module_target_visibility@" data-module-target-wrap>
+            <input class="form-control form-control-sm" type="text" name="shortcuts[@shortcut_key_code@][module_target]" value="@shortcut_module_target_value@" list="@shortcut_module_target_list@" placeholder="@platform_dispensing_shortcuts_module_target@" aria-label="@shortcut_module_target_aria_label@">
+            <small class="text-secondary">@platform_dispensing_shortcuts_module_targets_help@</small>
+        </div>
     </td>
-    <td><input class="form-control" type="text" maxlength="80" name="shortcuts[@shortcut_key_code@][title]" value="@shortcut_title_value@" aria-label="@platform_dispensing_shortcuts_title_label@ @shortcut_key_label@"></td>
-    <td><input class="form-control" type="text" maxlength="250" name="shortcuts[@shortcut_key_code@][tooltip]" value="@shortcut_tooltip_value@" aria-label="@platform_dispensing_shortcuts_tooltip@ @shortcut_key_label@"></td>
+    <td><input class="form-control" type="text" maxlength="80" name="shortcuts[@shortcut_key_code@][title]" value="@shortcut_title_value@" placeholder="@shortcut_title_placeholder@" aria-label="@platform_dispensing_shortcuts_title_label@ @shortcut_key_label@"></td>
+    <td><input class="form-control" type="text" maxlength="250" name="shortcuts[@shortcut_key_code@][tooltip]" value="@shortcut_tooltip_value@" placeholder="@shortcut_tooltip_placeholder@" aria-label="@platform_dispensing_shortcuts_tooltip@ @shortcut_key_label@"></td>
 </tr>

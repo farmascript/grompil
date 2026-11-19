@@ -131,7 +131,10 @@ if ($configuration === false) {
 
 $actionOptions = '';
 foreach ($actions as $actionKey => $action) {
-    $actionOptions .= '<option value="' . e($actionKey) . '">' . e(fn_t($action['title'])) . '</option>';
+    $actionOptions .= '<option value="' . e($actionKey)
+        . '" data-default-title="' . e(fn_t($action['title']))
+        . '" data-default-tooltip="' . e(fn_t($action['tooltip']))
+        . '">' . e(fn_t($action['title'])) . '</option>';
 }
 $moduleTargets = fn_dispensingShortcutModuleTargets();
 $moduleTargetOptions = '';
@@ -147,6 +150,7 @@ foreach ($slots as $slot) {
     $actionKey = $storedModuleTarget !== null
         ? 'open_module'
         : (array_key_exists($storedActionKey, $actions) ? $storedActionKey : 'none');
+    $actionDefaults = $actions[$actionKey] ?? $actions['none'];
     $labels = $config['labels'][$language] ?? [];
     $labels = is_array($labels) ? $labels : [];
     $selectedOptions = str_replace(
@@ -161,10 +165,13 @@ foreach ($slots as $slot) {
         'shortcut_module_target_value' => e((string) ($storedModuleTarget ?? '')),
         'shortcut_module_target_list' => 'dispensing-shortcut-module-targets',
         'shortcut_module_target_aria_label' => e(fn_t('platform_dispensing_shortcuts_module_target')),
+        'shortcut_module_target_visibility' => $actionKey === 'open_module' ? '' : 'd-none',
         'platform_dispensing_shortcuts_module_target' => fn_t('platform_dispensing_shortcuts_module_target'),
         'platform_dispensing_shortcuts_module_targets_help' => fn_t('platform_dispensing_shortcuts_module_targets_help'),
         'shortcut_title_value' => e((string) ($labels['title'] ?? '')),
+        'shortcut_title_placeholder' => e(fn_t($actionDefaults['title'])),
         'shortcut_tooltip_value' => e((string) ($labels['tooltip'] ?? '')),
+        'shortcut_tooltip_placeholder' => e(fn_t($actionDefaults['tooltip'])),
     ]);
 }
 

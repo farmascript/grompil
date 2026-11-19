@@ -34,5 +34,21 @@
         <button class="btn btn-primary" type="submit">@platform_settings_save@</button>
     </div>
 </form>
+<script>
+    document.querySelectorAll('[data-shortcut-row]').forEach((row) => {
+        const action = row.querySelector('select[name$="[action_key]"]');
+        const target = row.querySelector('[data-module-target-wrap]');
+        const title = row.querySelector('input[name$="[title]"]');
+        const tooltip = row.querySelector('input[name$="[tooltip]"]');
+        const update = () => {
+            const option = action.selectedOptions[0];
+            target.classList.toggle('d-none', action.value !== 'open_module');
+            title.placeholder = option.dataset.defaultTitle || '';
+            tooltip.placeholder = option.dataset.defaultTooltip || '';
+        };
+        action.addEventListener('change', update);
+        update();
+    });
+</script>
 
 <!-- 594028 e-->
