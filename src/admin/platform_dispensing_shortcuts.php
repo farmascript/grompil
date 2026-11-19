@@ -149,10 +149,18 @@ foreach ($slots as $slot) {
     $selectedOptions = '';
     foreach ($actions as $optionKey => $action) {
         $selected = $optionKey === $actionKey ? ' selected' : '';
+        $optionLabel = match ($optionKey) {
+            'none' => fn_t($action['title']),
+            'open_module' => $optionKey === $actionKey && $storedModuleTarget !== null
+                ? $storedModuleTarget
+                : fn_t($action['title']),
+            default => 'assets/dispensing.js · ' . $optionKey,
+        };
         $selectedOptions .= '<option value="' . e($optionKey) . '"'
             . ' data-default-title="' . e(fn_t($action['title']))
             . '" data-default-tooltip="' . e(fn_t($action['tooltip']))
-            . '"' . $selected . '>' . e(fn_t($action['title'])) . '</option>';
+            . '" data-action-display="' . e(fn_t($action['title']))
+            . '"' . $selected . '>' . e($optionLabel) . '</option>';
     }
     $rowsByLayer[$slot['layer']] .= fn_templateRender('platform_dispensing_shortcut_row.html', [
         'shortcut_key_label' => e($slot['key_label']),

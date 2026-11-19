@@ -38,15 +38,21 @@
     document.querySelectorAll('[data-shortcut-row]').forEach((row) => {
         const action = row.querySelector('select[name$="[action_key]"]');
         const target = row.querySelector('[data-module-target-wrap]');
+        const modulePath = target.querySelector('input');
         const title = row.querySelector('input[name$="[title]"]');
         const tooltip = row.querySelector('input[name$="[tooltip]"]');
         const update = () => {
             const option = action.selectedOptions[0];
-            target.classList.toggle('d-none', action.value !== 'open_module');
+            const isModule = action.value === 'open_module';
+            target.classList.toggle('d-none', !isModule);
             title.placeholder = option.dataset.defaultTitle || '';
             tooltip.placeholder = option.dataset.defaultTooltip || '';
+            if (isModule) {
+                option.textContent = modulePath.value.trim() || option.dataset.actionDisplay || '';
+            }
         };
         action.addEventListener('change', update);
+        modulePath.addEventListener('input', update);
         update();
     });
 </script>
