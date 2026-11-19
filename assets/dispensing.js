@@ -301,11 +301,29 @@
             }
         }
 
-        function runFunctionAction(actionKey) {
+        function runFunctionAction(actionKey, actionConfig = {}) {
             if (actionKey.startsWith('open_page:')) {
                 const modulePath = actionKey.slice('open_page:'.length);
                 if (/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*\.php$/.test(modulePath)) {
                     window.location.assign(new URL(modulePath, window.location.href).href);
+                }
+                return;
+            }
+
+            if (actionKey === 'open_url') {
+                const url = String(actionConfig.url || '').trim();
+                if (!url || /[\u0000-\u0020\u007f\\]/.test(url)) return;
+                let destination;
+                try {
+                    destination = new URL(url, window.location.href);
+                } catch {
+                    return;
+                }
+                if (!['http:', 'https:'].includes(destination.protocol)) return;
+                if (actionConfig.new_tab !== false) {
+                    window.open(destination.href, '_blank', 'noopener,noreferrer');
+                } else {
+                    window.location.assign(destination.href);
                 }
                 return;
             }
@@ -336,8 +354,17 @@
             }
         }
 
+        function readFunctionActionConfig(button) {
+            try {
+                const config = JSON.parse(button.dataset.actionConfig || '{}');
+                return config && typeof config === 'object' ? config : {};
+            } catch {
+                return {};
+            }
+        }
+
         for (const button of functionButtons) {
-            button.addEventListener('click', () => runFunctionAction(button.dataset.actionKey));
+            button.addEventListener('click', () => runFunctionAction(button.dataset.actionKey, readFunctionActionConfig(button)));
         }
 
         document.addEventListener('keydown', (event) => {
@@ -349,7 +376,7 @@
             const shortcut = functionButtons.find((button) => button.dataset.keyCode === keyCode);
             if (!shortcut || shortcut.dataset.actionKey === 'none') return;
             event.preventDefault();
-            runFunctionAction(shortcut.dataset.actionKey);
+            runFunctionAction(shortcut.dataset.actionKey, readFunctionActionConfig(shortcut));
         }, true);
 
         document.addEventListener('keyup', updateFunctionLayer);

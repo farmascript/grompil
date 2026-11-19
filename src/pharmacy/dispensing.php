@@ -760,6 +760,7 @@ foreach (fn_dispensingShortcutSlots() as $shortcutSlot) {
     $keyCode = $shortcutSlot['key_code'];
     $shortcut = $shortcutConfiguration[$keyCode] ?? ['action_key' => 'none', 'labels' => []];
     $storedActionKey = (string) ($shortcut['action_key'] ?? 'none');
+    $actionConfig = is_array($shortcut['action_config'] ?? null) ? $shortcut['action_config'] : [];
     $moduleTarget = fn_dispensingShortcutModulePath($storedActionKey);
     $actionKey = $moduleTarget !== null
         ? $storedActionKey
@@ -783,6 +784,7 @@ foreach (fn_dispensingShortcutSlots() as $shortcutSlot) {
     $functionKeysByLayer[$shortcutSlot['layer']] .= fn_moduleTemplateRender('dispensing', 'dispensing_function_key.html', [
         'shortcut_key_code' => $keyCode,
         'shortcut_action_key' => $actionKey,
+        'shortcut_action_config' => e((string) json_encode($actionConfig, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)),
         'shortcut_aria_key' => $ariaKey,
         'shortcut_accessible_label' => $shortcutSlot['key_label'] . ': ' . $shortcutTitle . '. ' . $shortcutTooltip,
         'shortcut_key_label' => $shortcutSlot['key_label'],

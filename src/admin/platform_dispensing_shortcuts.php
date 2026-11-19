@@ -38,21 +38,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             : [];
         $actionKey = is_scalar($posted['action_key'] ?? null) ? (string) $posted['action_key'] : '';
         $moduleTarget = is_scalar($posted['module_target'] ?? null) ? trim((string) $posted['module_target']) : '';
+        $urlTarget = is_scalar($posted['url_target'] ?? null) ? trim((string) $posted['url_target']) : '';
+        $newTab = isset($posted['new_tab']) && is_scalar($posted['new_tab'])
+            && in_array((string) $posted['new_tab'], ['1', 'true', 'on'], true);
         $moduleTargetValid = $actionKey !== 'open_module'
             || in_array($moduleTarget, fn_dispensingShortcutModuleTargets(), true);
         if ($actionKey === 'open_module' && $moduleTargetValid) {
             $actionKey = 'open_page:' . $moduleTarget;
         }
+        $urlTargetValid = $actionKey !== 'open_url' || fn_isSafeDispensingShortcutUrl($urlTarget);
         $title = is_scalar($posted['title'] ?? null) ? trim((string) $posted['title']) : '';
         $tooltip = is_scalar($posted['tooltip'] ?? null) ? trim((string) $posted['tooltip']) : '';
         $titleLength = function_exists('mb_strlen') ? mb_strlen($title) : strlen($title);
         $tooltipLength = function_exists('mb_strlen') ? mb_strlen($tooltip) : strlen($tooltip);
         $isModuleAction = fn_dispensingShortcutModulePath($actionKey) !== null;
-        if (!$moduleTargetValid || (!array_key_exists($actionKey, $actions) && !$isModuleAction) || strlen($actionKey) > 80 || $titleLength > 80 || $tooltipLength > 250) {
+        if (!$moduleTargetValid || !$urlTargetValid || (!array_key_exists($actionKey, $actions) && !$isModuleAction) || strlen($actionKey) > 80 || $titleLength > 80 || $tooltipLength > 250) {
             $valid = false;
         }
         $validated[$keyCode] = [
             'action_key' => $actionKey,
+            'action_config' => $actionKey === 'open_url'
+                ? ['url' => $urlTarget, 'new_tab' => $newTab]
+                : [],
             'title' => $title,
             'tooltip' => $tooltip,
         ];
@@ -86,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'tooltip' => $validated[$keyCode]['tooltip'],
             ];
             $labelsJson = json_encode($currentLabels, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-            if (!is_string($labelsJson)) {
+            $actionConfigJson = json_encode($validated[$keyCode]['action_config'], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            if (!is_string($labelsJson) || !is_string($actionConfigJson)) {
                 $saved = false;
                 break;
             }
@@ -94,14 +102,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = db_query_params(
                     'platform_dispensing_shortcuts.save',
                     'INSERT INTO ft_platform_dispensing_function_keys
-                        (key_code, action_key, labels, updated_by_user_code, updated_at)
-                     VALUES ($1, $2, $3::jsonb, $4, now())
+                        (key_code, action_key, action_config, labels, updated_by_user_code, updated_at)
+                     VALUES ($1, $2, $3::jsonb, $4::jsonb, $5, now())
                      ON CONFLICT (key_code) DO UPDATE
                      SET action_key = EXCLUDED.action_key,
+                         action_config = EXCLUDED.action_config,
                          labels = EXCLUDED.labels,
                          updated_by_user_code = EXCLUDED.updated_by_user_code,
                          updated_at = now()',
-                    [$keyCode, $validated[$keyCode]['action_key'], $labelsJson, (string) $currentUser['user_code']]
+                    [$keyCode, $validated[$keyCode]['action_key'], $actionConfigJson, $labelsJson, (string) $currentUser['user_code']]
                 );
             } catch (GrompilDatabaseQueryException) {
                 $result = false;
@@ -139,6 +148,7 @@ foreach ($slots as $slot) {
     $keyCode = $slot['key_code'];
     $config = $configuration[$keyCode] ?? ['action_key' => 'none', 'labels' => []];
     $storedActionKey = (string) ($config['action_key'] ?? 'none');
+    $storedActionConfig = is_array($config['action_config'] ?? null) ? $config['action_config'] : [];
     $storedModuleTarget = fn_dispensingShortcutModulePath($storedActionKey);
     $actionKey = $storedModuleTarget !== null
         ? 'open_module'
@@ -153,6 +163,9 @@ foreach ($slots as $slot) {
             'none' => fn_t($action['title']),
             'open_module' => $optionKey === $actionKey && $storedModuleTarget !== null
                 ? $storedModuleTarget
+                : fn_t($action['title']),
+            'open_url' => $optionKey === $actionKey && ($storedActionConfig['url'] ?? '') !== ''
+                ? (string) $storedActionConfig['url']
                 : fn_t($action['title']),
             default => 'assets/dispensing.js · ' . $optionKey,
         };
@@ -170,8 +183,15 @@ foreach ($slots as $slot) {
         'shortcut_module_target_list' => 'dispensing-shortcut-module-targets',
         'shortcut_module_target_aria_label' => e(fn_t('platform_dispensing_shortcuts_module_target')),
         'shortcut_module_target_visibility' => $actionKey === 'open_module' ? '' : 'd-none',
+        'shortcut_url_target_visibility' => $actionKey === 'open_url' ? '' : 'd-none',
+        'shortcut_url_target_value' => e((string) ($storedActionConfig['url'] ?? '')),
+        'shortcut_url_target_aria_label' => e(fn_t('platform_dispensing_shortcuts_url_target')),
+        'shortcut_url_target_placeholder' => e(fn_t('platform_dispensing_shortcuts_url_placeholder')),
+        'shortcut_new_tab_checked' => ($storedActionConfig['new_tab'] ?? true) === true ? ' checked' : '',
         'platform_dispensing_shortcuts_module_target' => fn_t('platform_dispensing_shortcuts_module_target'),
         'platform_dispensing_shortcuts_module_targets_help' => fn_t('platform_dispensing_shortcuts_module_targets_help'),
+        'platform_dispensing_shortcuts_new_tab' => fn_t('platform_dispensing_shortcuts_new_tab'),
+        'platform_dispensing_shortcuts_url_help' => fn_t('platform_dispensing_shortcuts_url_help'),
         'shortcut_title_value' => e((string) ($labels['title'] ?? '')),
         'shortcut_title_placeholder' => e(fn_t($actionDefaults['title'])),
         'shortcut_tooltip_value' => e((string) ($labels['tooltip'] ?? '')),
@@ -191,6 +211,10 @@ echo fn_templateRender('platform_dispensing_shortcuts.html', [
     'platform_dispensing_shortcuts_action' => fn_t('platform_dispensing_shortcuts_action'),
     'platform_dispensing_shortcuts_module_target' => fn_t('platform_dispensing_shortcuts_module_target'),
     'platform_dispensing_shortcuts_module_targets_help' => fn_t('platform_dispensing_shortcuts_module_targets_help'),
+    'platform_dispensing_shortcuts_url_target' => fn_t('platform_dispensing_shortcuts_url_target'),
+    'platform_dispensing_shortcuts_url_placeholder' => fn_t('platform_dispensing_shortcuts_url_placeholder'),
+    'platform_dispensing_shortcuts_new_tab' => fn_t('platform_dispensing_shortcuts_new_tab'),
+    'platform_dispensing_shortcuts_url_help' => fn_t('platform_dispensing_shortcuts_url_help'),
     'platform_dispensing_shortcuts_title_label' => fn_t('platform_dispensing_shortcuts_title_label'),
     'platform_dispensing_shortcuts_tooltip' => fn_t('platform_dispensing_shortcuts_tooltip'),
     'platform_settings_save' => fn_t('save'),

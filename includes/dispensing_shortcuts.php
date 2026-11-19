@@ -32,7 +32,33 @@ function fn_dispensingShortcutActions(): array
         'toggle_customer_regex' => ['title' => 'dispensing_shortcut_toggle_regex', 'tooltip' => 'dispensing_shortcut_toggle_regex_help'],
         'clear_product_search' => ['title' => 'dispensing_shortcut_clear_product_search', 'tooltip' => 'dispensing_shortcut_clear_product_search_help'],
         'open_module' => ['title' => 'dispensing_shortcut_open_module', 'tooltip' => 'dispensing_shortcut_open_module_help'],
+        'open_url' => ['title' => 'dispensing_shortcut_open_url', 'tooltip' => 'dispensing_shortcut_open_url_help'],
     ];
+}
+
+function fn_isSafeDispensingShortcutUrl(string $url): bool
+{
+    $url = trim($url);
+    if ($url === '' || strlen($url) > 2048 || preg_match('/[\x00-\x20\x7f\\\\]/', $url) === 1) {
+        return false;
+    }
+
+    $parts = parse_url($url);
+    if (!is_array($parts)) {
+        return false;
+    }
+    $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+    if ($scheme !== '') {
+        return in_array($scheme, ['http', 'https'], true)
+            && isset($parts['host'])
+            && !isset($parts['user'])
+            && !isset($parts['pass'])
+            && filter_var($url, FILTER_VALIDATE_URL) !== false;
+    }
+
+    return !str_starts_with($url, '//')
+        && trim((string) ($parts['path'] ?? '')) !== ''
+        && !preg_match('~(^|/)\.\.?(/|$)~', (string) ($parts['path'] ?? ''));
 }
 
 /**
@@ -73,13 +99,13 @@ function fn_dispensingShortcutModulePath(string $actionKey): ?string
     return in_array($module, fn_dispensingShortcutModuleTargets(), true) ? $module : null;
 }
 
-/** @return array<string, array{action_key:string, labels:array}>|false */
+/** @return array<string, array{action_key:string, action_config:array, labels:array}>|false */
 function fn_loadDispensingShortcutConfiguration(): array|false
 {
     try {
         $result = db_query_params(
             'dispensing.shortcuts.load',
-            'SELECT key_code, action_key, labels
+            'SELECT key_code, action_key, action_config, labels
              FROM ft_platform_dispensing_function_keys'
         );
     } catch (GrompilDatabaseQueryException) {
@@ -92,8 +118,10 @@ function fn_loadDispensingShortcutConfiguration(): array|false
     $configuration = [];
     while ($row = pg_fetch_assoc($result)) {
         $labels = json_decode((string) ($row['labels'] ?? '{}'), true);
+        $actionConfig = json_decode((string) ($row['action_config'] ?? '{}'), true);
         $configuration[(string) $row['key_code']] = [
             'action_key' => (string) $row['action_key'],
+            'action_config' => is_array($actionConfig) ? $actionConfig : [],
             'labels' => is_array($labels) ? $labels : [],
         ];
     }

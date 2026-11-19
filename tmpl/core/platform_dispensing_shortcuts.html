@@ -39,20 +39,27 @@
         const action = row.querySelector('select[name$="[action_key]"]');
         const target = row.querySelector('[data-module-target-wrap]');
         const modulePath = target.querySelector('input');
+        const urlTarget = row.querySelector('[data-url-target-wrap]');
+        const urlInput = urlTarget.querySelector('input[type="text"]');
         const title = row.querySelector('input[name$="[title]"]');
         const tooltip = row.querySelector('input[name$="[tooltip]"]');
         const update = () => {
             const option = action.selectedOptions[0];
             const isModule = action.value === 'open_module';
+            const isUrl = action.value === 'open_url';
             target.classList.toggle('d-none', !isModule);
+            urlTarget.classList.toggle('d-none', !isUrl);
             title.placeholder = option.dataset.defaultTitle || '';
             tooltip.placeholder = option.dataset.defaultTooltip || '';
             if (isModule) {
                 option.textContent = modulePath.value.trim() || option.dataset.actionDisplay || '';
+            } else if (isUrl) {
+                option.textContent = urlInput.value.trim() || option.dataset.actionDisplay || '';
             }
         };
         action.addEventListener('change', update);
         modulePath.addEventListener('input', update);
+        urlInput.addEventListener('input', update);
         update();
     });
 </script>
