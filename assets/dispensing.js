@@ -52,7 +52,7 @@
                 const url = new URL(page.dataset.patientEndpoint, window.location.href);
                 url.searchParams.set('patient', String(patient.customer_code || ''));
                 url.searchParams.set('mode', 'patient');
-                url.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'v');
+                url.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription');
                 const link = document.createElement('a');
                 link.className = 'list-group-item list-group-item-action patient-suggestion';
                 link.href = url.href;
@@ -178,7 +178,7 @@
             const statusCell = document.createElement('td');
             const statusBadge = document.createElement('span');
             statusBadge.className = 'badge text-bg-light';
-            statusBadge.textContent = product.status;
+            statusBadge.textContent = product.statusShortCode;
             statusCell.append(statusBadge);
             const quantity = document.createElement('td');
             const quantityInput = document.createElement('input');
@@ -210,7 +210,9 @@
     }
 
     function addProduct(product) {
-        const status = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'v';
+        const selectedStatusOption = dispenseStatusSelect?.selectedOptions[0];
+        const status = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription';
+        const statusShortCode = selectedStatusOption?.dataset.shortCode || status;
         const key = `${product.amp_code}|${product.ampp_code}|${product.cnk}|${status}`;
         const current = basket.get(key);
         if (current) current.quantity += 1;
@@ -220,6 +222,7 @@
             amp_code: String(product.amp_code || ''),
             ampp_code: String(product.ampp_code || ''),
             status,
+            statusShortCode,
             name: String((language === 'fr' ? product.prescription_name_fr : product.prescription_name_nl)
                 || product.prescription_name_nl || product.prescription_name_fr || product.official_name || ''),
             package: String((language === 'fr' ? product.pack_display_fr : product.pack_display_nl)
@@ -234,8 +237,8 @@
 
     function applyDispenseStatus() {
         if (!dispenseStatusSelect) return;
-        const status = dispenseStatusSelect.value || 'v';
-        const freeDispensing = status === 'z';
+        const status = dispenseStatusSelect.value || 'prescription';
+        const freeDispensing = status === 'free_sale';
         page.dataset.dispenseStatus = status;
         page.dataset.dispenseMode = freeDispensing ? 'walk_in' : 'patient';
         if (patientStatusInput) patientStatusInput.value = status;
@@ -293,7 +296,7 @@
                 url.searchParams.set('product_suggest', '1');
                 url.searchParams.set('q', query);
                 url.searchParams.set('mode', page.dataset.dispenseMode || 'patient');
-                url.searchParams.set('dispense_status', page.dataset.dispenseStatus || 'v');
+                url.searchParams.set('dispense_status', page.dataset.dispenseStatus || 'prescription');
                 if (page.dataset.dispenseMode === 'patient' && page.dataset.patientCode) {
                     url.searchParams.set('patient', page.dataset.patientCode);
                 }

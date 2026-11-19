@@ -76,43 +76,56 @@ $customerAddressTypes = dd_varia_get_options('address_types', '_root');
 $customerAddressTypeKeys = array_column($customerAddressTypes, 'key');
 $customerAddressTypeLabels = array_column($customerAddressTypes, 'label', 'key');
 $dispensingStatuses = dd_varia_get_options('dispensing_statuses', '_root');
+$dispenseLanguage = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
 if ($dispensingStatuses === []) {
     $dispensingStatuses = [
-        ['key' => 'z', 'label' => fn_t('dispense_status_free')],
-        ['key' => 'v', 'label' => fn_t('dispense_status_prescription')],
-        ['key' => 'o', 'label' => fn_t('dispense_status_incomplete_prescription')],
-        ['key' => 'a', 'label' => fn_t('dispense_status_incomplete_attestation')],
-        ['key' => 's', 'label' => fn_t('dispense_status_written_request')],
-        ['key' => 'e', 'label' => fn_t('dispense_status_veterinary')],
+        ['key' => 'free_sale', 'short_code' => ['NL' => 'z', 'FR' => 'l', 'EN' => 'f', 'DE' => 'f'][$dispenseLanguage] ?? 'z', 'label' => fn_t('dispense_status_free')],
+        ['key' => 'prescription', 'short_code' => ['NL' => 'v', 'FR' => 'o', 'EN' => 'p', 'DE' => 'r'][$dispenseLanguage] ?? 'v', 'label' => fn_t('dispense_status_prescription')],
+        ['key' => 'incomplete_prescription', 'short_code' => ['NL' => 'o', 'FR' => 'i', 'EN' => 'ip', 'DE' => 'ur'][$dispenseLanguage] ?? 'o', 'label' => fn_t('dispense_status_incomplete_prescription')],
+        ['key' => 'incomplete_attestation', 'short_code' => ['NL' => 'a', 'FR' => 'a', 'EN' => 'ia', 'DE' => 'ub'][$dispenseLanguage] ?? 'a', 'label' => fn_t('dispense_status_incomplete_attestation')],
+        ['key' => 'written_request', 'short_code' => ['NL' => 's', 'FR' => 'd', 'EN' => 'w', 'DE' => 's'][$dispenseLanguage] ?? 's', 'label' => fn_t('dispense_status_written_request')],
+        ['key' => 'veterinary', 'short_code' => ['NL' => 'e', 'FR' => 'v', 'EN' => 'v', 'DE' => 't'][$dispenseLanguage] ?? 'e', 'label' => fn_t('dispense_status_veterinary')],
     ];
 }
 $dispensingStatusByKey = [];
 foreach ($dispensingStatuses as $statusOption) {
     $statusOptionKey = (string) ($statusOption['key'] ?? '');
     if (preg_match('/^[a-z][a-z0-9_-]{0,79}$/', $statusOptionKey) === 1) {
-        $dispensingStatusByKey[$statusOptionKey] = (string) ($statusOption['label'] ?? $statusOptionKey);
+        $dispensingStatusByKey[$statusOptionKey] = [
+            'label' => (string) ($statusOption['label'] ?? $statusOptionKey),
+            'short_code' => (string) ($statusOption['short_code'] ?? $statusOptionKey),
+        ];
     }
 }
 $requestedDispenseStatus = strtolower(trim((string) ($_GET['dispense_status'] ?? $_POST['dispense_status'] ?? '')));
+$legacyDispenseStatusKeys = [
+    'z' => 'free_sale', 'v' => 'prescription', 'o' => 'incomplete_prescription',
+    'a' => 'incomplete_attestation', 's' => 'written_request', 'e' => 'veterinary',
+];
+if (isset($legacyDispenseStatusKeys[$requestedDispenseStatus])) {
+    $requestedDispenseStatus = $legacyDispenseStatusKeys[$requestedDispenseStatus];
+}
 if ($requestedDispenseStatus === '' && (string) ($_GET['mode'] ?? '') === 'walk_in') {
-    $requestedDispenseStatus = 'z';
+    $requestedDispenseStatus = 'free_sale';
 }
 $dispenseStatusKey = isset($dispensingStatusByKey[$requestedDispenseStatus])
     ? $requestedDispenseStatus
-    : (isset($dispensingStatusByKey['v']) ? 'v' : (string) array_key_first($dispensingStatusByKey));
-$dispenseStatusLabel = $dispensingStatusByKey[$dispenseStatusKey] ?? fn_t('dispense_status_prescription');
-$dispenseStatusDisplay = $dispenseStatusKey . ' — ' . $dispenseStatusLabel;
-$dispenseMode = $dispenseStatusKey === 'z' ? 'walk_in' : 'patient';
+    : (isset($dispensingStatusByKey['prescription']) ? 'prescription' : (string) array_key_first($dispensingStatusByKey));
+$dispenseStatusLabel = $dispensingStatusByKey[$dispenseStatusKey]['label'] ?? fn_t('dispense_status_prescription');
+$dispenseStatusShortCode = $dispensingStatusByKey[$dispenseStatusKey]['short_code'] ?? $dispenseStatusKey;
+$dispenseStatusDisplay = $dispenseStatusShortCode . ' — ' . $dispenseStatusLabel;
+$dispenseMode = $dispenseStatusKey === 'free_sale' ? 'walk_in' : 'patient';
 $dispenseStatusOptionsHtml = '';
 foreach ($dispensingStatuses as $statusOption) {
     $statusOptionKey = (string) ($statusOption['key'] ?? '');
     if (!isset($dispensingStatusByKey[$statusOptionKey])) {
         continue;
     }
-    $statusOptionLabel = $dispensingStatusByKey[$statusOptionKey];
-    $dispenseStatusOptionsHtml .= '<option value="' . e($statusOptionKey) . '"'
+    $statusOptionLabel = $dispensingStatusByKey[$statusOptionKey]['label'];
+    $statusOptionCode = $dispensingStatusByKey[$statusOptionKey]['short_code'];
+    $dispenseStatusOptionsHtml .= '<option value="' . e($statusOptionKey) . '" data-short-code="' . e($statusOptionCode) . '"'
         . ($statusOptionKey === $dispenseStatusKey ? ' selected' : '') . '>'
-        . e($statusOptionKey . ' — ' . $statusOptionLabel) . '</option>';
+        . e($statusOptionCode . ' — ' . $statusOptionLabel) . '</option>';
 }
 $messageKey = '';
 $editingPatientCode = '';
@@ -910,10 +923,10 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
         ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_feedback.html', ['patient_feedback' => $patientFeedback])
         : '',
     '_dispense_patient_count_html' => '',
-    '_dispense_product_search_disabled' => $selectedPatient === null && $dispenseStatusKey !== 'z' ? 'disabled' : '',
+    '_dispense_product_search_disabled' => $selectedPatient === null && $dispenseStatusKey !== 'free_sale' ? 'disabled' : '',
     '_dispense_patient_required_html' => fn_moduleTemplateRender('dispensing', 'dispensing_patient_required.html', [
         'dispense_patient_required' => $dispenseCustomerText('dispense_patient_required'),
-        '_dispense_patient_required_class' => $selectedPatient === null && $dispenseStatusKey !== 'z' ? '' : 'd-none',
+    '_dispense_patient_required_class' => $selectedPatient === null && $dispenseStatusKey !== 'free_sale' ? '' : 'd-none',
     ]),
     '_dispense_patient_results_html' => $patientResultRows,
     '_dispense_patient_suggestion_class' => $patientSuggestionClass,

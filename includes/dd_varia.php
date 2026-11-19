@@ -80,7 +80,7 @@ function dd_varia_get_options(string $listKey, ?string $parentKey = null, bool $
             'dd_varia.options',
             'SELECT item.id, item.list_key, item."key", item.content, item.parent_id,
                     parent."key" AS parent_key, item.info, item.sort_order, item.is_active,
-                    item.updated_at
+                    item.is_mutable, item.short_codes, item.updated_at
              FROM ft_dd_varia AS item
              LEFT JOIN ft_dd_varia AS parent
                ON parent.list_key = item.list_key AND parent.id = item.parent_id
@@ -104,6 +104,10 @@ function dd_varia_get_options(string $listKey, ?string $parentKey = null, bool $
         $row['parent_id'] = $row['parent_id'] === null ? null : (int) $row['parent_id'];
         $row['sort_order'] = (int) $row['sort_order'];
         $row['is_active'] = $row['is_active'] === 't';
+        $row['is_mutable'] = ($row['is_mutable'] ?? 't') === 't';
+        $shortCodes = json_decode((string) ($row['short_codes'] ?? '{}'), true);
+        $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
+        $row['short_code'] = is_array($shortCodes) ? (string) ($shortCodes[$language] ?? '') : '';
         $row['label'] = fn_t($translationKey);
         $row['translation_key'] = $translationKey;
         $options[] = $row;

@@ -35,6 +35,8 @@ $formValues = [
     'info' => '',
     'sort_order' => '0',
     'is_active' => true,
+    'is_mutable' => true,
+    'short_codes' => array_fill_keys($languages, ''),
     'translations' => array_fill_keys($languages, ''),
 ];
 
@@ -152,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'dd_varia.deactivate',
                 'UPDATE ft_dd_varia AS item SET is_active = FALSE, updated_at = now()
                  WHERE item.id = $1 AND item.list_key = $2
+                   AND item.is_mutable
                    AND NOT EXISTS (
                        SELECT 1 FROM ft_dd_varia AS child
                        WHERE child.parent_id = item.id AND child.is_active
@@ -174,6 +177,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $info = trim((string) ($_POST['info'] ?? ''));
     $sortOrder = filter_var($_POST['sort_order'] ?? null, FILTER_VALIDATE_INT);
     $isActive = isset($_POST['is_active']) && (string) $_POST['is_active'] === '1';
+    $isMutable = isset($_POST['is_mutable']) && (string) $_POST['is_mutable'] === '1';
+    if ($listKey === 'dispensing_statuses') {
+        $isMutable = false;
+    }
+    $shortCodeValues = [];
+    foreach ($languages as $language) {
+        $rawShortCode = $_POST['short_code_' . strtolower($language)] ?? null;
+        $shortCodeValues[$language] = is_string($rawShortCode) ? trim($rawShortCode) : '';
+    }
     $translationValues = [];
     foreach ($languages as $language) {
         $rawValue = $_POST['translation_' . strtolower($language)] ?? null;
@@ -187,6 +199,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'info' => $info,
         'sort_order' => is_int($sortOrder) ? (string) $sortOrder : '',
         'is_active' => $isActive,
+        'is_mutable' => $isMutable,
+        'short_codes' => $shortCodeValues,
         'translations' => $translationValues,
     ];
 
@@ -199,18 +213,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($translationValues as $translationValue) {
         $valid = $valid && $translationValue !== '' && strlen($translationValue) <= 2000;
     }
+    if ($listKey === 'dispensing_statuses' && $key !== '_root') {
+        foreach ($shortCodeValues as $shortCode) {
+            $valid = $valid && preg_match('/^[\p{L}\p{N}][\p{L}\p{N}._-]{0,11}$/u', $shortCode) === 1;
+        }
+    }
 
     $existing = null;
     if ($valid && $editingId > 0) {
         $existingResult = dd_varia_admin_query(
             'dd_varia.load_existing',
-            'SELECT id, list_key, "key", content FROM ft_dd_varia WHERE id = $1',
+            'SELECT id, list_key, "key", content, is_mutable FROM ft_dd_varia WHERE id = $1',
             [$editingId]
         );
         $existing = $existingResult ? pg_fetch_assoc($existingResult) : false;
         $valid = is_array($existing)
             && $listKey === (string) $existing['list_key']
-            && $key === (string) $existing['key'];
+            && $key === (string) $existing['key']
+            && $existing['is_mutable'] === 't';
     } elseif ($editingId > 0) {
         $valid = false;
     }
@@ -262,6 +282,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             && pg_fetch_result($activeChildResult, 0, 0) === 'f';
     }
 
+    if ($valid && $listKey === 'dispensing_statuses' && $key !== '_root') {
+        foreach ($shortCodeValues as $language => $shortCode) {
+            $duplicateCode = dd_varia_admin_query(
+                'dd_varia.check_short_code',
+                'SELECT 1 FROM ft_dd_varia
+                 WHERE list_key = $1 AND id <> $2
+                   AND lower(btrim(short_codes ->> $3::TEXT)) = lower(btrim($4))',
+                [$listKey, $editingId, $language, $shortCode]
+            );
+            if ($duplicateCode === false || pg_num_rows($duplicateCode) > 0) {
+                $valid = false;
+                break;
+            }
+        }
+    }
+
     if (!$valid) {
         $messageKey = 'dd_varia_invalid';
         $messageType = 'danger';
@@ -276,18 +312,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'dd_varia.update',
                 'UPDATE ft_dd_varia
                  SET parent_id = $1::BIGINT, info = $2, sort_order = $3,
-                     is_active = $4, updated_at = now()
-                 WHERE id = $5 AND list_key = $6',
-                [$parentId, $info, $sortOrder, $isActive ? 'true' : 'false', $editingId, $listKey]
+                     is_active = $4, is_mutable = $5, short_codes = $6::JSONB, updated_at = now()
+                 WHERE id = $7 AND list_key = $8 AND is_mutable',
+                [$parentId, $info, $sortOrder, $isActive ? 'true' : 'false', $isMutable ? 'true' : 'false',
+                    json_encode($listKey === 'dispensing_statuses' ? $shortCodeValues : (object) [], JSON_UNESCAPED_UNICODE),
+                    $editingId, $listKey]
             );
             $rowId = $editingId;
         } elseif ($started) {
             $saved = dd_varia_admin_query(
                 'dd_varia.insert',
-                'INSERT INTO ft_dd_varia (list_key, "key", content, parent_id, info, sort_order, is_active)
-                 VALUES ($1, $2, $3, $4::BIGINT, $5, $6, $7)
+                'INSERT INTO ft_dd_varia (list_key, "key", content, parent_id, info, sort_order, is_active, is_mutable, short_codes)
+                 VALUES ($1, $2, $3, $4::BIGINT, $5, $6, $7, $8, $9::JSONB)
                  RETURNING id',
-                [$listKey, $key, $contentToken, $parentId, $info, $sortOrder, $isActive ? 'true' : 'false']
+                [$listKey, $key, $contentToken, $parentId, $info, $sortOrder, $isActive ? 'true' : 'false',
+                    $isMutable ? 'true' : 'false',
+                    json_encode($listKey === 'dispensing_statuses' ? $shortCodeValues : (object) [], JSON_UNESCAPED_UNICODE)]
             );
             $inserted = $saved ? pg_fetch_assoc($saved) : false;
             $rowId = is_array($inserted) ? (int) $inserted['id'] : 0;
@@ -335,7 +375,7 @@ $childrenByParent = [];
 if ($selectedList !== '' && preg_match('/^[a-z][a-z0-9_-]{0,79}$/', $selectedList)) {
     $listResult = dd_varia_admin_query(
         'dd_varia.list_rows',
-        'SELECT id, list_key, "key", content, parent_id, info, sort_order, is_active, updated_at
+        'SELECT id, list_key, "key", content, parent_id, info, sort_order, is_active, is_mutable, short_codes, updated_at
          FROM ft_dd_varia WHERE list_key = $1 ORDER BY sort_order, "key", id',
         [$selectedList]
     );
@@ -367,22 +407,34 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         );
         $editRow = $editResult ? pg_fetch_assoc($editResult) : false;
         if ($editRow && (string) $editRow['list_key'] === $selectedList) {
-            $editingId = (int) $editRow['id'];
-            $formValues['list_key'] = (string) $editRow['list_key'];
-            $formValues['key'] = (string) $editRow['key'];
-            $formValues['parent_id'] = $editRow['parent_id'] === null ? '' : (string) $editRow['parent_id'];
-            $formValues['info'] = (string) $editRow['info'];
-            $formValues['sort_order'] = (string) $editRow['sort_order'];
-            $formValues['is_active'] = $editRow['is_active'] === 't';
-            $translationKey = dd_varia_admin_translation_key_from_content((string) $editRow['content']);
-            $translationResult = dd_varia_admin_query(
-                'dd_varia.load_translations',
-                'SELECT code, "value" FROM ft_substitutions
-                 WHERE company_id = 0 AND "key" = $1 AND code IN (\'NL\', \'FR\', \'EN\', \'DE\')',
-                [$translationKey]
-            );
-            while ($translationResult && $translation = pg_fetch_assoc($translationResult)) {
-                $formValues['translations'][$translation['code']] = (string) $translation['value'];
+            if ($editRow['is_mutable'] === 't') {
+                $editingId = (int) $editRow['id'];
+                $formValues['list_key'] = (string) $editRow['list_key'];
+                $formValues['key'] = (string) $editRow['key'];
+                $formValues['parent_id'] = $editRow['parent_id'] === null ? '' : (string) $editRow['parent_id'];
+                $formValues['info'] = (string) $editRow['info'];
+                $formValues['sort_order'] = (string) $editRow['sort_order'];
+                $formValues['is_active'] = $editRow['is_active'] === 't';
+                $formValues['is_mutable'] = true;
+                $shortCodes = json_decode((string) ($editRow['short_codes'] ?? '{}'), true);
+                if (is_array($shortCodes)) {
+                    foreach ($languages as $language) {
+                        $formValues['short_codes'][$language] = (string) ($shortCodes[$language] ?? '');
+                    }
+                }
+                $translationKey = dd_varia_admin_translation_key_from_content((string) $editRow['content']);
+                $translationResult = dd_varia_admin_query(
+                    'dd_varia.load_translations',
+                    'SELECT code, "value" FROM ft_substitutions
+                     WHERE company_id = 0 AND "key" = $1 AND code IN (\'NL\', \'FR\', \'EN\', \'DE\')',
+                    [$translationKey]
+                );
+                while ($translationResult && $translation = pg_fetch_assoc($translationResult)) {
+                    $formValues['translations'][$translation['code']] = (string) $translation['value'];
+                }
+            } else {
+                $messageKey = 'dd_varia_immutable';
+                $messageType = 'info';
             }
         }
     }
@@ -433,13 +485,22 @@ $renderRows = static function (?int $parentId, int $depth) use (&$renderRows, $c
     $html = '';
     foreach ($childrenByParent[$parentId === null ? 'root' : (string) $parentId] ?? [] as $rowId) {
         $row = $rowsById[$rowId];
-        $deleteForm = '<form method="post" action="dd-varia.php?list=' . rawurlencode((string) $row['list_key'])
+        $deleteForm = $row['is_mutable'] === 't' ? '<form method="post" action="dd-varia.php?list=' . rawurlencode((string) $row['list_key'])
             . '" class="d-inline">' . csrf_field()
             . '<input type="hidden" name="action" value="deactivate">'
             . '<input type="hidden" name="id" value="' . $rowId . '">'
             . '<input type="hidden" name="list_key" value="' . e((string) $row['list_key']) . '">'
             . '<button class="btn btn-link btn-sm text-danger p-0" type="submit">' . e(fn_t('dd_varia_remove')) . '</button>'
-            . '</form>';
+            . '</form>' : '';
+        $shortCodes = json_decode((string) ($row['short_codes'] ?? '{}'), true);
+        $shortCodeParts = [];
+        if (is_array($shortCodes)) {
+            foreach (['NL', 'FR', 'EN', 'DE'] as $language) {
+                if (isset($shortCodes[$language]) && is_string($shortCodes[$language]) && $shortCodes[$language] !== '') {
+                    $shortCodeParts[] = $language . ': ' . $shortCodes[$language];
+                }
+            }
+        }
         $parentKey = $row['parent_id'] === null ? null : (string) $rowsById[$row['parent_id']]['key'];
         $parentLabel = $parentKey === null ? '—' : ($parentKey === '_root' ? $selectedList : $parentKey);
         $html .= fn_templateRender('dd_varia_row.html', [
@@ -449,8 +510,13 @@ $renderRows = static function (?int $parentId, int $depth) use (&$renderRows, $c
             'dd_varia_info' => (string) $row['info'],
             'dd_varia_order' => (string) $row['sort_order'],
             'dd_varia_status' => $row['is_active'] === 't' ? fn_t('active') : fn_t('inactive'),
+            'dd_varia_mutability' => $row['is_mutable'] === 't' ? fn_t('dd_varia_mutable') : fn_t('dd_varia_immutable_label'),
+            'dd_varia_short_codes' => e(implode(' · ', $shortCodeParts)),
             'dd_varia_indent' => str_repeat('— ', min($depth, 12)),
             '_dd_varia_edit_href' => 'dd-varia.php?list=' . rawurlencode((string) $row['list_key']) . '&edit=' . $rowId,
+            '_dd_varia_edit_link_html' => $row['is_mutable'] === 't'
+                ? '<a class="btn btn-link btn-sm p-0" href="dd-varia.php?list=' . rawurlencode((string) $row['list_key']) . '&edit=' . $rowId . '">' . e(fn_t('edit')) . '</a>'
+                : '<span class="badge text-bg-light">' . e(fn_t('dd_varia_immutable_label')) . '</span>',
             '_dd_varia_remove_form_html' => $row['is_active'] === 't' ? $deleteForm : '',
         ]);
         $html .= $renderRows($rowId, $depth + 1);
@@ -459,7 +525,7 @@ $renderRows = static function (?int $parentId, int $depth) use (&$renderRows, $c
 };
 $rowsHtml = $renderRows(null, 0);
 if ($rowsHtml === '') {
-    $rowsHtml = '<tr><td colspan="7" class="text-secondary">' . e(fn_t('dd_varia_no_rows')) . '</td></tr>';
+    $rowsHtml = '<tr><td colspan="9" class="text-secondary">' . e(fn_t('dd_varia_no_rows')) . '</td></tr>';
 }
 
 $editingLabel = $editingId > 0 ? fn_t('dd_varia_edit_heading') : fn_t('dd_varia_add_heading');
@@ -468,8 +534,27 @@ $formKey = $formValues['key'];
 if ($editingId === 0 && $formKey === '' && $rowsById === []) {
     $formKey = '_root';
 }
+if ($editingId === 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $formValues['is_mutable'] = $selectedList !== 'dispensing_statuses';
+}
 $message = $messageKey === '' ? '' : '<div class="alert alert-' . e($messageType)
     . '" role="status">' . e(fn_t($messageKey)) . '</div>';
+$shortCodeFieldsHtml = '';
+if ($selectedList === 'dispensing_statuses' && $formKey !== '_root') {
+    foreach ($languages as $language) {
+        $shortCodeFieldsHtml .= '<div class="col-md-3"><label class="form-label" for="dd-varia-short-code-'
+            . strtolower($language) . '">' . e(fn_t('dd_varia_short_code_label')) . ' · ' . e(fn_t('dd_varia_language_' . strtolower($language)))
+            . '</label><input class="form-control" id="dd-varia-short-code-' . strtolower($language)
+            . '" name="short_code_' . strtolower($language) . '" maxlength="12" required value="'
+            . e((string) ($formValues['short_codes'][$language] ?? '')) . '"></div>';
+    }
+}
+$mutabilityControlHtml = $selectedList === 'dispensing_statuses'
+    ? '<div class="alert alert-info py-2 mb-2">' . e(fn_t('dd_varia_immutable_after_create')) . '</div>'
+    : '<div class="form-check mb-2"><input type="hidden" name="is_mutable" value="0">'
+        . '<input class="form-check-input" id="dd-varia-mutable" name="is_mutable" type="checkbox" value="1"'
+        . ($formValues['is_mutable'] ? ' checked' : '') . '><label class="form-check-label" for="dd-varia-mutable">'
+        . e(fn_t('dd_varia_mutable')) . '</label><div class="form-text">' . e(fn_t('dd_varia_mutability_help')) . '</div></div>';
 
 page_start(fn_t('dd_varia_title'), $currentUser);
 echo fn_templateRender('dd_varia.html', [
@@ -485,23 +570,29 @@ echo fn_templateRender('dd_varia.html', [
     'dd_varia_order_label' => fn_t('dd_varia_order_label'),
     'dd_varia_active_label' => fn_t('dd_varia_active_label'),
     'dd_varia_translation_help' => fn_t('dd_varia_translation_help'),
+    'dd_varia_short_code_label' => fn_t('dd_varia_short_code_label'),
     'dd_varia_translation_label' => fn_t('dd_varia_translation_label'),
     'dd_varia_save' => fn_t('save'),
     'dd_varia_cancel' => fn_t('cancel'),
     'dd_varia_table_key' => fn_t('dd_varia_key_label'),
     'dd_varia_table_parent' => fn_t('dd_varia_parent_label'),
     'dd_varia_table_label' => fn_t('dd_varia_translation_label'),
+    'dd_varia_table_short_codes' => fn_t('dd_varia_short_code_label'),
     'dd_varia_table_info' => fn_t('dd_varia_info_label'),
     'dd_varia_table_order' => fn_t('dd_varia_order_label'),
     'dd_varia_table_status' => fn_t('dd_varia_table_status'),
+    'dd_varia_table_mutability' => fn_t('dd_varia_mutability_label'),
     'dd_varia_table_actions' => fn_t('dd_varia_table_actions'),
     'dd_varia_remove' => fn_t('dd_varia_remove'),
     'dd_varia_no_rows' => fn_t('dd_varia_no_rows'),
     'dd_varia_key_value' => $formKey,
+    'dd_varia_mutability_label' => fn_t('dd_varia_mutability_label'),
     'dd_varia_list_value' => $formListKey,
     'dd_varia_info_value' => $formValues['info'],
     'dd_varia_sort_value' => $formValues['sort_order'],
     '_dd_varia_is_active_checked' => $formValues['is_active'] ? 'checked' : '',
+    '_dd_varia_short_code_fields_html' => $shortCodeFieldsHtml,
+    '_dd_varia_mutability_control_html' => $mutabilityControlHtml,
     '_dd_varia_edit_id_html' => $editingId > 0 ? '<input type="hidden" name="id" value="' . $editingId . '">' : '',
     '_dd_varia_key_readonly' => $editingId > 0 ? 'readonly' : '',
     '_dd_varia_list_readonly' => $editingId > 0 ? 'readonly' : '',
@@ -523,6 +614,10 @@ echo fn_templateRender('dd_varia.html', [
     'dd_varia_translation_fr_value' => $formValues['translations']['FR'],
     'dd_varia_translation_en_value' => $formValues['translations']['EN'],
     'dd_varia_translation_de_value' => $formValues['translations']['DE'],
+    'dd_varia_short_code_nl_value' => $formValues['short_codes']['NL'],
+    'dd_varia_short_code_fr_value' => $formValues['short_codes']['FR'],
+    'dd_varia_short_code_en_value' => $formValues['short_codes']['EN'],
+    'dd_varia_short_code_de_value' => $formValues['short_codes']['DE'],
     '_dd_varia_list_choose_selected' => $selectedList === '' ? 'selected' : '',
 ]);
 page_end();

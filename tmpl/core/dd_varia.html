@@ -43,6 +43,7 @@
             <div class="col-12">
                 <div class="form-text">@dd_varia_translation_help@</div>
             </div>
+            @_dd_varia_short_code_fields_html@
             <div class="col-md-6">
                 <label class="form-label" for="dd-varia-translation-nl">@dd_varia_translation_label@ · @dd_varia_translation_nl@</label>
                 <input class="form-control" id="dd-varia-translation-nl" name="translation_nl" maxlength="500" required value="@dd_varia_translation_nl_value@">
@@ -74,6 +75,7 @@
                     <label class="form-check-label" for="dd-varia-active">@dd_varia_active_label@</label>
                 </div>
             </div>
+            <div class="col-md-4 d-flex align-items-end">@_dd_varia_mutability_control_html@</div>
             <div class="col-12 d-flex gap-2 justify-content-end">
                 @_dd_varia_cancel_html@
                 <button class="btn btn-primary" type="submit">@dd_varia_save@</button>
@@ -90,9 +92,11 @@
                     <th scope="col">@dd_varia_table_key@</th>
                     <th scope="col">@dd_varia_table_parent@</th>
                     <th scope="col">@dd_varia_table_label@</th>
+                    <th scope="col">@dd_varia_table_short_codes@</th>
                     <th scope="col">@dd_varia_table_info@</th>
                     <th scope="col">@dd_varia_table_order@</th>
                     <th scope="col">@dd_varia_table_status@</th>
+                    <th scope="col">@dd_varia_table_mutability@</th>
                     <th scope="col" class="text-end">@dd_varia_table_actions@</th>
                 </tr>
             </thead>
