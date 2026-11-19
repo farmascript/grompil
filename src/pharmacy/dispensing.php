@@ -35,6 +35,7 @@ if (in_array($contactAction, ['add', 'update', 'delete'], true)) {
     $contactOwnerCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
     $contactManagerStatus = grompil_contact_manager_handle_post('customer', $companyId, $contactOwnerCode) ?? 'invalid';
     redirect('dispense.php?patient=' . rawurlencode($contactOwnerCode)
+        . '&dispense_status=' . rawurlencode((string) ($_GET['dispense_status'] ?? 'v'))
         . '&contacts=1&contact_status=' . rawurlencode($contactManagerStatus) . '#contact-manager-modal');
 }
 $companyIdentityResult = db_query_params(
@@ -74,7 +75,45 @@ $dispenseCustomerText = static function (string $key) use ($isPharmacyCompany): 
 $customerAddressTypes = dd_varia_get_options('address_types', '_root');
 $customerAddressTypeKeys = array_column($customerAddressTypes, 'key');
 $customerAddressTypeLabels = array_column($customerAddressTypes, 'label', 'key');
-$dispenseMode = (string) ($_GET['mode'] ?? 'patient') === 'walk_in' ? 'walk_in' : 'patient';
+$dispensingStatuses = dd_varia_get_options('dispensing_statuses', '_root');
+if ($dispensingStatuses === []) {
+    $dispensingStatuses = [
+        ['key' => 'z', 'label' => fn_t('dispense_status_free')],
+        ['key' => 'v', 'label' => fn_t('dispense_status_prescription')],
+        ['key' => 'o', 'label' => fn_t('dispense_status_incomplete_prescription')],
+        ['key' => 'a', 'label' => fn_t('dispense_status_incomplete_attestation')],
+        ['key' => 's', 'label' => fn_t('dispense_status_written_request')],
+        ['key' => 'e', 'label' => fn_t('dispense_status_veterinary')],
+    ];
+}
+$dispensingStatusByKey = [];
+foreach ($dispensingStatuses as $statusOption) {
+    $statusOptionKey = (string) ($statusOption['key'] ?? '');
+    if (preg_match('/^[a-z][a-z0-9_-]{0,79}$/', $statusOptionKey) === 1) {
+        $dispensingStatusByKey[$statusOptionKey] = (string) ($statusOption['label'] ?? $statusOptionKey);
+    }
+}
+$requestedDispenseStatus = strtolower(trim((string) ($_GET['dispense_status'] ?? $_POST['dispense_status'] ?? '')));
+if ($requestedDispenseStatus === '' && (string) ($_GET['mode'] ?? '') === 'walk_in') {
+    $requestedDispenseStatus = 'z';
+}
+$dispenseStatusKey = isset($dispensingStatusByKey[$requestedDispenseStatus])
+    ? $requestedDispenseStatus
+    : (isset($dispensingStatusByKey['v']) ? 'v' : (string) array_key_first($dispensingStatusByKey));
+$dispenseStatusLabel = $dispensingStatusByKey[$dispenseStatusKey] ?? fn_t('dispense_status_prescription');
+$dispenseStatusDisplay = $dispenseStatusKey . ' — ' . $dispenseStatusLabel;
+$dispenseMode = $dispenseStatusKey === 'z' ? 'walk_in' : 'patient';
+$dispenseStatusOptionsHtml = '';
+foreach ($dispensingStatuses as $statusOption) {
+    $statusOptionKey = (string) ($statusOption['key'] ?? '');
+    if (!isset($dispensingStatusByKey[$statusOptionKey])) {
+        continue;
+    }
+    $statusOptionLabel = $dispensingStatusByKey[$statusOptionKey];
+    $dispenseStatusOptionsHtml .= '<option value="' . e($statusOptionKey) . '"'
+        . ($statusOptionKey === $dispenseStatusKey ? ' selected' : '') . '>'
+        . e($statusOptionKey . ' — ' . $statusOptionLabel) . '</option>';
+}
 $messageKey = '';
 $editingPatientCode = '';
 $openPatientModal = false;
@@ -296,7 +335,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 );
             }
             db_query_raw('patients.transaction.commit', 'COMMIT');
-            $redirectUrl = 'dispense.php?patient=' . rawurlencode($patientCode) . '&saved=1';
+            $redirectUrl = 'dispense.php?patient=' . rawurlencode($patientCode)
+                . '&dispense_status=' . rawurlencode($dispenseStatusKey) . '&saved=1';
             if ($action === 'update_patient') {
                 $redirectUrl .= '&edit=1';
             }
@@ -336,7 +376,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 $query = trim((string) ($_GET['q'] ?? ''));
 $regexSearch = (string) ($_GET['regex'] ?? '') === '1';
 $patientSuggestionRequest = (string) ($_GET['patient_suggest'] ?? '') === '1';
-$selectedPatientCode = $dispenseMode === 'patient' ? strtoupper(trim((string) ($_GET['patient'] ?? ''))) : '';
+$selectedPatientCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
 if ($selectedPatientCode === '' && $editingPatientCode !== '') {
     $selectedPatientCode = $editingPatientCode;
 }
@@ -370,7 +410,7 @@ try {
         $editingPatientCode = $selectedPatientCode;
         $openPatientModal = true;
     }
-    if ($dispenseMode === 'patient' && mb_strlen($query) >= 3) {
+    if (mb_strlen($query) >= 3) {
         $searchPattern = $regexSearch ? $query : '%' . $query . '%';
         $searchPredicate = $regexSearch
             ? "(p.customer_code ~* $2 OR (p.name_first || ' ' || p.name_last) ~* $2
@@ -403,7 +443,7 @@ try {
     $messageKey = $messageKey !== '' ? $messageKey : ($regexSearch ? 'patient_regex_invalid' : 'patient_lookup_unavailable');
 }
 
-if ($patientSuggestionRequest && $dispenseMode === 'patient') {
+if ($patientSuggestionRequest) {
     header('Content-Type: application/json; charset=UTF-8');
     if ($messageKey !== '') {
         http_response_code($regexSearch ? 400 : 503);
@@ -550,7 +590,9 @@ if ($editingPatientCode !== '') {
             (string) $addressRow['country_code'],
         ])));
         $selectedAddress = (int) ($patientFormValues['location_id'] ?? 0) === (int) $addressRow['id'];
-        $addressHref = 'dispense.php?patient=' . rawurlencode($editingPatientCode) . '&edit=1&location=' . (int) $addressRow['id'];
+        $addressHref = 'dispense.php?patient=' . rawurlencode($editingPatientCode)
+            . '&dispense_status=' . rawurlencode($dispenseStatusKey)
+            . '&edit=1&location=' . (int) $addressRow['id'];
         $addressDescription = trim(implode(' · ', array_filter([
             (string) ($customerAddressTypeLabels[$addressRow['address_type_key']] ?? $addressRow['address_type_key']),
             (string) $addressRow['label'],
@@ -568,7 +610,8 @@ if ($editingPatientCode !== '') {
             . '</div>';
     }
     $customerAddressesHtml .= '<a class="btn btn-sm btn-outline-secondary mt-2" href="dispense.php?patient='
-        . rawurlencode($editingPatientCode) . '&amp;edit=1&amp;new_address=1">' . e(fn_t('customer_address_add')) . '</a></div></div>';
+        . rawurlencode($editingPatientCode) . '&amp;dispense_status=' . rawurlencode($dispenseStatusKey)
+        . '&amp;edit=1&amp;new_address=1">' . e(fn_t('customer_address_add')) . '</a></div></div>';
 }
 $addressTypeOptionsHtml = '';
 foreach ($customerAddressTypes as $addressTypeOption) {
@@ -580,6 +623,7 @@ foreach ($customerAddressTypes as $addressTypeOption) {
 $patientModalForm = fn_moduleTemplateRender('dispensing', 'dispensing_patient_form.html', [
     'csrf_token' => csrf_token(),
     'patient_form_action' => $formAction,
+    'dispense_status_key' => e($dispenseStatusKey),
     'customer_code' => $editingPatientCode,
     'patient_location_id' => (string) ($patientFormValues['location_id'] ?? ''),
     '_customer_addresses_html' => $customerAddressesHtml,
@@ -648,7 +692,7 @@ if ($selectedPatient) {
     if (isset($selectedPatient['created_at'])) {
         $patientName = trim((string) $selectedPatient['name_first'] . ' ' . (string) $selectedPatient['name_last']);
         $contactManagerActionUrl = 'dispense.php?patient=' . rawurlencode((string) $selectedPatient['customer_code'])
-            . '&contacts=1#contact-manager-modal';
+            . '&dispense_status=' . rawurlencode($dispenseStatusKey) . '&contacts=1#contact-manager-modal';
         $contactManagerData = grompil_contact_manager_render_modal(
             'customer', $companyId, (string) $selectedPatient['customer_code'], $patientName,
             $patientCodeLabel, $contactManagerActionUrl, $contactManagerStatus
@@ -704,11 +748,7 @@ $patientTitleHtml = $selectedPatient
         '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
         '_patient_age_html' => $patientAge !== '' ? '<span class="text-secondary small">(' . e($patientAge) . ')</span>' : '',
     ])
-    : ($dispenseMode === 'walk_in'
-    ? fn_moduleTemplateRender('dispensing', 'dispensing_walkin_title.html', ['dispense_walkin_title' => $dispenseCustomerText('dispense_walkin_title')])
-        : fn_moduleTemplateRender('dispensing', 'dispensing_no_patient_title.html', [
-            'dispense_no_patient' => $dispenseCustomerText('dispense_no_patient'),
-        ]));
+    : '';
 $companyBrandHtml = $companyLogo !== ''
     ? fn_moduleTemplateRender('dispensing', 'dispensing_company_logo.html', [
         'company_logo_url' => $companyLogo, 'company_name' => (string) $companyIdentity['name'],
@@ -719,25 +759,16 @@ $companyBrandHtml = $companyLogo !== ''
 $patientEditButtonHtml = $selectedPatient
     ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_edit_button.html', [
         'customer_code' => $selectedPatientCode,
+        'dispense_status_key' => e($dispenseStatusKey),
         'patient_edit' => $customerText('patient_edit'),
     ])
     : '';
 $addPatientButtonHtml = fn_moduleTemplateRender('dispensing', 'dispensing_add_patient_button.html', [
     'patient_add' => $customerText('patient_add'),
-    'patient_add_url' => e(fn_appBaseHref() . 'dispense.php?mode=patient&new_patient=1'
+    'patient_add_url' => e(fn_appBaseHref() . 'dispense.php?dispense_status=' . rawurlencode($dispenseStatusKey) . '&new_patient=1'
         . ($selectedPatientCode !== '' ? '&patient=' . rawurlencode($selectedPatientCode) : '')),
 ]);
-$patientModeUrl = fn_appBaseHref() . 'dispense.php?mode=patient';
-$walkInModeUrl = fn_appBaseHref() . 'dispense.php?mode=walk_in';
-$modeSwitchHtml = $dispenseMode === 'walk_in'
-    ? '<a class="btn btn-outline-primary" href="' . e($patientModeUrl) . '">' . e($dispenseCustomerText('dispense_patient_mode')) . '</a>'
-    : '';
-$patientPanelHtml = $dispenseMode === 'walk_in'
-    ? fn_moduleTemplateRender('dispensing', 'dispensing_walkin_panel.html', [
-        'dispense_walkin_title' => $dispenseCustomerText('dispense_walkin_title'),
-        'dispense_walkin_help' => $dispenseCustomerText('dispense_walkin_help'),
-    ])
-    : fn_moduleTemplateRender('dispensing', 'dispensing_patient_panel.html', [
+$patientPanelHtml = fn_moduleTemplateRender('dispensing', 'dispensing_patient_panel.html', [
         'dispense_patient_search' => $dispenseCustomerText('dispense_patient_search'),
         'dispense_select_patient' => $dispenseCustomerText('dispense_select_patient'),
         'dispense_query_value' => e($query),
@@ -748,7 +779,7 @@ $patientPanelHtml = $dispenseMode === 'walk_in'
         '_dispense_patient_results_html' => $patientResultRows,
         'dispense_patient_search_feedback' => e($patientFeedback),
         'dispense_walkin_title' => $dispenseCustomerText('dispense_walkin_title'),
-        'dispense_walkin_mode_url' => e($walkInModeUrl),
+        'dispense_status_key' => e($dispenseStatusKey),
     ]);
 
 $shortcutConfiguration = fn_loadDispensingShortcutConfiguration();
@@ -815,6 +846,9 @@ page_start(fn_t('dispense_title'), $currentUser, $dispensingTemplateVariant === 
 echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_title' => fn_t('dispense_title'),
     'dispense_mode' => $dispenseMode,
+    'dispense_status_key' => e($dispenseStatusKey),
+    'dispense_status_label' => e($dispenseStatusDisplay),
+    '_dispense_status_options_html' => $dispenseStatusOptionsHtml,
     'dispense_customer_code' => $selectedPatient ? (string) $selectedPatient['customer_code'] : '',
     'dispense_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
     'dispense_intro' => fn_t('dispense_intro'),
@@ -845,7 +879,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_product_search' => fn_t('dispense_product_search'),
     'dispense_product_help' => fn_t('dispense_product_help'),
     'dispense_patient_required' => $dispenseCustomerText('dispense_patient_required'),
-    'dispense_mode_label' => $dispenseCustomerText($dispenseMode === 'walk_in' ? 'dispense_walkin_title' : 'dispense_patient_mode'),
+    'dispense_status' => fn_t('dispense_status'),
     'dispense_current_items' => fn_t('dispense_current_items'),
     'dispense_empty_basket' => fn_t('dispense_empty_basket'),
     'dispense_quantity' => fn_t('dispense_quantity'),
@@ -868,7 +902,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.28',
+    'asset_version' => '0.18.29',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
@@ -876,10 +910,11 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
         ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_feedback.html', ['patient_feedback' => $patientFeedback])
         : '',
     '_dispense_patient_count_html' => '',
-    '_dispense_product_search_disabled' => $selectedPatient === null && $dispenseMode !== 'walk_in' ? 'disabled' : '',
-    '_dispense_patient_required_html' => $selectedPatient === null && $dispenseMode !== 'walk_in'
-        ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_required.html', ['dispense_patient_required' => $dispenseCustomerText('dispense_patient_required')])
-        : '',
+    '_dispense_product_search_disabled' => $selectedPatient === null && $dispenseStatusKey !== 'z' ? 'disabled' : '',
+    '_dispense_patient_required_html' => fn_moduleTemplateRender('dispensing', 'dispensing_patient_required.html', [
+        'dispense_patient_required' => $dispenseCustomerText('dispense_patient_required'),
+        '_dispense_patient_required_class' => $selectedPatient === null && $dispenseStatusKey !== 'z' ? '' : 'd-none',
+    ]),
     '_dispense_patient_results_html' => $patientResultRows,
     '_dispense_patient_suggestion_class' => $patientSuggestionClass,
     '_dispense_regex_checked' => $regexSearch ? 'checked' : '',
@@ -890,11 +925,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
         ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_audit.html', [
             '_patient_metadata_html' => $patientMetadata,
         ])
-        : ($dispenseMode === 'walk_in'
-            ? ''
-            : fn_moduleTemplateRender('dispensing', 'dispensing_no_patient_detail.html', [
-                'dispense_select_patient' => $dispenseCustomerText('dispense_select_patient'),
-            ])),
+        : '',
     '_dispense_patient_title_html' => $patientTitleHtml,
     '_contact_manager_modal_html' => $contactManagerModalHtml,
     '_contact_manager_modal_open' => $contactManagerModalOpen && $selectedPatient !== null ? 'true' : 'false',
@@ -902,7 +933,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     '_dispense_brand_html' => $companyBrandHtml,
     '_dispense_alert_html' => $messageHtml,
     '_dispense_function_bar_html' => $functionBarHtml,
-    '_dispense_patient_actions_html' => $dispenseMode === 'walk_in' ? $modeSwitchHtml : $addPatientButtonHtml,
+    '_dispense_patient_actions_html' => $addPatientButtonHtml,
     '_dispense_patient_panel_html' => $patientPanelHtml,
 ]);
 page_end();

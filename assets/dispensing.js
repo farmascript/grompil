@@ -22,6 +22,10 @@
     const patientSuggestions = document.querySelector('[data-patient-suggestions]');
     const patientStatus = document.querySelector('[data-patient-search-status]');
     const patientRegex = document.querySelector('[data-patient-regex]');
+    const dispenseStatusSelect = document.querySelector('[data-dispense-status-select]');
+    const patientStatusInput = document.querySelector('[data-patient-status-input]');
+    const currentDispenseStatus = document.querySelector('[data-current-dispense-status]');
+    const patientRequiredMessage = document.querySelector('[data-dispense-patient-required]');
     let patientTimer = 0;
     let patientRequestController = null;
 
@@ -48,6 +52,7 @@
                 const url = new URL(page.dataset.patientEndpoint, window.location.href);
                 url.searchParams.set('patient', String(patient.customer_code || ''));
                 url.searchParams.set('mode', 'patient');
+                url.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'v');
                 const link = document.createElement('a');
                 link.className = 'list-group-item list-group-item-action patient-suggestion';
                 link.href = url.href;
@@ -154,7 +159,7 @@
         if (!products.length) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 3;
+            td.colSpan = 4;
             td.className = 'empty-basket';
             td.textContent = t.empty;
             tr.append(td);
@@ -170,6 +175,11 @@
             const small = document.createElement('small');
             small.textContent = `${product.cnk} · ${product.package || ''}`;
             name.append(strong, small);
+            const statusCell = document.createElement('td');
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'badge text-bg-light';
+            statusBadge.textContent = product.status;
+            statusCell.append(statusBadge);
             const quantity = document.createElement('td');
             const quantityInput = document.createElement('input');
             quantityInput.type = 'number';
@@ -194,13 +204,14 @@
                 renderBasket();
             });
             removeCell.append(remove);
-            tr.append(name, quantity, removeCell);
+            tr.append(name, statusCell, quantity, removeCell);
             rows.append(tr);
         }
     }
 
     function addProduct(product) {
-        const key = `${product.amp_code}|${product.ampp_code}|${product.cnk}`;
+        const status = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'v';
+        const key = `${product.amp_code}|${product.ampp_code}|${product.cnk}|${status}`;
         const current = basket.get(key);
         if (current) current.quantity += 1;
         else basket.set(key, {
@@ -208,6 +219,7 @@
             cnk: String(product.cnk || ''),
             amp_code: String(product.amp_code || ''),
             ampp_code: String(product.ampp_code || ''),
+            status,
             name: String((language === 'fr' ? product.prescription_name_fr : product.prescription_name_nl)
                 || product.prescription_name_nl || product.prescription_name_fr || product.official_name || ''),
             package: String((language === 'fr' ? product.pack_display_fr : product.pack_display_nl)
@@ -219,6 +231,21 @@
         input.focus();
         hideSuggestions();
     }
+
+    function applyDispenseStatus() {
+        if (!dispenseStatusSelect) return;
+        const status = dispenseStatusSelect.value || 'v';
+        const freeDispensing = status === 'z';
+        page.dataset.dispenseStatus = status;
+        page.dataset.dispenseMode = freeDispensing ? 'walk_in' : 'patient';
+        if (patientStatusInput) patientStatusInput.value = status;
+        if (currentDispenseStatus) currentDispenseStatus.textContent = dispenseStatusSelect.selectedOptions[0]?.textContent || status;
+        if (input) input.disabled = !freeDispensing && !page.dataset.patientCode;
+        if (patientRequiredMessage) patientRequiredMessage.classList.toggle('d-none', freeDispensing || Boolean(page.dataset.patientCode));
+    }
+
+    dispenseStatusSelect?.addEventListener('change', applyDispenseStatus);
+    applyDispenseStatus();
 
     function showResults(data) {
         suggestions.replaceChildren();
@@ -266,6 +293,7 @@
                 url.searchParams.set('product_suggest', '1');
                 url.searchParams.set('q', query);
                 url.searchParams.set('mode', page.dataset.dispenseMode || 'patient');
+                url.searchParams.set('dispense_status', page.dataset.dispenseStatus || 'v');
                 if (page.dataset.dispenseMode === 'patient' && page.dataset.patientCode) {
                     url.searchParams.set('patient', page.dataset.patientCode);
                 }

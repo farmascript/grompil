@@ -1,6 +1,7 @@
 <form method="post" action="dispense.php" class="customer-edit-form">
     <input type="hidden" name="csrf_token" value="@csrf_token@">
     <input type="hidden" name="action" value="@patient_form_action@">
+    <input type="hidden" name="dispense_status" value="@dispense_status_key@">
     <input type="hidden" name="customer_code" value="@customer_code@">
     <input type="hidden" name="location_id" value="@patient_location_id@">
     <input type="hidden" name="add_another_address" value="@_patient_add_address_value@">

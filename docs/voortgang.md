@@ -728,3 +728,21 @@
 - Een bedrijfsbeheerder met `company.settings.manage` kiest de layout via de bedrijfsinstellingen. De keuze wordt per bedrijf bewaard in `ct_company_preferences` en toegepast door de aflevermodule. Zonder opgeslagen keuze gebruikt de module `standard`.
 - Bestaande databases krijgen de tabel en keuzewaarden via `migrations/20261113-090000_company_dispensing_template.sql`; voer daarna het toepasselijke `schema_grant_*.sql` uit. Softwareversie verhoogd naar 0.16.32.
 
+### Aanvulling: functietoetsen voor de aflevermodule
+
+- De platformbeheerder kan 36 toetsen configureren: F1–F12, Ctrl+F1–Ctrl+F12 en Shift+F1–Shift+F12. Per toets zijn actie, titel en tooltip instelbaar; de labels worden per taal bewaard.
+- Naast ingebouwde acties kunnen geregistreerde modulepagina’s en vrije webadressen worden toegewezen. Modulepagina’s blijven hun eigen toegangscontrole uitvoeren. Webadressen accepteren alleen HTTP(S) of een intern pad; openen in een nieuwe tab is de standaard en kan per toets worden uitgezet.
+- URL en tabkeuze staan als JSON-object in `action_config`. De opslag encodeert ook lege configuraties als `{}` zodat de PostgreSQL-controle op JSON-objecten slaagt. De modulepagina en functietoetsbalk geven de opgeslagen actie, bestemming, titel en tooltip weer.
+- Ctrl+F1 opent de publieke website van de actieve company in een nieuwe tab. De URL wordt bij het renderen met de actuele companyslug samengesteld. Migratie `migrations/20261119-190000_dispensing_ctrl_f1_company_website.sql` voegt de actie toe en wijst Ctrl+F1 eraan toe.
+- Op touchapparaten zonder hover verschijnen laagknoppen voor F1–F12, Ctrl en Shift. De gekozen laag blijft actief tot een andere laag wordt gekozen. Op gewone desktops blijft de functietoetsbalk ongewijzigd en werken fysieke Ctrl- en Shift-toetsen zoals voorheen.
+- De configuratie- en schermteksten zijn beschikbaar in NL, FR, EN en DE. Voor URL-acties is `migrations/20261119-180000_dispensing_function_key_urls.sql` nodig; modulepaginabestemmingen gebruiken `migrations/20261119-170000_dispensing_function_key_module_targets.sql`. De cacheversie van de afleverassets staat op 0.18.28.
+
+### Huidige stand
+
+- De functietoetsacties, URL-opslag en Ctrl+F1 naar de companywebsite werken. De tabletlaagkiezer is toegevoegd; een database-update is daarvoor niet nodig.
+- De platformbeheerder beheert de toewijzingen centraal. Gewone gebruikers kunnen de toetsen uitvoeren, maar niet de toewijzingen aanpassen.
+
+### Volgende stap
+
+- Valideer de volledige functietoetsbalk op een tablet met alleen touchscreen en op een desktop met toetsenbord. Controleer daarbij alle drie de lagen, openen van URLs in dezelfde/nieuwe tab en dat een toegangsbeperkte modulepagina haar eigen controle blijft toepassen.
+

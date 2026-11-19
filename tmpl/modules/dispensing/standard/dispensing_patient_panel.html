@@ -3,6 +3,7 @@
     <div class="patient-search-wrap">
         <form method="get" action="dispense.php" class="patient-search-form" data-patient-search-form>
             <input type="hidden" name="mode" value="patient">
+            <input type="hidden" name="dispense_status" value="@dispense_status_key@" data-patient-status-input>
             <label class="visually-hidden" for="patient-search">@dispense_patient_search@</label>
             <input class="form-control" id="patient-search" name="q" type="search" minlength="3" maxlength="100" value="@dispense_query_value@" placeholder="@dispense_patient_search@" autocomplete="off" aria-autocomplete="list" aria-controls="patient-suggestions" aria-expanded="false" data-patient-search-input>
             <button class="btn btn-outline-primary" type="submit">@dispense_search@</button>
@@ -11,7 +12,4 @@
         <div class="list-group patient-suggestions @_dispense_patient_suggestion_class@" id="patient-suggestions" role="listbox" data-patient-suggestions>@_dispense_patient_results_html@</div>
     </div>
     <div class="form-text mt-2" aria-live="polite" data-patient-search-status>@dispense_patient_search_feedback@</div>
-    <div class="patient-panel-footer d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-secondary" href="@dispense_walkin_mode_url@">@dispense_walkin_title@</a>
-    </div>
 </section>
