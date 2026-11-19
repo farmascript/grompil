@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS ft_platform_dispensing_function_keys (
             'open_customer_modal',
             'toggle_customer_regex',
             'clear_product_search',
-            'open_url'
+            'open_url',
+            'open_company_website'
         ) OR action_key ~ '^open_page:[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*[.]php$'),
     action_config JSONB NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(action_config) = 'object'),
     labels JSONB NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(labels) = 'object'),

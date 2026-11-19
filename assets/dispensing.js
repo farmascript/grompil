@@ -310,7 +310,7 @@
                 return;
             }
 
-            if (actionKey === 'open_url') {
+            if (actionKey === 'open_url' || actionKey === 'open_company_website') {
                 const url = String(actionConfig.url || '').trim();
                 if (!url || /[\u0000-\u0020\u007f\\]/.test(url)) return;
                 let destination;

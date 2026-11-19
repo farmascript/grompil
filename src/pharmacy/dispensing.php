@@ -761,6 +761,12 @@ foreach (fn_dispensingShortcutSlots() as $shortcutSlot) {
     $shortcut = $shortcutConfiguration[$keyCode] ?? ['action_key' => 'none', 'labels' => []];
     $storedActionKey = (string) ($shortcut['action_key'] ?? 'none');
     $actionConfig = is_array($shortcut['action_config'] ?? null) ? $shortcut['action_config'] : [];
+    if ($storedActionKey === 'open_company_website') {
+        $actionConfig = [
+            'url' => fn_appBaseHref() . 'index.php?c=' . rawurlencode((string) ($company['slug'] ?? '')),
+            'new_tab' => true,
+        ];
+    }
     $moduleTarget = fn_dispensingShortcutModulePath($storedActionKey);
     $actionKey = $moduleTarget !== null
         ? $storedActionKey
@@ -858,7 +864,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.26',
+    'asset_version' => '0.18.27',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',

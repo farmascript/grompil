@@ -168,6 +168,7 @@ foreach ($slots as $slot) {
             'open_url' => $optionKey === $actionKey && ($storedActionConfig['url'] ?? '') !== ''
                 ? (string) $storedActionConfig['url']
                 : fn_t($action['title']),
+            'open_company_website' => 'index.php?c={company_slug}',
             default => 'assets/dispensing.js · ' . $optionKey,
         };
         $selectedOptions .= '<option value="' . e($optionKey) . '"'
