@@ -669,7 +669,7 @@
         if (!receiptConfirmButton) return;
         receiptConfirmButton.disabled = true;
         try {
-            await sessionRequest('complete');
+            await sessionRequest('discard');
             try {
                 sessionStorage.removeItem(sessionStorageKey);
                 sessionStorage.removeItem(`${sessionStorageKey}-party`);

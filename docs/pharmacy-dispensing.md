@@ -11,7 +11,7 @@ The pharmacy workbench is available at `dispense.php`. It requires an active com
 - Search and edits are scoped to the active company. PostgreSQL row-level security provides a second tenant boundary.
 - The workbench has two explicit modes: patient-linked dispensing and walk-in sale without a patient. Product search in patient mode requires a valid active patient from the current company; walk-in mode does not attach products to any patient.
 - The dispensing product-search endpoint checks the selected mode and, in patient mode, verifies the patient in the active company before searching the SAM catalogue. The separate `sam-products.php` endpoint remains available to its other authorized tools.
-- Each browser tab keeps its own active dispensing session in `dt_dispensing_sessions`, with names in `dt_dispensing_parties` and product lines in `dt_dispensing_lines`. Confirming the receipt copies the details to history; F12 discards the current open session and its related rows after confirmation.
+- Each browser tab keeps its own active dispensing session in `dt_dispensing_sessions`, with names in `dt_dispensing_parties` and product lines in `dt_dispensing_lines`. For now, confirming the receipt with OK discards the current session, just like F12; it does not save a history record. F12 asks for confirmation first.
 - The count at the upper right of the current dispensing panel shows the number of distinct product lines, not the sum of their quantities.
 - Electronic prescriptions, live stock, safety checks, reimbursement, prices, and checkout are not connected. Their controls are deliberately disabled.
 
