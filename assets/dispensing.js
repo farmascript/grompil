@@ -449,6 +449,7 @@
                 quantityInput.value = String(product.quantity);
                 quantityInput.className = 'form-control form-control-sm basket-qty';
                 quantityInput.setAttribute('aria-label', t.quantity);
+                quantityInput.disabled = Boolean(product.pending);
                 quantityInput.addEventListener('change', async () => {
                     const quantityValue = Math.min(999, Math.max(1, Number.parseInt(quantityInput.value, 10) || 1));
                     try {
@@ -467,6 +468,7 @@
                 remove.className = 'basket-remove';
                 remove.textContent = '×';
                 remove.title = t.remove;
+                remove.disabled = Boolean(product.pending);
                 remove.addEventListener('click', async () => {
                     try {
                         await sessionRequest('line_remove', { line_id: product.id });
@@ -490,6 +492,27 @@
             return;
         }
         const status = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription';
+        const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const pendingLine = {
+            id: pendingId,
+            party_id: activePartyId,
+            status,
+            statusShortCode: dispenseStatusSelect?.selectedOptions[0]?.dataset.shortCode || status,
+            cnk: String(product.cnk || ''),
+            amp_code: String(product.amp_code || ''),
+            ampp_code: String(product.ampp_code || ''),
+            name_nl: String(product.prescription_name_nl || product.name_nl || product.official_name || ''),
+            name_fr: String(product.prescription_name_fr || product.name_fr || product.official_name || ''),
+            package_nl: String(product.pack_display_nl || ''),
+            package_fr: String(product.pack_display_fr || ''),
+            quantity: 1,
+            pending: true,
+        };
+        basket.set(pendingId, pendingLine);
+        renderBasket();
+        input.value = '';
+        input.focus();
+        hideSuggestions();
         try {
             const data = await sessionRequest('line_add', {
                 party_id: activePartyId,
@@ -498,12 +521,17 @@
                 amp_code: product.amp_code,
                 ampp_code: product.ampp_code,
             });
-            basket.set(String(data.line.id), data.line);
+            basket.delete(pendingId);
+            const savedLineId = String(data.line.id);
+            const previousSavedLine = basket.get(savedLineId);
+            if (previousSavedLine && Number(previousSavedLine.quantity) > Number(data.line.quantity)) {
+                data.line.quantity = previousSavedLine.quantity;
+            }
+            basket.set(savedLineId, data.line);
             renderBasket();
-            input.value = '';
-            input.focus();
-            hideSuggestions();
         } catch {
+            basket.delete(pendingId);
+            renderBasket();
             showSessionError();
         }
     }
