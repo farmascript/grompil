@@ -274,14 +274,14 @@
     function renderPartySelector() {
         if (!partySelector) return;
         partySelector.replaceChildren();
-        const label = document.createElement('span');
-        label.className = 'small text-secondary me-1';
-        label.textContent = page.dataset.textPartiesLabel || '';
+        const sessionRow = document.createElement('div');
+        sessionRow.className = 'dispense-session-reference';
         const sessionReference = document.createElement('span');
         sessionReference.className = 'badge text-bg-light me-1';
         sessionReference.textContent = `${page.dataset.textSessionReference || ''} #${dispensingSessionId.slice(0, 8)}`.trim();
         sessionReference.title = dispensingSessionId;
-        partySelector.append(label, sessionReference);
+        sessionRow.append(sessionReference);
+        partySelector.append(sessionRow);
         for (const party of dispensingParties) {
             const button = document.createElement('button');
             button.type = 'button';

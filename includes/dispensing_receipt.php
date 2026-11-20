@@ -63,9 +63,9 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
             $package = strtoupper($language) === 'FR'
                 ? ((string) ($line['package_fr'] ?? '') ?: (string) ($line['package_nl'] ?? ''))
                 : ((string) ($line['package_nl'] ?? '') ?: (string) ($line['package_fr'] ?? ''));
-            $add('  ' . $productName, 9, false);
+            $add('  ' . $quantity . ' × ' . $productName, 9, false);
             $add('     ' . (string) ($line['cnk'] ?? '') . ($package !== '' ? ' · ' . $package : '')
-                . ' · ' . (string) ($line['statusShortCode'] ?? '') . '     ' . $text['quantity'] . ': ' . $quantity, 8, false);
+                . ' · ' . (string) ($line['statusShortCode'] ?? ''), 8, false);
         }
         $groupCount = array_sum(array_map(static fn(array $line): int => (int) ($line['quantity'] ?? 0), $group['lines'] ?? []));
         $add($text['subtotal'] . ': ' . $groupCount, 9, true);
