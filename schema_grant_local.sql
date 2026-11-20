@@ -60,8 +60,11 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON st_password_reset_tokens, st_password_reset_attempts TO grompil_app;
 GRANT SELECT, INSERT, UPDATE ON bt_customers, dt_customer_locations TO grompil_app;
+GRANT SELECT, INSERT, UPDATE ON dt_dispensing_sessions TO grompil_app;
+GRANT SELECT, INSERT ON dt_dispensing_parties TO grompil_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON dt_dispensing_lines TO grompil_app;
 GRANT SELECT, INSERT ON st_customer_audit_log TO grompil_app;
-GRANT USAGE, SELECT ON SEQUENCE bt_customers_id_seq, dt_customer_locations_id_seq, st_customer_audit_log_id_seq TO grompil_app;
+GRANT USAGE, SELECT ON SEQUENCE bt_customers_id_seq, dt_customer_locations_id_seq, st_customer_audit_log_id_seq, dt_dispensing_parties_id_seq, dt_dispensing_lines_id_seq TO grompil_app;
 REVOKE DELETE ON bt_customers, dt_customer_locations FROM grompil_app;
 REVOKE UPDATE, DELETE ON st_customer_audit_log FROM grompil_app;
 

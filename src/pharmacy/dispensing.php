@@ -20,6 +20,7 @@ declare(strict_types=1);
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 require_once GROMPIL_ROOT . '/includes/contact_manager.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_shortcuts.php';
+require_once GROMPIL_ROOT . '/includes/dispensing_sessions.php';
 $currentUser = require_login();
 $company = require_company_context($currentUser);
 if ($company === null || !grompil_can_access_module('dispense.php', $currentUser, $company)) {
@@ -127,6 +128,10 @@ foreach ($dispensingStatuses as $statusOption) {
         . ($statusOptionKey === $dispenseStatusKey ? ' selected' : '') . '>'
         . e($statusOptionCode . ' — ' . $statusOptionLabel) . '</option>';
 }
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+    && (string) ($_GET['dispensing_session_api'] ?? '') === '1') {
+    grompil_dispensing_session_api($companyId, $actorCode, $dispensingStatusByKey);
+}
 $messageKey = '';
 $editingPatientCode = '';
 $openPatientModal = false;
@@ -145,7 +150,15 @@ if (isset($_GET['product_suggest']) && (string) $_GET['product_suggest'] === '1'
         echo json_encode(['error' => 'query_required']);
         exit;
     }
-    if ($dispenseMode === 'patient') {
+    $searchStatusKey = strtolower(trim((string) ($_GET['dispense_status'] ?? $dispenseStatusKey)));
+    if (isset($legacyDispenseStatusKeys[$searchStatusKey])) {
+        $searchStatusKey = $legacyDispenseStatusKeys[$searchStatusKey];
+    }
+    if (!isset($dispensingStatusByKey[$searchStatusKey])) {
+        $searchStatusKey = $dispenseStatusKey;
+    }
+    $searchDispenseMode = $searchStatusKey === 'free_sale' ? 'walk_in' : 'patient';
+    if ($searchDispenseMode === 'patient') {
         $productPatientCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
         if (preg_match('/^[A-Z0-9]{6}$/D', $productPatientCode) !== 1) {
             http_response_code(409);
@@ -894,6 +907,10 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_patient_required' => $dispenseCustomerText('dispense_patient_required'),
     'dispense_status' => fn_t('dispense_status'),
     'dispense_current_items' => fn_t('dispense_current_items'),
+    'dispense_parties_label' => fn_t('dispense_parties_label'),
+    'dispense_add_party' => fn_t('dispense_add_party'),
+    'dispense_session_error' => fn_t('dispense_session_error'),
+    'dispense_session_reference' => fn_t('dispense_session_reference'),
     'dispense_empty_basket' => fn_t('dispense_empty_basket'),
     'dispense_quantity' => fn_t('dispense_quantity'),
     'dispense_remove' => fn_t('delete'),
@@ -915,7 +932,11 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_logo_url' => $companyLogo,
     'dispense_query_value' => $query,
     'dispense_product_endpoint' => fn_appBaseHref() . 'dispense.php',
-    'asset_version' => '0.18.29',
+    'dispense_session_endpoint' => fn_appBaseHref() . 'dispense.php?dispensing_session_api=1',
+    'dispense_company_id' => (string) $companyId,
+    'dispense_actor_code' => $actorCode,
+    'dispense_csrf_token' => csrf_token(),
+    'asset_version' => '0.18.31',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',

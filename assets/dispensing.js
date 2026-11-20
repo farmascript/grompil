@@ -16,6 +16,7 @@
     const rows = document.querySelector('[data-basket-rows]');
     const count = document.querySelector('[data-basket-count]');
     const summary = document.querySelector('[data-basket-summary]');
+    const partySelector = document.querySelector('[data-dispense-parties]');
 
     const patientInput = document.querySelector('[data-patient-search-input]');
     const patientForm = document.querySelector('[data-patient-search-form]');
@@ -26,6 +27,7 @@
     const patientStatusInput = document.querySelector('[data-patient-status-input]');
     const currentDispenseStatus = document.querySelector('[data-current-dispense-status]');
     const patientRequiredMessage = document.querySelector('[data-dispense-patient-required]');
+    const initialPageCustomerCode = page.dataset.patientCode || '';
     let patientTimer = 0;
     let patientRequestController = null;
 
@@ -129,6 +131,27 @@
         });
     }
 
+    if (patientSuggestions) {
+        patientSuggestions.addEventListener('click', async (event) => {
+            const suggestion = event.target.closest('a.patient-suggestion');
+            if (!suggestion) return;
+            const customerCode = new URL(suggestion.href, window.location.href).searchParams.get('patient') || '';
+            if (!customerCode) return;
+            event.preventDefault();
+            await sessionReady;
+            try {
+                const data = await sessionRequest('party_add', { customer_code: customerCode });
+                dispensingParties = data.parties || dispensingParties;
+                activateParty(data.active_party_id);
+                patientInput.value = '';
+                hidePatientSuggestions();
+                setPatientStatus('');
+            } catch {
+                showSessionError();
+            }
+        });
+    }
+
     if (!input || !suggestions || !rows) return;
 
     const t = {
@@ -142,9 +165,140 @@
     };
     const language = (page.dataset.lang || 'nl').toLowerCase();
     const basket = new Map();
+    let dispensingSessionId = '';
+    let dispensingParties = [];
+    let activePartyId = 0;
     let timer = 0;
     let requestController = null;
     let activeSuggestionIndex = -1;
+
+    const sessionStorageKey = `grompil-dispensing-${page.dataset.sessionCompany || '0'}-${page.dataset.sessionUser || 'user'}`;
+
+    async function sessionRequest(action, values = {}) {
+        const response = await fetch(page.dataset.sessionEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                csrf_token: page.dataset.csrfToken,
+                session_id: dispensingSessionId,
+                action,
+                ...values,
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || page.dataset.textSessionError || '');
+        return data;
+    }
+
+    function showSessionError() {
+        const panel = document.querySelector('.current-dispense-panel');
+        if (!panel) return;
+        let notice = panel.querySelector('.dispense-session-notice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.className = 'alert alert-danger small dispense-session-notice';
+            panel.prepend(notice);
+        }
+        notice.textContent = page.dataset.textSessionError || '';
+    }
+
+    function renderPartySelector() {
+        if (!partySelector) return;
+        partySelector.replaceChildren();
+        const label = document.createElement('span');
+        label.className = 'small text-secondary me-1';
+        label.textContent = page.dataset.textPartiesLabel || '';
+        const sessionReference = document.createElement('span');
+        sessionReference.className = 'badge text-bg-light me-1';
+        sessionReference.textContent = `${page.dataset.textSessionReference || ''} #${dispensingSessionId.slice(0, 8)}`.trim();
+        sessionReference.title = dispensingSessionId;
+        partySelector.append(label, sessionReference);
+        for (const party of dispensingParties) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `btn btn-sm ${Number(party.id) === activePartyId ? 'btn-primary' : 'btn-outline-secondary'}`;
+            button.textContent = party.name;
+            button.title = party.customer_code || party.name;
+            button.setAttribute('aria-pressed', Number(party.id) === activePartyId ? 'true' : 'false');
+            button.addEventListener('click', () => activateParty(party.id));
+            partySelector.append(button);
+        }
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.className = 'btn btn-sm btn-outline-success';
+        addButton.textContent = page.dataset.textAddParty || '';
+        addButton.addEventListener('click', () => patientInput?.focus());
+        partySelector.append(addButton);
+    }
+
+    function activateParty(partyId) {
+        const party = dispensingParties.find((item) => Number(item.id) === Number(partyId));
+        if (!party) return;
+        activePartyId = Number(party.id);
+        try { sessionStorage.setItem(`${sessionStorageKey}-party`, String(activePartyId)); } catch {}
+        page.dataset.patientCode = party.customer_code || '';
+        hideSuggestions();
+        const currentName = document.querySelector('.dispense-selected-patient');
+        if (currentName) currentName.textContent = party.name;
+        const patientDetails = document.querySelector('.dispense-patientbar .dispense-selected-patient + span');
+        const patientActions = document.querySelector('.dispense-patientbar .ms-auto');
+        const partyMatchesPageCustomer = Boolean(party.customer_code) && party.customer_code === initialPageCustomerCode;
+        if (patientDetails) patientDetails.classList.toggle('d-none', !partyMatchesPageCustomer);
+        if (patientActions) patientActions.classList.toggle('d-none', !partyMatchesPageCustomer);
+        applyDispenseStatus();
+        renderPartySelector();
+        renderBasket();
+    }
+
+    async function initializeDispensingSession() {
+        let previouslyActivePartyId = 0;
+        let previouslyDisplayedCustomer = '';
+        try {
+            dispensingSessionId = sessionStorage.getItem(sessionStorageKey) || '';
+            previouslyActivePartyId = Number(sessionStorage.getItem(`${sessionStorageKey}-party`) || 0);
+            previouslyDisplayedCustomer = sessionStorage.getItem(`${sessionStorageKey}-page-customer`) || '';
+        } catch {}
+        if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(dispensingSessionId)) {
+            dispensingSessionId = window.crypto && typeof window.crypto.randomUUID === 'function'
+                ? window.crypto.randomUUID()
+                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+                    const random = Math.floor(Math.random() * 16);
+                    return (character === 'x' ? random : ((random & 3) | 8)).toString(16);
+                });
+        }
+        const session = await sessionRequest('load', {
+            customer_code: page.dataset.patientCode || '',
+            status_key: dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription',
+        });
+        try { sessionStorage.setItem(sessionStorageKey, dispensingSessionId); } catch {}
+        dispensingParties = session.parties || [];
+        for (const line of session.lines || []) basket.set(String(line.id), line);
+        if (session.status_key && Array.from(dispenseStatusSelect?.options || []).some((option) => option.value === session.status_key)) {
+            dispenseStatusSelect.value = session.status_key;
+            page.dataset.dispenseStatus = session.status_key;
+        }
+        const pageCustomer = page.dataset.patientCode || '';
+        const customerChanged = pageCustomer !== previouslyDisplayedCustomer;
+        const preferredParty = (customerChanged && pageCustomer
+            ? dispensingParties.find((party) => party.customer_code === pageCustomer)
+            : null)
+            || dispensingParties.find((party) => Number(party.id) === previouslyActivePartyId)
+            || dispensingParties.find((party) => pageCustomer && party.customer_code === pageCustomer)
+            || dispensingParties.find((party) => party.type === 'anonymous')
+            || dispensingParties[0];
+        try { sessionStorage.setItem(`${sessionStorageKey}-page-customer`, pageCustomer); } catch {}
+        if (preferredParty) activateParty(preferredParty.id);
+        else {
+            applyDispenseStatus();
+            renderBasket();
+        }
+    }
+
+    const sessionReady = initializeDispensingSession().catch((error) => {
+        showSessionError();
+        if (input) input.disabled = true;
+    });
 
     function productSuggestionButtons() {
         return [...suggestions.querySelectorAll('button.product-suggestion')];
@@ -187,13 +341,28 @@
             summary.textContent = t.empty;
             return;
         }
-        for (const product of products) {
+        for (const party of dispensingParties) {
+            const partyProducts = products.filter((product) => Number(product.party_id) === Number(party.id));
+            if (!partyProducts.length) continue;
+            const headingRow = document.createElement('tr');
+            headingRow.className = 'dispense-party-heading';
+            const heading = document.createElement('th');
+            heading.colSpan = 4;
+            heading.scope = 'rowgroup';
+            heading.textContent = party.name;
+            headingRow.append(heading);
+            rows.append(headingRow);
+
+            for (const product of partyProducts) {
             const tr = document.createElement('tr');
             const name = document.createElement('td');
             const strong = document.createElement('strong');
-            strong.textContent = product.name;
+            strong.textContent = (language === 'fr' ? product.name_fr : product.name_nl)
+                || product.name_nl || product.name_fr || '';
             const small = document.createElement('small');
-            small.textContent = `${product.cnk} · ${product.package || ''}`;
+            const packageText = (language === 'fr' ? product.package_fr : product.package_nl)
+                || product.package_nl || product.package_fr || '';
+            small.textContent = `${product.cnk} · ${packageText}`;
             name.append(strong, small);
             const statusCell = document.createElement('td');
             const statusBadge = document.createElement('span');
@@ -204,13 +373,20 @@
             const quantityInput = document.createElement('input');
             quantityInput.type = 'number';
             quantityInput.min = '1';
-            quantityInput.max = '99';
+            quantityInput.max = '999';
             quantityInput.value = String(product.quantity);
             quantityInput.className = 'form-control form-control-sm basket-qty';
             quantityInput.setAttribute('aria-label', t.quantity);
-            quantityInput.addEventListener('change', () => {
-                product.quantity = Math.min(99, Math.max(1, Number.parseInt(quantityInput.value, 10) || 1));
-                renderBasket();
+            quantityInput.addEventListener('change', async () => {
+                const quantityValue = Math.min(999, Math.max(1, Number.parseInt(quantityInput.value, 10) || 1));
+                try {
+                    await sessionRequest('line_update', { line_id: product.id, quantity: quantityValue });
+                    product.quantity = quantityValue;
+                    renderBasket();
+                } catch {
+                    showSessionError();
+                    renderBasket();
+                }
             });
             quantity.append(quantityInput);
             const removeCell = document.createElement('td');
@@ -219,40 +395,45 @@
             remove.className = 'basket-remove';
             remove.textContent = '×';
             remove.title = t.remove;
-            remove.addEventListener('click', () => {
-                basket.delete(product.key);
-                renderBasket();
+            remove.addEventListener('click', async () => {
+                try {
+                    await sessionRequest('line_remove', { line_id: product.id });
+                    basket.delete(String(product.id));
+                    renderBasket();
+                } catch {
+                    showSessionError();
+                }
             });
             removeCell.append(remove);
             tr.append(name, statusCell, quantity, removeCell);
             rows.append(tr);
+            }
         }
     }
 
-    function addProduct(product) {
-        const selectedStatusOption = dispenseStatusSelect?.selectedOptions[0];
+    async function addProduct(product) {
+        await sessionReady;
+        if (!activePartyId) {
+            showSessionError();
+            return;
+        }
         const status = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription';
-        const statusShortCode = selectedStatusOption?.dataset.shortCode || status;
-        const key = `${product.amp_code}|${product.ampp_code}|${product.cnk}|${status}`;
-        const current = basket.get(key);
-        if (current) current.quantity += 1;
-        else basket.set(key, {
-            key,
-            cnk: String(product.cnk || ''),
-            amp_code: String(product.amp_code || ''),
-            ampp_code: String(product.ampp_code || ''),
-            status,
-            statusShortCode,
-            name: String((language === 'fr' ? product.prescription_name_fr : product.prescription_name_nl)
-                || product.prescription_name_nl || product.prescription_name_fr || product.official_name || ''),
-            package: String((language === 'fr' ? product.pack_display_fr : product.pack_display_nl)
-                || product.pack_display_nl || product.pack_display_fr || ''),
-            quantity: 1,
-        });
-        renderBasket();
-        input.value = '';
-        input.focus();
-        hideSuggestions();
+        try {
+            const data = await sessionRequest('line_add', {
+                party_id: activePartyId,
+                status_key: status,
+                cnk: product.cnk,
+                amp_code: product.amp_code,
+                ampp_code: product.ampp_code,
+            });
+            basket.set(String(data.line.id), data.line);
+            renderBasket();
+            input.value = '';
+            input.focus();
+            hideSuggestions();
+        } catch {
+            showSessionError();
+        }
     }
 
     function exactIdentifierProduct(data, query) {
@@ -287,7 +468,11 @@
         if (patientRequiredMessage) patientRequiredMessage.classList.toggle('d-none', freeDispensing || Boolean(page.dataset.patientCode));
     }
 
-    dispenseStatusSelect?.addEventListener('change', applyDispenseStatus);
+    dispenseStatusSelect?.addEventListener('change', () => {
+        applyDispenseStatus();
+        void sessionReady.then(() => sessionRequest('status_set', { status_key: dispenseStatusSelect.value }))
+            .catch(showSessionError);
+    });
     applyDispenseStatus();
 
     function showResults(data) {
@@ -313,7 +498,7 @@
             add.className = 'btn btn-sm btn-outline-success mt-2';
             add.textContent = t.add;
             button.append(title, detail, add);
-            button.addEventListener('click', () => addProduct(product));
+            button.addEventListener('click', () => { void addProduct(product); });
             suggestions.append(button);
         }
         if (!(data.results || []).length) {
