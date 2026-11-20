@@ -93,7 +93,7 @@
                 const url = new URL(page.dataset.patientEndpoint, window.location.href);
                 url.searchParams.set('patient', String(patient.customer_code || ''));
                 url.searchParams.set('mode', 'patient');
-                url.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription');
+                url.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale');
                 const link = document.createElement('a');
                 link.className = 'list-group-item list-group-item-action patient-suggestion';
                 link.id = `patient-option-${index}`;
@@ -373,7 +373,7 @@
         renderSessionReference();
         const session = await sessionRequest('load', {
             customer_code: page.dataset.patientCode || '',
-            status_key: dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription',
+            status_key: dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale',
         });
         try { sessionStorage.setItem(sessionStorageKey, dispensingSessionId); } catch {}
         dispensingParties = session.parties || [];
@@ -764,7 +764,7 @@
                 url.searchParams.set('product_suggest', '1');
                 url.searchParams.set('q', query);
                 url.searchParams.set('mode', page.dataset.dispenseMode || 'patient');
-                url.searchParams.set('dispense_status', page.dataset.dispenseStatus || 'prescription');
+                url.searchParams.set('dispense_status', page.dataset.dispenseStatus || 'free_sale');
                 if (page.dataset.dispenseMode === 'patient' && page.dataset.patientCode) {
                     url.searchParams.set('patient', page.dataset.patientCode);
                 }

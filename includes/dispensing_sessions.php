@@ -39,7 +39,9 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
     if ($action === 'status_set' && !isset($statusByKey[$requestedStatusKey])) {
         $respond(['error' => 'invalid_status'], 400);
     }
-    $statusKey = isset($statusByKey[$requestedStatusKey]) ? $requestedStatusKey : 'prescription';
+    $statusKey = isset($statusByKey[$requestedStatusKey])
+        ? $requestedStatusKey
+        : (isset($statusByKey['free_sale']) ? 'free_sale' : (string) array_key_first($statusByKey));
     $transactionStarted = false;
 
     try {

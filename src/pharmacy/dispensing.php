@@ -112,7 +112,9 @@ if ($requestedDispenseStatus === '' && (string) ($_GET['mode'] ?? '') === 'walk_
 }
 $dispenseStatusKey = isset($dispensingStatusByKey[$requestedDispenseStatus])
     ? $requestedDispenseStatus
-    : (isset($dispensingStatusByKey['prescription']) ? 'prescription' : (string) array_key_first($dispensingStatusByKey));
+    : (isset($dispensingStatusByKey['free_sale'])
+        ? 'free_sale'
+        : (isset($dispensingStatusByKey['prescription']) ? 'prescription' : (string) array_key_first($dispensingStatusByKey)));
 $dispenseStatusLabel = $dispensingStatusByKey[$dispenseStatusKey]['label'] ?? fn_t('dispense_status_prescription');
 $dispenseStatusShortCode = $dispensingStatusByKey[$dispenseStatusKey]['short_code'] ?? $dispenseStatusKey;
 $dispenseStatusDisplay = $dispenseStatusShortCode . ' — ' . $dispenseStatusLabel;
