@@ -487,7 +487,9 @@ if ($patientSuggestionRequest) {
             ])));
             $suggestions[] = [
                 'customer_code' => (string) $patient['customer_code'],
-                'patient_name' => trim((string) $patient['name_first'] . ' ' . (string) $patient['name_last']),
+                'patient_name' => grompil_dispensing_display_name(
+                    (string) $patient['name_first'], (string) $patient['name_last']
+                ),
                 'patient_address' => $address !== '' ? $address : $customerText('patient_no_address'),
             ];
         }
@@ -539,7 +541,9 @@ foreach ($patientMatches as $patient) {
     ])));
     $patientResultRows .= fn_moduleTemplateRender('dispensing', 'dispensing_patient_result.html', [
         'customer_code' => (string) $patient['customer_code'],
-        'patient_name' => trim($patient['name_first'] . ' ' . $patient['name_last']),
+        'patient_name' => grompil_dispensing_display_name(
+            (string) $patient['name_first'], (string) $patient['name_last']
+        ),
         'patient_address' => $address !== '' ? $address : $customerText('patient_no_address'),
     ]);
 }
@@ -716,7 +720,9 @@ if ($selectedPatient) {
         $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_birth_date') . ': ' . fn_formatDateDisplay($dob));
     }
     if (isset($selectedPatient['created_at'])) {
-        $patientName = trim((string) $selectedPatient['name_first'] . ' ' . (string) $selectedPatient['name_last']);
+        $patientName = grompil_dispensing_display_name(
+            (string) $selectedPatient['name_first'], (string) $selectedPatient['name_last']
+        );
         $contactManagerActionUrl = 'dispense.php?patient=' . rawurlencode((string) $selectedPatient['customer_code'])
             . '&dispense_status=' . rawurlencode($dispenseStatusKey) . '&contacts=1#contact-manager-modal';
         $contactManagerData = grompil_contact_manager_render_modal(
@@ -769,7 +775,9 @@ $patientSuggestionClass = $patientMatches !== [] ? '' : 'd-none';
 $patientTitleHtml = $selectedPatient
     ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_title.html', [
         'patient_initials' => strtoupper(mb_substr((string) $selectedPatient['name_first'], 0, 1) . mb_substr((string) $selectedPatient['name_last'], 0, 1)),
-        'patient_name' => trim($selectedPatient['name_first'] . ' ' . $selectedPatient['name_last']),
+        'patient_name' => grompil_dispensing_display_name(
+            (string) $selectedPatient['name_first'], (string) $selectedPatient['name_last']
+        ),
         '_patient_audit_tooltip_text' => $auditTooltipText,
         '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
         '_patient_age_html' => $patientAge !== '' ? '<span class="text-secondary small">(' . e($patientAge) . ')</span>' : '',

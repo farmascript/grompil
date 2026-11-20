@@ -1,6 +1,16 @@
 <?php
 declare(strict_types=1);
 
+function grompil_dispensing_display_name(string $firstName, string $lastName): string
+{
+    $firstName = mb_strtolower(trim($firstName), 'UTF-8');
+    if ($firstName !== '') {
+        $firstName = mb_strtoupper(mb_substr($firstName, 0, 1, 'UTF-8'), 'UTF-8')
+            . mb_substr($firstName, 1, null, 'UTF-8');
+    }
+    return trim($firstName . ' ' . trim($lastName));
+}
+
 /** JSON API for per-tab dispensing drafts and their customer groups/lines. */
 function grompil_dispensing_session_api(int $companyId, string $actorCode, array $statusByKey): never
 {
@@ -160,10 +170,19 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             }
             $partyResult = db_query_params(
                 'dispensing.session_line_party',
-                'SELECT display_name, customer_code FROM dt_dispensing_parties WHERE id = $1 AND company_id = $2',
+                'SELECT party.display_name, party.customer_code, customer.name_first, customer.name_last
+                 FROM dt_dispensing_parties party
+                 LEFT JOIN bt_customers customer
+                   ON customer.company_id = party.company_id AND customer.customer_code = party.customer_code
+                 WHERE party.id = $1 AND party.company_id = $2',
                 [(int) $line['party_id'], $companyId]
             );
             $party = pg_fetch_assoc($partyResult) ?: ['display_name' => '', 'customer_code' => null];
+            if (($party['customer_code'] ?? null) !== null) {
+                $party['display_name'] = grompil_dispensing_display_name(
+                    (string) ($party['name_first'] ?? ''), (string) ($party['name_last'] ?? '')
+                );
+            }
             $statusResult = db_query_params(
                 'dispensing.session_line_status',
                 'SELECT COALESCE(short_codes ->> $2, \'\') FROM ft_dd_varia
@@ -235,7 +254,9 @@ function grompil_dispensing_session_add_customer(int $companyId, string $session
     if (!$customer) {
         throw new InvalidArgumentException('customer_unavailable');
     }
-    $displayName = trim((string) $customer['name_first'] . ' ' . (string) $customer['name_last']);
+    $displayName = grompil_dispensing_display_name(
+        (string) $customer['name_first'], (string) $customer['name_last']
+    );
     $insert = db_query_params(
         'dispensing.session_party_add',
         'INSERT INTO dt_dispensing_parties (company_id, dispensing_session_id, party_type, customer_code, display_name)
@@ -266,10 +287,13 @@ function grompil_dispensing_session_parties(int $companyId, string $sessionId): 
 {
     $result = db_query_params(
         'dispensing.session_parties_load',
-        'SELECT id, party_type, customer_code, display_name
-         FROM dt_dispensing_parties
-         WHERE company_id = $1 AND dispensing_session_id = $2::UUID
-         ORDER BY sort_order, id',
+        'SELECT party.id, party.party_type, party.customer_code, party.display_name,
+                customer.name_first, customer.name_last
+         FROM dt_dispensing_parties party
+         LEFT JOIN bt_customers customer
+           ON customer.company_id = party.company_id AND customer.customer_code = party.customer_code
+         WHERE party.company_id = $1 AND party.dispensing_session_id = $2::UUID
+         ORDER BY party.sort_order, party.id',
         [$companyId, $sessionId]
     );
     $parties = [];
@@ -278,7 +302,9 @@ function grompil_dispensing_session_parties(int $companyId, string $sessionId): 
             'id' => (int) $row['id'],
             'type' => (string) $row['party_type'],
             'customer_code' => (string) ($row['customer_code'] ?? ''),
-            'name' => (string) $row['display_name'],
+            'name' => $row['party_type'] === 'customer'
+                ? grompil_dispensing_display_name((string) $row['name_first'], (string) $row['name_last'])
+                : (string) $row['display_name'],
         ];
     }
     return $parties;
