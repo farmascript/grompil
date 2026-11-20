@@ -935,6 +935,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_parties_label' => fn_t('dispense_parties_label'),
     'dispense_add_party' => fn_t('dispense_add_party'),
     'dispense_session_error' => fn_t('dispense_session_error'),
+    'dispense_discard_confirm' => fn_t('dispense_discard_confirm'),
     'dispense_session_reference' => fn_t('dispense_session_reference'),
     'dispense_copy_session' => fn_t('dispense_copy_session'),
     'dispense_session_copied' => fn_t('dispense_session_copied'),

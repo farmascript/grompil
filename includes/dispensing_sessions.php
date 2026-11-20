@@ -225,6 +225,29 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $respond(['removed' => pg_affected_rows($removed) === 1]);
         }
 
+        if ($action === 'discard') {
+            $begin = db_query_params('dispensing.session_discard_begin', 'BEGIN');
+            if (!$begin) throw new RuntimeException('Could not start dispensing discard transaction.');
+            $transactionStarted = true;
+            $deleted = db_query_params(
+                'dispensing.session_discard',
+                'DELETE FROM dt_dispensing_sessions
+                 WHERE id = $1::UUID AND company_id = $2
+                   AND created_by_user_code = $3 AND state = \'open\'
+                 RETURNING id',
+                [$sessionId, $companyId, $actorCode]
+            );
+            if (pg_num_rows($deleted) !== 1) {
+                db_query_params('dispensing.session_discard_rollback_missing', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'session_unavailable'], 404);
+            }
+            $commit = db_query_params('dispensing.session_discard_commit', 'COMMIT');
+            if (!$commit) throw new RuntimeException('Could not commit dispensing discard.');
+            $transactionStarted = false;
+            $respond(['discarded' => true]);
+        }
+
         if (in_array($action, ['receipt_preview', 'complete'], true)) {
             if ($action === 'receipt_preview') {
                 $receipt = grompil_dispensing_receipt_data($companyId, $sessionId, $walkinTitle);

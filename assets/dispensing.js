@@ -232,6 +232,7 @@
         remove: page.dataset.textRemove,
         quantity: page.dataset.textQuantity,
         productCount: page.dataset.textProductCount,
+        discardConfirm: page.dataset.textDiscardConfirm,
     };
     const language = (page.dataset.lang || 'nl').toLowerCase();
     const basket = new Map();
@@ -686,6 +687,22 @@
         }
     }
 
+    async function discardDispensing() {
+        if (!window.confirm(t.discardConfirm || '')) return;
+        try {
+            await sessionReady;
+            await sessionRequest('discard');
+            try {
+                sessionStorage.removeItem(sessionStorageKey);
+                sessionStorage.removeItem(`${sessionStorageKey}-party`);
+                sessionStorage.removeItem(`${sessionStorageKey}-page-customer`);
+            } catch {}
+            window.location.reload();
+        } catch {
+            showSessionError();
+        }
+    }
+
     closeDispensingButton?.addEventListener('click', () => { void beginReceiptPreview(); });
     receiptConfirmButton?.addEventListener('click', () => { void confirmReceipt(); });
     receiptModalElement?.addEventListener('hidden.bs.modal', () => {
@@ -894,6 +911,9 @@
                     break;
                 case 'close_dispensing':
                     void beginReceiptPreview();
+                    break;
+                case 'discard_dispensing':
+                    void discardDispensing();
                     break;
                 default:
                     break;

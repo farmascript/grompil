@@ -749,6 +749,8 @@
 
 - De functietoetsacties, URL-opslag en Ctrl+F1 naar de companywebsite werken. De tabletlaagkiezer is toegevoegd; een database-update is daarvoor niet nodig.
 - De platformbeheerder beheert de toewijzingen centraal. Gewone gebruikers kunnen de toetsen uitvoeren, maar niet de toewijzingen aanpassen.
+- F12 kan nu de huidige afleveringssessie wissen: de gebruiker bevestigt eerst, waarna de open sessie en de gekoppelde regels uit `dt_dispensing_sessions`, `dt_dispensing_parties` en `dt_dispensing_lines` worden verwijderd. Migratie `migrations/20261120_142834_dispensing_session_discard.sql` staat klaar; ze wijst F12 toe als die nog niet was ingesteld.
+- Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 
 ### Volgende stap
 
