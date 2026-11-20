@@ -376,13 +376,23 @@ function grompil_dispensing_receipt_data(int $companyId, string $sessionId, stri
         strtoupper((string) ($company['country_code'] ?? ''))];
     $groupsById = [];
     foreach (grompil_dispensing_session_parties($companyId, $sessionId, $walkinTitle) as $party) {
-        $groupsById[(int) $party['id']] = ['name' => (string) $party['name'], 'customer_code' => (string) $party['customer_code'], 'lines' => []];
+        $groupsById[(int) $party['id']] = [
+            'name' => (string) $party['name'],
+            'customer_code' => (string) $party['customer_code'],
+            'type' => (string) $party['type'],
+            'lines' => [],
+        ];
     }
     $lines = grompil_dispensing_session_lines($companyId, $sessionId, $walkinTitle);
     foreach ($lines as $line) {
         $partyId = (int) $line['party_id'];
         if (!isset($groupsById[$partyId])) {
-            $groupsById[$partyId] = ['name' => (string) $line['party_name'], 'customer_code' => (string) $line['customer_code'], 'lines' => []];
+            $groupsById[$partyId] = [
+                'name' => (string) $line['party_name'],
+                'customer_code' => (string) $line['customer_code'],
+                'type' => (string) ($line['customer_code'] === '' ? 'anonymous' : 'customer'),
+                'lines' => [],
+            ];
         }
         $groupsById[$partyId]['lines'][] = $line;
     }

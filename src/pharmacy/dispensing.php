@@ -936,6 +936,8 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_add_party' => fn_t('dispense_add_party'),
     'dispense_session_error' => fn_t('dispense_session_error'),
     'dispense_session_reference' => fn_t('dispense_session_reference'),
+    'dispense_copy_session' => fn_t('dispense_copy_session'),
+    'dispense_session_copied' => fn_t('dispense_session_copied'),
     'dispense_empty_basket' => fn_t('dispense_empty_basket'),
     'dispense_quantity' => fn_t('dispense_quantity'),
     'dispense_remove' => fn_t('delete'),

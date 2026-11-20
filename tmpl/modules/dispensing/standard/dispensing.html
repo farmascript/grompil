@@ -33,7 +33,7 @@
 
             <section class="dispense-panel current-dispense-panel">
                 <div class="panel-heading"><div><h2>@dispense_current_items@</h2><p>@dispense_product_help@</p></div><span class="badge text-bg-light" data-basket-count>0</span></div>
-                <div class="dispense-statusline"><span class="status-pill">@dispense_logged_in@</span><span class="status-pill status-muted">@dispense_price_unavailable@</span></div>
+                <div class="dispense-statusline"><span class="status-pill">@dispense_logged_in@</span><span class="status-pill status-muted">@dispense_price_unavailable@</span><span class="status-pill status-muted dispense-session-pill"><span data-session-reference></span><button type="button" class="dispense-copy-session" data-copy-session data-copied-label="@dispense_session_copied@" aria-label="@dispense_copy_session@" title="@dispense_copy_session@"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5h7a1 1 0 0 1 1 1v8M3 5.5h7a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button></span></div>
                 <div class="dispense-party-selector" data-dispense-parties role="group" aria-label="@dispense_parties_label@"></div>
                 <div class="product-search-wrap">
                     <label class="form-label" for="dispense-product-search">@dispense_product_search@</label>
@@ -42,7 +42,7 @@
                     <div class="list-group product-suggestions d-none" id="dispense-product-suggestions" role="listbox" data-product-suggestions></div>
                 </div>
                 <div class="basket-table-wrap">
-                    <table class="table align-middle dispense-basket"><thead><tr><th>@dispense_product_search@</th><th>@dispense_status@</th><th>@dispense_quantity@</th><th></th></tr></thead><tbody data-basket-rows><tr><td colspan="4" class="empty-basket">@dispense_empty_basket@</td></tr></tbody></table>
+                    <table class="table align-middle dispense-basket"><colgroup><col class="dispense-col-status"><col class="dispense-col-cnk"><col class="dispense-col-quantity"><col><col class="dispense-col-remove"></colgroup><thead><tr><th>@dispense_status@</th><th>CNK</th><th>@dispense_quantity@</th><th>@dispense_product_search@</th><th></th></tr></thead><tbody data-basket-rows><tr><td colspan="5" class="empty-basket">@dispense_empty_basket@</td></tr></tbody></table>
                 </div>
                 <div class="dispense-panel-foot"><span data-basket-summary>@dispense_empty_basket@</span><span>@dispense_price_unavailable@</span></div>
             </section>

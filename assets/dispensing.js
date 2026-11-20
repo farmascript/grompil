@@ -17,6 +17,8 @@
     const count = document.querySelector('[data-basket-count]');
     const summary = document.querySelector('[data-basket-summary]');
     const partySelector = document.querySelector('[data-dispense-parties]');
+    const sessionReferenceLabel = document.querySelector('[data-session-reference]');
+    const copySessionButton = document.querySelector('[data-copy-session]');
     const closeDispensingButton = document.querySelector('[data-close-dispensing]');
     const receiptModalElement = document.getElementById('dispensingReceiptModal');
     const receiptFrame = document.querySelector('[data-receipt-frame]');
@@ -242,6 +244,46 @@
 
     const sessionStorageKey = `grompil-dispensing-${page.dataset.sessionCompany || '0'}-${page.dataset.sessionUser || 'user'}`;
 
+    function renderSessionReference() {
+        if (sessionReferenceLabel) {
+            sessionReferenceLabel.textContent = `${page.dataset.textSessionReference || ''} #${dispensingSessionId}`.trim();
+            sessionReferenceLabel.title = dispensingSessionId;
+        }
+    }
+
+    async function copySessionReference() {
+        const originalLabel = copySessionButton?.getAttribute('aria-label') || '';
+        const copiedLabel = copySessionButton?.dataset.copiedLabel || originalLabel;
+        let copied = false;
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(dispensingSessionId);
+                copied = true;
+            }
+        } catch {}
+        if (!copied) {
+            const temporary = document.createElement('textarea');
+            temporary.value = dispensingSessionId;
+            temporary.setAttribute('readonly', '');
+            temporary.style.position = 'fixed';
+            temporary.style.opacity = '0';
+            document.body.append(temporary);
+            temporary.select();
+            try { copied = document.execCommand('copy'); } catch {}
+            temporary.remove();
+        }
+        if (copied && copySessionButton) {
+            copySessionButton.setAttribute('aria-label', copiedLabel);
+            copySessionButton.title = copiedLabel;
+            window.setTimeout(() => {
+                copySessionButton.setAttribute('aria-label', originalLabel);
+                copySessionButton.title = originalLabel;
+            }, 1800);
+        }
+    }
+
+    copySessionButton?.addEventListener('click', () => { void copySessionReference(); });
+
     async function sessionRequest(action, values = {}) {
         const response = await fetch(page.dataset.sessionEndpoint, {
             method: 'POST',
@@ -274,14 +316,6 @@
     function renderPartySelector() {
         if (!partySelector) return;
         partySelector.replaceChildren();
-        const sessionRow = document.createElement('div');
-        sessionRow.className = 'dispense-session-reference';
-        const sessionReference = document.createElement('span');
-        sessionReference.className = 'badge text-bg-light me-1';
-        sessionReference.textContent = `${page.dataset.textSessionReference || ''} #${dispensingSessionId.slice(0, 8)}`.trim();
-        sessionReference.title = dispensingSessionId;
-        sessionRow.append(sessionReference);
-        partySelector.append(sessionRow);
         for (const party of dispensingParties) {
             const button = document.createElement('button');
             button.type = 'button';
@@ -335,6 +369,7 @@
                     return (character === 'x' ? random : ((random & 3) | 8)).toString(16);
                 });
         }
+        renderSessionReference();
         const session = await sessionRequest('load', {
             customer_code: page.dataset.patientCode || '',
             status_key: dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription',
@@ -404,7 +439,7 @@
         if (!dispensingParties.length) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 4;
+            td.colSpan = 5;
             td.className = 'empty-basket';
             td.textContent = t.empty;
             tr.append(td);
@@ -417,7 +452,7 @@
             const headingRow = document.createElement('tr');
             headingRow.className = 'dispense-party-heading';
             const heading = document.createElement('th');
-            heading.colSpan = 4;
+            heading.colSpan = 5;
             heading.scope = 'rowgroup';
             heading.textContent = party.name;
             headingRow.append(heading);
@@ -426,7 +461,7 @@
             if (!partyProducts.length) {
                 const emptyRow = document.createElement('tr');
                 const emptyCell = document.createElement('td');
-                emptyCell.colSpan = 4;
+                emptyCell.colSpan = 5;
                 emptyCell.className = 'empty-basket';
                 emptyCell.textContent = t.empty;
                 emptyRow.append(emptyCell);
@@ -437,27 +472,25 @@
             for (const product of partyProducts) {
                 const tr = document.createElement('tr');
                 tr.className = 'dispense-product-line';
-                const name = document.createElement('td');
-                const strong = document.createElement('strong');
-                strong.textContent = (language === 'fr' ? product.name_fr : product.name_nl)
-                    || product.name_nl || product.name_fr || '';
-                const small = document.createElement('small');
-                const packageText = (language === 'fr' ? product.package_fr : product.package_nl)
-                    || product.package_nl || product.package_fr || '';
-                small.textContent = `${product.cnk} · ${packageText}`;
-                name.append(strong, small);
                 const statusCell = document.createElement('td');
                 const statusBadge = document.createElement('span');
                 statusBadge.className = 'badge text-bg-light';
                 statusBadge.textContent = product.statusShortCode;
                 statusCell.append(statusBadge);
+
+                const cnkCell = document.createElement('td');
+                const cnk = document.createElement('small');
+                cnk.className = 'dispense-line-cnk';
+                cnk.textContent = product.cnk;
+                cnkCell.append(cnk);
+
                 const quantity = document.createElement('td');
                 const quantityInput = document.createElement('input');
                 quantityInput.type = 'number';
                 quantityInput.min = '1';
                 quantityInput.max = '999';
                 quantityInput.value = String(product.quantity);
-                quantityInput.className = 'form-control form-control-sm basket-qty';
+                quantityInput.className = 'form-control form-control-sm basket-qty dispense-line-quantity';
                 quantityInput.setAttribute('aria-label', t.quantity);
                 quantityInput.disabled = Boolean(product.pending);
                 quantityInput.addEventListener('change', async () => {
@@ -472,6 +505,26 @@
                     }
                 });
                 quantity.append(quantityInput);
+
+                const descriptionCell = document.createElement('td');
+                descriptionCell.className = 'dispense-product-description';
+                const name = document.createElement('span');
+                name.className = 'dispense-product-description__name';
+                name.textContent = (language === 'fr' ? product.name_fr : product.name_nl)
+                    || product.name_nl || product.name_fr || '';
+                const packageText = (language === 'fr' ? product.package_fr : product.package_nl)
+                    || product.package_nl || product.package_fr || '';
+                descriptionCell.append(name);
+                if (packageText) {
+                    const separator = document.createElement('span');
+                    separator.className = 'dispense-product-description__separator';
+                    separator.textContent = ' · ';
+                    const packageSize = document.createElement('strong');
+                    packageSize.className = 'dispense-product-description__package';
+                    packageSize.textContent = packageText;
+                    descriptionCell.append(separator, packageSize);
+                }
+
                 const removeCell = document.createElement('td');
                 const remove = document.createElement('button');
                 remove.type = 'button';
@@ -489,7 +542,7 @@
                     }
                 });
                 removeCell.append(remove);
-                tr.append(name, statusCell, quantity, removeCell);
+                tr.append(statusCell, cnkCell, quantity, descriptionCell, removeCell);
                 rows.append(tr);
             }
         }
