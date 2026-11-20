@@ -3,6 +3,7 @@
 .dispense-selected-patient{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}.dispense-selected-patient>.patient-avatar{flex:0 0 44px;width:44px;height:44px}.dispense-selected-patient>.badge{font-family:monospace}
 
 .patient-search-wrap{position:relative}.patient-search-form{flex-wrap:wrap;align-items:center}.patient-search-form>[data-patient-search-input]{flex:1 1 140px;min-width:0}.patient-regex-check{display:flex;align-items:center;gap:.35rem;margin:0;font-size:.76rem;white-space:nowrap}.patient-regex-check .form-check-input{margin:0}.patient-suggestions{position:absolute;z-index:12;top:calc(100% + .25rem);left:0;right:0;max-height:42vh;overflow:auto;box-shadow:0 10px 24px #132b3a25}.patient-suggestion{font-size:.86rem;white-space:normal}.patient-suggestion strong{font-weight:700}
+.patient-suggestion.is-keyboard-active,.product-suggestion.is-keyboard-active{color:#173b52;background-color:#eaf2f4;border-color:#b8cdd4;box-shadow:inset 0 0 0 1px #b8cdd4}
 .walkin-panel{background:#f8fbfa}
 .customer-edit-form{min-width:0;overflow-x:hidden}.customer-edit-form>.row{--bs-gutter-x:1rem}.customer-address-editor{margin-top:1rem!important;padding-top:.25rem}.customer-address-editor>[data-address-fields]{min-width:0}.customer-address-editor [data-address-fields]>.row{--bs-gutter-x:1rem;--bs-gutter-y:.75rem;margin-top:0}.customer-address-editor .form-control,.customer-address-editor .form-select{min-width:0}#patientModal .modal-body{overflow-x:hidden}
 

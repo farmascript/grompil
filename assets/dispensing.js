@@ -30,12 +30,42 @@
     const initialPageCustomerCode = page.dataset.patientCode || '';
     let patientTimer = 0;
     let patientRequestController = null;
+    let activePatientSuggestionIndex = -1;
+
+    function patientSuggestionLinks() {
+        return [...(patientSuggestions?.querySelectorAll('a.patient-suggestion') || [])];
+    }
+
+    function setActivePatientSuggestion(index) {
+        const links = patientSuggestionLinks();
+        if (!links.length) return;
+        activePatientSuggestionIndex = Math.max(0, Math.min(index, links.length - 1));
+        links.forEach((link, linkIndex) => {
+            const active = linkIndex === activePatientSuggestionIndex;
+            link.classList.toggle('is-keyboard-active', active);
+            link.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        const activeLink = links[activePatientSuggestionIndex];
+        patientInput?.setAttribute('aria-activedescendant', activeLink.id);
+        activeLink.scrollIntoView({ block: 'nearest' });
+    }
+
+    function preparePatientSuggestionOptions() {
+        patientSuggestionLinks().forEach((link, index) => {
+            if (!link.id) link.id = `patient-option-${index}`;
+            link.setAttribute('role', 'option');
+            link.setAttribute('aria-selected', 'false');
+            link.tabIndex = -1;
+        });
+    }
 
     function hidePatientSuggestions() {
         if (!patientSuggestions || !patientInput) return;
         patientSuggestions.classList.add('d-none');
         patientSuggestions.replaceChildren();
+        activePatientSuggestionIndex = -1;
         patientInput.setAttribute('aria-expanded', 'false');
+        patientInput.removeAttribute('aria-activedescendant');
     }
 
     function setPatientStatus(message) {
@@ -44,19 +74,24 @@
 
     function showPatientSuggestions(results) {
         patientSuggestions.replaceChildren();
+        activePatientSuggestionIndex = -1;
         if (!results.length) {
             const empty = document.createElement('div');
             empty.className = 'list-group-item small text-secondary';
             empty.textContent = page.dataset.textPatientNoResults || '';
             patientSuggestions.append(empty);
         } else {
-            for (const patient of results) {
+            for (const [index, patient] of results.entries()) {
                 const url = new URL(page.dataset.patientEndpoint, window.location.href);
                 url.searchParams.set('patient', String(patient.customer_code || ''));
                 url.searchParams.set('mode', 'patient');
                 url.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'prescription');
                 const link = document.createElement('a');
                 link.className = 'list-group-item list-group-item-action patient-suggestion';
+                link.id = `patient-option-${index}`;
+                link.setAttribute('role', 'option');
+                link.setAttribute('aria-selected', 'false');
+                link.tabIndex = -1;
                 link.href = url.href;
                 const title = document.createElement('strong');
                 title.textContent = String(patient.patient_name || '');
@@ -70,6 +105,7 @@
                 patientSuggestions.append(link);
             }
         }
+        preparePatientSuggestionOptions();
         patientSuggestions.classList.remove('d-none');
         patientInput.setAttribute('aria-expanded', 'true');
     }
@@ -122,7 +158,29 @@
             }
         });
         patientInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') hidePatientSuggestions();
+            if (event.key === 'Escape') {
+                hidePatientSuggestions();
+                return;
+            }
+            if (patientSuggestions.classList.contains('d-none')) return;
+            const links = patientSuggestionLinks();
+            if (!links.length) return;
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                setActivePatientSuggestion(activePatientSuggestionIndex < 0 ? 0 : activePatientSuggestionIndex + 1);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                setActivePatientSuggestion(activePatientSuggestionIndex < 0 ? links.length - 1 : activePatientSuggestionIndex - 1);
+            } else if (event.key === 'Home') {
+                event.preventDefault();
+                setActivePatientSuggestion(0);
+            } else if (event.key === 'End') {
+                event.preventDefault();
+                setActivePatientSuggestion(links.length - 1);
+            } else if (event.key === 'Enter' && activePatientSuggestionIndex >= 0) {
+                event.preventDefault();
+                links[activePatientSuggestionIndex].click();
+            }
         });
         document.addEventListener('click', (event) => {
             if (!patientSuggestions.contains(event.target) && event.target !== patientInput) {
@@ -132,6 +190,7 @@
     }
 
     if (patientSuggestions) {
+        preparePatientSuggestionOptions();
         patientSuggestions.addEventListener('click', async (event) => {
             const suggestion = event.target.closest('a.patient-suggestion');
             if (!suggestion) return;
@@ -148,6 +207,7 @@
                 patientInput.value = '';
                 hidePatientSuggestions();
                 setPatientStatus('');
+                input?.focus();
             } catch {
                 showSessionError();
             }
@@ -312,7 +372,7 @@
         activeSuggestionIndex = Math.max(0, Math.min(index, buttons.length - 1));
         buttons.forEach((button, buttonIndex) => {
             const active = buttonIndex === activeSuggestionIndex;
-            button.classList.toggle('active', active);
+            button.classList.toggle('is-keyboard-active', active);
             button.setAttribute('aria-selected', active ? 'true' : 'false');
         });
         input.setAttribute('aria-activedescendant', buttons[activeSuggestionIndex].id);
