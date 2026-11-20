@@ -302,10 +302,13 @@ CREATE TABLE IF NOT EXISTS ct_company_preferences (
     dispensing_template_list_key VARCHAR(80) NOT NULL DEFAULT 'dispensing_templates'
         CHECK (dispensing_template_list_key = 'dispensing_templates'),
     dispensing_template_key VARCHAR(80) NOT NULL DEFAULT 'standard',
+    dispensing_receipt_thank_you TEXT NOT NULL DEFAULT '',
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     FOREIGN KEY (dispensing_template_list_key, dispensing_template_key)
         REFERENCES ft_dd_varia(list_key, "key") ON DELETE RESTRICT
 );
+ALTER TABLE ct_company_preferences
+    ADD COLUMN IF NOT EXISTS dispensing_receipt_thank_you TEXT NOT NULL DEFAULT '';
 
 WITH root AS (
     SELECT id FROM ft_dd_varia WHERE list_key = 'dispensing_templates' AND "key" = '_root'
@@ -689,6 +692,42 @@ CREATE UNIQUE INDEX IF NOT EXISTS dt_dispensing_lines_product_uidx
     );
 CREATE INDEX IF NOT EXISTS dt_dispensing_lines_session_idx
     ON dt_dispensing_lines (company_id, dispensing_session_id, party_id, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS st_dispensing_history (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    company_id BIGINT NOT NULL,
+    dispensing_session_id UUID NOT NULL,
+    created_by_user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE RESTRICT,
+    status_key VARCHAR(80) NOT NULL,
+    receipt_thank_you TEXT NOT NULL DEFAULT '',
+    receipt_snapshot JSONB NOT NULL CHECK (jsonb_typeof(receipt_snapshot) = 'object'),
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (company_id, dispensing_session_id),
+    UNIQUE (company_id, id),
+    FOREIGN KEY (company_id, dispensing_session_id)
+        REFERENCES dt_dispensing_sessions(company_id, id) ON DELETE RESTRICT
+);
+CREATE TABLE IF NOT EXISTS st_dispensing_history_lines (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    history_id BIGINT NOT NULL REFERENCES st_dispensing_history(id) ON DELETE CASCADE,
+    party_type VARCHAR(16) NOT NULL CHECK (party_type IN ('customer', 'anonymous')),
+    customer_code VARCHAR(6),
+    party_name VARCHAR(260) NOT NULL,
+    status_key VARCHAR(80) NOT NULL,
+    cnk VARCHAR(7) NOT NULL,
+    amp_code VARCHAR(80) NOT NULL DEFAULT '',
+    ampp_code VARCHAR(80) NOT NULL DEFAULT '',
+    product_name_nl VARCHAR(500) NOT NULL,
+    product_name_fr VARCHAR(500) NOT NULL DEFAULT '',
+    package_display_nl VARCHAR(250) NOT NULL DEFAULT '',
+    package_display_fr VARCHAR(250) NOT NULL DEFAULT '',
+    quantity INTEGER NOT NULL CHECK (quantity BETWEEN 1 AND 999),
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS st_dispensing_history_company_date_idx
+    ON st_dispensing_history (company_id, completed_at DESC);
+CREATE INDEX IF NOT EXISTS st_dispensing_history_lines_order_idx
+    ON st_dispensing_history_lines (history_id, sort_order, id);
 
 CREATE TABLE IF NOT EXISTS st_customer_audit_log (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -1462,6 +1501,8 @@ ALTER TABLE dt_customer_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dt_dispensing_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dt_dispensing_parties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dt_dispensing_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE st_dispensing_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE st_dispensing_history_lines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE st_customer_audit_log ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS bt_customers_company_scope ON bt_customers;
 CREATE POLICY bt_customers_company_scope ON bt_customers FOR ALL
@@ -1560,6 +1601,30 @@ CREATE POLICY dt_dispensing_lines_owner_scope ON dt_dispensing_lines FOR ALL
               AND session.state = 'open'
         )
     );
+DROP POLICY IF EXISTS st_dispensing_history_company_scope ON st_dispensing_history;
+CREATE POLICY st_dispensing_history_company_scope ON st_dispensing_history FOR ALL
+    USING (
+        company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+        AND created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    )
+    WITH CHECK (
+        company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+        AND created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    );
+DROP POLICY IF EXISTS st_dispensing_history_lines_company_scope ON st_dispensing_history_lines;
+CREATE POLICY st_dispensing_history_lines_company_scope ON st_dispensing_history_lines FOR ALL
+    USING (EXISTS (
+        SELECT 1 FROM st_dispensing_history history
+        WHERE history.id = st_dispensing_history_lines.history_id
+          AND history.company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+          AND history.created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    ))
+    WITH CHECK (EXISTS (
+        SELECT 1 FROM st_dispensing_history history
+        WHERE history.id = st_dispensing_history_lines.history_id
+          AND history.company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
+          AND history.created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
+    ));
 DROP POLICY IF EXISTS st_customer_audit_log_company_scope ON st_customer_audit_log;
 CREATE POLICY st_customer_audit_log_company_scope ON st_customer_audit_log FOR SELECT
     USING (
@@ -1577,6 +1642,26 @@ CREATE POLICY st_customer_audit_log_insert ON st_customer_audit_log FOR INSERT
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND changed_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
     );
+
+DO $$
+DECLARE
+    app_role TEXT;
+BEGIN
+    FOR app_role IN
+        SELECT rolname FROM pg_roles
+        WHERE rolname IN ('grompil_app', 'grompil_test_app', 'grompilc_app')
+    LOOP
+        EXECUTE format(
+            'GRANT SELECT, INSERT, UPDATE, DELETE ON st_dispensing_history, st_dispensing_history_lines TO %I',
+            app_role
+        );
+        EXECUTE format(
+            'GRANT USAGE, SELECT ON SEQUENCE st_dispensing_history_id_seq, st_dispensing_history_lines_id_seq TO %I',
+            app_role
+        );
+    END LOOP;
+END;
+$$;
 
 INSERT INTO ft_substitutions (company_id, "key", "value", code)
 VALUES

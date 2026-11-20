@@ -21,6 +21,7 @@ require GROMPIL_ROOT . '/includes/bootstrap.php';
 require_once GROMPIL_ROOT . '/includes/contact_manager.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_shortcuts.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_sessions.php';
+require_once GROMPIL_ROOT . '/includes/dispensing_receipt.php';
 $currentUser = require_login();
 $company = require_company_context($currentUser);
 if ($company === null || !grompil_can_access_module('dispense.php', $currentUser, $company)) {
@@ -948,6 +949,10 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_billing' => fn_t('dispense_billing'),
     'dispense_payment' => fn_t('dispense_payment'),
     'dispense_ready' => fn_t('dispense_ready'),
+    'dispense_close' => fn_t('dispense_close'),
+    'dispense_receipt_title' => fn_t('dispense_receipt_title'),
+    'dispense_receipt_cancel' => fn_t('dispense_receipt_cancel'),
+    'dispense_receipt_confirm' => fn_t('dispense_receipt_confirm'),
     'dispense_patient_modal_title' => $patientModalTitle,
     'dispense_company' => (string) $companyIdentity['name'],
     'dispense_employee' => (string) $currentUser['display_name'],

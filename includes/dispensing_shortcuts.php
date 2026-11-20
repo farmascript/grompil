@@ -31,6 +31,7 @@ function fn_dispensingShortcutActions(): array
         'open_customer_modal' => ['title' => 'dispensing_shortcut_add_customer', 'tooltip' => 'dispensing_shortcut_add_customer_help'],
         'toggle_customer_regex' => ['title' => 'dispensing_shortcut_toggle_regex', 'tooltip' => 'dispensing_shortcut_toggle_regex_help'],
         'clear_product_search' => ['title' => 'dispensing_shortcut_clear_product_search', 'tooltip' => 'dispensing_shortcut_clear_product_search_help'],
+        'close_dispensing' => ['title' => 'dispensing_shortcut_close_dispensing', 'tooltip' => 'dispensing_shortcut_close_dispensing_help'],
         'open_module' => ['title' => 'dispensing_shortcut_open_module', 'tooltip' => 'dispensing_shortcut_open_module_help'],
         'open_url' => ['title' => 'dispensing_shortcut_open_url', 'tooltip' => 'dispensing_shortcut_open_url_help'],
         'open_company_website' => ['title' => 'dispensing_shortcut_company_website', 'tooltip' => 'dispensing_shortcut_company_website_help'],

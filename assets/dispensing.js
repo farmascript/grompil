@@ -17,6 +17,12 @@
     const count = document.querySelector('[data-basket-count]');
     const summary = document.querySelector('[data-basket-summary]');
     const partySelector = document.querySelector('[data-dispense-parties]');
+    const closeDispensingButton = document.querySelector('[data-close-dispensing]');
+    const receiptModalElement = document.getElementById('dispensingReceiptModal');
+    const receiptFrame = document.querySelector('[data-receipt-frame]');
+    const receiptError = document.querySelector('[data-receipt-error]');
+    const receiptConfirmButton = document.querySelector('[data-receipt-confirm]');
+    let receiptObjectUrl = '';
 
     const patientInput = document.querySelector('[data-patient-search-input]');
     const patientForm = document.querySelector('[data-patient-search-form]');
@@ -392,6 +398,9 @@
         const products = Array.from(basket.values());
         count.textContent = String(products.length);
         summary.textContent = t.productCount.replace('{count}', String(products.length));
+        if (closeDispensingButton) {
+            closeDispensingButton.disabled = products.length === 0 || products.some((product) => product.pending);
+        }
         if (!dispensingParties.length) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
@@ -575,6 +584,64 @@
             .catch(showSessionError);
     });
     applyDispenseStatus();
+
+    async function beginReceiptPreview() {
+        if (!closeDispensingButton || closeDispensingButton.disabled) return;
+        closeDispensingButton.disabled = true;
+        try {
+            await sessionReady;
+            const result = await sessionRequest('receipt_preview');
+            if (receiptError) {
+                receiptError.classList.add('d-none');
+                receiptError.textContent = '';
+            }
+            const binary = atob(String(result.pdf_base64 || ''));
+            const bytes = new Uint8Array(binary.length);
+            for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            if (receiptObjectUrl) URL.revokeObjectURL(receiptObjectUrl);
+            receiptObjectUrl = URL.createObjectURL(blob);
+            if (receiptFrame) receiptFrame.src = receiptObjectUrl;
+            if (receiptConfirmButton) receiptConfirmButton.disabled = false;
+            if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).show();
+        } catch {
+            showSessionError();
+        } finally {
+            renderBasket();
+        }
+    }
+
+    async function confirmReceipt() {
+        if (!receiptConfirmButton) return;
+        receiptConfirmButton.disabled = true;
+        try {
+            await sessionRequest('complete');
+            try {
+                sessionStorage.removeItem(sessionStorageKey);
+                sessionStorage.removeItem(`${sessionStorageKey}-party`);
+                sessionStorage.removeItem(`${sessionStorageKey}-page-customer`);
+            } catch {}
+            if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).hide();
+            window.location.reload();
+        } catch {
+            if (receiptError) {
+                receiptError.textContent = page.dataset.textSessionError || '';
+                receiptError.classList.remove('d-none');
+            }
+            receiptConfirmButton.disabled = false;
+            showSessionError();
+        }
+    }
+
+    closeDispensingButton?.addEventListener('click', () => { void beginReceiptPreview(); });
+    receiptConfirmButton?.addEventListener('click', () => { void confirmReceipt(); });
+    receiptModalElement?.addEventListener('hidden.bs.modal', () => {
+        if (receiptFrame) receiptFrame.removeAttribute('src');
+        if (receiptObjectUrl) {
+            URL.revokeObjectURL(receiptObjectUrl);
+            receiptObjectUrl = '';
+        }
+    });
 
     function showResults(data) {
         suggestions.replaceChildren();
@@ -771,6 +838,9 @@
                     input.value = '';
                     hideSuggestions();
                     input.focus();
+                    break;
+                case 'close_dispensing':
+                    void beginReceiptPreview();
                     break;
                 default:
                     break;

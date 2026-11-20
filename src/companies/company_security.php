@@ -40,6 +40,7 @@ $templateOptions = array_values(array_filter(
     }
 ));
 $selectedTemplate = 'standard';
+$receiptThankYou = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -69,6 +70,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('company_template_save_failed')) . '</div>';
             }
+        }
+    } elseif ($action === 'save_dispensing_receipt_message') {
+        $receiptThankYou = trim((string) ($_POST['dispensing_receipt_thank_you'] ?? ''));
+        if (mb_strlen($receiptThankYou, 'UTF-8') > 1000) {
+            $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('company_receipt_message_invalid')) . '</div>';
+        } else {
+            try {
+                $savedReceiptText = db_query_params(
+                    'company_settings.dispensing_receipt_message.save',
+                    'INSERT INTO ct_company_preferences (company_id, dispensing_receipt_thank_you, updated_at)
+                     VALUES ($1, $2, now())
+                     ON CONFLICT (company_id) DO UPDATE
+                     SET dispensing_receipt_thank_you = EXCLUDED.dispensing_receipt_thank_you,
+                         updated_at = now()',
+                    [$companyId, $receiptThankYou]
+                );
+            } catch (GrompilDatabaseQueryException) {
+                $savedReceiptText = false;
+            }
+            $message = $savedReceiptText
+                ? '<div class="alert alert-success" role="status">' . e(fn_t('company_receipt_message_saved')) . '</div>'
+                : '<div class="alert alert-danger" role="alert">' . e(fn_t('company_receipt_message_save_failed')) . '</div>';
         }
     } elseif ($action === 'restrict_current_ip') {
         if ($currentIp === '') {
@@ -134,13 +157,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $templateResult = db_query_params(
         'company_settings.dispensing_template.current',
-        'SELECT preference.dispensing_template_key
+        'SELECT preference.dispensing_template_key, preference.dispensing_receipt_thank_you
          FROM ct_company_preferences AS preference
          WHERE preference.company_id = $1',
         [$companyId]
     );
     $templateRow = $templateResult ? pg_fetch_assoc($templateResult) : false;
     if (is_array($templateRow)) {
+        $receiptThankYou = (string) ($templateRow['dispensing_receipt_thank_you'] ?? '');
         $storedTemplate = (string) $templateRow['dispensing_template_key'];
         if (in_array($storedTemplate, array_column($templateOptions, 'key'), true)) {
             $selectedTemplate = $storedTemplate;
@@ -192,6 +216,22 @@ page_start(fn_t('company_settings_title'), $user);
                 <div class="col-auto">
                     <button class="btn btn-success" type="submit"><?= e(fn_t('save')) ?></button>
                 </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h2 class="h5"><?= e(fn_t('company_receipt_message_heading')) ?></h2>
+            <p class="text-secondary"><?= e(fn_t('company_receipt_message_help')) ?></p>
+            <form method="post" class="row g-3">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="save_dispensing_receipt_message">
+                <div class="col-12">
+                    <label class="form-label" for="dispensing-receipt-thank-you"><?= e(fn_t('company_receipt_message_label')) ?></label>
+                    <textarea class="form-control" id="dispensing-receipt-thank-you" name="dispensing_receipt_thank_you" rows="3" maxlength="1000"><?= e($receiptThankYou) ?></textarea>
+                </div>
+                <div class="col-auto"><button class="btn btn-success" type="submit"><?= e(fn_t('save')) ?></button></div>
             </form>
         </div>
     </section>

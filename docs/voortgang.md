@@ -17,6 +17,14 @@
 
 # Voortgang Grompil
 
+## 20 november 2026
+
+### Naamgeving van SQL-migraties
+
+- Nieuwe timestamped bestanden in `migrations/` volgen `YYYYMMDD_HHMMSS_omschrijving.sql`. `HHMMSS` is de werkelijke lokale tijd in 24-uursformaat en `Europe/Brussels`, inclusief seconden; gebruik geen vaste placeholdertijd.
+- Bestaande migratiebestanden behouden hun historische naamgeving. De bonmigratie is hernoemd naar `migrations/20261120_124523_dispensing_receipts.sql`.
+- Zie ook `docs/database-table-naming.md`.
+
 ## 12 november 2026
 
 ### MFA-label voor bedrijfsbeheerders
@@ -100,9 +108,9 @@
 
 ## 24 oktober 2026
 
-### Naamgeving database-migraties
+### Historische naamgeving database-migraties
 
-- Alle SQL-bestanden in `migrations/` gebruiken nu `YYYYMMDD-HHMMSS_omschrijving.sql`. Datum en tijd zijn 24-uurs lokale tijd; dezelfde datum sorteert daardoor chronologisch op bestandsnaam. Nieuwe migraties krijgen bij aanmaak een unieke tijdstempel.
+- De toenmalige conventie was `YYYYMMDD-HHMMSS_omschrijving.sql`; oudere bestanden behouden die historische naam. De actuele conventie voor nieuwe migraties staat bovenaan dit document en in `docs/database-table-naming.md`.
 
 ### Klantenmonitor per bedrijf
 

@@ -40,6 +40,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
         $respond(['error' => 'invalid_status'], 400);
     }
     $statusKey = isset($statusByKey[$requestedStatusKey]) ? $requestedStatusKey : 'prescription';
+    $transactionStarted = false;
 
     try {
         $session = false;
@@ -222,6 +223,87 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $respond(['removed' => pg_affected_rows($removed) === 1]);
         }
 
+        if (in_array($action, ['receipt_preview', 'complete'], true)) {
+            if ($action === 'receipt_preview') {
+                $receipt = grompil_dispensing_receipt_data($companyId, $sessionId);
+                if ($receipt['lines'] === []) $respond(['error' => 'empty_session'], 409);
+                $pdf = grompil_dispensing_receipt_pdf($receipt, strtoupper((string) ($_SESSION['language'] ?? 'NL')));
+                $respond(['pdf_base64' => base64_encode($pdf)]);
+            }
+
+            $begin = db_query_params('dispensing.session_complete_begin', 'BEGIN');
+            if (!$begin) throw new RuntimeException('Could not start receipt transaction.');
+            $transactionStarted = true;
+            $lockedSession = db_query_params(
+                'dispensing.session_complete_lock',
+                'SELECT id FROM dt_dispensing_sessions
+                 WHERE id = $1::UUID AND company_id = $2 AND created_by_user_code = $3 AND state = \'open\'
+                 FOR UPDATE',
+                [$sessionId, $companyId, $actorCode]
+            );
+            if (pg_num_rows($lockedSession) !== 1) {
+                db_query_params('dispensing.session_complete_rollback_empty', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'session_unavailable'], 404);
+            }
+            $receipt = grompil_dispensing_receipt_data($companyId, $sessionId);
+            if ($receipt['lines'] === []) {
+                db_query_params('dispensing.session_complete_rollback_empty', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'empty_session'], 409);
+            }
+            $snapshotJson = json_encode($receipt, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            $history = db_query_params(
+                'dispensing.history_create',
+                'INSERT INTO st_dispensing_history
+                    (company_id, dispensing_session_id, created_by_user_code, status_key, receipt_thank_you, receipt_snapshot)
+                 SELECT $1, session.id, $3, session.status_key, $4, $5::jsonb
+                 FROM dt_dispensing_sessions session
+                 WHERE session.id = $2::UUID AND session.company_id = $1
+                   AND session.created_by_user_code = $3 AND session.state = \'open\'
+                 RETURNING id',
+                [$companyId, $sessionId, $actorCode, (string) $receipt['thank_you'], (string) $snapshotJson]
+            );
+            $historyRow = pg_fetch_assoc($history);
+            if (!$historyRow) throw new RuntimeException('Could not create dispensing history header.');
+            $historyId = (int) $historyRow['id'];
+            db_query_params(
+                'dispensing.history_lines_create',
+                'INSERT INTO st_dispensing_history_lines
+                    (history_id, party_type, customer_code, party_name, status_key, cnk, amp_code, ampp_code,
+                     product_name_nl, product_name_fr, package_display_nl, package_display_fr, quantity, sort_order)
+                 SELECT $1, party.party_type, party.customer_code, party.display_name, line.status_key, line.cnk,
+                        line.amp_code, line.ampp_code, line.product_name_nl, line.product_name_fr,
+                        line.package_display_nl, line.package_display_fr, line.quantity, line.sort_order
+                 FROM dt_dispensing_lines line
+                 JOIN dt_dispensing_parties party
+                   ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
+                  AND party.id = line.party_id
+                 WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID',
+                [$historyId, $companyId, $sessionId]
+            );
+            db_query_params(
+                'dispensing.session_lines_clear',
+                'DELETE FROM dt_dispensing_lines WHERE company_id = $1 AND dispensing_session_id = $2::UUID',
+                [$companyId, $sessionId]
+            );
+            db_query_params(
+                'dispensing.session_parties_clear',
+                'DELETE FROM dt_dispensing_parties WHERE company_id = $1 AND dispensing_session_id = $2::UUID',
+                [$companyId, $sessionId]
+            );
+            db_query_params(
+                'dispensing.session_mark_complete',
+                'UPDATE dt_dispensing_sessions SET state = \'completed\', completed_at = now(), updated_at = now()
+                 WHERE company_id = $1 AND id = $2::UUID AND created_by_user_code = $3 AND state = \'open\'',
+                [$companyId, $sessionId, $actorCode]
+            );
+            $commit = db_query_params('dispensing.session_complete_commit', 'COMMIT');
+            if (!$commit) throw new RuntimeException('Could not commit dispensing history.');
+            $transactionStarted = false;
+            $respond(['completed' => true]);
+        }
+
         if ($action !== 'load') {
             $respond(['error' => 'unknown_action'], 400);
         }
@@ -232,11 +314,89 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             'lines' => grompil_dispensing_session_lines($companyId, $sessionId),
         ]);
     } catch (InvalidArgumentException $error) {
+        if ($transactionStarted) db_query_params('dispensing.session_complete_rollback', 'ROLLBACK');
         $respond(['error' => $error->getMessage()], 400);
     } catch (Throwable $error) {
+        if ($transactionStarted) db_query_params('dispensing.session_complete_rollback', 'ROLLBACK');
         error_log('Dispensing session request failed: ' . get_class($error));
         $respond(['error' => 'session_unavailable'], 503);
     }
+}
+
+/** @return array<string, mixed> */
+function grompil_dispensing_receipt_data(int $companyId, string $sessionId): array
+{
+    $companyResult = db_query_params(
+        'dispensing.receipt_company',
+        'SELECT company.name, company.legal_name, company.enterprise_number, company.vat_number,
+                location.street, location.house_number, location.box_number, location.postal_code,
+                location.city, location.country_code
+         FROM bt_companies company
+         LEFT JOIN LATERAL (
+             SELECT * FROM dt_company_locations
+             WHERE company_id = company.id AND is_active AND is_primary
+             ORDER BY sort_order, id LIMIT 1
+         ) location ON TRUE
+         WHERE company.id = $1',
+        [$companyId]
+    );
+    $company = pg_fetch_assoc($companyResult) ?: [];
+    $sessionResult = db_query_params(
+        'dispensing.receipt_session',
+        'SELECT created_at, status_key FROM dt_dispensing_sessions
+         WHERE company_id = $1 AND id = $2::UUID AND state = \'open\'',
+        [$companyId, $sessionId]
+    );
+    $session = pg_fetch_assoc($sessionResult);
+    if (!$session) throw new RuntimeException('Dispensing session is unavailable for receipt preview.');
+    $thankYouResult = db_query_params(
+        'dispensing.receipt_company_thank_you',
+        'SELECT dispensing_receipt_thank_you FROM ct_company_preferences WHERE company_id = $1',
+        [$companyId]
+    );
+    $thankYouRow = pg_fetch_assoc($thankYouResult) ?: [];
+    $thankYou = trim((string) ($thankYouRow['dispensing_receipt_thank_you'] ?? ''));
+    if ($thankYou === '') $thankYou = fn_t('dispense_receipt_thank_you_default');
+
+    $receiptAt = new DateTimeImmutable('now', new DateTimeZone('Europe/Brussels'));
+    $lang = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
+    $weekdays = [
+        'NL' => ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
+        'FR' => ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'],
+        'EN' => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        'DE' => ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'],
+    ][$lang] ?? ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+    $addressParts = [trim((string) ($company['street'] ?? '') . ' ' . (string) ($company['house_number'] ?? '')
+        . ((string) ($company['box_number'] ?? '') !== '' ? ' ' . (string) $company['box_number'] : '')),
+        trim((string) ($company['postal_code'] ?? '') . ' ' . (string) ($company['city'] ?? '')),
+        strtoupper((string) ($company['country_code'] ?? ''))];
+    $groupsById = [];
+    foreach (grompil_dispensing_session_parties($companyId, $sessionId) as $party) {
+        $groupsById[(int) $party['id']] = ['name' => (string) $party['name'], 'customer_code' => (string) $party['customer_code'], 'lines' => []];
+    }
+    $lines = grompil_dispensing_session_lines($companyId, $sessionId);
+    foreach ($lines as $line) {
+        $partyId = (int) $line['party_id'];
+        if (!isset($groupsById[$partyId])) {
+            $groupsById[$partyId] = ['name' => (string) $line['party_name'], 'customer_code' => (string) $line['customer_code'], 'lines' => []];
+        }
+        $groupsById[$partyId]['lines'][] = $line;
+    }
+    $groups = array_values(array_filter($groupsById, static fn(array $group): bool => $group['lines'] !== []));
+    return [
+        'company_name' => (string) ($company['name'] ?? ''),
+        'legal_name' => (string) ($company['legal_name'] ?? ''),
+        'enterprise_number' => trim((string) ($company['enterprise_number'] ?? '')),
+        'vat_number' => trim((string) ($company['vat_number'] ?? '')),
+        'address' => implode(' · ', array_values(array_filter($addressParts, static fn(string $part): bool => $part !== ''))),
+        'session_id' => $sessionId,
+        'status_key' => (string) $session['status_key'],
+        'date' => $weekdays[(int) $receiptAt->format('w')] . ' ' . $receiptAt->format('d-m-Y H:i'),
+        'thank_you' => $thankYou,
+        'groups' => $groups,
+        'lines' => $lines,
+        'total_quantity' => array_sum(array_map(static fn(array $line): int => (int) $line['quantity'], $lines)),
+    ];
 }
 
 function grompil_dispensing_session_add_customer(int $companyId, string $sessionId, string $customerCode): int

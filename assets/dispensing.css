@@ -17,3 +17,10 @@
 
 .contact-manager-row{border:1px solid #dce4e8;border-radius:.6rem;padding:.85rem;margin-bottom:.65rem}.contact-manager-row .form-label{font-size:.78rem;font-weight:600}.contact-manager-row .form-control,.contact-manager-row .form-select{background-color:var(--bs-tertiary-bg,#f8f9fa)}.contact-manager-trigger{display:inline-flex;align-items:center;gap:.3rem;vertical-align:middle}.contact-manager-trigger svg{flex:none}
 .dispense-party-selector{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:0 0 .8rem;padding:0 0 .8rem;border-bottom:1px solid #e4eaed}.dispense-party-heading th{background:#f2f6f7;color:#173b52;font-size:.82rem}
+.dispensing-receipt-frame {
+    display: block;
+    width: 100%;
+    height: min(72vh, 900px);
+    border: 0;
+    background: #fff;
+}

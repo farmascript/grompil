@@ -26,7 +26,7 @@
     <main class="dispense-main">
         <div class="dispense-heading">
             <div><p class="eyebrow mb-1">@dispense_title@</p><div class="d-flex align-items-end gap-3 flex-wrap"><h1 class="mb-0">@dispense_intro@</h1><select class="form-select form-select-sm dispense-status-select" aria-label="@dispense_status@" data-dispense-status-select>@_dispense_status_options_html@</select></div></div>
-            <span class="concept-badge">@dispense_concept@</span>
+            <div class="d-flex align-items-center gap-2 flex-wrap"><span class="concept-badge">@dispense_concept@</span><button class="btn btn-primary" type="button" data-close-dispensing disabled>@dispense_close@</button></div>
         </div>
         <div class="dispense-columns">
             @_dispense_patient_panel_html@
@@ -59,6 +59,14 @@
     </main>
 </div>
 @_dispense_function_bar_html@
+
+<div class="modal fade" id="dispensingReceiptModal" tabindex="-1" aria-labelledby="dispensingReceiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title fs-5" id="dispensingReceiptModalLabel">@dispense_receipt_title@</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@close@"></button></div>
+        <div class="modal-body p-0"><div class="alert alert-danger m-3 d-none" role="alert" data-receipt-error></div><iframe class="dispensing-receipt-frame" title="@dispense_receipt_title@" data-receipt-frame></iframe></div>
+        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">@dispense_receipt_cancel@</button><button class="btn btn-primary" type="button" data-receipt-confirm disabled>@dispense_receipt_confirm@</button></div>
+    </div></div>
+</div>
 
 <div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">

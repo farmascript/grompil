@@ -14,6 +14,16 @@ Table prefixes describe a table's data family. They do not encode its dependency
 
 Use lowercase, unquoted PostgreSQL identifiers.
 
+## Migration SQL filenames
+
+Nieuwe tijdgestempelde migratiescripts in `migrations/` gebruiken dit formaat:
+
+```text
+YYYYMMDD_HHMMSS_description.sql
+```
+
+Use the actual creation date and local 24-hour time, including seconds (`HHMMSS`), in the `Europe/Brussels` timezone. The timestamp must be unique so filenames sort chronologically and do not collide. For example, `20261120_124523_dispensing_receipts.sql` was created on 20 November 2026 at 12:45:23 local time. Do not use a placeholder time such as `120000` unless the script was actually created at noon. Keep older migration filenames unchanged; this convention applies to new scripts.
+
 ## Design levels
 
 Levels are a design aid for choosing a table's structure and naming family. They are not stored in the database and have no runtime behavior.
