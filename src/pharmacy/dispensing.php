@@ -876,6 +876,22 @@ $functionBarHtml = fn_moduleTemplateRender('dispensing', 'dispensing_function_ba
 ]);
 
 $dispensingTemplateVariant = fn_moduleTemplateVariant('dispensing');
+$dispensingAssetPaths = [
+    GROMPIL_ROOT . '/assets/dispensing.css',
+    GROMPIL_ROOT . '/assets/dispensing-wide.css',
+    GROMPIL_ROOT . '/assets/dispensing.js',
+];
+$dispensingAssetHashes = [];
+foreach ($dispensingAssetPaths as $assetPath) {
+    $assetHash = is_file($assetPath) ? hash_file('sha256', $assetPath) : false;
+    if (is_string($assetHash)) {
+        $dispensingAssetHashes[] = $assetHash;
+    }
+}
+$dispensingAssetVersion = $dispensingAssetHashes !== []
+    ? substr(hash('sha256', implode('|', $dispensingAssetHashes)), 0, 16)
+    : '0.18.35';
+header('Cache-Control: no-store, private');
 page_start(fn_t('dispense_title'), $currentUser, $dispensingTemplateVariant === 'wide');
 echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_title' => fn_t('dispense_title'),
@@ -944,7 +960,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_company_id' => (string) $companyId,
     'dispense_actor_code' => $actorCode,
     'dispense_csrf_token' => csrf_token(),
-    'asset_version' => '0.18.35',
+    'asset_version' => $dispensingAssetVersion,
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
