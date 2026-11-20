@@ -68,7 +68,8 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
                 'segments' => [
                     ['text' => (string) ($line['statusShortCode'] ?? '')],
                     ['text' => ' · ' . (string) ($line['cnk'] ?? '')],
-                    ['text' => ' · ' . $quantity . ' · ' . $productName],
+                    ['text' => ' · ' . $quantity . ' · '],
+                    ['text' => $productName, 'bold' => true],
                     ...($package !== '' ? [['text' => ' · '], ['text' => $package, 'bold' => true]] : []),
                 ],
                 'size' => 8,
