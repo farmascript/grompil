@@ -427,6 +427,7 @@
 
             for (const product of partyProducts) {
                 const tr = document.createElement('tr');
+                tr.className = 'dispense-product-line';
                 const name = document.createElement('td');
                 const strong = document.createElement('strong');
                 strong.textContent = (language === 'fr' ? product.name_fr : product.name_nl)
