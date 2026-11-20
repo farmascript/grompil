@@ -142,6 +142,8 @@
             try {
                 const data = await sessionRequest('party_add', { customer_code: customerCode });
                 dispensingParties = data.parties || dispensingParties;
+                basket.clear();
+                for (const line of data.lines || []) basket.set(String(line.id), line);
                 activateParty(data.active_party_id);
                 patientInput.value = '';
                 hidePatientSuggestions();
@@ -330,7 +332,7 @@
         const products = Array.from(basket.values());
         count.textContent = String(products.length);
         summary.textContent = t.productCount.replace('{count}', String(products.length));
-        if (!products.length) {
+        if (!dispensingParties.length) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
             td.colSpan = 4;
@@ -343,7 +345,6 @@
         }
         for (const party of dispensingParties) {
             const partyProducts = products.filter((product) => Number(product.party_id) === Number(party.id));
-            if (!partyProducts.length) continue;
             const headingRow = document.createElement('tr');
             headingRow.className = 'dispense-party-heading';
             const heading = document.createElement('th');
@@ -353,60 +354,71 @@
             headingRow.append(heading);
             rows.append(headingRow);
 
+            if (!partyProducts.length) {
+                const emptyRow = document.createElement('tr');
+                const emptyCell = document.createElement('td');
+                emptyCell.colSpan = 4;
+                emptyCell.className = 'empty-basket';
+                emptyCell.textContent = t.empty;
+                emptyRow.append(emptyCell);
+                rows.append(emptyRow);
+                continue;
+            }
+
             for (const product of partyProducts) {
-            const tr = document.createElement('tr');
-            const name = document.createElement('td');
-            const strong = document.createElement('strong');
-            strong.textContent = (language === 'fr' ? product.name_fr : product.name_nl)
-                || product.name_nl || product.name_fr || '';
-            const small = document.createElement('small');
-            const packageText = (language === 'fr' ? product.package_fr : product.package_nl)
-                || product.package_nl || product.package_fr || '';
-            small.textContent = `${product.cnk} · ${packageText}`;
-            name.append(strong, small);
-            const statusCell = document.createElement('td');
-            const statusBadge = document.createElement('span');
-            statusBadge.className = 'badge text-bg-light';
-            statusBadge.textContent = product.statusShortCode;
-            statusCell.append(statusBadge);
-            const quantity = document.createElement('td');
-            const quantityInput = document.createElement('input');
-            quantityInput.type = 'number';
-            quantityInput.min = '1';
-            quantityInput.max = '999';
-            quantityInput.value = String(product.quantity);
-            quantityInput.className = 'form-control form-control-sm basket-qty';
-            quantityInput.setAttribute('aria-label', t.quantity);
-            quantityInput.addEventListener('change', async () => {
-                const quantityValue = Math.min(999, Math.max(1, Number.parseInt(quantityInput.value, 10) || 1));
-                try {
-                    await sessionRequest('line_update', { line_id: product.id, quantity: quantityValue });
-                    product.quantity = quantityValue;
-                    renderBasket();
-                } catch {
-                    showSessionError();
-                    renderBasket();
-                }
-            });
-            quantity.append(quantityInput);
-            const removeCell = document.createElement('td');
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'basket-remove';
-            remove.textContent = '×';
-            remove.title = t.remove;
-            remove.addEventListener('click', async () => {
-                try {
-                    await sessionRequest('line_remove', { line_id: product.id });
-                    basket.delete(String(product.id));
-                    renderBasket();
-                } catch {
-                    showSessionError();
-                }
-            });
-            removeCell.append(remove);
-            tr.append(name, statusCell, quantity, removeCell);
-            rows.append(tr);
+                const tr = document.createElement('tr');
+                const name = document.createElement('td');
+                const strong = document.createElement('strong');
+                strong.textContent = (language === 'fr' ? product.name_fr : product.name_nl)
+                    || product.name_nl || product.name_fr || '';
+                const small = document.createElement('small');
+                const packageText = (language === 'fr' ? product.package_fr : product.package_nl)
+                    || product.package_nl || product.package_fr || '';
+                small.textContent = `${product.cnk} · ${packageText}`;
+                name.append(strong, small);
+                const statusCell = document.createElement('td');
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'badge text-bg-light';
+                statusBadge.textContent = product.statusShortCode;
+                statusCell.append(statusBadge);
+                const quantity = document.createElement('td');
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'number';
+                quantityInput.min = '1';
+                quantityInput.max = '999';
+                quantityInput.value = String(product.quantity);
+                quantityInput.className = 'form-control form-control-sm basket-qty';
+                quantityInput.setAttribute('aria-label', t.quantity);
+                quantityInput.addEventListener('change', async () => {
+                    const quantityValue = Math.min(999, Math.max(1, Number.parseInt(quantityInput.value, 10) || 1));
+                    try {
+                        await sessionRequest('line_update', { line_id: product.id, quantity: quantityValue });
+                        product.quantity = quantityValue;
+                        renderBasket();
+                    } catch {
+                        showSessionError();
+                        renderBasket();
+                    }
+                });
+                quantity.append(quantityInput);
+                const removeCell = document.createElement('td');
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'basket-remove';
+                remove.textContent = '×';
+                remove.title = t.remove;
+                remove.addEventListener('click', async () => {
+                    try {
+                        await sessionRequest('line_remove', { line_id: product.id });
+                        basket.delete(String(product.id));
+                        renderBasket();
+                    } catch {
+                        showSessionError();
+                    }
+                });
+                removeCell.append(remove);
+                tr.append(name, statusCell, quantity, removeCell);
+                rows.append(tr);
             }
         }
     }

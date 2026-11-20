@@ -102,6 +102,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $respond([
                 'parties' => grompil_dispensing_session_parties($companyId, $sessionId),
                 'active_party_id' => $partyId,
+                'lines' => grompil_dispensing_session_lines($companyId, $sessionId),
             ]);
         }
 

@@ -936,7 +936,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_company_id' => (string) $companyId,
     'dispense_actor_code' => $actorCode,
     'dispense_csrf_token' => csrf_token(),
-    'asset_version' => '0.18.31',
+    'asset_version' => '0.18.32',
     'dispense_product_min_chars' => '3',
     'dispense_patient_min_chars' => '3',
     'dispense_patient_form_mode' => $editingPatientCode !== '' ? 'edit' : 'create',
