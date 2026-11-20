@@ -8,7 +8,8 @@ function grompil_dispensing_display_name(string $firstName, string $lastName): s
         $firstName = mb_strtoupper(mb_substr($firstName, 0, 1, 'UTF-8'), 'UTF-8')
             . mb_substr($firstName, 1, null, 'UTF-8');
     }
-    return trim($firstName . ' ' . trim($lastName));
+    $lastName = mb_strtoupper(trim($lastName), 'UTF-8');
+    return trim($firstName . ' ' . $lastName);
 }
 
 /** JSON API for per-tab dispensing drafts and their customer groups/lines. */
