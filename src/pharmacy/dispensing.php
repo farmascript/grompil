@@ -131,7 +131,7 @@ foreach ($dispensingStatuses as $statusOption) {
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
     && (string) ($_GET['dispensing_session_api'] ?? '') === '1') {
-    grompil_dispensing_session_api($companyId, $actorCode, $dispensingStatusByKey);
+    grompil_dispensing_session_api($companyId, $actorCode, $dispensingStatusByKey, $dispenseCustomerText('dispense_walkin_title'));
 }
 $messageKey = '';
 $editingPatientCode = '';

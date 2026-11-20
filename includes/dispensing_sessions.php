@@ -13,7 +13,7 @@ function grompil_dispensing_display_name(string $firstName, string $lastName): s
 }
 
 /** JSON API for per-tab dispensing drafts and their customer groups/lines. */
-function grompil_dispensing_session_api(int $companyId, string $actorCode, array $statusByKey): never
+function grompil_dispensing_session_api(int $companyId, string $actorCode, array $statusByKey, string $walkinTitle): never
 {
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store, private');
@@ -112,9 +112,9 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $customerCode = strtoupper(trim((string) ($payload['customer_code'] ?? '')));
             $partyId = grompil_dispensing_session_add_customer($companyId, $sessionId, $customerCode);
             $respond([
-                'parties' => grompil_dispensing_session_parties($companyId, $sessionId),
+                'parties' => grompil_dispensing_session_parties($companyId, $sessionId, $walkinTitle),
                 'active_party_id' => $partyId,
-                'lines' => grompil_dispensing_session_lines($companyId, $sessionId),
+                'lines' => grompil_dispensing_session_lines($companyId, $sessionId, $walkinTitle),
             ]);
         }
 
@@ -172,7 +172,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             }
             $partyResult = db_query_params(
                 'dispensing.session_line_party',
-                'SELECT party.display_name, party.customer_code, customer.name_first, customer.name_last
+                'SELECT party.display_name, party.party_type, party.customer_code, customer.name_first, customer.name_last
                  FROM dt_dispensing_parties party
                  LEFT JOIN bt_customers customer
                    ON customer.company_id = party.company_id AND customer.customer_code = party.customer_code
@@ -180,7 +180,9 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 [(int) $line['party_id'], $companyId]
             );
             $party = pg_fetch_assoc($partyResult) ?: ['display_name' => '', 'customer_code' => null];
-            if (($party['customer_code'] ?? null) !== null) {
+            if (($party['party_type'] ?? '') === 'anonymous') {
+                $party['display_name'] = $walkinTitle;
+            } elseif (($party['customer_code'] ?? null) !== null) {
                 $party['display_name'] = grompil_dispensing_display_name(
                     (string) ($party['name_first'] ?? ''), (string) ($party['name_last'] ?? '')
                 );
@@ -225,7 +227,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
 
         if (in_array($action, ['receipt_preview', 'complete'], true)) {
             if ($action === 'receipt_preview') {
-                $receipt = grompil_dispensing_receipt_data($companyId, $sessionId);
+                $receipt = grompil_dispensing_receipt_data($companyId, $sessionId, $walkinTitle);
                 if ($receipt['lines'] === []) $respond(['error' => 'empty_session'], 409);
                 $pdf = grompil_dispensing_receipt_pdf($receipt, strtoupper((string) ($_SESSION['language'] ?? 'NL')));
                 $respond(['pdf_base64' => base64_encode($pdf)]);
@@ -246,7 +248,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 $transactionStarted = false;
                 $respond(['error' => 'session_unavailable'], 404);
             }
-            $receipt = grompil_dispensing_receipt_data($companyId, $sessionId);
+            $receipt = grompil_dispensing_receipt_data($companyId, $sessionId, $walkinTitle);
             if ($receipt['lines'] === []) {
                 db_query_params('dispensing.session_complete_rollback_empty', 'ROLLBACK');
                 $transactionStarted = false;
@@ -272,7 +274,9 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 'INSERT INTO st_dispensing_history_lines
                     (history_id, party_type, customer_code, party_name, status_key, cnk, amp_code, ampp_code,
                      product_name_nl, product_name_fr, package_display_nl, package_display_fr, quantity, sort_order)
-                 SELECT $1, party.party_type, party.customer_code, party.display_name, line.status_key, line.cnk,
+                 SELECT $1, party.party_type, party.customer_code,
+                        CASE WHEN party.party_type = \'anonymous\' THEN $4::VARCHAR(260) ELSE party.display_name END,
+                        line.status_key, line.cnk,
                         line.amp_code, line.ampp_code, line.product_name_nl, line.product_name_fr,
                         line.package_display_nl, line.package_display_fr, line.quantity, line.sort_order
                  FROM dt_dispensing_lines line
@@ -280,7 +284,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                    ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
                   AND party.id = line.party_id
                  WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID',
-                [$historyId, $companyId, $sessionId]
+                [$historyId, $companyId, $sessionId, $walkinTitle]
             );
             db_query_params(
                 'dispensing.session_lines_clear',
@@ -310,8 +314,8 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
         $respond([
             'session_id' => $sessionId,
             'status_key' => $statusKey,
-            'parties' => grompil_dispensing_session_parties($companyId, $sessionId),
-            'lines' => grompil_dispensing_session_lines($companyId, $sessionId),
+            'parties' => grompil_dispensing_session_parties($companyId, $sessionId, $walkinTitle),
+            'lines' => grompil_dispensing_session_lines($companyId, $sessionId, $walkinTitle),
         ]);
     } catch (InvalidArgumentException $error) {
         if ($transactionStarted) db_query_params('dispensing.session_complete_rollback', 'ROLLBACK');
@@ -324,7 +328,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
 }
 
 /** @return array<string, mixed> */
-function grompil_dispensing_receipt_data(int $companyId, string $sessionId): array
+function grompil_dispensing_receipt_data(int $companyId, string $sessionId, string $walkinTitle): array
 {
     $companyResult = db_query_params(
         'dispensing.receipt_company',
@@ -371,10 +375,10 @@ function grompil_dispensing_receipt_data(int $companyId, string $sessionId): arr
         trim((string) ($company['postal_code'] ?? '') . ' ' . (string) ($company['city'] ?? '')),
         strtoupper((string) ($company['country_code'] ?? ''))];
     $groupsById = [];
-    foreach (grompil_dispensing_session_parties($companyId, $sessionId) as $party) {
+    foreach (grompil_dispensing_session_parties($companyId, $sessionId, $walkinTitle) as $party) {
         $groupsById[(int) $party['id']] = ['name' => (string) $party['name'], 'customer_code' => (string) $party['customer_code'], 'lines' => []];
     }
-    $lines = grompil_dispensing_session_lines($companyId, $sessionId);
+    $lines = grompil_dispensing_session_lines($companyId, $sessionId, $walkinTitle);
     foreach ($lines as $line) {
         $partyId = (int) $line['party_id'];
         if (!isset($groupsById[$partyId])) {
@@ -444,7 +448,7 @@ function grompil_dispensing_session_add_customer(int $companyId, string $session
     return (int) $row['id'];
 }
 
-function grompil_dispensing_session_parties(int $companyId, string $sessionId): array
+function grompil_dispensing_session_parties(int $companyId, string $sessionId, string $walkinTitle = ''): array
 {
     $result = db_query_params(
         'dispensing.session_parties_load',
@@ -465,7 +469,7 @@ function grompil_dispensing_session_parties(int $companyId, string $sessionId): 
             'customer_code' => (string) ($row['customer_code'] ?? ''),
             'name' => $row['party_type'] === 'customer'
                 ? grompil_dispensing_display_name((string) $row['name_first'], (string) $row['name_last'])
-                : (string) $row['display_name'],
+                : ($walkinTitle !== '' ? $walkinTitle : (string) $row['display_name']),
         ];
     }
     return $parties;
@@ -492,7 +496,7 @@ function grompil_dispensing_session_line_data(array $line, array $party, string 
     ];
 }
 
-function grompil_dispensing_session_lines(int $companyId, string $sessionId): array
+function grompil_dispensing_session_lines(int $companyId, string $sessionId, string $walkinTitle = ''): array
 {
     $result = db_query_params(
         'dispensing.session_lines_load',
@@ -500,7 +504,7 @@ function grompil_dispensing_session_lines(int $companyId, string $sessionId): ar
                 line.product_name_nl, line.product_name_fr,
                 line.package_display_nl, line.package_display_fr, line.quantity,
                 COALESCE(status.short_codes ->> $3, \'\') AS status_short_code,
-                party.display_name, party.customer_code
+                party.display_name, party.party_type, party.customer_code
          FROM dt_dispensing_lines line
          JOIN dt_dispensing_parties party
            ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
@@ -513,6 +517,9 @@ function grompil_dispensing_session_lines(int $companyId, string $sessionId): ar
     );
     $lines = [];
     while ($row = pg_fetch_assoc($result)) {
+        if ($row['party_type'] === 'anonymous' && $walkinTitle !== '') {
+            $row['display_name'] = $walkinTitle;
+        }
         $lines[] = grompil_dispensing_session_line_data($row, $row, (string) $row['status_short_code']);
     }
     return $lines;
