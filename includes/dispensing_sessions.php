@@ -204,13 +204,97 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             if ($lineId === false || $lineId === null || $quantity === false || $quantity === null || $quantity < 1 || $quantity > 999) {
                 $respond(['error' => 'invalid_quantity'], 400);
             }
-            $updated = db_query_params(
-                'dispensing.session_line_update',
-                'UPDATE dt_dispensing_lines SET quantity = $1, updated_at = now()
-                 WHERE id = $2 AND company_id = $3 AND dispensing_session_id = $4::UUID RETURNING id',
-                [$quantity, $lineId, $companyId, $sessionId]
+            $requestedLineStatus = array_key_exists('status_key', $payload)
+                ? strtolower(trim((string) $payload['status_key']))
+                : null;
+            if ($requestedLineStatus !== null && !isset($statusByKey[$requestedLineStatus])) {
+                $respond(['error' => 'invalid_status'], 400);
+            }
+            $requestedPartyId = array_key_exists('party_id', $payload)
+                ? filter_var($payload['party_id'], FILTER_VALIDATE_INT)
+                : null;
+            if ($requestedPartyId === false || ($requestedPartyId !== null && $requestedPartyId < 1)) {
+                $respond(['error' => 'invalid_party'], 400);
+            }
+            db_query_params('dispensing.session_line_update_begin', 'BEGIN');
+            $transactionStarted = true;
+            $targetResult = db_query_params(
+                'dispensing.session_line_update_target',
+                'SELECT id, party_id, status_key, cnk, amp_code, ampp_code, quantity
+                 FROM dt_dispensing_lines
+                 WHERE id = $1 AND company_id = $2 AND dispensing_session_id = $3::UUID
+                 FOR UPDATE',
+                [$lineId, $companyId, $sessionId]
             );
-            $respond(['updated' => pg_num_rows($updated) === 1]);
+            $target = pg_fetch_assoc($targetResult);
+            if (!$target) {
+                db_query_params('dispensing.session_line_update_rollback_missing', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['updated' => false]);
+            }
+            $newStatus = $requestedLineStatus ?? (string) $target['status_key'];
+            $newPartyId = $requestedPartyId ?? (int) $target['party_id'];
+            $partyResult = db_query_params(
+                'dispensing.session_line_update_party_validate',
+                'SELECT id FROM dt_dispensing_parties
+                 WHERE id = $1 AND company_id = $2 AND dispensing_session_id = $3::UUID',
+                [$newPartyId, $companyId, $sessionId]
+            );
+            if (pg_num_rows($partyResult) !== 1) {
+                db_query_params('dispensing.session_line_update_rollback_party', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'invalid_party'], 400);
+            }
+            $lineMoved = $newStatus !== (string) $target['status_key'] || $newPartyId !== (int) $target['party_id'];
+            if ($lineMoved) {
+                $duplicateResult = db_query_params(
+                    'dispensing.session_line_update_duplicate',
+                    'SELECT id, quantity FROM dt_dispensing_lines
+                     WHERE company_id = $1 AND dispensing_session_id = $2::UUID AND party_id = $3
+                       AND status_key = $4 AND cnk = $5 AND amp_code = $6 AND ampp_code = $7 AND id <> $8
+                     FOR UPDATE',
+                    [$companyId, $sessionId, $newPartyId, $newStatus, $target['cnk'], $target['amp_code'], $target['ampp_code'], $lineId]
+                );
+                $duplicate = pg_fetch_assoc($duplicateResult);
+                if ($duplicate) {
+                    $mergedQuantity = (int) $duplicate['quantity'] + $quantity;
+                    if ($mergedQuantity > 999) {
+                        db_query_params('dispensing.session_line_update_rollback_quantity', 'ROLLBACK');
+                        $transactionStarted = false;
+                        $respond(['error' => 'invalid_quantity'], 409);
+                    }
+                    db_query_params(
+                        'dispensing.session_line_update_merge',
+                        'UPDATE dt_dispensing_lines SET quantity = $1, updated_at = now() WHERE id = $2',
+                        [$mergedQuantity, (int) $duplicate['id']]
+                    );
+                    db_query_params(
+                        'dispensing.session_line_update_remove_source',
+                        'DELETE FROM dt_dispensing_lines WHERE id = $1 AND company_id = $2 AND dispensing_session_id = $3::UUID',
+                        [$lineId, $companyId, $sessionId]
+                    );
+                } else {
+                    db_query_params(
+                        'dispensing.session_line_update',
+                        'UPDATE dt_dispensing_lines SET quantity = $1, status_key = $2, party_id = $3, updated_at = now()
+                         WHERE id = $4 AND company_id = $5 AND dispensing_session_id = $6::UUID',
+                        [$quantity, $newStatus, $newPartyId, $lineId, $companyId, $sessionId]
+                    );
+                }
+            } else {
+                db_query_params(
+                    'dispensing.session_line_update',
+                    'UPDATE dt_dispensing_lines SET quantity = $1, updated_at = now()
+                     WHERE id = $2 AND company_id = $3 AND dispensing_session_id = $4::UUID',
+                    [$quantity, $lineId, $companyId, $sessionId]
+                );
+            }
+            db_query_params('dispensing.session_line_update_commit', 'COMMIT');
+            $transactionStarted = false;
+            $respond([
+                'updated' => true,
+                'lines' => grompil_dispensing_session_lines($companyId, $sessionId, $walkinTitle),
+            ]);
         }
 
         if ($action === 'line_remove') {

@@ -24,6 +24,15 @@
     const receiptFrame = document.querySelector('[data-receipt-frame]');
     const receiptError = document.querySelector('[data-receipt-error]');
     const receiptConfirmButton = document.querySelector('[data-receipt-confirm]');
+    const lineEditModalElement = document.getElementById('dispensingLineEditModal');
+    const lineEditForm = document.querySelector('[data-line-edit-form]');
+    const lineEditTitle = document.querySelector('[data-line-edit-title]');
+    const lineEditParty = document.querySelector('[data-line-edit-party]');
+    const lineEditStatus = document.querySelector('[data-line-edit-status]');
+    const lineEditQuantity = document.querySelector('[data-line-edit-quantity]');
+    const lineEditError = document.querySelector('[data-line-edit-error]');
+    const lineEditSave = document.querySelector('[data-line-edit-save]');
+    let editingLine = null;
     const historyModalElement = document.getElementById('dispensingPatientHistoryModal');
     const historyBody = document.querySelector('[data-patient-history-body]');
     const historyTitle = document.querySelector('[data-patient-history-title]');
@@ -238,6 +247,9 @@
         empty: page.dataset.textEmptyBasket,
         remove: page.dataset.textRemove,
         quantity: page.dataset.textQuantity,
+        lineEdit: page.dataset.textLineEdit,
+        lineEditSave: page.dataset.textLineEditSave,
+        lineEditError: page.dataset.textLineEditError,
         productCount: page.dataset.textProductCount,
         discardConfirm: page.dataset.textDiscardConfirm,
         historyTitle: page.dataset.textHistoryTitle,
@@ -643,6 +655,14 @@
                 }
 
                 const removeCell = document.createElement('td');
+                const edit = document.createElement('button');
+                edit.type = 'button';
+                edit.className = 'basket-remove me-2';
+                edit.textContent = '✎';
+                edit.title = t.lineEdit || '';
+                edit.setAttribute('aria-label', t.lineEdit || '');
+                edit.disabled = Boolean(product.pending);
+                edit.addEventListener('click', () => openLineEdit(product));
                 const remove = document.createElement('button');
                 remove.type = 'button';
                 remove.className = 'basket-remove';
@@ -658,12 +678,70 @@
                         showSessionError();
                     }
                 });
-                removeCell.append(remove);
+                removeCell.append(edit, remove);
                 tr.append(statusCell, cnkCell, quantity, descriptionCell, removeCell);
                 rows.append(tr);
             }
         }
     }
+
+    function openLineEdit(product) {
+        if (!lineEditModalElement || !lineEditParty || !lineEditStatus || !lineEditQuantity || !window.bootstrap) return;
+        editingLine = product;
+        lineEditParty.replaceChildren();
+        for (const party of dispensingParties) {
+            const option = document.createElement('option');
+            option.value = String(party.id);
+            option.textContent = party.name;
+            option.selected = Number(party.id) === Number(product.party_id);
+            lineEditParty.append(option);
+        }
+        lineEditStatus.value = product.status;
+        lineEditQuantity.value = String(product.quantity);
+        const productName = (language === 'fr' ? product.name_fr : product.name_nl)
+            || product.name_nl || product.name_fr || '';
+        if (lineEditTitle) lineEditTitle.textContent = `${t.lineEdit || ''} · ${product.cnk} · ${productName}`;
+        if (lineEditError) {
+            lineEditError.textContent = '';
+            lineEditError.classList.add('d-none');
+        }
+        bootstrap.Modal.getOrCreateInstance(lineEditModalElement).show();
+    }
+
+    lineEditForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!editingLine || !lineEditQuantity || !lineEditStatus || !lineEditParty || !lineEditSave) return;
+        const quantity = Number.parseInt(lineEditQuantity.value, 10);
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
+            lineEditQuantity.focus();
+            return;
+        }
+        lineEditSave.disabled = true;
+        try {
+            await sessionReady;
+            const result = await sessionRequest('line_update', {
+                line_id: editingLine.id,
+                quantity,
+                status_key: lineEditStatus.value,
+                party_id: Number(lineEditParty.value),
+            });
+            if (!result.updated) throw new Error(t.lineEditError || '');
+            for (const [key, line] of basket) {
+                if (!line.pending) basket.delete(key);
+            }
+            for (const line of result.lines || []) basket.set(String(line.id), line);
+            renderBasket();
+            editingLine = null;
+            bootstrap.Modal.getOrCreateInstance(lineEditModalElement).hide();
+        } catch (error) {
+            if (lineEditError) {
+                lineEditError.textContent = t.lineEditError || error.message || '';
+                lineEditError.classList.remove('d-none');
+            }
+        } finally {
+            lineEditSave.disabled = false;
+        }
+    });
 
     async function addProduct(product) {
         await sessionReady;
