@@ -109,7 +109,7 @@ function grompil_dispensing_history_fetch(
                 COALESCE(status.short_codes ->> $7, status."key", line.status_key) AS status_code,
                 line.cnk, line.product_name_nl, line.product_name_fr,
                 line.package_display_nl, line.package_display_fr, line.quantity,
-                (NULLIF($3::text, \'\') IS NOT NULL AND line.cnk ILIKE '%' || $3::text || '%') AS cnk_matches_query
+                (NULLIF($3::text, \'\') IS NOT NULL AND line.cnk ILIKE \'%\' || $3::text || \'%\') AS cnk_matches_query
          FROM page_history history
          JOIN st_dispensing_history_lines line ON line.history_id = history.id
          LEFT JOIN ft_dd_varia status

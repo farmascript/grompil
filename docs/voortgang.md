@@ -784,6 +784,7 @@
 - De CNK-kolom is uit de afleverhistoriekkaart verwijderd. De CNK verschijnt als tooltip bij de productnaam en blijft doorzoekbaar. Versie verhoogd naar `0.18.51`.
 - Bij een zoekopdracht die een CNK van een productregel raakt, wordt de volledige productnaam en verpakking van die regel rood gemarkeerd; de overige regels van dezelfde sessie blijven als context zichtbaar. Versie verhoogd naar `0.18.52`.
 - De foutregistratie voor het laden van de algemene afleverhistoriek vermeldt nu ook de exceptionbron en regel, zodat PHP-fouten gericht te diagnosticeren zijn. Versie verhoogd naar `0.18.53`.
+- Een ontbrekende PHP-escaping rond de CNK-wildcards veroorzaakte een `TypeError` bij het laden van de afleverhistoriek. De quotes zijn escaped; de CNK-match kan nu correct worden berekend. Versie verhoogd naar `0.18.54`.
 
 ### Volgende stap
 
