@@ -786,6 +786,7 @@
 - De foutregistratie voor het laden van de algemene afleverhistoriek vermeldt nu ook de exceptionbron en regel, zodat PHP-fouten gericht te diagnosticeren zijn. Versie verhoogd naar `0.18.53`.
 - Een ontbrekende PHP-escaping rond de CNK-wildcards veroorzaakte een `TypeError` bij het laden van de afleverhistoriek. De quotes zijn escaped; de CNK-match kan nu correct worden berekend. Versie verhoogd naar `0.18.54`.
 - Bij het openen van de modal ‘Patiënt toevoegen’ staat de focus nu op het veld ‘Voornaam’. Bij patiëntbewerking wordt de focus niet verplaatst. Versie verhoogd naar `0.18.55`.
+- Een overleden patiënt toont in de afleverbalk de overlijdensdatum en leeftijd, plus de melding ‘Geen aflevering mogelijk’. Zoeken en toevoegen van afleverregels voor deze patiënt wordt in de interface geblokkeerd; de API controleert dit ook serverzijdig. De melding is vertaald in NL, FR, EN en DE. Geen database-update nodig; versie verhoogd naar `0.18.56`.
 
 ### Volgende stap
 

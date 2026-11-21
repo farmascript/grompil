@@ -173,7 +173,7 @@ if (isset($_GET['product_suggest']) && (string) $_GET['product_suggest'] === '1'
         try {
             $patientCheck = db_query_params(
                 'dispensing.product_search_patient_check',
-                'SELECT 1 FROM bt_customers WHERE company_id=$1 AND customer_code=$2 AND is_active',
+                'SELECT date_of_death FROM bt_customers WHERE company_id=$1 AND customer_code=$2 AND is_active',
                 [$companyId, $productPatientCode]
             );
         } catch (Throwable $error) {
@@ -182,9 +182,15 @@ if (isset($_GET['product_suggest']) && (string) $_GET['product_suggest'] === '1'
             echo json_encode(['error' => 'patient_check_unavailable']);
             exit;
         }
-        if (pg_num_rows($patientCheck) !== 1) {
+        $patientRecord = pg_fetch_assoc($patientCheck);
+        if (!$patientRecord) {
             http_response_code(403);
             echo json_encode(['error' => 'patient_unavailable']);
+            exit;
+        }
+        if (trim((string) ($patientRecord['date_of_death'] ?? '')) !== '') {
+            http_response_code(409);
+            echo json_encode(['error' => 'deceased_customer']);
             exit;
         }
     }
@@ -783,11 +789,13 @@ $patientContactButtonHtml = '';
 $patientEditButtonHtml = '';
 $patientIdentityTooltipText = '';
 $patientAge = '';
+$selectedPatientIsDeceased = false;
 if ($selectedPatient) {
     $dob = trim((string) ($selectedPatient['date_of_birth'] ?? ''));
     $birthDate = $dob !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $dob) : false;
     $today = new DateTimeImmutable('today');
     $dod = trim((string) ($selectedPatient['date_of_death'] ?? ''));
+    $selectedPatientIsDeceased = $dod !== '';
     $ageDate = $dod !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $dod) : $today;
     if ($birthDate !== false && $birthDate->format('Y-m-d') === $dob
         && $ageDate !== false && $ageDate->format('Y-m-d') === ($dod !== '' ? $dod : $today->format('Y-m-d'))
@@ -890,7 +898,11 @@ $patientTitleHtml = $selectedPatient
         ),
         '_patient_audit_tooltip_text' => $auditTooltipText,
         '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
-        '_patient_age_html' => $patientAge !== '' ? '<span class="text-secondary small">(' . e($patientAge) . ')</span>' : '',
+        '_patient_age_html' => $selectedPatientIsDeceased
+            ? '<span class="text-danger small">(' . e(grompil_dispensing_deceased_display($dod, $patientAge)) . ')</span>'
+            : ($patientAge !== '' ? '<span class="text-secondary small">(' . e($patientAge) . ')</span>' : ''),
+        '_patient_deceased_badge_html' => $selectedPatientIsDeceased
+            ? '<span class="badge text-bg-danger">' . e(fn_t('dispense_no_dispensing_possible')) . '</span>' : '',
     ])
     : '';
 $companyBrandHtml = $companyLogo !== ''
@@ -1004,7 +1016,9 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_status_key' => e($dispenseStatusKey),
     'dispense_status_label' => e($dispenseStatusDisplay),
     '_dispense_status_options_html' => $dispenseStatusOptionsHtml,
+    '_dispense_status_disabled' => $selectedPatientIsDeceased ? 'disabled' : '',
     'dispense_customer_code' => $selectedPatient ? (string) $selectedPatient['customer_code'] : '',
+    '_dispense_patient_deceased' => $selectedPatientIsDeceased ? 'true' : 'false',
     'dispense_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
     'dispense_history_title' => fn_t('dispensing_history_title'),
     'dispense_history_anonymous_title' => fn_t('dispensing_history_anonymous_title'),
@@ -1060,6 +1074,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_withdrawn_filter' => fn_t('dispense_withdrawn_filter'),
     'dispense_product_help' => fn_t('dispense_product_help'),
     'dispense_patient_required' => $dispenseCustomerText('dispense_patient_required'),
+    'dispense_no_dispensing_possible' => fn_t('dispense_no_dispensing_possible'),
     'dispense_status' => fn_t('dispense_status'),
     'dispense_current_items' => fn_t('dispense_current_items'),
     'dispense_parties_label' => fn_t('dispense_parties_label'),
@@ -1109,10 +1124,11 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
         ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_feedback.html', ['patient_feedback' => $patientFeedback])
         : '',
     '_dispense_patient_count_html' => '',
-    '_dispense_product_search_disabled' => $selectedPatient === null && $dispenseStatusKey !== 'free_sale' ? 'disabled' : '',
+    '_dispense_product_search_disabled' => $selectedPatientIsDeceased
+        || ($selectedPatient === null && $dispenseStatusKey !== 'free_sale') ? 'disabled' : '',
     '_dispense_patient_required_html' => fn_moduleTemplateRender('dispensing', 'dispensing_patient_required.html', [
         'dispense_patient_required' => $dispenseCustomerText('dispense_patient_required'),
-    '_dispense_patient_required_class' => $selectedPatient === null && $dispenseStatusKey !== 'free_sale' ? '' : 'd-none',
+    '_dispense_patient_required_class' => !$selectedPatientIsDeceased && $selectedPatient === null && $dispenseStatusKey !== 'free_sale' ? '' : 'd-none',
     ]),
     '_dispense_patient_results_html' => $patientResultRows,
     '_dispense_patient_suggestion_class' => $patientSuggestionClass,

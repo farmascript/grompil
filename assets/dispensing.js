@@ -523,6 +523,7 @@
         try { sessionStorage.setItem(`${sessionStorageKey}-party`, String(activePartyId)); } catch {}
         page.dataset.patientCode = party.customer_code || '';
         page.dataset.patientName = party.name || party.customer_code || '';
+        page.dataset.patientDeceased = party.is_deceased ? 'true' : 'false';
         hideSuggestions();
         const currentName = document.querySelector('.dispense-selected-patient');
         const patientDetails = document.querySelector('.dispense-patientbar .dispensing-patient-metadata');
@@ -540,7 +541,16 @@
                 name.className = 'fs-5 fw-semibold';
                 name.textContent = party.name || party.customer_code || '';
                 currentName.append(avatar, name);
-                if (party.age_display) {
+                if (party.is_deceased && party.deceased_display) {
+                    const deceased = document.createElement('span');
+                    deceased.className = 'text-danger small';
+                    deceased.textContent = `(${party.deceased_display})`;
+                    currentName.append(deceased);
+                    const blocked = document.createElement('span');
+                    blocked.className = 'badge text-bg-danger';
+                    blocked.textContent = page.dataset.textNoDispensingPossible || '';
+                    currentName.append(blocked);
+                } else if (party.age_display) {
                     const age = document.createElement('span');
                     age.className = 'text-secondary small';
                     age.textContent = `(${party.age_display})`;
@@ -934,12 +944,14 @@
         if (!dispenseStatusSelect) return;
         const status = dispenseStatusSelect.value || 'prescription';
         const freeDispensing = status === 'free_sale';
+        const patientDeceased = page.dataset.patientDeceased === 'true';
         page.dataset.dispenseStatus = status;
         page.dataset.dispenseMode = freeDispensing ? 'walk_in' : 'patient';
+        dispenseStatusSelect.disabled = patientDeceased;
         if (patientStatusInput) patientStatusInput.value = status;
         if (currentDispenseStatus) currentDispenseStatus.textContent = dispenseStatusSelect.selectedOptions[0]?.textContent || status;
-        if (input) input.disabled = !freeDispensing && !page.dataset.patientCode;
-        if (patientRequiredMessage) patientRequiredMessage.classList.toggle('d-none', freeDispensing || Boolean(page.dataset.patientCode));
+        if (input) input.disabled = patientDeceased || (!freeDispensing && !page.dataset.patientCode);
+        if (patientRequiredMessage) patientRequiredMessage.classList.toggle('d-none', patientDeceased || freeDispensing || Boolean(page.dataset.patientCode));
     }
 
     dispenseStatusSelect?.addEventListener('change', () => {

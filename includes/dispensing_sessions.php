@@ -12,6 +12,14 @@ function grompil_dispensing_display_name(string $firstName, string $lastName): s
     return trim($firstName . ' ' . $lastName);
 }
 
+function grompil_dispensing_deceased_display(string $deathDate, string $ageDisplay): string
+{
+    $formattedDate = fn_formatDateDisplay($deathDate);
+    $formattedDate = preg_replace('/(\\d{2})-(\\d{2})-(\\d{4})/', '$1/$2/$3', $formattedDate) ?? $formattedDate;
+    $template = fn_t($ageDisplay !== '' ? 'dispense_deceased_age_summary' : 'dispense_deceased_summary');
+    return strtr($template, ['{date}' => $formattedDate, '{age}' => $ageDisplay]);
+}
+
 /** JSON API for per-tab dispensing drafts and their customer groups/lines. */
 function grompil_dispensing_session_api(int $companyId, string $actorCode, array $statusByKey, string $walkinTitle): never
 {
@@ -133,6 +141,22 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 || strlen($amppCode) > 80) {
                 $respond(['error' => 'invalid_line'], 400);
             }
+            $partyCheck = db_query_params(
+                'dispensing.session_line_party_check',
+                'SELECT party.party_type, customer.date_of_death
+                 FROM dt_dispensing_parties party
+                 LEFT JOIN bt_customers customer
+                   ON customer.company_id = party.company_id AND customer.customer_code = party.customer_code
+                 WHERE party.id = $1 AND party.company_id = $2 AND party.dispensing_session_id = $3::UUID',
+                [$partyId, $companyId, $sessionId]
+            );
+            $partyRow = pg_fetch_assoc($partyCheck);
+            if (!$partyRow) {
+                $respond(['error' => 'party_unavailable'], 409);
+            }
+            if (($partyRow['party_type'] ?? '') === 'customer' && trim((string) ($partyRow['date_of_death'] ?? '')) !== '') {
+                $respond(['error' => 'deceased_customer'], 409);
+            }
             $productResult = db_query_params(
                 'dispensing.session_product_validate',
                 'SELECT cnk, amp_code, ampp_code,
@@ -236,14 +260,23 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $newPartyId = $requestedPartyId ?? (int) $target['party_id'];
             $partyResult = db_query_params(
                 'dispensing.session_line_update_party_validate',
-                'SELECT id FROM dt_dispensing_parties
-                 WHERE id = $1 AND company_id = $2 AND dispensing_session_id = $3::UUID',
+                'SELECT party.id, party.party_type, customer.date_of_death
+                 FROM dt_dispensing_parties party
+                 LEFT JOIN bt_customers customer
+                   ON customer.company_id = party.company_id AND customer.customer_code = party.customer_code
+                 WHERE party.id = $1 AND party.company_id = $2 AND party.dispensing_session_id = $3::UUID',
                 [$newPartyId, $companyId, $sessionId]
             );
-            if (pg_num_rows($partyResult) !== 1) {
+            $newParty = pg_fetch_assoc($partyResult);
+            if (!$newParty) {
                 db_query_params('dispensing.session_line_update_rollback_party', 'ROLLBACK');
                 $transactionStarted = false;
                 $respond(['error' => 'invalid_party'], 400);
+            }
+            if (($newParty['party_type'] ?? '') === 'customer' && trim((string) ($newParty['date_of_death'] ?? '')) !== '') {
+                db_query_params('dispensing.session_line_update_rollback_deceased', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'deceased_customer'], 409);
             }
             $lineMoved = $newStatus !== (string) $target['status_key'] || $newPartyId !== (int) $target['party_id'];
             if ($lineMoved) {
@@ -649,6 +682,9 @@ function grompil_dispensing_session_parties(int $companyId, string $sessionId, s
             'first_name' => (string) ($row['name_first'] ?? ''),
             'last_name' => (string) ($row['name_last'] ?? ''),
             'age_display' => $isCustomer ? $ageDisplay : '',
+            'is_deceased' => $isCustomer && $deathDate !== '',
+            'deceased_display' => $isCustomer && $deathDate !== ''
+                ? grompil_dispensing_deceased_display($deathDate, $ageDisplay) : '',
             'address' => $isCustomer ? $address : '',
             'latitude' => (string) ($row['wgs84_latitude'] ?? ''),
             'longitude' => (string) ($row['wgs84_longitude'] ?? ''),
