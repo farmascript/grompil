@@ -3,9 +3,9 @@
         <div><h1 class="h2">@dispensing_history_title@</h1><p class="text-secondary mb-0">@dispensing_history_intro@</p></div>
         <a class="btn btn-outline-secondary" href="dispense.php">@dispensing_history_back_to_dispensing@</a>
     </div>
-    <section class="card shadow-sm">
+    <section class="card shadow-sm mb-3 dispensing-history-filter-card">
         <div class="card-body">
-            <form method="get" action="dispensing-history.php" class="row g-2 align-items-end mb-3" data-dispensing-history-form data-language="@history_language@">
+            <form method="get" action="dispensing-history.php" class="row g-2 align-items-end mb-0" data-dispensing-history-form data-language="@history_language@">
                 <div class="col-12 col-xl-5">
                     <label class="form-label" for="history-query">@dispensing_history_search_label@</label>
                     <input class="form-control" id="history-query" type="search" name="q" value="@history_query_value@" maxlength="100" placeholder="@dispensing_history_search_placeholder@" data-dispensing-history-search data-minimum-message="@dispensing_history_search_minimum@">
@@ -28,6 +28,10 @@
                 </div>
                 <div class="col-6 col-sm-4 col-xl-auto"><button class="btn btn-primary" type="submit">@dispensing_history_search_button@</button></div>
             </form>
+        </div>
+    </section>
+    <section class="card shadow-sm">
+        <div class="card-body">
             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
                 <span class="small text-secondary" data-history-count data-count-template="@history_count_template@" data-date-range-error="@dispensing_history_date_range_error@">@history_count_label@</span>
                 <div data-history-pagination data-first="@dispensing_history_first@" data-previous="@dispensing_history_previous@" data-next="@dispensing_history_next@" data-last="@dispensing_history_last@">@_history_pagination_html@</div>

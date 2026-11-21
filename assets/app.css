@@ -37,6 +37,10 @@ body {
     background-color: #f0f3ed;
 }
 
+.dispensing-history-filter-card {
+    background-color: #f1f5f3;
+}
+
 .login-intro {
     min-height: 100vh;
     background: var(--green);

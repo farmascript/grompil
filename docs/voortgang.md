@@ -779,6 +779,7 @@
 - De algemene afleverhistoriek groepeert nu alle regels van dezelfde afleversessie in één kaart. De paginering telt sessies, zodat een sessie niet over meerdere pagina's wordt gesplitst; binnen de kaart blijven ontvanger, status en productregels zichtbaar. Geen database-update nodig; versie verhoogd naar `0.18.46`.
 - De klantcode neemt in de afleverhistoriek geen extra regel meer in. Hij verschijnt als tooltip wanneer de gebruiker over de patiënt-/klantnaam beweegt. Versie verhoogd naar `0.18.47`.
 - In de afleverhistoriek worden overeenkomende tekstfragmenten in de sessiekaart rood gemarkeerd, ook in de andere regels die ter context bij dezelfde sessie worden getoond. Versie verhoogd naar `0.18.48`.
+- De zoek- en datumfilters van de afleverhistoriek staan nu in een aparte kaart met de afgesproken achtergrondkleur `#f1f5f3`; de invoervelden blijven wit. De stijlgids is hiervoor aangevuld. Versie verhoogd naar `0.18.49`.
 
 ### Volgende stap
 

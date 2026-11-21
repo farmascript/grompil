@@ -23,6 +23,9 @@ For data-entry dialogs, keep the general modal background white. Use
 with their normal control border. This contrast helps users see each data-entry
 group without tinting the surrounding dialog.
 
+Search and filter forms may use the same `#f1f5f3` surface on a separate card
+when they need to stand apart from result cards. Keep their input controls white.
+
 For suggestions, use `#f1f5f3` for the list and its rows, `#cbd8d2` for the
 outer border, and `#dfeae5` with `#183b32` text for hover and keyboard selection.
 Do not use the hover color as the resting background.
