@@ -72,9 +72,9 @@
             const prefix = document.createElement('span');
             prefix.className = 'text-secondary';
             prefix.textContent = `${label(name)}: `;
-            const content = document.createElement(title ? 'code' : 'span');
+            if (title) prefix.title = title;
+            const content = document.createElement('span');
             appendHighlightedText(content, String(value ?? '—'));
-            if (title) content.title = title;
             item.append(prefix, content);
             header.append(item);
         };
@@ -88,8 +88,7 @@
             date.className = 'text-nowrap';
             appendHighlightedText(date, String(first.completed_at_display || ''));
             header.append(date);
-            addHeaderItem(header, 'session', `${String(first.session_id || '').slice(0, 8)}…`, String(first.session_id || ''));
-            addHeaderItem(header, 'prescription', first.prescription_number == null ? '—' : `#${first.prescription_number}`);
+            addHeaderItem(header, 'prescription', first.prescription_number == null ? '—' : `#${first.prescription_number}`, String(first.session_id || ''));
             card.append(header);
 
             const responsive = document.createElement('div');

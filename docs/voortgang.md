@@ -780,6 +780,7 @@
 - De klantcode neemt in de afleverhistoriek geen extra regel meer in. Hij verschijnt als tooltip wanneer de gebruiker over de patiënt-/klantnaam beweegt. Versie verhoogd naar `0.18.47`.
 - In de afleverhistoriek worden overeenkomende tekstfragmenten in de sessiekaart rood gemarkeerd, ook in de andere regels die ter context bij dezelfde sessie worden getoond. Versie verhoogd naar `0.18.48`.
 - De zoek- en datumfilters van de afleverhistoriek staan nu in een aparte kaart met de afgesproken achtergrondkleur `#f1f5f3`; de invoervelden blijven wit. De stijlgids is hiervoor aangevuld. Versie verhoogd naar `0.18.49`.
+- Het sessienummer is niet langer zichtbaar in de afleverhistoriekkaart. Het volledige nummer verschijnt als tooltip bij het label ‘Receptnummer’; het receptnummer blijft zichtbaar. Versie verhoogd naar `0.18.50`.
 
 ### Volgende stap
 
