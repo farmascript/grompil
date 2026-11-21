@@ -841,6 +841,13 @@ if ($selectedPatient) {
         '_patient_contact_button_html' => $patientContactButtonHtml,
     ]);
 }
+if ($patientMetadata === '') {
+    $patientMetadata = fn_moduleTemplateRender('dispensing', 'dispensing_patient_detail.html', [
+        'patient_address' => '',
+        '_patient_map_link_html' => '',
+        '_patient_contact_button_html' => '',
+    ]);
+}
 $auditLine = $selectedPatient
     ? str_replace(['{creator}', '{created}', '{updater}', '{updated}'], [
         (string) ($selectedPatient['created_by_name'] ?? ''), fn_formatDateDisplay((string) ($selectedPatient['created_at'] ?? '')),
@@ -1119,11 +1126,12 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'patient_duplicate_warning_text' => $customerText('patient_duplicate_warning_text'),
     'patient_duplicate_warning_back' => $customerText('patient_duplicate_warning_back'),
     'patient_duplicate_warning_continue' => $customerText('patient_duplicate_warning_continue'),
-    '_dispense_patient_detail_html' => $selectedPatient
-        ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_audit.html', [
-            '_patient_metadata_html' => $patientMetadata,
-        ])
-        : '',
+    '_dispense_patient_detail_html' => fn_moduleTemplateRender('dispensing', 'dispensing_patient_audit.html', [
+        '_patient_metadata_html' => $patientMetadata,
+    ]),
+    'dispense_patient_no_address' => $customerText('patient_no_address'),
+    'dispense_contact_details' => fn_t('contact_manager_count'),
+    'dispense_google_maps' => fn_t('address_google_maps'),
     '_dispense_patient_title_html' => $patientTitleHtml,
     '_contact_manager_modal_html' => $contactManagerModalHtml,
     '_contact_manager_modal_open' => $contactManagerModalOpen && $selectedPatient !== null ? 'true' : 'false',

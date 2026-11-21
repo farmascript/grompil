@@ -519,11 +519,66 @@
         page.dataset.patientName = party.name || party.customer_code || '';
         hideSuggestions();
         const currentName = document.querySelector('.dispense-selected-patient');
-        if (currentName) currentName.textContent = party.name;
-        const patientDetails = document.querySelector('.dispense-patientbar .dispense-selected-patient + span');
+        const patientDetails = document.querySelector('.dispense-patientbar .dispensing-patient-metadata');
         const patientActions = document.querySelector('.dispense-patientbar .ms-auto');
         const partyMatchesPageCustomer = Boolean(party.customer_code) && party.customer_code === initialPageCustomerCode;
-        if (patientDetails) patientDetails.classList.toggle('d-none', !partyMatchesPageCustomer);
+        if (currentName) {
+            currentName.replaceChildren();
+            if (party.type === 'customer') {
+                const initials = `${String(party.first_name || '').slice(0, 1)}${String(party.last_name || '').slice(0, 1)}`.toUpperCase();
+                const avatar = document.createElement('span');
+                avatar.className = 'patient-avatar';
+                avatar.textContent = initials;
+                avatar.title = party.customer_code || '';
+                const name = document.createElement('span');
+                name.className = 'fs-5 fw-semibold';
+                name.textContent = party.name || party.customer_code || '';
+                currentName.append(avatar, name);
+                if (party.age_display) {
+                    const age = document.createElement('span');
+                    age.className = 'text-secondary small';
+                    age.textContent = `(${party.age_display})`;
+                    currentName.append(age);
+                }
+            }
+        }
+        if (patientDetails) {
+            patientDetails.replaceChildren();
+            patientDetails.classList.toggle('d-none', party.type !== 'customer');
+            if (party.type === 'customer') {
+                const address = document.createElement('span');
+                address.textContent = party.address || page.dataset.textPatientNoAddress || '';
+                patientDetails.append(address);
+                const mapUrl = party.latitude && party.longitude
+                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${party.latitude},${party.longitude}`)}`
+                    : (party.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(party.address)}` : '');
+                if (mapUrl) {
+                    const mapLink = document.createElement('a');
+                    mapLink.className = 'address-map-link link-primary text-decoration-none';
+                    mapLink.href = mapUrl;
+                    mapLink.target = '_blank';
+                    mapLink.rel = 'noopener noreferrer';
+                    mapLink.title = page.dataset.textGoogleMaps || '';
+                    mapLink.setAttribute('aria-label', mapLink.title);
+                    mapLink.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm0 1.2a6.8 6.8 0 1 1 0 13.6A6.8 6.8 0 0 1 8 1.2Zm0 1.1a5.7 5.7 0 1 0 0 11.4A5.7 5.7 0 0 0 8 2.3Zm0 1.3a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8Zm0 2.3a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z"/></svg>';
+                    patientDetails.append(mapLink);
+                }
+                const contactLink = document.createElement('a');
+                contactLink.className = 'btn btn-outline-secondary btn-sm contact-manager-trigger';
+                contactLink.href = page.dataset.patientEndpoint;
+                const contactUrl = new URL(page.dataset.patientEndpoint, window.location.href);
+                contactUrl.searchParams.set('patient', party.customer_code);
+                contactUrl.searchParams.set('mode', 'patient');
+                contactUrl.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale');
+                contactUrl.searchParams.set('contacts', '1');
+                contactUrl.hash = 'contact-manager-modal';
+                contactLink.href = contactUrl.href;
+                contactLink.title = page.dataset.textContactDetails || '';
+                contactLink.setAttribute('aria-label', `${contactLink.title}: ${party.contact_count || 0}`);
+                contactLink.textContent = String(party.contact_count || 0);
+                patientDetails.append(contactLink);
+            }
+        }
         if (patientActions) patientActions.classList.toggle('d-none', !partyMatchesPageCustomer);
         applyDispenseStatus();
         renderPartySelector();

@@ -596,16 +596,49 @@ function grompil_dispensing_session_parties(int $companyId, string $sessionId, s
     $result = db_query_params(
         'dispensing.session_parties_load',
         'SELECT party.id, party.party_type, party.customer_code, party.display_name,
-                customer.name_first, customer.name_last
+                customer.name_first, customer.name_last, customer.date_of_birth, customer.date_of_death,
+                location.street, location.house_number, location.box_number, location.postal_code,
+                location.city, location.country_code, location.wgs84_latitude, location.wgs84_longitude,
+                (SELECT COUNT(*) FROM dt_user_contacts contact
+                 WHERE contact.company_id = party.company_id AND contact.customer_code = party.customer_code
+                   AND contact.user_code IS NULL AND contact.is_active) AS contact_count
          FROM dt_dispensing_parties party
          LEFT JOIN bt_customers customer
            ON customer.company_id = party.company_id AND customer.customer_code = party.customer_code
+         LEFT JOIN LATERAL (
+             SELECT street, house_number, box_number, postal_code, city, country_code, wgs84_latitude, wgs84_longitude
+             FROM dt_customer_locations
+             WHERE company_id = party.company_id AND customer_code = party.customer_code AND is_active
+             ORDER BY is_primary DESC, sort_order, id LIMIT 1
+         ) location ON TRUE
          WHERE party.company_id = $1 AND party.dispensing_session_id = $2::UUID
          ORDER BY party.sort_order, party.id',
         [$companyId, $sessionId]
     );
     $parties = [];
     while ($row = pg_fetch_assoc($result)) {
+        $isCustomer = $row['party_type'] === 'customer';
+        $birthDate = trim((string) ($row['date_of_birth'] ?? ''));
+        $deathDate = trim((string) ($row['date_of_death'] ?? ''));
+        $referenceDate = $deathDate !== '' ? $deathDate : (new DateTimeImmutable('today'))->format('Y-m-d');
+        $ageDisplay = '';
+        $birth = $birthDate !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $birthDate) : false;
+        $ageDate = DateTimeImmutable::createFromFormat('!Y-m-d', $referenceDate);
+        if ($birth !== false && $birth->format('Y-m-d') === $birthDate
+            && $ageDate !== false && $ageDate->format('Y-m-d') === $referenceDate && $birth <= $ageDate) {
+            $age = $birth->diff($ageDate);
+            if ($age->y < 2) {
+                $months = $age->y * 12 + $age->m;
+                $ageDisplay = $months . ' ' . fn_t($months === 1 ? 'patient_age_month' : 'patient_age_months');
+            } else {
+                $ageDisplay = $age->y . ' ' . fn_t($age->y === 1 ? 'patient_age_year' : 'patient_age_years');
+            }
+        }
+        $address = trim(implode(', ', array_filter([
+            trim((string) ($row['street'] ?? '') . ' ' . (string) ($row['house_number'] ?? '')
+                . ((string) ($row['box_number'] ?? '') !== '' ? ' bus ' . $row['box_number'] : '')),
+            trim((string) ($row['postal_code'] ?? '') . ' ' . (string) ($row['city'] ?? '')),
+        ])));
         $parties[] = [
             'id' => (int) $row['id'],
             'type' => (string) $row['party_type'],
@@ -613,6 +646,13 @@ function grompil_dispensing_session_parties(int $companyId, string $sessionId, s
             'name' => $row['party_type'] === 'customer'
                 ? grompil_dispensing_display_name((string) $row['name_first'], (string) $row['name_last'])
                 : ($walkinTitle !== '' ? $walkinTitle : (string) $row['display_name']),
+            'first_name' => (string) ($row['name_first'] ?? ''),
+            'last_name' => (string) ($row['name_last'] ?? ''),
+            'age_display' => $isCustomer ? $ageDisplay : '',
+            'address' => $isCustomer ? $address : '',
+            'latitude' => (string) ($row['wgs84_latitude'] ?? ''),
+            'longitude' => (string) ($row['wgs84_longitude'] ?? ''),
+            'contact_count' => $isCustomer ? (int) ($row['contact_count'] ?? 0) : 0,
         ];
     }
     return $parties;
