@@ -85,13 +85,12 @@
             for (const item of sessionRows) {
                 const row = tbody.insertRow();
                 const recipient = row.insertCell();
-                recipient.textContent = String(item.party_name || '');
+                const partyName = document.createElement('span');
+                partyName.textContent = String(item.party_name || '');
                 if (item.customer_code) {
-                    const codeLabel = document.createElement('span');
-                    codeLabel.className = 'd-block small text-secondary';
-                    codeLabel.textContent = String(item.customer_code);
-                    recipient.append(codeLabel);
+                    partyName.title = String(item.customer_code);
                 }
+                recipient.append(partyName);
                 const status = document.createElement('span');
                 status.className = 'badge text-bg-light';
                 status.textContent = String(item.status_code || '');

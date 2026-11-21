@@ -131,9 +131,8 @@ foreach ($sessionGroups as $sessionRows) {
     $package = $language === 'FR'
         ? ($row['package_display_fr'] ?: $row['package_display_nl'])
         : ($row['package_display_nl'] ?: $row['package_display_fr']);
-    $groupsHtml .= '<tr><td>' . e($row['party_name'])
-        . ($row['customer_code'] !== '' ? '<span class="d-block small text-secondary">' . e($row['customer_code']) . '</span>' : '')
-        . '</td><td><span class="badge text-bg-light">' . e($row['status_code']) . '</span></td>'
+    $groupsHtml .= '<tr><td><span' . ($row['customer_code'] !== '' ? ' title="' . e($row['customer_code']) . '"' : '') . '>'
+        . e($row['party_name']) . '</span></td><td><span class="badge text-bg-light">' . e($row['status_code']) . '</span></td>'
         . '<td><small>' . e($row['cnk']) . '</small></td><td><strong>' . e($productName) . '</strong>'
         . ($package !== '' ? '<span class="ms-2 fw-bold">' . e($package) . '</span>' : '')
         . '</td><td class="text-end">' . e((string) $row['quantity']) . '</td></tr>';
