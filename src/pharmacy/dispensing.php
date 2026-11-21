@@ -786,16 +786,25 @@ if ($selectedPatient) {
     $dob = trim((string) ($selectedPatient['date_of_birth'] ?? ''));
     $birthDate = $dob !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $dob) : false;
     $today = new DateTimeImmutable('today');
-    $patientAge = $birthDate !== false && $birthDate->format('Y-m-d') === $dob && $birthDate <= $today
-        ? (string) $birthDate->diff($today)->y
-        : '';
+    $dod = trim((string) ($selectedPatient['date_of_death'] ?? ''));
+    $ageDate = $dod !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $dod) : $today;
+    if ($birthDate !== false && $birthDate->format('Y-m-d') === $dob
+        && $ageDate !== false && $ageDate->format('Y-m-d') === ($dod !== '' ? $dod : $today->format('Y-m-d'))
+        && $birthDate <= $ageDate) {
+        $age = $birthDate->diff($ageDate);
+        if ($age->y < 2) {
+            $months = ($age->y * 12) + $age->m;
+            $patientAge = $months . ' ' . fn_t($months === 1 ? 'patient_age_month' : 'patient_age_months');
+        } else {
+            $patientAge = $age->y . ' ' . fn_t($age->y === 1 ? 'patient_age_year' : 'patient_age_years');
+        }
+    }
     $patientCodeLabel = fn_t($companyIdentity['company_classification_key'] === 'pharmacy'
         ? 'company_customer_code_label_pharmacy' : 'company_customer_code_label_business');
     $patientIdentityTooltipText = e($patientCodeLabel . ': ' . (string) $selectedPatient['customer_code']);
     if ($dob !== '') {
         $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_birth_date') . ': ' . fn_formatDateDisplay($dob));
     }
-    $dod = trim((string) ($selectedPatient['date_of_death'] ?? ''));
     if ($dod !== '') {
         $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_death_date') . ': '
             . fn_formatDeathDateDisplay($dob, $dod));
@@ -817,8 +826,13 @@ if ($selectedPatient) {
             'contact_manager_count_number' => (string) $patientContactCount,
         ]);
     }
+    $patientBarAddress = trim(implode(', ', array_filter([
+        trim((string) ($selectedPatient['street'] ?? '') . ' ' . (string) ($selectedPatient['house_number'] ?? '')
+            . ((string) ($selectedPatient['box_number'] ?? '') !== '' ? ' bus ' . $selectedPatient['box_number'] : '')),
+        trim((string) ($selectedPatient['postal_code'] ?? '') . ' ' . (string) ($selectedPatient['city'] ?? '')),
+    ])));
     $patientMetadata = fn_moduleTemplateRender('dispensing', 'dispensing_patient_detail.html', [
-        'patient_address' => $patientAddress !== '' ? $patientAddress : $customerText('patient_no_address'),
+        'patient_address' => $patientBarAddress !== '' ? $patientBarAddress : $customerText('patient_no_address'),
         '_patient_map_link_html' => grompil_google_maps_link(
             $selectedPatient['wgs84_latitude'] ?? null,
             $selectedPatient['wgs84_longitude'] ?? null,
