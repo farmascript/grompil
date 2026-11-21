@@ -263,12 +263,13 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $transactionStarted = true;
             $lockedSession = db_query_params(
                 'dispensing.session_complete_lock',
-                'SELECT id FROM dt_dispensing_sessions
+                'SELECT id, status_key FROM dt_dispensing_sessions
                  WHERE id = $1::UUID AND company_id = $2 AND created_by_user_code = $3 AND state = \'open\'
                  FOR UPDATE',
                 [$sessionId, $companyId, $actorCode]
             );
-            if (pg_num_rows($lockedSession) !== 1) {
+            $lockedSessionRow = pg_fetch_assoc($lockedSession);
+            if (!$lockedSessionRow) {
                 db_query_params('dispensing.session_complete_rollback_empty', 'ROLLBACK');
                 $transactionStarted = false;
                 $respond(['error' => 'session_unavailable'], 404);
@@ -279,17 +280,40 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 $transactionStarted = false;
                 $respond(['error' => 'empty_session'], 409);
             }
+            $hasPrescriptionLine = false;
+            foreach ($receipt['lines'] as $receiptLine) {
+                if (($receiptLine['status'] ?? '') === 'prescription') {
+                    $hasPrescriptionLine = true;
+                    break;
+                }
+            }
+            $prescriptionNumber = null;
+            if ($hasPrescriptionLine) {
+                $counter = db_query_params(
+                    'dispensing.prescription_number_next',
+                    'INSERT INTO dt_company_prescription_counters (company_id, last_number)
+                     VALUES ($1, 1)
+                     ON CONFLICT (company_id) DO UPDATE
+                         SET last_number = dt_company_prescription_counters.last_number + 1
+                     RETURNING last_number',
+                    [$companyId]
+                );
+                $counterRow = pg_fetch_assoc($counter);
+                if (!$counterRow) throw new RuntimeException('Could not allocate prescription number.');
+                $prescriptionNumber = (int) $counterRow['last_number'];
+            }
             $snapshotJson = json_encode($receipt, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
             $history = db_query_params(
                 'dispensing.history_create',
                 'INSERT INTO st_dispensing_history
-                    (company_id, dispensing_session_id, created_by_user_code, status_key, receipt_thank_you, receipt_snapshot)
-                 SELECT $1, session.id, $3::VARCHAR(6), session.status_key, $4, $5::jsonb
+                    (company_id, dispensing_session_id, created_by_user_code, status_key, prescription_number,
+                     receipt_thank_you, receipt_snapshot)
+                 SELECT $1, session.id, $3::VARCHAR(6), session.status_key, $6::BIGINT, $4, $5::jsonb
                  FROM dt_dispensing_sessions session
                  WHERE session.id = $2::UUID AND session.company_id = $1
                    AND session.created_by_user_code = $3::VARCHAR(6) AND session.state = \'open\'
                  RETURNING id',
-                [$companyId, $sessionId, $actorCode, (string) $receipt['thank_you'], (string) $snapshotJson]
+                [$companyId, $sessionId, $actorCode, (string) $receipt['thank_you'], (string) $snapshotJson, $prescriptionNumber]
             );
             $historyRow = pg_fetch_assoc($history);
             if (!$historyRow) throw new RuntimeException('Could not create dispensing history header.');

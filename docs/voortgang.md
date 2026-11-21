@@ -755,6 +755,7 @@
 - De actie `open_patient_history` toont de historiek van de actieve patiënt in een modaal. Zonder actieve patiënt toont F6 de naamloze afleveringen. Ze wordt standaard aan F6 gekoppeld als die toets nog vrij is.
 - Bestaande databases hebben migratie `migrations/20261121_143422_dispensing_history_access.sql` nodig na de ontvangst- en F12-migraties. Softwareversie verhoogd naar `0.18.25`.
 - In het algemene historiekoverzicht en de patiëntmodal staat de verpakkingsgrootte nu direct naast de productnaam; de aparte verpakkingskolom is verwijderd. Softwareversie verhoogd naar `0.18.26`.
+- Receptnummers lopen vanaf 1 per bedrijf. Bij het bevestigen krijgt een aflevering alleen een nummer als minstens één regel de status `prescription` heeft; regels met `incomplete_prescription` blijven zonder nummer. Het nummer staat in beide historiekweergaven. De tellerwijziging en historiekopslag gebeuren in dezelfde transactie. Migratie `migrations/20261121_150833_dispensing_prescription_numbers.sql` is vereist op bestaande databases; softwareversie verhoogd naar `0.18.27`.
 - De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 

@@ -85,6 +85,7 @@ foreach ($history['rows'] as $row) {
     $rowsHtml .= '<tr>'
         . '<td class="text-nowrap">' . e($row['completed_at_display']) . '</td>'
         . '<td><code title="' . e($row['session_id']) . '">' . e($sessionShort) . '…</code></td>'
+        . '<td>' . ($row['prescription_number'] === null ? '—' : '#' . e((string) $row['prescription_number'])) . '</td>'
         . '<td>' . e($row['party_name'])
         . ($row['customer_code'] !== '' ? '<span class="d-block small text-secondary">' . e($row['customer_code']) . '</span>' : '')
         . '</td>'
@@ -97,7 +98,7 @@ foreach ($history['rows'] as $row) {
         . '</tr>';
 }
 if ($rowsHtml === '') {
-    $rowsHtml = '<tr><td colspan="7" class="text-center text-secondary py-4">' . e(fn_t('dispensing_history_empty')) . '</td></tr>';
+    $rowsHtml = '<tr><td colspan="8" class="text-center text-secondary py-4">' . e(fn_t('dispensing_history_empty')) . '</td></tr>';
 }
 
 $paginationHtml = '<nav aria-label="' . e(fn_t('dispensing_history_pagination')) . '"><ul class="pagination pagination-sm mb-0">';
@@ -134,6 +135,7 @@ echo fn_templateRender('dispensing_history.html', [
     'dispensing_history_per_page' => fn_t('dispensing_history_per_page'),
     'dispensing_history_date' => fn_t('dispensing_history_date'),
     'dispensing_history_session' => fn_t('dispensing_history_session'),
+    'dispensing_history_prescription_number' => fn_t('dispensing_history_prescription_number'),
     'dispensing_history_recipient' => fn_t('dispensing_history_recipient'),
     'dispensing_history_status' => fn_t('dispensing_history_status'),
     'dispensing_history_cnk' => fn_t('dispensing_history_cnk'),

@@ -242,6 +242,7 @@
         discardConfirm: page.dataset.textDiscardConfirm,
         historyTitle: page.dataset.textHistoryTitle,
         historyAnonymousTitle: historyTitle?.dataset.anonymousTitle,
+        historyPrescriptionNumber: historyTitle?.dataset.prescriptionNumberLabel,
         historyError: page.dataset.textHistoryError,
         historyEmpty: page.dataset.textHistoryEmpty,
         historyDate: page.dataset.textHistoryDate,
@@ -291,7 +292,7 @@
             } else {
                 const table = document.createElement('table');
                 table.className = 'table table-sm table-striped align-middle';
-                const headings = [t.historyDate, t.historySession, t.historyStatus, t.historyCnk, t.historyProduct, t.historyQuantity];
+                const headings = [t.historyDate, t.historySession, t.historyPrescriptionNumber, t.historyStatus, t.historyCnk, t.historyProduct, t.historyQuantity];
                 const thead = table.createTHead().insertRow();
                 headings.forEach((label) => { const th = document.createElement('th'); th.textContent = label || ''; thead.append(th); });
                 const tbody = table.createTBody();
@@ -299,7 +300,7 @@
                     const tr = tbody.insertRow();
                     const product = language === 'fr' ? (row.product_name_fr || row.product_name_nl) : (row.product_name_nl || row.product_name_fr);
                     const pack = language === 'fr' ? (row.package_display_fr || row.package_display_nl) : (row.package_display_nl || row.package_display_fr);
-                    [row.completed_at_display, String(row.session_id).slice(0, 8) + '…', row.status_code, row.cnk].forEach((value) => {
+                    [row.completed_at_display, String(row.session_id).slice(0, 8) + '…', row.prescription_number === null ? '—' : `#${row.prescription_number}`, row.status_code, row.cnk].forEach((value) => {
                         const cell = tr.insertCell(); cell.textContent = String(value ?? '');
                     });
                     const productCell = tr.insertCell();

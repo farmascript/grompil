@@ -28,6 +28,7 @@ function grompil_dispensing_history_fetch(
         )
         AND (NULLIF($3::text, '') IS NULL OR concat_ws(' ',
             history.dispensing_session_id::text, line.party_name, line.customer_code,
+            history.prescription_number::text,
             line.status_key, line.cnk, line.amp_code, line.ampp_code,
             line.product_name_nl, line.product_name_fr,
             line.package_display_nl, line.package_display_fr
@@ -51,6 +52,7 @@ function grompil_dispensing_history_fetch(
     $result = db_query_params(
         'dispensing.history_list_page',
         'SELECT history.id AS history_id, history.dispensing_session_id::text AS session_id,
+                history.prescription_number,
                 history.completed_at, line.party_type, line.customer_code, line.party_name,
                 line.status_key,
                 COALESCE(status.short_codes ->> $5, status."key", line.status_key) AS status_code,
@@ -70,6 +72,7 @@ function grompil_dispensing_history_fetch(
         $rows[] = [
             'history_id' => (int) $row['history_id'],
             'session_id' => (string) $row['session_id'],
+            'prescription_number' => $row['prescription_number'] === null ? null : (int) $row['prescription_number'],
             'completed_at' => (string) $row['completed_at'],
             'completed_at_display' => fn_formatDateDisplay((string) $row['completed_at']),
             'party_type' => (string) $row['party_type'],

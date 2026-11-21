@@ -907,6 +907,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
     'dispense_history_title' => fn_t('dispensing_history_title'),
     'dispense_history_anonymous_title' => fn_t('dispensing_history_anonymous_title'),
+    'dispense_history_prescription_number' => fn_t('dispensing_history_prescription_number'),
     'dispense_history_url' => fn_appBaseHref() . 'dispensing-history.php',
     'dispense_history_no_patient' => fn_t('dispensing_history_no_patient'),
     'dispense_history_error' => fn_t('dispensing_history_unavailable'),

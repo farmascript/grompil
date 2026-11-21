@@ -840,6 +840,7 @@ $arrSubst = array (
   'dispensing_history_per_page' => 'Lines per page',
   'dispensing_history_date' => 'Date',
   'dispensing_history_session' => 'Session',
+  'dispensing_history_prescription_number' => 'Prescription no.',
   'dispensing_history_recipient' => 'Patient/customer',
   'dispensing_history_status' => 'Status',
   'dispensing_history_cnk' => 'CNK',

@@ -699,6 +699,7 @@ CREATE TABLE IF NOT EXISTS st_dispensing_history (
     dispensing_session_id UUID NOT NULL,
     created_by_user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE RESTRICT,
     status_key VARCHAR(80) NOT NULL,
+    prescription_number BIGINT,
     receipt_thank_you TEXT NOT NULL DEFAULT '',
     receipt_snapshot JSONB NOT NULL CHECK (jsonb_typeof(receipt_snapshot) = 'object'),
     completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -707,6 +708,15 @@ CREATE TABLE IF NOT EXISTS st_dispensing_history (
     FOREIGN KEY (company_id, dispensing_session_id)
         REFERENCES dt_dispensing_sessions(company_id, id) ON DELETE RESTRICT
 );
+CREATE UNIQUE INDEX IF NOT EXISTS st_dispensing_history_prescription_number_uidx
+    ON st_dispensing_history (company_id, prescription_number)
+    WHERE prescription_number IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS dt_company_prescription_counters (
+    company_id BIGINT PRIMARY KEY REFERENCES bt_companies(id) ON DELETE CASCADE,
+    last_number BIGINT NOT NULL DEFAULT 0 CHECK (last_number >= 0)
+);
+
 CREATE TABLE IF NOT EXISTS st_dispensing_history_lines (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     history_id BIGINT NOT NULL REFERENCES st_dispensing_history(id) ON DELETE CASCADE,
@@ -1506,6 +1516,7 @@ ALTER TABLE dt_dispensing_parties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dt_dispensing_lines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE st_dispensing_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE st_dispensing_history_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dt_company_prescription_counters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE st_customer_audit_log ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS bt_customers_company_scope ON bt_customers;
 CREATE POLICY bt_customers_company_scope ON bt_customers FOR ALL
@@ -1630,6 +1641,16 @@ CREATE POLICY st_dispensing_history_lines_company_insert ON st_dispensing_histor
           AND history.company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
           AND history.created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
     ));
+DROP POLICY IF EXISTS dt_company_prescription_counters_read ON dt_company_prescription_counters;
+DROP POLICY IF EXISTS dt_company_prescription_counters_insert ON dt_company_prescription_counters;
+DROP POLICY IF EXISTS dt_company_prescription_counters_update ON dt_company_prescription_counters;
+CREATE POLICY dt_company_prescription_counters_read ON dt_company_prescription_counters FOR SELECT
+    USING (company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT);
+CREATE POLICY dt_company_prescription_counters_insert ON dt_company_prescription_counters FOR INSERT
+    WITH CHECK (company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT);
+CREATE POLICY dt_company_prescription_counters_update ON dt_company_prescription_counters FOR UPDATE
+    USING (company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT)
+    WITH CHECK (company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT);
 DROP POLICY IF EXISTS st_customer_audit_log_company_scope ON st_customer_audit_log;
 CREATE POLICY st_customer_audit_log_company_scope ON st_customer_audit_log FOR SELECT
     USING (
@@ -1658,6 +1679,10 @@ BEGIN
     LOOP
         EXECUTE format(
             'GRANT SELECT, INSERT, UPDATE, DELETE ON st_dispensing_history, st_dispensing_history_lines TO %I',
+            app_role
+        );
+        EXECUTE format(
+            'GRANT SELECT, INSERT, UPDATE ON dt_company_prescription_counters TO %I',
             app_role
         );
         EXECUTE format(
