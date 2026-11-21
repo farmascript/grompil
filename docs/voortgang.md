@@ -772,6 +772,7 @@
 - De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 - In de contactgegevensmodal blijft het formulier voor een nieuw contact verborgen tot de gebruiker op ‘Nieuw contactgegeven toevoegen’ klikt. Bij een foutmelding blijft het formulier open; na opslaan of verwijderen keert het terug naar de ingeklapte weergave. Versie verhoogd naar `0.18.41`.
+- De contactsoorten die als `dd_varia`-vertalingen worden geladen, zijn toegevoegd aan de standaardtaalbestanden in NL, FR, EN en DE. Daardoor toont de keuzelijst leesbare labels als een vertaling nog niet naar de databasebestanden is geëxporteerd. Geen database-update nodig; versie verhoogd naar `0.18.42`.
 
 ### Volgende stap
 
