@@ -6,6 +6,24 @@
     if (modal && page.dataset.modalOpen === 'true' && window.bootstrap) {
         bootstrap.Modal.getOrCreateInstance(modal).show();
     }
+    const duplicateWarningModal = document.getElementById('patientDuplicateWarningModal');
+    if (duplicateWarningModal && page.dataset.duplicateWarning === 'true' && window.bootstrap) {
+        const warningInstance = bootstrap.Modal.getOrCreateInstance(duplicateWarningModal);
+        duplicateWarningModal.addEventListener('hidden.bs.modal', () => {
+            if (modal && page.dataset.duplicateSubmitted !== 'true') {
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            }
+        });
+        duplicateWarningModal.querySelector('[data-confirm-duplicate-patient]')?.addEventListener('click', () => {
+            const confirmation = document.getElementById('confirm-duplicate-patient');
+            const patientForm = modal?.querySelector('.customer-edit-form');
+            if (!confirmation || !patientForm) return;
+            confirmation.value = '1';
+            page.dataset.duplicateSubmitted = 'true';
+            patientForm.requestSubmit();
+        });
+        warningInstance.show();
+    }
 
     const contactModal = document.getElementById('contact-manager-modal');
     if (contactModal && page.dataset.contactModalOpen === 'true' && window.bootstrap) {

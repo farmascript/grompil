@@ -763,6 +763,7 @@
 - De achtergrond van het invoergedeelte in de patiëntmodal gebruikt nu dezelfde lichte groen-grijze kleur als de adres-suggesties (`#f1f5f3`), zodat witte invoervelden beter afsteken. Versie verhoogd naar `0.18.32`.
 - Patiënten/klanten kunnen een optionele overlijdensdatum krijgen. Die datum wordt in het patiëntformulier beheerd en getoond bij de klantgegevens. Bij patiënt- en klantzoekopdrachten zijn overleden personen standaard verborgen; met `+` worden ze meegezocht en krijgen ze in de suggestielijst een zachte afwijkende kleur met overlijdensdatum. Migratie `migrations/20261121_163331_customer_death_date.sql` is vereist op bestaande databases; versie verhoogd naar `0.18.33`.
 - Bij overleden patiënten en klanten toont de zoeklijst nu ook de bereikte leeftijd tussen haakjes, berekend met de geboortedatum en overlijdensdatum. Als de geboortedatum ontbreekt, wordt geen leeftijd getoond. Versie verhoogd naar `0.18.34`.
+- Bij het toevoegen of aanpassen van een patiënt/klant waarschuwt een bevestigingsmodaal als binnen hetzelfde bedrijf al iemand met dezelfde voor- en familienaam op exact hetzelfde adres bestaat. De registratie blijft toegestaan; bevestigen slaat de tweede persoon op. Dit vereist geen database-update. Versie verhoogd naar `0.18.35`.
 - De herbruikbare GUI-kleurafspraken voor pagina-, witte en gedempte oppervlakken, randen en actieve suggesties zijn vastgelegd in `docs/gui-style-guide.md` en gelinkt vanuit de README.
 - De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
@@ -770,5 +771,6 @@
 ### Volgende stap
 
 - Voer migratie `migrations/20261121_163331_customer_death_date.sql` uit op bestaande databases en controleer het toevoegen/wijzigen van overlijdensdatums, de standaardfiltering en de `+`-zoekoptie in beide patiëntzoekschermen.
+- Controleer de dubbele-registratiewaarschuwing met dezelfde naam/adres, met een afwijkend adres en met twee personen met dezelfde naam op hetzelfde adres.
 - Valideer de volledige functietoetsbalk op een tablet met alleen touchscreen en op een desktop met toetsenbord. Controleer daarbij alle drie de lagen, openen van URLs in dezelfde/nieuwe tab en dat een toegangsbeperkte modulepagina haar eigen controle blijft toepassen.
 

@@ -139,6 +139,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
 $messageKey = '';
 $editingPatientCode = '';
 $openPatientModal = false;
+$duplicatePatientWarning = false;
 $newPatientModalRequested = (string) ($_GET['new_patient'] ?? '') === '1';
 if ($newPatientModalRequested) {
     $openPatientModal = true;
@@ -283,7 +284,37 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         && mb_strlen($addressLabel) <= 160
         && grompil_address_selection_allowed($addressSelection, isset($_POST['manual_address_without_coordinates']));
 
-    if (in_array($action, ['create_patient', 'update_patient'], true) && $valid) {
+    if (in_array($action, ['create_patient', 'update_patient'], true) && $valid
+        && $addressHasContent && (string) ($_POST['confirm_duplicate_patient'] ?? '') !== '1') {
+        $duplicateCheck = db_query_params(
+            'patients.duplicate_name_address_check',
+            "SELECT 1
+             FROM bt_customers existing
+             JOIN dt_customer_locations location
+               ON location.company_id=existing.company_id
+              AND location.customer_code=existing.customer_code
+              AND location.is_active
+             WHERE existing.company_id=$1 AND existing.is_active
+               AND lower(btrim(existing.name_first))=lower(btrim($2))
+               AND lower(btrim(existing.name_last))=lower(btrim($3))
+               AND lower(btrim(COALESCE(location.street, '')))=lower(btrim($4))
+               AND lower(btrim(COALESCE(location.house_number, '')))=lower(btrim($5))
+               AND lower(btrim(COALESCE(location.box_number, '')))=lower(btrim($6))
+               AND lower(btrim(COALESCE(location.postal_code, '')))=lower(btrim($7))
+               AND lower(btrim(COALESCE(location.city, '')))=lower(btrim($8))
+               AND lower(btrim(COALESCE(location.country_code, '')))=lower(btrim($9))
+               AND ($10='' OR existing.customer_code<>$10)
+             LIMIT 1",
+            [$companyId, $firstName, $lastName, $street, $houseNumber, $boxNumber,
+                $postalCode, $city, $countryCode, $action === 'update_patient' ? $patientCode : '']
+        );
+        $duplicatePatientWarning = pg_num_rows($duplicateCheck) > 0;
+    }
+
+    if ($duplicatePatientWarning) {
+        // Keep the submitted patient form available behind the confirmation dialog.
+        $editingPatientCode = $action === 'update_patient' ? $patientCode : '';
+    } elseif (in_array($action, ['create_patient', 'update_patient'], true) && $valid) {
         try {
             db_query_raw('patients.transaction.begin', 'BEGIN');
             if ($action === 'create_patient') {
@@ -708,6 +739,7 @@ $patientModalForm = fn_moduleTemplateRender('dispensing', 'dispensing_patient_fo
     'patient_address_sort_order_value' => (string) ($patientFormValues['address_sort_order'] ?? ''),
     '_patient_location_primary_checked' => ($patientFormValues['location_is_primary'] ?? 'f') === 't' ? 'checked' : '',
     '_patient_add_address_value' => $newAddressMode ? '1' : '0',
+    'confirm_duplicate_patient' => '0',
     'patient_first_name_value' => (string) ($patientFormValues['name_first'] ?? ''),
     'patient_last_name_value' => (string) ($patientFormValues['name_last'] ?? ''),
     'patient_birth_date_value' => (string) ($patientFormValues['date_of_birth'] ?? ''),
@@ -1068,6 +1100,11 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_patient_endpoint' => fn_appBaseHref() . 'dispense.php',
     '_dispense_patient_modal_form_html' => $patientModalForm,
     '_dispense_patient_modal_open' => $openPatientModal ? 'true' : 'false',
+    '_dispense_duplicate_warning_open' => $duplicatePatientWarning ? 'true' : 'false',
+    'patient_duplicate_warning_title' => $customerText('patient_duplicate_warning_title'),
+    'patient_duplicate_warning_text' => $customerText('patient_duplicate_warning_text'),
+    'patient_duplicate_warning_back' => $customerText('patient_duplicate_warning_back'),
+    'patient_duplicate_warning_continue' => $customerText('patient_duplicate_warning_continue'),
     '_dispense_patient_detail_html' => $selectedPatient
         ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_audit.html', [
             '_patient_metadata_html' => $patientMetadata,
