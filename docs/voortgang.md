@@ -753,7 +753,8 @@
 - **OK** op de gecontroleerde afleverbon bewaart een onveranderlijke kopie en alle productregels in `st_dispensing_history` en `st_dispensing_history_lines`. F12 blijft voor het bewust wissen van een open aflevering.
 - `dispensing-history.php` toont per bedrijf alle opgeslagen afleverregels met zoeken, instelbare paginagrootte en eerste/vorige/volgende/laatste paginering.
 - De actie `open_patient_history` toont de historiek van de actieve patiënt in een modaal. Ze wordt standaard aan F6 gekoppeld als die toets nog vrij is.
-- Bestaande databases hebben migratie `migrations/20261121_143422_dispensing_history_access.sql` nodig na de ontvangst- en F12-migraties. Softwareversie verhoogd naar `0.18.23`.
+- Bestaande databases hebben migratie `migrations/20261121_143422_dispensing_history_access.sql` nodig na de ontvangst- en F12-migraties. Softwareversie verhoogd naar `0.18.24`.
+- De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 
 ### Volgende stap

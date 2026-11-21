@@ -284,10 +284,10 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 'dispensing.history_create',
                 'INSERT INTO st_dispensing_history
                     (company_id, dispensing_session_id, created_by_user_code, status_key, receipt_thank_you, receipt_snapshot)
-                 SELECT $1, session.id, $3, session.status_key, $4, $5::jsonb
+                 SELECT $1, session.id, $3::VARCHAR(6), session.status_key, $4, $5::jsonb
                  FROM dt_dispensing_sessions session
                  WHERE session.id = $2::UUID AND session.company_id = $1
-                   AND session.created_by_user_code = $3 AND session.state = \'open\'
+                   AND session.created_by_user_code = $3::VARCHAR(6) AND session.state = \'open\'
                  RETURNING id',
                 [$companyId, $sessionId, $actorCode, (string) $receipt['thank_you'], (string) $snapshotJson]
             );
