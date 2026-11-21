@@ -775,9 +775,11 @@
 - De contactsoorten die als `dd_varia`-vertalingen worden geladen, zijn toegevoegd aan de standaardtaalbestanden in NL, FR, EN en DE. Daardoor toont de keuzelijst leesbare labels als een vertaling nog niet naar de databasebestanden is geëxporteerd. Geen database-update nodig; versie verhoogd naar `0.18.42`.
 - Het potloodicoon voor patiëntbewerking staat nu direct na de contactenteller in de patiëntbalk. Het opent de bestaande bewerkmodal voor de actieve patiënt; dit werkt ook na wisselen tussen patiëntgroepen in een open afleversessie. Geen database-update nodig; versie verhoogd naar `0.18.43`.
 - De geneesmiddelzoekactie start na 120 ms in plaats van 220 ms. De zoekvoorwaarden vergelijken nu rechtstreeks Nederlandse en Franse productnamen en verpakkingen, zodat de bestaande trigram-indexen gebruikt kunnen worden. Versie verhoogd naar `0.18.44`.
+- De algemene afleverhistoriek heeft nu naast het smallere tekstzoekveld een datumbereikfilter met `Vanaf` en `Tot en met`. Beide velden starten op de huidige datum in de Brusselse tijdzone en ondersteunen handmatige invoer plus de kalenderkiezer van de browser. De gekozen periode filtert de resultaten en blijft behouden bij paginering; vertalingen zijn beschikbaar in NL, FR, EN en DE. Geen database-update nodig; versie verhoogd naar `0.18.45`.
 
 ### Volgende stap
 
+- Controleer op de testomgeving de standaardweergave van vandaag, een aangepast datumbereik, een lege datumgrens en paginering binnen het gekozen bereik.
 - Voer `migrations/20261121_173559_remember_me.sql` uit op de testdatabase. Controleer daarna met een gewoon account en een MFA-account: zonder vinkje de bestaande 30-minutentime-out, met vinkje herstel na browsersluiten en een MFA-herhaling na de ingestelde dag, en intrekking bij uitloggen/wachtwoordwijziging.
 - Voer migratie `migrations/20261121_163331_customer_death_date.sql` uit op bestaande databases en controleer het toevoegen/wijzigen van overlijdensdatums, de standaardfiltering en de `+`-zoekoptie in beide patiëntzoekschermen.
 - Controleer de dubbele-registratiewaarschuwing met dezelfde naam/adres, met een afwijkend adres en met twee personen met dezelfde naam op hetzelfde adres.

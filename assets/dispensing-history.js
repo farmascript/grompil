@@ -1,6 +1,8 @@
 (() => {
     const form = document.querySelector('[data-dispensing-history-form]');
     const input = document.querySelector('[data-dispensing-history-search]');
+    const dateFrom = document.querySelector('[data-history-date-from]');
+    const dateTo = document.querySelector('[data-history-date-to]');
     const pageSize = document.querySelector('#history-per-page');
     const body = document.querySelector('[data-history-rows]');
     const count = document.querySelector('[data-history-count]');
@@ -119,12 +121,22 @@
             pagination.replaceChildren();
             return;
         }
+        if (dateFrom?.value && dateTo?.value && dateFrom.value > dateTo.value) {
+            requestId += 1;
+            showTableMessage(count.dataset.dateRangeError || '');
+            setCount(0, 0, 0);
+            pagination.replaceChildren();
+            dateTo.focus();
+            return;
+        }
         const currentRequest = ++requestId;
         showTableMessage('…');
         const params = new URLSearchParams({
             history_api: '1', scope: 'all', q: query,
             page: String(page), per_page: String(pageSize?.value || 25),
         });
+        if (dateFrom?.value) params.set('date_from', dateFrom.value);
+        if (dateTo?.value) params.set('date_to', dateTo.value);
         try {
             const response = await fetch(`${form.action}?${params}`, {
                 credentials: 'same-origin',
@@ -141,6 +153,10 @@
             else url.searchParams.delete('q');
             url.searchParams.set('per_page', String(data.per_page || 25));
             url.searchParams.set('page', String(data.page || 1));
+            if (dateFrom?.value) url.searchParams.set('date_from', dateFrom.value);
+            else url.searchParams.delete('date_from');
+            if (dateTo?.value) url.searchParams.set('date_to', dateTo.value);
+            else url.searchParams.delete('date_to');
             window.history.replaceState(null, '', url);
         } catch {
             if (currentRequest === requestId) {
@@ -160,6 +176,8 @@
         }
         timer = window.setTimeout(() => { void search(1); }, 250);
     });
+    dateFrom?.addEventListener('change', () => { void search(1); });
+    dateTo?.addEventListener('change', () => { void search(1); });
     form.addEventListener('submit', (event) => {
         event.preventDefault();
         window.clearTimeout(timer);

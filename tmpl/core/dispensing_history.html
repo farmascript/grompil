@@ -6,11 +6,18 @@
     <section class="card shadow-sm">
         <div class="card-body">
             <form method="get" action="dispensing-history.php" class="row g-2 align-items-end mb-3" data-dispensing-history-form data-language="@history_language@">
-                <div class="col-12 col-lg">
+                <div class="col-12 col-xl-5">
                     <label class="form-label" for="history-query">@dispensing_history_search_label@</label>
                     <input class="form-control" id="history-query" type="search" name="q" value="@history_query_value@" maxlength="100" placeholder="@dispensing_history_search_placeholder@" data-dispensing-history-search data-minimum-message="@dispensing_history_search_minimum@">
                 </div>
-                <div class="col-6 col-sm-4 col-lg-2">
+                <fieldset class="col-12 col-xl-4 border-0 p-0 m-0">
+                    <legend class="form-label fs-6 mb-2">@dispensing_history_date_filter@</legend>
+                    <div class="row g-2">
+                        <div class="col-6"><label class="form-label small" for="history-date-from">@dispensing_history_date_from@</label><input class="form-control" id="history-date-from" type="date" name="date_from" value="@history_date_from_value@" data-history-date-from></div>
+                        <div class="col-6"><label class="form-label small" for="history-date-to">@dispensing_history_date_to@</label><input class="form-control" id="history-date-to" type="date" name="date_to" value="@history_date_to_value@" data-history-date-to></div>
+                    </div>
+                </fieldset>
+                <div class="col-6 col-sm-4 col-xl-2">
                     <label class="form-label" for="history-per-page">@dispensing_history_per_page@</label>
                     <select class="form-select" id="history-per-page" name="per_page">
                         <option value="10"@history_per_page_10_selected@>10</option>
@@ -19,10 +26,10 @@
                         <option value="100"@history_per_page_100_selected@>100</option>
                     </select>
                 </div>
-                <div class="col-6 col-sm-4 col-lg-auto"><button class="btn btn-primary" type="submit">@dispensing_history_search_button@</button></div>
+                <div class="col-6 col-sm-4 col-xl-auto"><button class="btn btn-primary" type="submit">@dispensing_history_search_button@</button></div>
             </form>
             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
-                <span class="small text-secondary" data-history-count data-count-template="@history_count_template@">@history_count_label@</span>
+                <span class="small text-secondary" data-history-count data-count-template="@history_count_template@" data-date-range-error="@dispensing_history_date_range_error@">@history_count_label@</span>
                 <div data-history-pagination data-first="@dispensing_history_first@" data-previous="@dispensing_history_previous@" data-next="@dispensing_history_next@" data-last="@dispensing_history_last@">@_history_pagination_html@</div>
             </div>
             <div class="table-responsive">

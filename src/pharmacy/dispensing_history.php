@@ -45,8 +45,21 @@ if (($_GET['history_api'] ?? '') === '1') {
     $perPage = is_scalar($rawPerPage) && in_array((int) $rawPerPage, [10, 25, 50, 100], true)
         ? (int) $rawPerPage : 25;
     try {
+        $dateFrom = grompil_dispensing_history_parse_date($_GET['date_from'] ?? null);
+        $dateTo = grompil_dispensing_history_parse_date($_GET['date_to'] ?? null);
+    } catch (InvalidArgumentException) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid_date']);
+        exit;
+    }
+    if ($dateFrom !== null && $dateTo !== null && $dateFrom > $dateTo) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid_date_range']);
+        exit;
+    }
+    try {
         $history = grompil_dispensing_history_fetch(
-            $companyId, $query, $customerCode, $scope === 'anonymous', $page, $perPage, $language
+            $companyId, $query, $customerCode, $scope === 'anonymous', $page, $perPage, $language, $dateFrom, $dateTo
         );
         echo json_encode($history, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     } catch (Throwable $error) {
@@ -66,9 +79,25 @@ $page = is_scalar($rawPage) && filter_var($rawPage, FILTER_VALIDATE_INT) !== fal
 $rawPerPage = $_GET['per_page'] ?? 25;
 $perPage = is_scalar($rawPerPage) && in_array((int) $rawPerPage, [10, 25, 50, 100], true)
     ? (int) $rawPerPage : 25;
+$today = (new DateTimeImmutable('now', new DateTimeZone('Europe/Brussels')))->format('Y-m-d');
+$rawDateFrom = array_key_exists('date_from', $_GET) ? $_GET['date_from'] : $today;
+$rawDateTo = array_key_exists('date_to', $_GET) ? $_GET['date_to'] : $today;
+try {
+    $dateFrom = grompil_dispensing_history_parse_date($rawDateFrom);
+    $dateTo = grompil_dispensing_history_parse_date($rawDateTo);
+} catch (InvalidArgumentException) {
+    $dateFrom = $today;
+    $dateTo = $today;
+}
+if ($dateFrom !== null && $dateTo !== null && $dateFrom > $dateTo) {
+    $dateFrom = $today;
+    $dateTo = $today;
+}
 
 try {
-    $history = grompil_dispensing_history_fetch($companyId, $query, '', false, $page, $perPage, $language);
+    $history = grompil_dispensing_history_fetch(
+        $companyId, $query, '', false, $page, $perPage, $language, $dateFrom, $dateTo
+    );
 } catch (Throwable $error) {
     error_log('Dispensing history page failed: ' . get_class($error));
     grompil_show_error(503, 72805, fn_t('dispensing_history_unavailable'), 'Historiek niet beschikbaar');
@@ -113,6 +142,7 @@ foreach ([
         || ($index >= 2 && $history['page'] >= $history['pages']);
     $href = 'dispensing-history.php?' . http_build_query([
         'q' => $query, 'per_page' => $perPage, 'page' => $targetPage,
+        'date_from' => $dateFrom ?? '', 'date_to' => $dateTo ?? '',
     ]);
     $paginationHtml .= '<li class="page-item' . ($disabled ? ' disabled' : '') . '">'
         . '<a class="page-link" href="' . e($href) . '"' . ($disabled ? ' aria-disabled="true" tabindex="-1"' : '') . '>'
@@ -134,6 +164,10 @@ echo fn_templateRender('dispensing_history.html', [
     'dispensing_history_search_label' => fn_t('dispensing_history_search_label'),
     'dispensing_history_search_placeholder' => fn_t('dispensing_history_search_placeholder'),
     'dispensing_history_search_minimum' => fn_t('dispensing_history_search_minimum'),
+    'dispensing_history_date_filter' => fn_t('dispensing_history_date_filter'),
+    'dispensing_history_date_from' => fn_t('dispensing_history_date_from'),
+    'dispensing_history_date_to' => fn_t('dispensing_history_date_to'),
+    'dispensing_history_date_range_error' => fn_t('dispensing_history_date_range_error'),
     'history_language' => strtolower($language),
     'dispensing_history_per_page' => fn_t('dispensing_history_per_page'),
     'dispensing_history_date' => fn_t('dispensing_history_date'),
@@ -153,6 +187,8 @@ echo fn_templateRender('dispensing_history.html', [
     '_history_rows_html' => $rowsHtml,
     '_history_pagination_html' => $paginationHtml,
     'history_query_value' => e($query),
+    'history_date_from_value' => e($dateFrom ?? ''),
+    'history_date_to_value' => e($dateTo ?? ''),
     'history_per_page_10_selected' => $perPage === 10 ? 'selected' : '',
     'history_per_page_25_selected' => $perPage === 25 ? 'selected' : '',
     'history_per_page_50_selected' => $perPage === 50 ? 'selected' : '',
