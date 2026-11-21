@@ -778,6 +778,7 @@
 - De algemene afleverhistoriek heeft nu naast het smallere tekstzoekveld een datumbereikfilter met `Vanaf` en `Tot en met`. Beide velden starten op de huidige datum in de Brusselse tijdzone en ondersteunen handmatige invoer plus de kalenderkiezer van de browser. De gekozen periode filtert de resultaten en blijft behouden bij paginering; vertalingen zijn beschikbaar in NL, FR, EN en DE. Geen database-update nodig; versie verhoogd naar `0.18.45`.
 - De algemene afleverhistoriek groepeert nu alle regels van dezelfde afleversessie in één kaart. De paginering telt sessies, zodat een sessie niet over meerdere pagina's wordt gesplitst; binnen de kaart blijven ontvanger, status en productregels zichtbaar. Geen database-update nodig; versie verhoogd naar `0.18.46`.
 - De klantcode neemt in de afleverhistoriek geen extra regel meer in. Hij verschijnt als tooltip wanneer de gebruiker over de patiënt-/klantnaam beweegt. Versie verhoogd naar `0.18.47`.
+- In de afleverhistoriek worden overeenkomende tekstfragmenten in de sessiekaart rood gemarkeerd, ook in de andere regels die ter context bij dezelfde sessie worden getoond. Versie verhoogd naar `0.18.48`.
 
 ### Volgende stap
 

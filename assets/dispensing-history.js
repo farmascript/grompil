@@ -31,6 +31,29 @@
         groupsContainer.append(messageElement);
     }
 
+    function appendHighlightedText(target, value, query = input.value.trim()) {
+        const text = String(value ?? '');
+        target.replaceChildren();
+        if (query.length < 3) {
+            target.textContent = text;
+            return;
+        }
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const matcher = new RegExp(escapedQuery, 'gi');
+        let cursor = 0;
+        let match;
+        while ((match = matcher.exec(text)) !== null) {
+            if (match.index > cursor) target.append(document.createTextNode(text.slice(cursor, match.index)));
+            const highlighted = document.createElement('span');
+            highlighted.className = 'text-danger fw-semibold';
+            highlighted.textContent = match[0];
+            target.append(highlighted);
+            cursor = matcher.lastIndex;
+        }
+        if (cursor === 0) target.textContent = text;
+        else if (cursor < text.length) target.append(document.createTextNode(text.slice(cursor)));
+    }
+
     function renderRows(rows) {
         groupsContainer.replaceChildren();
         if (!rows.length) {
@@ -50,7 +73,7 @@
             prefix.className = 'text-secondary';
             prefix.textContent = `${label(name)}: `;
             const content = document.createElement(title ? 'code' : 'span');
-            content.textContent = String(value ?? '—');
+            appendHighlightedText(content, String(value ?? '—'));
             if (title) content.title = title;
             item.append(prefix, content);
             header.append(item);
@@ -63,7 +86,7 @@
             header.className = 'card-header d-flex align-items-center gap-3 flex-wrap';
             const date = document.createElement('strong');
             date.className = 'text-nowrap';
-            date.textContent = String(first.completed_at_display || '');
+            appendHighlightedText(date, String(first.completed_at_display || ''));
             header.append(date);
             addHeaderItem(header, 'session', `${String(first.session_id || '').slice(0, 8)}…`, String(first.session_id || ''));
             addHeaderItem(header, 'prescription', first.prescription_number == null ? '—' : `#${first.prescription_number}`);
@@ -86,29 +109,29 @@
                 const row = tbody.insertRow();
                 const recipient = row.insertCell();
                 const partyName = document.createElement('span');
-                partyName.textContent = String(item.party_name || '');
+                appendHighlightedText(partyName, String(item.party_name || ''));
                 if (item.customer_code) {
                     partyName.title = String(item.customer_code);
                 }
                 recipient.append(partyName);
                 const status = document.createElement('span');
                 status.className = 'badge text-bg-light';
-                status.textContent = String(item.status_code || '');
+                appendHighlightedText(status, String(item.status_code || ''));
                 row.insertCell().append(status);
                 const cnkText = document.createElement('small');
-                cnkText.textContent = String(item.cnk || '');
+                appendHighlightedText(cnkText, String(item.cnk || ''));
                 row.insertCell().append(cnkText);
                 const product = row.insertCell();
                 const name = document.createElement('strong');
-                name.textContent = String((language === 'fr' ? item.product_name_fr : item.product_name_nl)
-                    || item.product_name_nl || item.product_name_fr || '');
+                appendHighlightedText(name, String((language === 'fr' ? item.product_name_fr : item.product_name_nl)
+                    || item.product_name_nl || item.product_name_fr || ''));
                 product.append(name);
                 const packageText = String((language === 'fr' ? item.package_display_fr : item.package_display_nl)
                     || item.package_display_nl || item.package_display_fr || '');
                 if (packageText) {
                     const pack = document.createElement('span');
                     pack.className = 'ms-2 fw-bold';
-                    pack.textContent = packageText;
+                    appendHighlightedText(pack, packageText);
                     product.append(pack);
                 }
                 const quantity = row.insertCell();
@@ -218,4 +241,9 @@
         void search(1);
     });
     pageSize?.addEventListener('change', () => { void search(1); });
+    const initialQuery = input.value.trim();
+    if (initialQuery.length >= 3) {
+        const initialPage = Number(new URLSearchParams(window.location.search).get('page') || 1);
+        void search(Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1);
+    }
 })();
