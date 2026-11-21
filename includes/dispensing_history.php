@@ -2,13 +2,14 @@
 declare(strict_types=1);
 
 /**
- * Fetches completed dispensing lines with company scope, optional customer and text filters.
+ * Fetches completed dispensing lines with company, customer/anonymous scope and text filters.
  * @return array{rows:list<array<string,mixed>>,total:int,page:int,per_page:int,pages:int}
  */
 function grompil_dispensing_history_fetch(
     int $companyId,
     string $query,
     string $customerCode,
+    bool $anonymousOnly,
     int $page,
     int $perPage,
     string $language
@@ -21,7 +22,10 @@ function grompil_dispensing_history_fetch(
 
     $where = <<<'SQL'
         history.company_id = $1
-        AND (NULLIF($2::text, '') IS NULL OR line.customer_code = NULLIF($2::text, ''))
+        AND (
+            (NULLIF($2::text, '') IS NOT NULL AND line.customer_code = NULLIF($2::text, ''))
+            OR (NULLIF($2::text, '') IS NULL AND (NOT $4::boolean OR line.party_type = 'anonymous'))
+        )
         AND (NULLIF($3::text, '') IS NULL OR concat_ws(' ',
             history.dispensing_session_id::text, line.party_name, line.customer_code,
             line.status_key, line.cnk, line.amp_code, line.ampp_code,
@@ -29,7 +33,7 @@ function grompil_dispensing_history_fetch(
             line.package_display_nl, line.package_display_fr
         ) ILIKE '%' || $3::text || '%')
         SQL;
-    $baseParams = [$companyId, $customerCode, $query];
+    $baseParams = [$companyId, $customerCode, $query, $anonymousOnly ? 'true' : 'false'];
 
     $countResult = db_query_params(
         'dispensing.history_list_count',
@@ -49,7 +53,7 @@ function grompil_dispensing_history_fetch(
         'SELECT history.id AS history_id, history.dispensing_session_id::text AS session_id,
                 history.completed_at, line.party_type, line.customer_code, line.party_name,
                 line.status_key,
-                COALESCE(status.short_codes ->> $4, status."key", line.status_key) AS status_code,
+                COALESCE(status.short_codes ->> $5, status."key", line.status_key) AS status_code,
                 line.cnk, line.product_name_nl, line.product_name_fr,
                 line.package_display_nl, line.package_display_fr, line.quantity
          FROM st_dispensing_history_lines line
@@ -58,8 +62,8 @@ function grompil_dispensing_history_fetch(
            ON status.list_key = \'dispensing_statuses\' AND status."key" = line.status_key
          WHERE ' . $where . '
          ORDER BY history.completed_at DESC, history.id DESC, line.sort_order, line.id
-         LIMIT $5::integer OFFSET $6::integer',
-        [$companyId, $customerCode, $query, strtoupper($language), $perPage, $offset]
+         LIMIT $6::integer OFFSET $7::integer',
+        [$companyId, $customerCode, $query, $anonymousOnly ? 'true' : 'false', strtoupper($language), $perPage, $offset]
     );
     $rows = [];
     while ($row = pg_fetch_assoc($result)) {

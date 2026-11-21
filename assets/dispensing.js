@@ -241,7 +241,7 @@
         productCount: page.dataset.textProductCount,
         discardConfirm: page.dataset.textDiscardConfirm,
         historyTitle: page.dataset.textHistoryTitle,
-        historyNoPatient: page.dataset.textHistoryNoPatient,
+        historyAnonymousTitle: historyTitle?.dataset.anonymousTitle,
         historyError: page.dataset.textHistoryError,
         historyEmpty: page.dataset.textHistoryEmpty,
         historyDate: page.dataset.textHistoryDate,
@@ -272,11 +272,11 @@
     let historyRequestId = 0;
     let historySearchTimer = 0;
     async function loadPatientHistory() {
-        if (!historyBody || !historyCustomerCode) return;
+        if (!historyBody) return;
         const requestId = ++historyRequestId;
         historyBody.textContent = '…';
         const params = new URLSearchParams({
-            history_api: '1', customer_code: historyCustomerCode,
+            history_api: '1', scope: historyCustomerCode ? 'customer' : 'anonymous', customer_code: historyCustomerCode,
             q: historySearch?.value || '', page: String(historyCurrentPage),
             per_page: String(historyPageSize?.value || 25),
         });
@@ -328,7 +328,8 @@
         historyCustomerCode = page.dataset.patientCode || '';
         historyCurrentPage = 1;
         if (!historyCustomerCode) {
-            if (historyBody) historyBody.textContent = t.historyNoPatient || '';
+            if (historyTitle) historyTitle.textContent = t.historyAnonymousTitle || t.historyTitle || '';
+            if (historySearch) historySearch.value = '';
             if (historyCount) historyCount.textContent = '0';
             historyPagination?.replaceChildren();
         } else {
@@ -336,7 +337,7 @@
             if (historySearch) historySearch.value = '';
         }
         if (historyModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(historyModalElement).show();
-        if (historyCustomerCode) void loadPatientHistory();
+        void loadPatientHistory();
     }
 
     historySearch?.addEventListener('input', () => {

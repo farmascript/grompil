@@ -833,6 +833,7 @@ $arrSubst = array (
   'dispensing_shortcut_patient_history' => 'Patientenverlauf',
   'dispensing_shortcut_patient_history_help' => 'Abgabeverlauf des ausgewählten Patienten anzeigen.',
   'dispensing_history_title' => 'Abgabeverlauf',
+  'dispensing_history_anonymous_title' => 'Abgaben ohne Patient',
   'dispensing_history_intro' => 'Übersicht der abgeschlossenen Abgaben dieses Unternehmens.',
   'dispensing_history_search_label' => 'Verlauf durchsuchen',
   'dispensing_history_search_placeholder' => 'Sitzung, Kunde, Status, CNK oder Produkt suchen',

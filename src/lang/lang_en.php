@@ -833,6 +833,7 @@ $arrSubst = array (
   'dispensing_shortcut_patient_history' => 'Patient history',
   'dispensing_shortcut_patient_history_help' => 'Show the dispensing history of the selected patient.',
   'dispensing_history_title' => 'Dispensing history',
+  'dispensing_history_anonymous_title' => 'Dispensing without a patient',
   'dispensing_history_intro' => 'Overview of completed dispensing within this company.',
   'dispensing_history_search_label' => 'Search history',
   'dispensing_history_search_placeholder' => 'Search session, customer, status, CNK or product',

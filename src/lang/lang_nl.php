@@ -833,6 +833,7 @@ $arrSubst = array (
   'dispensing_shortcut_patient_history' => 'Patiënthistoriek',
   'dispensing_shortcut_patient_history_help' => 'Toon de afleverhistoriek van de geselecteerde patiënt.',
   'dispensing_history_title' => 'Afleverhistoriek',
+  'dispensing_history_anonymous_title' => 'Naamloze afleveringen',
   'dispensing_history_intro' => 'Overzicht van alle afgewerkte afleveringen binnen dit bedrijf.',
   'dispensing_history_search_label' => 'Zoeken in de historiek',
   'dispensing_history_search_placeholder' => 'Zoek op sessie, klant, status, CNK of product',

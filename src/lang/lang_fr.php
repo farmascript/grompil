@@ -833,6 +833,7 @@ $arrSubst = array (
   'dispensing_shortcut_patient_history' => 'Historique du patient',
   'dispensing_shortcut_patient_history_help' => 'Afficher l’historique de délivrance du patient sélectionné.',
   'dispensing_history_title' => 'Historique des délivrances',
+  'dispensing_history_anonymous_title' => 'Délivrances sans patient',
   'dispensing_history_intro' => 'Vue d’ensemble des délivrances terminées dans cette entreprise.',
   'dispensing_history_search_label' => 'Rechercher dans l’historique',
   'dispensing_history_search_placeholder' => 'Rechercher session, client, statut, CNK ou produit',

@@ -28,6 +28,13 @@ if (($_GET['history_api'] ?? '') === '1') {
         echo json_encode(['error' => 'invalid_customer']);
         exit;
     }
+    $rawScope = $_GET['scope'] ?? '';
+    $scope = is_scalar($rawScope) ? (string) $rawScope : '';
+    if (($customerCode !== '' && $scope !== 'customer') || ($customerCode === '' && $scope !== 'anonymous')) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid_scope']);
+        exit;
+    }
     $rawQuery = $_GET['q'] ?? '';
     $query = is_scalar($rawQuery) ? trim((string) $rawQuery) : '';
     $rawPage = $_GET['page'] ?? 1;
@@ -37,7 +44,9 @@ if (($_GET['history_api'] ?? '') === '1') {
     $perPage = is_scalar($rawPerPage) && in_array((int) $rawPerPage, [10, 25, 50, 100], true)
         ? (int) $rawPerPage : 25;
     try {
-        $history = grompil_dispensing_history_fetch($companyId, $query, $customerCode, $page, $perPage, $language);
+        $history = grompil_dispensing_history_fetch(
+            $companyId, $query, $customerCode, $scope === 'anonymous', $page, $perPage, $language
+        );
         echo json_encode($history, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     } catch (Throwable $error) {
         error_log('Dispensing history lookup failed: ' . get_class($error));
@@ -58,7 +67,7 @@ $perPage = is_scalar($rawPerPage) && in_array((int) $rawPerPage, [10, 25, 50, 10
     ? (int) $rawPerPage : 25;
 
 try {
-    $history = grompil_dispensing_history_fetch($companyId, $query, '', $page, $perPage, $language);
+    $history = grompil_dispensing_history_fetch($companyId, $query, '', false, $page, $perPage, $language);
 } catch (Throwable $error) {
     error_log('Dispensing history page failed: ' . get_class($error));
     grompil_show_error(503, 72805, fn_t('dispensing_history_unavailable'), 'Historiek niet beschikbaar');

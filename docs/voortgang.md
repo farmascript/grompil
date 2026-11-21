@@ -752,8 +752,8 @@
 - F12 kan nu de huidige afleveringssessie wissen: de gebruiker bevestigt eerst, waarna de open sessie en de gekoppelde regels uit `dt_dispensing_sessions`, `dt_dispensing_parties` en `dt_dispensing_lines` worden verwijderd. Migratie `migrations/20261120_142834_dispensing_session_discard.sql` staat klaar; ze wijst F12 toe als die nog niet was ingesteld.
 - **OK** op de gecontroleerde afleverbon bewaart een onveranderlijke kopie en alle productregels in `st_dispensing_history` en `st_dispensing_history_lines`. F12 blijft voor het bewust wissen van een open aflevering.
 - `dispensing-history.php` toont per bedrijf alle opgeslagen afleverregels met zoeken, instelbare paginagrootte en eerste/vorige/volgende/laatste paginering.
-- De actie `open_patient_history` toont de historiek van de actieve patiënt in een modaal. Ze wordt standaard aan F6 gekoppeld als die toets nog vrij is.
-- Bestaande databases hebben migratie `migrations/20261121_143422_dispensing_history_access.sql` nodig na de ontvangst- en F12-migraties. Softwareversie verhoogd naar `0.18.24`.
+- De actie `open_patient_history` toont de historiek van de actieve patiënt in een modaal. Zonder actieve patiënt toont F6 de naamloze afleveringen. Ze wordt standaard aan F6 gekoppeld als die toets nog vrij is.
+- Bestaande databases hebben migratie `migrations/20261121_143422_dispensing_history_access.sql` nodig na de ontvangst- en F12-migraties. Softwareversie verhoogd naar `0.18.25`.
 - De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 
