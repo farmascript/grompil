@@ -27,7 +27,8 @@ outer border, and `#dfeae5` with `#183b32` text for hover and keyboard selection
 Do not use the hover color as the resting background.
 
 The current shared implementation is in `assets/app.css` (`.address-suggestions`)
-and the dispensing modal rule is in `assets/dispensing.css` (`#patientModal .modal-body`).
+and the dispensing modal rules are in `assets/dispensing.css` (`#patientModal .modal-body`
+and `#contact-manager-modal .modal-body`).
 Keep future screens aligned with these colors and roles.
 
 Mark deceased patient/customer suggestions with the muted rose surface and text

@@ -32,3 +32,6 @@
 #patientModal .modal-body{background-color:#f1f5f3}
 
 .dispensing-patient-metadata{display:flex;align-items:center;gap:.35rem;font-size:.82rem;color:#647780;flex-wrap:wrap}.dispensing-patient-metadata .contact-manager-trigger{padding:.15rem .45rem}
+#contact-manager-modal .modal-body{background-color:#f1f5f3}
+#contact-manager-modal .contact-manager-row{background-color:#fff}
+#contact-manager-modal .contact-manager-row .form-control,#contact-manager-modal .contact-manager-row .form-select{background-color:#fff}
