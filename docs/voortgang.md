@@ -760,6 +760,7 @@
 - Lege ontvangersgroepen verdwijnen uit de productlijst. De keuze voor naamloze/vrije verkoop verschijnt alleen wanneer vrije verkoop als status is geselecteerd of wanneer daar al regels staan. Dit voorkomt dat vrije verkoop tussen voorschriftregels overbodig in beeld staat; versie verhoogd naar `0.18.29`.
 - De afleverhistoriek filtert automatisch tijdens het typen vanaf drie tekens, zowel op de algemene historiekpagina als in de patiëntmodal. De zoekknop blijft werken; API-paginering en paginagrootte blijven behouden. Versie verhoogd naar `0.18.30`.
 - Naast geneesmiddel zoeken staat de UH-schakelaar (uit de handel). Standaard worden producten met een ingetrokken AMP- of AMPP-status weggefilterd; inschakelen toont ze voor de huidige afleversessie. Na afsluiten of wissen wordt de schakelaar teruggezet. Versie verhoogd naar `0.18.31`.
+- De achtergrond van het invoergedeelte in de patiëntmodal gebruikt nu dezelfde lichte groen-grijze kleur als de adres-suggesties (`#f1f5f3`), zodat witte invoervelden beter afsteken. Versie verhoogd naar `0.18.32`.
 - De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 
