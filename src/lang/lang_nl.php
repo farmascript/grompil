@@ -837,6 +837,7 @@ $arrSubst = array (
   'dispensing_history_intro' => 'Overzicht van alle afgewerkte afleveringen binnen dit bedrijf.',
   'dispensing_history_search_label' => 'Zoeken in de historiek',
   'dispensing_history_search_placeholder' => 'Zoek op sessie, klant, status, CNK of product',
+  'dispensing_history_search_minimum' => 'Typ minstens 3 tekens om te zoeken.',
   'dispensing_history_per_page' => 'Regels per pagina',
   'dispensing_history_date' => 'Datum',
   'dispensing_history_session' => 'Sessie',

@@ -837,6 +837,7 @@ $arrSubst = array (
   'dispensing_history_intro' => 'Vue d’ensemble des délivrances terminées dans cette entreprise.',
   'dispensing_history_search_label' => 'Rechercher dans l’historique',
   'dispensing_history_search_placeholder' => 'Rechercher session, client, statut, CNK ou produit',
+  'dispensing_history_search_minimum' => 'Saisissez au moins 3 caractères pour rechercher.',
   'dispensing_history_per_page' => 'Lignes par page',
   'dispensing_history_date' => 'Date',
   'dispensing_history_session' => 'Session',

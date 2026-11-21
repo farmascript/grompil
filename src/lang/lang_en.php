@@ -837,6 +837,7 @@ $arrSubst = array (
   'dispensing_history_intro' => 'Overview of completed dispensing within this company.',
   'dispensing_history_search_label' => 'Search history',
   'dispensing_history_search_placeholder' => 'Search session, customer, status, CNK or product',
+  'dispensing_history_search_minimum' => 'Type at least 3 characters to search.',
   'dispensing_history_per_page' => 'Lines per page',
   'dispensing_history_date' => 'Date',
   'dispensing_history_session' => 'Session',

@@ -30,7 +30,8 @@ if (($_GET['history_api'] ?? '') === '1') {
     }
     $rawScope = $_GET['scope'] ?? '';
     $scope = is_scalar($rawScope) ? (string) $rawScope : '';
-    if (($customerCode !== '' && $scope !== 'customer') || ($customerCode === '' && $scope !== 'anonymous')) {
+    if (($customerCode !== '' && $scope !== 'customer')
+        || ($customerCode === '' && !in_array($scope, ['anonymous', 'all'], true))) {
         http_response_code(400);
         echo json_encode(['error' => 'invalid_scope']);
         exit;
@@ -132,6 +133,8 @@ echo fn_templateRender('dispensing_history.html', [
     'dispensing_history_intro' => fn_t('dispensing_history_intro'),
     'dispensing_history_search_label' => fn_t('dispensing_history_search_label'),
     'dispensing_history_search_placeholder' => fn_t('dispensing_history_search_placeholder'),
+    'dispensing_history_search_minimum' => fn_t('dispensing_history_search_minimum'),
+    'history_language' => strtolower($language),
     'dispensing_history_per_page' => fn_t('dispensing_history_per_page'),
     'dispensing_history_date' => fn_t('dispensing_history_date'),
     'dispensing_history_session' => fn_t('dispensing_history_session'),
@@ -143,6 +146,10 @@ echo fn_templateRender('dispensing_history.html', [
     'dispensing_history_package' => fn_t('dispensing_history_package'),
     'dispensing_history_quantity' => fn_t('dispensing_history_quantity'),
     'dispensing_history_search_button' => fn_t('dispensing_history_search_button'),
+    'dispensing_history_first' => fn_t('dispensing_history_first'),
+    'dispensing_history_previous' => fn_t('dispensing_history_previous'),
+    'dispensing_history_next' => fn_t('dispensing_history_next'),
+    'dispensing_history_last' => fn_t('dispensing_history_last'),
     '_history_rows_html' => $rowsHtml,
     '_history_pagination_html' => $paginationHtml,
     'history_query_value' => e($query),
@@ -151,5 +158,7 @@ echo fn_templateRender('dispensing_history.html', [
     'history_per_page_50_selected' => $perPage === 50 ? 'selected' : '',
     'history_per_page_100_selected' => $perPage === 100 ? 'selected' : '',
     'history_count_label' => e($countLabel),
+    'history_count_template' => e(fn_t('dispensing_history_count')),
+    'history_script_url' => e(fn_appBaseHref() . 'assets/dispensing-history.js?v=' . (string) @filemtime(GROMPIL_ROOT . '/assets/dispensing-history.js')),
 ]);
 page_end();

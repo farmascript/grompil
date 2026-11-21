@@ -368,7 +368,18 @@
 
     historySearch?.addEventListener('input', () => {
         window.clearTimeout(historySearchTimer);
-        historySearchTimer = window.setTimeout(() => { historyCurrentPage = 1; void loadPatientHistory(); }, 180);
+        historySearchTimer = window.setTimeout(() => {
+            const query = historySearch.value.trim();
+            historyCurrentPage = 1;
+            if (query.length > 0 && query.length < 3) {
+                historyRequestId += 1;
+                if (historyBody) historyBody.textContent = historySearch.dataset.minimumMessage || '';
+                if (historyCount) historyCount.textContent = '0';
+                historyPagination?.replaceChildren();
+                return;
+            }
+            void loadPatientHistory();
+        }, 250);
     });
     historyPageSize?.addEventListener('change', () => { historyCurrentPage = 1; void loadPatientHistory(); });
 

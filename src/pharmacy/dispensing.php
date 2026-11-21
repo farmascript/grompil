@@ -924,6 +924,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_history_next' => fn_t('dispensing_history_next'),
     'dispense_history_last' => fn_t('dispensing_history_last'),
     'dispense_history_search_label' => fn_t('dispensing_history_search_label'),
+    'dispense_history_search_minimum' => fn_t('dispensing_history_search_minimum'),
     'dispense_history_per_page' => fn_t('dispensing_history_per_page'),
     'dispense_history_count' => fn_t('dispensing_history_count_short'),
     'dispense_history_customer_name' => $selectedPatient ? grompil_dispensing_display_name(

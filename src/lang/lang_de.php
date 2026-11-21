@@ -837,6 +837,7 @@ $arrSubst = array (
   'dispensing_history_intro' => 'Übersicht der abgeschlossenen Abgaben dieses Unternehmens.',
   'dispensing_history_search_label' => 'Verlauf durchsuchen',
   'dispensing_history_search_placeholder' => 'Sitzung, Kunde, Status, CNK oder Produkt suchen',
+  'dispensing_history_search_minimum' => 'Geben Sie mindestens 3 Zeichen für die Suche ein.',
   'dispensing_history_per_page' => 'Zeilen pro Seite',
   'dispensing_history_date' => 'Datum',
   'dispensing_history_session' => 'Sitzung',
