@@ -1096,7 +1096,7 @@
                 suggestions.append(message);
                 suggestions.classList.remove('d-none');
             }
-        }, 220);
+        }, 120);
     });
     withdrawnToggle?.addEventListener('change', () => {
         try {

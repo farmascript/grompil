@@ -106,9 +106,13 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
             return [];
         }
 
+        // Keep these as direct column expressions so the matching trigram
+        // indexes in schema_sam_public_products_search.sql remain usable.
         $nameFields = [
-            "COALESCE(NULLIF(prescription_name_nl, ''), prescription_name_fr)",
-            "COALESCE(NULLIF(pack_display_nl, ''), pack_display_fr)",
+            'prescription_name_nl',
+            'prescription_name_fr',
+            'pack_display_nl',
+            'pack_display_fr',
         ];
         // A compact alphabetic query can be an abbreviation made by taking
         // the start of successive words (for example "dafcod" for
@@ -161,19 +165,19 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
                     // Match whole numeric components so 50 does not match 150.
                     $params[] = '(^|[^0-9])' . $token . '([^0-9]|$)';
                     $fieldConditions = array_map(
-                        static fn (string $field): string => "COALESCE({$field}, '') ~* {$placeholder}",
+                        static fn (string $field): string => "{$field} ~* {$placeholder}",
                         $nameFields
                     );
                 } elseif ($term['word_prefix']) {
                     $params[] = '(^|[^[:alnum:]])' . $token;
                     $fieldConditions = array_map(
-                        static fn (string $field): string => "lower(COALESCE({$field}, '')) ~* {$placeholder}",
+                        static fn (string $field): string => "lower({$field}) ~* {$placeholder}",
                         $nameFields
                     );
                 } else {
                     $params[] = '%' . $token . '%';
                     $fieldConditions = array_map(
-                        static fn (string $field): string => "lower(COALESCE({$field}, '')) LIKE {$placeholder}",
+                        static fn (string $field): string => "lower({$field}) LIKE {$placeholder}",
                         $nameFields
                     );
                     if ($compactQuery && preg_match('/^\p{L}+$/u', $token) === 1) {
@@ -207,19 +211,21 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
             // Prefix/substring matching remains available without the optional extension.
             $trigramsAvailable = false;
         }
-        $displayName = $nameFields[0];
-        $displayPackage = $nameFields[1];
+        $similarityExpressions = array_map(
+            static fn (string $field): string => "COALESCE(similarity(lower({$field}), lower($1)), 0)",
+            $nameFields
+        );
         $similaritySelect = $trigramsAvailable
-            ? "GREATEST(
-                    COALESCE(similarity(lower({$displayName}), lower($1)), 0),
-                    COALESCE(similarity(lower({$displayPackage}), lower($1)), 0)
-                )::real"
-            : "CASE WHEN lower(COALESCE({$displayName}, '')) LIKE lower($1) || '%'
-                       OR lower(COALESCE({$displayPackage}, '')) LIKE lower($1) || '%'
-                   THEN 1.0 ELSE 0.0 END::real";
+            ? 'GREATEST(' . implode(', ', $similarityExpressions) . ')::real'
+            : 'CASE WHEN ' . implode(' OR ', array_map(
+                static fn (string $field): string => "lower({$field}) LIKE lower($1) || '%'",
+                $nameFields
+            )) . ' THEN 1.0 ELSE 0.0 END::real';
         $fuzzyConditions = $trigramsAvailable
-            ? "OR lower({$displayName}) % lower($1)
-                    OR lower({$displayPackage}) % lower($1)"
+            ? 'OR ' . implode(' OR ', array_map(
+                static fn (string $field): string => "lower({$field}) % lower($1)",
+                $nameFields
+            ))
             : '';
         if (count($tokens) > 1) {
             $fuzzyConditions = '';

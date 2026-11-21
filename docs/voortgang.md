@@ -774,6 +774,7 @@
 - In de contactgegevensmodal blijft het formulier voor een nieuw contact verborgen tot de gebruiker op ‘Nieuw contactgegeven toevoegen’ klikt. Bij een foutmelding blijft het formulier open; na opslaan of verwijderen keert het terug naar de ingeklapte weergave. Versie verhoogd naar `0.18.41`.
 - De contactsoorten die als `dd_varia`-vertalingen worden geladen, zijn toegevoegd aan de standaardtaalbestanden in NL, FR, EN en DE. Daardoor toont de keuzelijst leesbare labels als een vertaling nog niet naar de databasebestanden is geëxporteerd. Geen database-update nodig; versie verhoogd naar `0.18.42`.
 - Het potloodicoon voor patiëntbewerking staat nu direct na de contactenteller in de patiëntbalk. Het opent de bestaande bewerkmodal voor de actieve patiënt; dit werkt ook na wisselen tussen patiëntgroepen in een open afleversessie. Geen database-update nodig; versie verhoogd naar `0.18.43`.
+- De geneesmiddelzoekactie start na 120 ms in plaats van 220 ms. De zoekvoorwaarden vergelijken nu rechtstreeks Nederlandse en Franse productnamen en verpakkingen, zodat de bestaande trigram-indexen gebruikt kunnen worden. Versie verhoogd naar `0.18.44`.
 
 ### Volgende stap
 
