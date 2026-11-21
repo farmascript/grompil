@@ -237,6 +237,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $lastName = trim((string) ($_POST['name_last'] ?? ''));
     $birthDate = trim((string) ($_POST['date_of_birth'] ?? ''));
     $birthDateValue = $birthDate === '' ? null : $birthDate;
+    $deathDate = trim((string) ($_POST['date_of_death'] ?? ''));
+    $deathDateValue = $deathDate === '' ? null : $deathDate;
     $street = trim((string) ($_POST['street'] ?? ''));
     $houseNumber = trim((string) ($_POST['house_number'] ?? ''));
     $boxNumber = trim((string) ($_POST['box_number'] ?? ''));
@@ -263,9 +265,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     ];
     $addressHasContent = implode('', [$street, $houseNumber, $boxNumber, $postalCode, $city]) !== '';
     $parsedBirthDate = $birthDate === '' ? false : DateTimeImmutable::createFromFormat('!Y-m-d', $birthDate);
-    $dateValid = $birthDate === '' || ($parsedBirthDate !== false
+    $birthDateValid = $birthDate === '' || ($parsedBirthDate !== false
         && $parsedBirthDate->format('Y-m-d') === $birthDate
         && $birthDate <= date('Y-m-d'));
+    $parsedDeathDate = $deathDate === '' ? false : DateTimeImmutable::createFromFormat('!Y-m-d', $deathDate);
+    $deathDateValid = $deathDate === '' || ($parsedDeathDate !== false
+        && $parsedDeathDate->format('Y-m-d') === $deathDate
+        && $deathDate <= date('Y-m-d'));
+    $dateValid = $birthDateValid && $deathDateValid
+        && ($deathDate === '' || $birthDate === '' || $deathDate >= $birthDate);
     $valid = $firstName !== '' && mb_strlen($firstName) <= 120
         && $lastName !== '' && mb_strlen($lastName) <= 120
         && $dateValid && preg_match('/^[A-Z]{2}$/D', $countryCode) === 1
@@ -284,10 +292,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     $candidate = grompil_generate_user_code();
                     $insert = db_query_params(
                         'patients.create',
-                        'INSERT INTO bt_customers (company_id, customer_code, name_first, name_last, date_of_birth, created_by_user_code, updated_by_user_code)
-                         VALUES ($1, $2, $3, $4, $5::date, $6, $6)
+                        'INSERT INTO bt_customers (company_id, customer_code, name_first, name_last, date_of_birth, date_of_death, created_by_user_code, updated_by_user_code)
+                         VALUES ($1, $2, $3, $4, $5::date, $6::date, $7, $7)
                          ON CONFLICT (customer_code) DO NOTHING RETURNING customer_code',
-                        [$companyId, $candidate, $firstName, $lastName, $birthDateValue, $actorCode]
+                        [$companyId, $candidate, $firstName, $lastName, $birthDateValue, $deathDateValue, $actorCode]
                     );
                     $inserted = pg_fetch_assoc($insert);
                     if ($inserted) {
@@ -303,9 +311,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $update = db_query_params(
                     'patients.update',
                     'UPDATE bt_customers SET name_first=$1, name_last=$2, date_of_birth=$3::date,
-                        updated_by_user_code=$4, updated_at=now()
-                     WHERE company_id=$5 AND customer_code=$6 AND is_active RETURNING customer_code',
-                    [$firstName, $lastName, $birthDateValue, $actorCode, $companyId, $patientCode]
+                        date_of_death=$4::date, updated_by_user_code=$5, updated_at=now()
+                     WHERE company_id=$6 AND customer_code=$7 AND is_active RETURNING customer_code',
+                    [$firstName, $lastName, $birthDateValue, $deathDateValue, $actorCode, $companyId, $patientCode]
                 );
                 if (pg_num_rows($update) !== 1) {
                     throw new RuntimeException('Patient record was not found in the active company.');
@@ -411,6 +419,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
 $query = trim((string) ($_GET['q'] ?? ''));
 $regexSearch = (string) ($_GET['regex'] ?? '') === '1';
+$includeDeceased = (string) ($_GET['include_deceased'] ?? '') === '1';
 $patientSuggestionRequest = (string) ($_GET['patient_suggest'] ?? '') === '1';
 $selectedPatientCode = strtoupper(trim((string) ($_GET['patient'] ?? '')));
 if ($selectedPatientCode === '' && $editingPatientCode !== '') {
@@ -422,7 +431,7 @@ try {
     if ($selectedPatientCode !== '' && preg_match('/^[A-Z0-9]{6}$/D', $selectedPatientCode) === 1) {
         $result = db_query_params(
             'patients.load_selected',
-            'SELECT p.customer_code, p.name_first, p.name_last, p.date_of_birth,
+            'SELECT p.customer_code, p.name_first, p.name_last, p.date_of_birth, p.date_of_death,
                     l.id AS location_id, l.address_type_key, l.label AS address_label, l.sort_order AS address_sort_order,
                     l.is_primary AS location_is_primary, l.street, l.house_number, l.box_number, l.postal_code,
                     l.city, l.country_code, l.address_reference_id, l.lambert72_x, l.lambert72_y,
@@ -456,9 +465,12 @@ try {
         $searchParams = $regexSearch
             ? [$companyId, $searchPattern]
             : [$companyId, $query, $searchPattern];
+        $includeDeceasedParameter = count($searchParams) + 1;
+        $searchParams[] = $includeDeceased ? 'true' : 'false';
+        $includeDeceasedPredicate = '(p.date_of_death IS NULL OR $' . $includeDeceasedParameter . '::boolean)';
         $result = db_query_params(
             'patients.search',
-            "SELECT p.customer_code, p.name_first, p.name_last, p.date_of_birth,
+            "SELECT p.customer_code, p.name_first, p.name_last, p.date_of_birth, p.date_of_death,
                     l.street, l.house_number, l.postal_code, l.city
              FROM bt_customers p
              LEFT JOIN LATERAL (
@@ -466,7 +478,7 @@ try {
                 WHERE company_id=p.company_id AND customer_code=p.customer_code AND is_active
                 ORDER BY is_primary DESC, sort_order, id LIMIT 1
              ) l ON TRUE
-             WHERE p.company_id=$1 AND p.is_active AND $searchPredicate
+             WHERE p.company_id=$1 AND p.is_active AND $includeDeceasedPredicate AND $searchPredicate
              ORDER BY lower(p.name_last), lower(p.name_first), p.customer_code LIMIT 20",
             $searchParams
         );
@@ -501,6 +513,10 @@ if ($patientSuggestionRequest) {
                     (string) $patient['name_first'], (string) $patient['name_last']
                 ),
                 'patient_address' => $address !== '' ? $address : $customerText('patient_no_address'),
+                'is_deceased' => !empty($patient['date_of_death']),
+                'deceased_label' => !empty($patient['date_of_death']) ? $customerText('patient_deceased') : '',
+                'death_date_display' => !empty($patient['date_of_death'])
+                    ? fn_formatDateDisplay((string) $patient['date_of_death']) : '',
             ];
         }
         echo json_encode(['results' => $suggestions], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
@@ -514,6 +530,7 @@ if ($editingPatientCode !== '' && $selectedPatient === null) {
         'name_first' => (string) ($_POST['name_first'] ?? ''),
         'name_last' => (string) ($_POST['name_last'] ?? ''),
         'date_of_birth' => (string) ($_POST['date_of_birth'] ?? ''),
+        'date_of_death' => (string) ($_POST['date_of_death'] ?? ''),
         'location_id' => (string) ($_POST['location_id'] ?? ''),
         'street' => (string) ($_POST['street'] ?? ''),
         'house_number' => (string) ($_POST['house_number'] ?? ''),
@@ -555,6 +572,15 @@ foreach ($patientMatches as $patient) {
             (string) $patient['name_first'], (string) $patient['name_last']
         ),
         'patient_address' => $address !== '' ? $address : $customerText('patient_no_address'),
+        'patient_href' => e('dispense.php?' . http_build_query([
+            'patient' => (string) $patient['customer_code'],
+            'dispense_status' => $dispenseStatusKey,
+            'include_deceased' => $includeDeceased ? '1' : null,
+        ])),
+        '_patient_deceased_class' => !empty($patient['date_of_death']) ? 'customer-deceased-option' : '',
+        '_patient_deceased_html' => !empty($patient['date_of_death'])
+            ? '<span class="d-block small customer-deceased-date">' . e($customerText('patient_deceased') . ' · '
+                . fn_formatDateDisplay((string) $patient['date_of_death'])) . '</span>' : '',
     ]);
 }
 
@@ -589,6 +615,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         'name_first' => (string) ($_POST['name_first'] ?? ''),
         'name_last' => (string) ($_POST['name_last'] ?? ''),
         'date_of_birth' => (string) ($_POST['date_of_birth'] ?? ''),
+        'date_of_death' => (string) ($_POST['date_of_death'] ?? ''),
         'location_id' => (string) ($_POST['location_id'] ?? ''),
         'address_type_key' => (string) ($_POST['address_type_key'] ?? 'residential'),
         'address_label' => (string) ($_POST['address_label'] ?? ''),
@@ -679,9 +706,11 @@ $patientModalForm = fn_moduleTemplateRender('dispensing', 'dispensing_patient_fo
     'patient_first_name_value' => (string) ($patientFormValues['name_first'] ?? ''),
     'patient_last_name_value' => (string) ($patientFormValues['name_last'] ?? ''),
     'patient_birth_date_value' => (string) ($patientFormValues['date_of_birth'] ?? ''),
+    'patient_death_date_value' => (string) ($patientFormValues['date_of_death'] ?? ''),
     'patient_first_name' => $customerText('patient_first_name'),
     'patient_last_name' => $customerText('patient_last_name'),
     'patient_birth_date' => $customerText('patient_birth_date'),
+    'patient_death_date' => $customerText('patient_death_date'),
     'patient_country_value' => (string) ($patientFormValues['country_code'] ?? 'BE'),
     '_patient_address_fields_html' => fn_templateRender('address_fields.html', [
         'address_prefix' => 'patient-address',
@@ -728,6 +757,10 @@ if ($selectedPatient) {
     $patientIdentityTooltipText = e($patientCodeLabel . ': ' . (string) $selectedPatient['customer_code']);
     if ($dob !== '') {
         $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_birth_date') . ': ' . fn_formatDateDisplay($dob));
+    }
+    $dod = trim((string) ($selectedPatient['date_of_death'] ?? ''));
+    if ($dod !== '') {
+        $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_death_date') . ': ' . fn_formatDateDisplay($dod));
     }
     if (isset($selectedPatient['created_at'])) {
         $patientName = grompil_dispensing_display_name(
@@ -818,6 +851,8 @@ $patientPanelHtml = fn_moduleTemplateRender('dispensing', 'dispensing_patient_pa
         'dispense_query_value' => e($query),
         'dispense_search' => $customerText('patient_search_button'),
         'dispense_patient_search_regex' => $customerText('patient_search_regex'),
+        'patient_show_deceased' => $customerText('patient_show_deceased'),
+        '_dispense_deceased_checked' => $includeDeceased ? 'checked' : '',
         '_dispense_regex_checked' => $regexSearch ? 'checked' : '',
         '_dispense_patient_suggestion_class' => $patientSuggestionClass,
         '_dispense_patient_results_html' => $patientResultRows,
@@ -1022,6 +1057,8 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     '_dispense_patient_results_html' => $patientResultRows,
     '_dispense_patient_suggestion_class' => $patientSuggestionClass,
     '_dispense_regex_checked' => $regexSearch ? 'checked' : '',
+    '_dispense_deceased_checked' => $includeDeceased ? 'checked' : '',
+    'patient_show_deceased' => $customerText('patient_show_deceased'),
     'dispense_patient_endpoint' => fn_appBaseHref() . 'dispense.php',
     '_dispense_patient_modal_form_html' => $patientModalForm,
     '_dispense_patient_modal_open' => $openPatientModal ? 'true' : 'false',

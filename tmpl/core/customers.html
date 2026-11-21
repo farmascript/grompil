@@ -8,7 +8,10 @@
     <div class="card-body">
         <form id="customer-search-form" method="get" action="customers.php" data-customer-picker data-search-empty="@customers_search_empty@" data-search-unavailable="@customers_search_unavailable@">
             <label class="form-label" for="customer-search">@customers_search_label@</label>
-            <input class="form-control" id="customer-search" type="search" autocomplete="off" aria-autocomplete="list" aria-controls="customer-search-results" aria-expanded="false" placeholder="@customers_search_placeholder@">
+            <div class="d-flex align-items-center gap-2">
+                <input class="form-control" id="customer-search" type="search" autocomplete="off" aria-autocomplete="list" aria-controls="customer-search-results" aria-expanded="false" placeholder="@customers_search_placeholder@">
+                <label class="form-check customer-deceased-check mb-0" title="@patient_show_deceased@"><input class="form-check-input" type="checkbox" id="customer-include-deceased" name="include_deceased" value="1" aria-label="@patient_show_deceased@" @_customers_deceased_checked@ data-customer-include-deceased><span class="form-check-label">+</span></label>
+            </div>
             <input type="hidden" id="customer-code" name="customer_code" value="">
             <div class="list-group mt-1" id="customer-search-results" role="listbox" hidden></div>
             <div class="form-text" id="customer-search-status" aria-live="polite">@customers_search_help@</div>
@@ -16,6 +19,6 @@
     </div>
 </section>
 <div data-customer-details>@_customer_details_html@</div>
-<script src="@_asset_base_href@assets/customers-picker.js?v=4"></script>
+<script src="@_asset_base_href@assets/customers-picker.js?v=5"></script>
 
 <!-- 680241 e-->

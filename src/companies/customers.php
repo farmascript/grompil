@@ -41,19 +41,21 @@ if (($_GET['ajax'] ?? '') === 'search') {
     $escapedQuery = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $normalizedQuery);
     $contains = '%' . $escapedQuery . '%';
     $exactCustomerCode = preg_match('/^[A-Z0-9]{6}$/i', $query) === 1 ? strtoupper($query) : '';
+    $includeDeceased = (string) ($_GET['include_deceased'] ?? '') === '1';
     try {
         $result = db_query_params(
             'customers.search',
-            "SELECT customer_code, name_first, name_last, date_of_birth, is_active
+            "SELECT customer_code, name_first, name_last, date_of_birth, date_of_death, is_active
              FROM bt_customers
              WHERE company_id = $1
+               AND (date_of_death IS NULL OR $4::boolean)
                AND (lower(name_first) LIKE $2 OR lower(name_last) LIKE $2
                     OR lower(name_first || ' ' || name_last) LIKE $2
                     OR lower(name_last || ' ' || name_first) LIKE $2
                     OR customer_code = NULLIF($3, ''))
              ORDER BY lower(name_last), lower(name_first), customer_code
              LIMIT 20",
-            [$companyId, $contains, $exactCustomerCode]
+            [$companyId, $contains, $exactCustomerCode, $includeDeceased ? 'true' : 'false']
         );
     } catch (GrompilDatabaseQueryException) {
         $result = false;
@@ -69,6 +71,10 @@ if (($_GET['ajax'] ?? '') === 'search') {
             'customer_code' => (string) $row['customer_code'],
             'name' => trim((string) $row['name_first'] . ' ' . (string) $row['name_last']),
             'date_of_birth' => (string) ($row['date_of_birth'] ?? ''),
+            'is_deceased' => !empty($row['date_of_death']),
+            'deceased_label' => !empty($row['date_of_death']) ? fn_t('patient_deceased') : '',
+            'death_date_display' => !empty($row['date_of_death'])
+                ? fn_formatDateDisplay((string) $row['date_of_death']) : '',
             'is_active' => $row['is_active'] === 't',
         ];
     }
@@ -84,7 +90,7 @@ if ($customerCodeValid) {
     try {
         $result = db_query_params(
             'customers.load_details',
-            "SELECT customer_code, name_first, name_last, date_of_birth, is_active, created_at, updated_at
+            "SELECT customer_code, name_first, name_last, date_of_birth, date_of_death, is_active, created_at, updated_at
              FROM bt_customers
              WHERE company_id = $1 AND customer_code = $2",
             [$companyId, $customerCode]
@@ -105,12 +111,15 @@ if ($selectedCustomer !== null) {
         'customer_code' => (string) $selectedCustomer['customer_code'],
         'customer_birth_date' => $selectedCustomer['date_of_birth'] === null
             ? fn_t('customers_not_recorded') : fn_formatDateDisplay((string) $selectedCustomer['date_of_birth']),
+        'customer_death_date' => empty($selectedCustomer['date_of_death'])
+            ? fn_t('customers_not_recorded') : fn_formatDateDisplay((string) $selectedCustomer['date_of_death']),
         'customer_status' => fn_t($selectedCustomer['is_active'] === 't' ? 'active' : 'inactive'),
         'customer_created_at' => fn_formatDateDisplay((string) $selectedCustomer['created_at']),
         'customer_updated_at' => fn_formatDateDisplay((string) $selectedCustomer['updated_at']),
         'customers_detail_heading' => fn_t('customers_detail_heading'),
         'customers_code' => fn_t('customers_code'),
         'customers_birth_date' => fn_t('customer_birth_date'),
+        'customers_death_date' => fn_t('patient_death_date'),
         'customers_status' => fn_t('col_status'),
         'customers_created_at' => fn_t('customers_created_at'),
         'customers_updated_at' => fn_t('customers_updated_at'),
@@ -128,6 +137,8 @@ echo fn_templateRender('customers.html', [
     'customers_search_help' => fn_t('customers_search_help'),
     'customers_search_empty' => fn_t('customers_search_empty'),
     'customers_search_unavailable' => fn_t('customers_search_unavailable'),
+    'patient_show_deceased' => fn_t('patient_show_deceased'),
+    '_customers_deceased_checked' => (string) ($_GET['include_deceased'] ?? '') === '1' ? 'checked' : '',
     '_customer_details_html' => $details,
 ]);
 page_end();

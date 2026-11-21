@@ -761,10 +761,13 @@
 - De afleverhistoriek filtert automatisch tijdens het typen vanaf drie tekens, zowel op de algemene historiekpagina als in de patiëntmodal. De zoekknop blijft werken; API-paginering en paginagrootte blijven behouden. Versie verhoogd naar `0.18.30`.
 - Naast geneesmiddel zoeken staat de UH-schakelaar (uit de handel). Standaard worden producten met een ingetrokken AMP- of AMPP-status weggefilterd; inschakelen toont ze voor de huidige afleversessie. Na afsluiten of wissen wordt de schakelaar teruggezet. Versie verhoogd naar `0.18.31`.
 - De achtergrond van het invoergedeelte in de patiëntmodal gebruikt nu dezelfde lichte groen-grijze kleur als de adres-suggesties (`#f1f5f3`), zodat witte invoervelden beter afsteken. Versie verhoogd naar `0.18.32`.
+- Patiënten/klanten kunnen een optionele overlijdensdatum krijgen. Die datum wordt in het patiëntformulier beheerd en getoond bij de klantgegevens. Bij patiënt- en klantzoekopdrachten zijn overleden personen standaard verborgen; met `+` worden ze meegezocht en krijgen ze in de suggestielijst een zachte afwijkende kleur met overlijdensdatum. Migratie `migrations/20261121_163331_customer_death_date.sql` is vereist op bestaande databases; versie verhoogd naar `0.18.33`.
+- De herbruikbare GUI-kleurafspraken voor pagina-, witte en gedempte oppervlakken, randen en actieve suggesties zijn vastgelegd in `docs/gui-style-guide.md` en gelinkt vanuit de README.
 - De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 
 ### Volgende stap
 
+- Voer migratie `migrations/20261121_163331_customer_death_date.sql` uit op bestaande databases en controleer het toevoegen/wijzigen van overlijdensdatums, de standaardfiltering en de `+`-zoekoptie in beide patiëntzoekschermen.
 - Valideer de volledige functietoetsbalk op een tablet met alleen touchscreen en op een desktop met toetsenbord. Controleer daarbij alle drie de lagen, openen van URLs in dezelfde/nieuwe tab en dat een toegangsbeperkte modulepagina haar eigen controle blijft toepassen.
 

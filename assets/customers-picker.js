@@ -23,6 +23,7 @@
     const customerCode = form.querySelector('#customer-code');
     const results = form.querySelector('#customer-search-results');
     const status = form.querySelector('#customer-search-status');
+    const includeDeceased = form.querySelector('[data-customer-include-deceased]');
     const customerDetails = document.querySelector('[data-customer-details]');
     let timer = 0;
     let requestController = null;
@@ -53,6 +54,7 @@
             const option = document.createElement('button');
             option.type = 'button';
             option.className = 'list-group-item list-group-item-action';
+            if (customer.is_deceased) option.classList.add('customer-deceased-option');
             option.setAttribute('role', 'option');
             option.dataset.customerCode = String(customer.customer_code);
             const name = document.createElement('strong');
@@ -61,6 +63,12 @@
             detail.className = 'd-block small text-secondary';
             detail.textContent = customer.customer_code;
             option.append(name, detail);
+            if (customer.is_deceased) {
+                const deceased = document.createElement('span');
+                deceased.className = 'd-block small customer-deceased-date';
+                deceased.textContent = [customer.deceased_label, customer.death_date_display].filter(Boolean).join(' · ');
+                option.append(deceased);
+            }
             results.append(option);
         }
         results.hidden = false;
@@ -72,7 +80,11 @@
         requestController?.abort();
         requestController = new AbortController();
         try {
-            const response = await fetch(`customers.php?ajax=search&q=${encodeURIComponent(query)}`, {
+            const url = new URL('customers.php', window.location.href);
+            url.searchParams.set('ajax', 'search');
+            url.searchParams.set('q', query);
+            if (includeDeceased?.checked) url.searchParams.set('include_deceased', '1');
+            const response = await fetch(url, {
                 headers: { Accept: 'application/json' },
                 cache: 'no-store',
                 signal: requestController.signal,
@@ -96,6 +108,11 @@
             return;
         }
         timer = window.setTimeout(() => searchCustomers(query), 200);
+    });
+
+    includeDeceased?.addEventListener('change', () => {
+        const query = input.value.trim();
+        if (query.length >= 2) searchCustomers(query);
     });
 
     input.addEventListener('keydown', (event) => {

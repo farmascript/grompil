@@ -48,6 +48,7 @@
     const patientSuggestions = document.querySelector('[data-patient-suggestions]');
     const patientStatus = document.querySelector('[data-patient-search-status]');
     const patientRegex = document.querySelector('[data-patient-regex]');
+    const patientIncludeDeceased = document.querySelector('[data-patient-include-deceased]');
     const dispenseStatusSelect = document.querySelector('[data-dispense-status-select]');
     const patientStatusInput = document.querySelector('[data-patient-status-input]');
     const currentDispenseStatus = document.querySelector('[data-current-dispense-status]');
@@ -111,6 +112,7 @@
                 url.searchParams.set('patient', String(patient.customer_code || ''));
                 url.searchParams.set('mode', 'patient');
                 url.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale');
+                if (patientIncludeDeceased?.checked) url.searchParams.set('include_deceased', '1');
                 const link = document.createElement('a');
                 link.className = 'list-group-item list-group-item-action patient-suggestion';
                 link.id = `patient-option-${index}`;
@@ -127,6 +129,13 @@
                 address.className = 'd-block small text-secondary';
                 address.textContent = String(patient.patient_address || '');
                 link.append(title, code, address);
+                if (patient.is_deceased) {
+                    link.classList.add('customer-deceased-option');
+                    const deathDate = document.createElement('span');
+                    deathDate.className = 'd-block small customer-deceased-date';
+                    deathDate.textContent = [patient.deceased_label, patient.death_date_display].filter(Boolean).join(' · ');
+                    link.append(deathDate);
+                }
                 patientSuggestions.append(link);
             }
         }
@@ -154,6 +163,7 @@
                 url.searchParams.set('patient_suggest', '1');
                 url.searchParams.set('q', query);
                 if (patientRegex?.checked) url.searchParams.set('regex', '1');
+                if (patientIncludeDeceased?.checked) url.searchParams.set('include_deceased', '1');
                 const response = await fetch(url, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -176,6 +186,7 @@
     if (patientInput && patientForm && patientSuggestions) {
         patientInput.addEventListener('input', schedulePatientSearch);
         patientRegex?.addEventListener('change', schedulePatientSearch);
+        patientIncludeDeceased?.addEventListener('change', schedulePatientSearch);
         patientForm.addEventListener('submit', (event) => {
             if (patientInput.value.trim().length < Number(page.dataset.patientMinChars || 3)) {
                 event.preventDefault();

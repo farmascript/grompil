@@ -61,3 +61,19 @@ matches:
     replace: "http://localhost:8181/grompil/sam-products-test.php"
     label: sam-products-test.php
 
+  - triggers: [":gp-dispense", ":gpmod"]
+    replace: "http://localhost:8181/grompil/dispense.php"
+    label: dispense.php
+
+  - triggers: [":gp-compound-products-test", ":gpmod"]
+    replace: "http://localhost:8181/grompil/compound-products-test.php"
+    label: compound-products-test.php
+
+  - triggers: [":gp-platform-dispensing-keys", ":gpmod"]
+    replace: "http://localhost:8181/grompil/platform-dispensing-keys.php"
+    label: platform-dispensing-keys.php
+
+  - triggers: [":gp-dispensing-history", ":gpmod"]
+    replace: "http://localhost:8181/grompil/dispensing-history.php"
+    label: dispensing-history.php
+

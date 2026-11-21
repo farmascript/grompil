@@ -870,5 +870,6 @@ body {
 .app-footer{margin-top:2rem;padding:1rem 0;border-top:1px solid #dfe5e0;color:#6c757d;background:#fff;font-size:.8rem}
 .app-footer code{color:inherit}
 .company-context-badge{max-width:min(42vw,24rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:auto}
+.customer-deceased-check{display:inline-flex;align-items:center;gap:.2rem;white-space:nowrap}.customer-deceased-check .form-check-input{margin:0}.customer-deceased-check .form-check-label{font-weight:700;color:#526c67}.customer-deceased-option{background-color:#f4eeee!important;border-color:#dfcaca!important;color:#533b3b!important}.customer-deceased-option .text-secondary,.customer-deceased-date{color:#765f5f!important}
 .user-context-label{max-width:min(36vw,22rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:576px){.user-context-label{max-width:30vw;font-size:.7rem!important}}
 

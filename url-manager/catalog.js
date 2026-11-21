@@ -1,7 +1,7 @@
 window.GROMPIL_NAVIGATION = {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.18.21",
+    "applicationVersion": "0.18.33",
     "defaultLanguage": "nl",
     "languages": [
         "nl",
@@ -277,7 +277,7 @@ window.GROMPIL_NAVIGATION = {
             "id": 16721,
             "module": "translations.php",
             "group": "platform",
-            "public_visibility": false,
+            "public_visibility": true,
             "i18n": {
                 "nl": {
                     "title": "Vertalingen",
@@ -461,22 +461,22 @@ window.GROMPIL_NAVIGATION = {
             "i18n": {
                 "nl": {
                     "title": "Klanten",
-                    "description": "Beheer de klantaccounts van dit bedrijf.",
+                    "description": "Beheer de klantgegevens van dit bedrijf.",
                     "keywords": []
                 },
                 "fr": {
                     "title": "Clients",
-                    "description": "Gérer les comptes clients de cette entreprise.",
+                    "description": "Gérer les dossiers clients de cette entreprise.",
                     "keywords": []
                 },
                 "en": {
                     "title": "Customers",
-                    "description": "Manage this company’s customer accounts.",
+                    "description": "Manage this company’s customer records.",
                     "keywords": []
                 },
                 "de": {
                     "title": "Kunden",
-                    "description": "Kundenkonten dieses Unternehmens verwalten.",
+                    "description": "Kundendaten dieses Unternehmens verwalten.",
                     "keywords": []
                 }
             },
@@ -544,6 +544,36 @@ window.GROMPIL_NAVIGATION = {
             "action": "manage"
         },
         {
+            "id": 74269,
+            "module": "dispense.php",
+            "group": "company",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "Afleveren",
+                    "description": "Aflevering voorbereiden",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Délivrance",
+                    "description": "Préparer une délivrance",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Dispense",
+                    "description": "Prepare a dispensing",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Abgabe",
+                    "description": "Abgabe vorbereiten",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 17,
+            "action": "manage"
+        },
+        {
             "id": 74270,
             "module": "compound-products-test.php",
             "group": "platform",
@@ -571,6 +601,66 @@ window.GROMPIL_NAVIGATION = {
                 }
             },
             "sequence_number": 18,
+            "action": "manage"
+        },
+        {
+            "id": 18536,
+            "module": "platform-dispensing-keys.php",
+            "group": "platform",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "Functietoetsen aflevermodule",
+                    "description": "Wijs acties toe aan F1–F12, Ctrl+F1–Ctrl+F12 en Shift+F1–Shift+F12. Je kunt een ingebouwde actie, een geregistreerde modulepagina of een webadres toewijzen. Titels en tooltips stel je in voor de geselecteerde taal.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Touches de fonction du module de délivrance",
+                    "description": "Attribuez des actions aux touches F1–F12, Ctrl+F1–Ctrl+F12 et Maj+F1–Maj+F12. Vous pouvez choisir une action intégrée, une page de module enregistrée ou une adresse web. Les titres et info-bulles sont définis pour la langue sélectionnée.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Dispensing function keys",
+                    "description": "Assign actions to F1–F12, Ctrl+F1–Ctrl+F12 and Shift+F1–Shift+F12. You can assign a built-in action, a registered module page, or a web address. Titles and tooltips are configured for the selected language.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Funktionstasten für die Abgabe",
+                    "description": "Weisen Sie F1–F12, Strg+F1–Strg+F12 und Umschalt+F1–Umschalt+F12 Aktionen zu. Sie können eine integrierte Aktion, eine registrierte Modulseite oder eine Webadresse zuweisen. Titel und Tooltips werden für die ausgewählte Sprache gepflegt.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 19,
+            "action": "manage"
+        },
+        {
+            "id": 91347,
+            "module": "dispensing-history.php",
+            "group": "company",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "Afleverhistoriek",
+                    "description": "Overzicht van alle afgewerkte afleveringen binnen dit bedrijf.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Historique des délivrances",
+                    "description": "Vue d’ensemble des délivrances terminées dans cette entreprise.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "Dispensing history",
+                    "description": "Overview of completed dispensing within this company.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Abgabeverlauf",
+                    "description": "Übersicht der abgeschlossenen Abgaben dieses Unternehmens.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 20,
             "action": "manage"
         }
     ],

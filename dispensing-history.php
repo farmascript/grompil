@@ -12,7 +12,7 @@ if (!defined('GROMPIL_ROOT')) {
 /*
 @NAV
 id: 91347
-sequence_number: 18
+sequence_number: 20
 public_visibility: false
 group: company
 group_title: @workspace_label@

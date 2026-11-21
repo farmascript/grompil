@@ -561,12 +561,14 @@ CREATE TABLE IF NOT EXISTS bt_customers (
     name_first VARCHAR(120) NOT NULL,
     name_last VARCHAR(120) NOT NULL,
     date_of_birth DATE,
+    date_of_death DATE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_by_user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE RESTRICT,
     updated_by_user_code VARCHAR(6) NOT NULL REFERENCES bt_users(user_code) ON DELETE RESTRICT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (company_id, customer_code)
+    UNIQUE (company_id, customer_code),
+    CHECK (date_of_death IS NULL OR date_of_birth IS NULL OR date_of_death >= date_of_birth)
 );
 CREATE INDEX IF NOT EXISTS bt_customers_company_name_idx
     ON bt_customers (company_id, lower(name_last), lower(name_first)) WHERE is_active;

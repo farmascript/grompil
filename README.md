@@ -94,6 +94,8 @@ Plaats afbeeldingen in `media/companies/<company-id>/` en vul in het bedrijfsbeh
 
 HTML-templates worden leesbaar opgemaakt met structurele tags op aparte regels en vier spaties per inspringniveau. `.editorconfig` legt UTF-8, LF-regeleinden, vier spaties en een afsluitende newline vast.
 
+Voor gedeeld kleurgebruik in formulieren, modals en suggestielijsten: zie [docs/gui-style-guide.md](docs/gui-style-guide.md).
+
 Algemene vertalingen worden bijgehouden in de tabel `substitutions` met een rij per company-scope, sleutel en taalcode (`NL`, `FR`, `EN`, `DE`). De importer voegt alle algemene vertaalbare teksten toe onder `company_id = 0`. De Franse en Duitse sleutels worden initieel leeg aangemaakt; zolang ze leeg zijn toont de applicatie de Engelse tekst als terugval.
 
 De zelfstandige URL-manager gebruikt `scripts/generate_navigation.php` om NAV-commentaarblokken uit aanroepbare modules om te zetten naar `navigation.json`. De generator hergebruikt de bestaande gegenereerde PHP-taalarrays en voert de applicatiemodules niet uit. De NAV-conventie, het JSON-schema en de eerste permanente module-ID's staan in [docs/url-manager.md](docs/url-manager.md).
