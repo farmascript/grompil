@@ -1,0 +1,36 @@
+<main class="container-fluid py-4">
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+        <div><h1 class="h2">@dispensing_history_title@</h1><p class="text-secondary mb-0">@dispensing_history_intro@</p></div>
+        <a class="btn btn-outline-secondary" href="dispense.php">@dispensing_history_back_to_dispensing@</a>
+    </div>
+    <section class="card shadow-sm">
+        <div class="card-body">
+            <form method="get" action="dispensing-history.php" class="row g-2 align-items-end mb-3">
+                <div class="col-12 col-lg">
+                    <label class="form-label" for="history-query">@dispensing_history_search_label@</label>
+                    <input class="form-control" id="history-query" type="search" name="q" value="@history_query_value@" maxlength="100" placeholder="@dispensing_history_search_placeholder@">
+                </div>
+                <div class="col-6 col-sm-4 col-lg-2">
+                    <label class="form-label" for="history-per-page">@dispensing_history_per_page@</label>
+                    <select class="form-select" id="history-per-page" name="per_page">
+                        <option value="10"@history_per_page_10_selected@>10</option>
+                        <option value="25"@history_per_page_25_selected@>25</option>
+                        <option value="50"@history_per_page_50_selected@>50</option>
+                        <option value="100"@history_per_page_100_selected@>100</option>
+                    </select>
+                </div>
+                <div class="col-6 col-sm-4 col-lg-auto"><button class="btn btn-primary" type="submit">@dispensing_history_search_button@</button></div>
+            </form>
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
+                <span class="small text-secondary">@history_count_label@</span>
+                @_history_pagination_html@
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead><tr><th>@dispensing_history_date@</th><th>@dispensing_history_session@</th><th>@dispensing_history_recipient@</th><th>@dispensing_history_status@</th><th>@dispensing_history_cnk@</th><th>@dispensing_history_product@</th><th>@dispensing_history_package@</th><th class="text-end">@dispensing_history_quantity@</th></tr></thead>
+                    <tbody>@_history_rows_html@</tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>

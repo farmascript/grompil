@@ -24,6 +24,13 @@
     const receiptFrame = document.querySelector('[data-receipt-frame]');
     const receiptError = document.querySelector('[data-receipt-error]');
     const receiptConfirmButton = document.querySelector('[data-receipt-confirm]');
+    const historyModalElement = document.getElementById('dispensingPatientHistoryModal');
+    const historyBody = document.querySelector('[data-patient-history-body]');
+    const historyTitle = document.querySelector('[data-patient-history-title]');
+    const historySearch = document.querySelector('[data-patient-history-search]');
+    const historyPageSize = document.querySelector('[data-patient-history-page-size]');
+    const historyPagination = document.querySelector('[data-patient-history-pagination]');
+    const historyCount = document.querySelector('[data-patient-history-count]');
     let receiptObjectUrl = '';
 
     const patientInput = document.querySelector('[data-patient-search-input]');
@@ -233,6 +240,21 @@
         quantity: page.dataset.textQuantity,
         productCount: page.dataset.textProductCount,
         discardConfirm: page.dataset.textDiscardConfirm,
+        historyTitle: page.dataset.textHistoryTitle,
+        historyNoPatient: page.dataset.textHistoryNoPatient,
+        historyError: page.dataset.textHistoryError,
+        historyEmpty: page.dataset.textHistoryEmpty,
+        historyDate: page.dataset.textHistoryDate,
+        historySession: page.dataset.textHistorySession,
+        historyStatus: page.dataset.textHistoryStatus,
+        historyCnk: page.dataset.textHistoryCnk,
+        historyProduct: page.dataset.textHistoryProduct,
+        historyPackage: page.dataset.textHistoryPackage,
+        historyQuantity: page.dataset.textHistoryQuantity,
+        historyPrevious: page.dataset.textHistoryPrevious,
+        historyNext: page.dataset.textHistoryNext,
+        historyFirst: page.dataset.textHistoryFirst,
+        historyLast: page.dataset.textHistoryLast,
     };
     const language = (page.dataset.lang || 'nl').toLowerCase();
     const basket = new Map();
@@ -244,6 +266,84 @@
     let activeSuggestionIndex = -1;
 
     const sessionStorageKey = `grompil-dispensing-${page.dataset.sessionCompany || '0'}-${page.dataset.sessionUser || 'user'}`;
+
+    let historyCustomerCode = '';
+    let historyCurrentPage = 1;
+    let historyRequestId = 0;
+    let historySearchTimer = 0;
+    async function loadPatientHistory() {
+        if (!historyBody || !historyCustomerCode) return;
+        const requestId = ++historyRequestId;
+        historyBody.textContent = '…';
+        const params = new URLSearchParams({
+            history_api: '1', customer_code: historyCustomerCode,
+            q: historySearch?.value || '', page: String(historyCurrentPage),
+            per_page: String(historyPageSize?.value || 25),
+        });
+        try {
+            const response = await fetch(`dispensing-history.php?${params}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('History unavailable');
+            const data = await response.json();
+            if (requestId !== historyRequestId) return;
+            historyBody.replaceChildren();
+            if (!data.rows?.length) {
+                historyBody.textContent = t.historyEmpty || '';
+            } else {
+                const table = document.createElement('table');
+                table.className = 'table table-sm table-striped align-middle';
+                const headings = [t.historyDate, t.historySession, t.historyStatus, t.historyCnk, t.historyProduct, t.historyPackage, t.historyQuantity];
+                const thead = table.createTHead().insertRow();
+                headings.forEach((label) => { const th = document.createElement('th'); th.textContent = label || ''; thead.append(th); });
+                const tbody = table.createTBody();
+                data.rows.forEach((row) => {
+                    const tr = tbody.insertRow();
+                    const product = language === 'fr' ? (row.product_name_fr || row.product_name_nl) : (row.product_name_nl || row.product_name_fr);
+                    const pack = language === 'fr' ? (row.package_display_fr || row.package_display_nl) : (row.package_display_nl || row.package_display_fr);
+                    [row.completed_at_display, String(row.session_id).slice(0, 8) + '…', row.status_code, row.cnk, product, pack, row.quantity].forEach((value) => {
+                        const cell = tr.insertCell(); cell.textContent = String(value ?? '');
+                    });
+                });
+                const responsiveTable = document.createElement('div');
+                responsiveTable.className = 'table-responsive';
+                responsiveTable.append(table);
+                historyBody.append(responsiveTable);
+            }
+            if (historyCount) historyCount.textContent = String(data.total || 0);
+            if (historyPagination) {
+                historyPagination.replaceChildren();
+                const items = [[1, t.historyFirst], [Math.max(1, data.page - 1), t.historyPrevious], [Math.min(data.pages, data.page + 1), t.historyNext], [data.pages, t.historyLast]];
+                items.forEach(([target, label], index) => {
+                    const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-sm btn-outline-secondary'; button.textContent = label || '';
+                    button.disabled = (index < 2 && data.page === 1) || (index >= 2 && data.page >= data.pages);
+                    button.addEventListener('click', () => { historyCurrentPage = Number(target); void loadPatientHistory(); });
+                    historyPagination.append(button);
+                });
+            }
+        } catch {
+            if (requestId === historyRequestId) historyBody.textContent = t.historyError || '';
+        }
+    }
+
+    function openPatientHistory() {
+        historyCustomerCode = page.dataset.patientCode || '';
+        historyCurrentPage = 1;
+        if (!historyCustomerCode) {
+            if (historyBody) historyBody.textContent = t.historyNoPatient || '';
+            if (historyCount) historyCount.textContent = '0';
+            historyPagination?.replaceChildren();
+        } else {
+            if (historyTitle) historyTitle.textContent = `${t.historyTitle || ''} — ${page.dataset.patientName || historyCustomerCode}`;
+            if (historySearch) historySearch.value = '';
+        }
+        if (historyModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(historyModalElement).show();
+        if (historyCustomerCode) void loadPatientHistory();
+    }
+
+    historySearch?.addEventListener('input', () => {
+        window.clearTimeout(historySearchTimer);
+        historySearchTimer = window.setTimeout(() => { historyCurrentPage = 1; void loadPatientHistory(); }, 180);
+    });
+    historyPageSize?.addEventListener('change', () => { historyCurrentPage = 1; void loadPatientHistory(); });
 
     function renderSessionReference() {
         if (sessionReferenceLabel) {
@@ -341,6 +441,7 @@
         activePartyId = Number(party.id);
         try { sessionStorage.setItem(`${sessionStorageKey}-party`, String(activePartyId)); } catch {}
         page.dataset.patientCode = party.customer_code || '';
+        page.dataset.patientName = party.name || party.customer_code || '';
         hideSuggestions();
         const currentName = document.querySelector('.dispense-selected-patient');
         if (currentName) currentName.textContent = party.name;
@@ -669,7 +770,7 @@
         if (!receiptConfirmButton) return;
         receiptConfirmButton.disabled = true;
         try {
-            await sessionRequest('discard');
+            await sessionRequest('complete');
             try {
                 sessionStorage.removeItem(sessionStorageKey);
                 sessionStorage.removeItem(`${sessionStorageKey}-party`);
@@ -914,6 +1015,9 @@
                     break;
                 case 'discard_dispensing':
                     void discardDispensing();
+                    break;
+                case 'open_patient_history':
+                    void openPatientHistory();
                     break;
                 default:
                     break;

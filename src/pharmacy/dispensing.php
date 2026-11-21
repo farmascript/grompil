@@ -22,6 +22,7 @@ require_once GROMPIL_ROOT . '/includes/contact_manager.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_shortcuts.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_sessions.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_receipt.php';
+require_once GROMPIL_ROOT . '/includes/dispensing_history.php';
 $currentUser = require_login();
 $company = require_company_context($currentUser);
 if ($company === null || !grompil_can_access_module('dispense.php', $currentUser, $company)) {
@@ -904,6 +905,28 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     '_dispense_status_options_html' => $dispenseStatusOptionsHtml,
     'dispense_customer_code' => $selectedPatient ? (string) $selectedPatient['customer_code'] : '',
     'dispense_language' => strtolower((string) ($_SESSION['language'] ?? 'NL')),
+    'dispense_history_title' => fn_t('dispensing_history_title'),
+    'dispense_history_url' => fn_appBaseHref() . 'dispensing-history.php',
+    'dispense_history_no_patient' => fn_t('dispensing_history_no_patient'),
+    'dispense_history_error' => fn_t('dispensing_history_unavailable'),
+    'dispense_history_empty' => fn_t('dispensing_history_empty'),
+    'dispense_history_date' => fn_t('dispensing_history_date'),
+    'dispense_history_session' => fn_t('dispensing_history_session'),
+    'dispense_history_status' => fn_t('dispensing_history_status'),
+    'dispense_history_cnk' => fn_t('dispensing_history_cnk'),
+    'dispense_history_product' => fn_t('dispensing_history_product'),
+    'dispense_history_package' => fn_t('dispensing_history_package'),
+    'dispense_history_quantity' => fn_t('dispensing_history_quantity'),
+    'dispense_history_first' => fn_t('dispensing_history_first'),
+    'dispense_history_previous' => fn_t('dispensing_history_previous'),
+    'dispense_history_next' => fn_t('dispensing_history_next'),
+    'dispense_history_last' => fn_t('dispensing_history_last'),
+    'dispense_history_search_label' => fn_t('dispensing_history_search_label'),
+    'dispense_history_per_page' => fn_t('dispensing_history_per_page'),
+    'dispense_history_count' => fn_t('dispensing_history_count_short'),
+    'dispense_history_customer_name' => $selectedPatient ? grompil_dispensing_display_name(
+        (string) $selectedPatient['name_first'], (string) $selectedPatient['name_last']
+    ) : '',
     'dispense_intro' => fn_t('dispense_intro'),
     'dispense_concept' => fn_t('dispense_concept'),
     'dispense_no_live_prescriptions' => fn_t('dispense_no_live_prescriptions'),

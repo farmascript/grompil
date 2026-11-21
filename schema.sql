@@ -728,6 +728,9 @@ CREATE INDEX IF NOT EXISTS st_dispensing_history_company_date_idx
     ON st_dispensing_history (company_id, completed_at DESC);
 CREATE INDEX IF NOT EXISTS st_dispensing_history_lines_order_idx
     ON st_dispensing_history_lines (history_id, sort_order, id);
+CREATE INDEX IF NOT EXISTS st_dispensing_history_lines_customer_idx
+    ON st_dispensing_history_lines (customer_code, history_id)
+    WHERE customer_code IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS st_customer_audit_log (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -1602,23 +1605,25 @@ CREATE POLICY dt_dispensing_lines_owner_scope ON dt_dispensing_lines FOR ALL
         )
     );
 DROP POLICY IF EXISTS st_dispensing_history_company_scope ON st_dispensing_history;
-CREATE POLICY st_dispensing_history_company_scope ON st_dispensing_history FOR ALL
-    USING (
-        company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
-        AND created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
-    )
+DROP POLICY IF EXISTS st_dispensing_history_company_read ON st_dispensing_history;
+DROP POLICY IF EXISTS st_dispensing_history_actor_insert ON st_dispensing_history;
+CREATE POLICY st_dispensing_history_company_read ON st_dispensing_history FOR SELECT
+    USING (company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT);
+CREATE POLICY st_dispensing_history_actor_insert ON st_dispensing_history FOR INSERT
     WITH CHECK (
         company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
         AND created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
     );
 DROP POLICY IF EXISTS st_dispensing_history_lines_company_scope ON st_dispensing_history_lines;
-CREATE POLICY st_dispensing_history_lines_company_scope ON st_dispensing_history_lines FOR ALL
+DROP POLICY IF EXISTS st_dispensing_history_lines_company_read ON st_dispensing_history_lines;
+DROP POLICY IF EXISTS st_dispensing_history_lines_company_insert ON st_dispensing_history_lines;
+CREATE POLICY st_dispensing_history_lines_company_read ON st_dispensing_history_lines FOR SELECT
     USING (EXISTS (
         SELECT 1 FROM st_dispensing_history history
         WHERE history.id = st_dispensing_history_lines.history_id
           AND history.company_id = NULLIF(current_setting('grompil.company_id', true), '')::BIGINT
-          AND history.created_by_user_code = NULLIF(current_setting('grompil.user_code', true), '')
-    ))
+    ));
+CREATE POLICY st_dispensing_history_lines_company_insert ON st_dispensing_history_lines FOR INSERT
     WITH CHECK (EXISTS (
         SELECT 1 FROM st_dispensing_history history
         WHERE history.id = st_dispensing_history_lines.history_id

@@ -750,7 +750,10 @@
 - De functietoetsacties, URL-opslag en Ctrl+F1 naar de companywebsite werken. De tabletlaagkiezer is toegevoegd; een database-update is daarvoor niet nodig.
 - De platformbeheerder beheert de toewijzingen centraal. Gewone gebruikers kunnen de toetsen uitvoeren, maar niet de toewijzingen aanpassen.
 - F12 kan nu de huidige afleveringssessie wissen: de gebruiker bevestigt eerst, waarna de open sessie en de gekoppelde regels uit `dt_dispensing_sessions`, `dt_dispensing_parties` en `dt_dispensing_lines` worden verwijderd. Migratie `migrations/20261120_142834_dispensing_session_discard.sql` staat klaar; ze wijst F12 toe als die nog niet was ingesteld.
-- Zolang de historieopslag nog niet beschikbaar is op de database, voert **OK** op het afleverkasticket dezelfde verwijderactie uit als F12, zonder een tweede bevestigingsvraag.
+- **OK** op de gecontroleerde afleverbon bewaart een onveranderlijke kopie en alle productregels in `st_dispensing_history` en `st_dispensing_history_lines`. F12 blijft voor het bewust wissen van een open aflevering.
+- `dispensing-history.php` toont per bedrijf alle opgeslagen afleverregels met zoeken, instelbare paginagrootte en eerste/vorige/volgende/laatste paginering.
+- De actie `open_patient_history` toont de historiek van de actieve patiënt in een modaal. Ze wordt standaard aan F6 gekoppeld als die toets nog vrij is.
+- Bestaande databases hebben migratie `migrations/20261121_143422_dispensing_history_access.sql` nodig na de ontvangst- en F12-migraties.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 
 ### Volgende stap

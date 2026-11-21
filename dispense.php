@@ -13,6 +13,8 @@
  * @description: Company-scoped pharmacy dispensing workbench entry point.
  *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:dispense
+ * https://dw.grompil.com/!saas/doku.php?id=nl:doc:grompil:dev:tables:aflevering
+ *
  */
 
 declare(strict_types=1);
