@@ -787,6 +787,7 @@
 - Een ontbrekende PHP-escaping rond de CNK-wildcards veroorzaakte een `TypeError` bij het laden van de afleverhistoriek. De quotes zijn escaped; de CNK-match kan nu correct worden berekend. Versie verhoogd naar `0.18.54`.
 - Bij het openen van de modal ‘Patiënt toevoegen’ staat de focus nu op het veld ‘Voornaam’. Bij patiëntbewerking wordt de focus niet verplaatst. Versie verhoogd naar `0.18.55`.
 - Een overleden patiënt toont in de afleverbalk de overlijdensdatum en leeftijd, plus de melding ‘Geen aflevering mogelijk’. Zoeken en toevoegen van afleverregels voor deze patiënt wordt in de interface geblokkeerd; de API controleert dit ook serverzijdig. De melding is vertaald in NL, FR, EN en DE. Geen database-update nodig; versie verhoogd naar `0.18.56`.
+- Na ‘Aflevering wissen’ worden queryparameters die patiënt-, bewerk- of contactmodals automatisch openen verwijderd voordat de lege afleverpagina wordt geladen. Zo opent bijvoorbeeld de patiëntmodal niet opnieuw wanneer wissen vanuit `?new_patient=1` gebeurt. Versie verhoogd naar `0.18.57`.
 
 ### Volgende stap
 

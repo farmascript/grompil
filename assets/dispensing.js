@@ -1023,7 +1023,10 @@
                 sessionStorage.removeItem(`${sessionStorageKey}-page-customer`);
                 sessionStorage.removeItem(withdrawnFilterStorageKey());
             } catch {}
-            window.location.reload();
+            const destination = new URL(window.location.href);
+            ['new_patient', 'edit', 'contacts', 'contact_status', 'saved'].forEach((key) => destination.searchParams.delete(key));
+            destination.hash = '';
+            window.location.replace(destination.href);
         } catch {
             showSessionError();
         }
