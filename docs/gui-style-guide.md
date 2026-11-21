@@ -18,9 +18,10 @@ fields easy to distinguish.
 | Deceased record border | `#dfcaca` | Border around a deceased suggestion |
 | Deceased record text | `#533b3b` | Text on a deceased suggestion |
 
-For data-entry dialogs, keep the header white and use `#f1f5f3` behind the
-form. Leave inputs white with their normal control border. This contrast helps
-users see where to enter data without making the form background too strong.
+For data-entry dialogs, keep the general modal background white. Use
+`#f1f5f3` on the cards that group related fields, and leave the inputs white
+with their normal control border. This contrast helps users see each data-entry
+group without tinting the surrounding dialog.
 
 For suggestions, use `#f1f5f3` for the list and its rows, `#cbd8d2` for the
 outer border, and `#dfeae5` with `#183b32` text for hover and keyboard selection.
@@ -28,7 +29,7 @@ Do not use the hover color as the resting background.
 
 The current shared implementation is in `assets/app.css` (`.address-suggestions`)
 and the dispensing modal rules are in `assets/dispensing.css` (`#patientModal .modal-body`
-and `#contact-manager-modal .modal-body`).
+and `#contact-manager-modal .contact-manager-row`).
 Keep future screens aligned with these colors and roles.
 
 Mark deceased patient/customer suggestions with the muted rose surface and text
