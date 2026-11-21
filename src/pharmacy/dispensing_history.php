@@ -99,7 +99,13 @@ try {
         $companyId, $query, '', false, $page, $perPage, $language, $dateFrom, $dateTo
     );
 } catch (Throwable $error) {
-    error_log('Dispensing history page failed: ' . get_class($error));
+    error_log(sprintf(
+        'Dispensing history page failed [%s at %s:%d]: %s',
+        get_class($error),
+        basename($error->getFile()),
+        $error->getLine(),
+        substr($error->getMessage(), 0, 300)
+    ));
     grompil_show_error(503, 72805, fn_t('dispensing_history_unavailable'), 'Historiek niet beschikbaar');
 }
 

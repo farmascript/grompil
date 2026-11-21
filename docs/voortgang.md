@@ -783,6 +783,7 @@
 - Het sessienummer is niet langer zichtbaar in de afleverhistoriekkaart. Het volledige nummer verschijnt als tooltip bij het label ‘Receptnummer’; het receptnummer blijft zichtbaar. Versie verhoogd naar `0.18.50`.
 - De CNK-kolom is uit de afleverhistoriekkaart verwijderd. De CNK verschijnt als tooltip bij de productnaam en blijft doorzoekbaar. Versie verhoogd naar `0.18.51`.
 - Bij een zoekopdracht die een CNK van een productregel raakt, wordt de volledige productnaam en verpakking van die regel rood gemarkeerd; de overige regels van dezelfde sessie blijven als context zichtbaar. Versie verhoogd naar `0.18.52`.
+- De foutregistratie voor het laden van de algemene afleverhistoriek vermeldt nu ook de exceptionbron en regel, zodat PHP-fouten gericht te diagnosticeren zijn. Versie verhoogd naar `0.18.53`.
 
 ### Volgende stap
 
