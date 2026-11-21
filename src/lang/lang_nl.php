@@ -386,6 +386,7 @@ $arrSubst = array (
   'company_street' => 'Straat en nummer',
   'close' => 'Sluiten',
   'contact_manager_add' => 'Contact toevoegen',
+  'contact_manager_add_toggle' => 'Nieuw contactgegeven toevoegen',
   'contact_manager_add_title' => 'Nieuw contactgegeven',
   'contact_manager_choose_type' => 'Kies een contactsoort',
   'contact_manager_count' => 'Contactgegevens',

@@ -229,6 +229,8 @@ function grompil_contact_manager_render_modal(
             'contact_manager_owner_name' => $ownerName,
             'contact_manager_intro' => fn_t('contact_manager_intro'),
             'contact_manager_add_title' => fn_t('contact_manager_add_title'),
+            'contact_manager_add_toggle' => fn_t('contact_manager_add_toggle'),
+            'contact_manager_add_expanded' => $status !== '' && !in_array($status, ['saved', 'deleted'], true) ? 'true' : 'false',
             'contact_manager_type' => fn_t('contact_manager_type'),
             'contact_manager_value' => fn_t('contact_manager_value'),
             'contact_manager_label' => fn_t('contact_manager_label'),
@@ -246,6 +248,7 @@ function grompil_contact_manager_render_modal(
                 ? '<p class="text-secondary" data-contact-empty>' . e(fn_t('contact_manager_empty')) . '</p>' : '',
             '_contact_manager_type_options_html' => $typeOptions(''),
             '_contact_manager_feedback_html' => $feedback,
+            '_contact_manager_add_show' => $status !== '' && !in_array($status, ['saved', 'deleted'], true) ? 'show' : '',
         ]),
     ];
 }

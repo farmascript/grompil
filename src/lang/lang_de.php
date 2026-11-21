@@ -386,6 +386,7 @@ $arrSubst = array (
   'company_street' => 'Straße und Hausnummer',
   'close' => 'Schließen',
   'contact_manager_add' => 'Kontakt hinzufügen',
+  'contact_manager_add_toggle' => 'Neuen Kontakteintrag hinzufügen',
   'contact_manager_add_title' => 'Neuer Kontakteintrag',
   'contact_manager_choose_type' => 'Kontaktart auswählen',
   'contact_manager_count' => 'Kontaktdaten',
