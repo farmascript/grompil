@@ -103,32 +103,45 @@ try {
     grompil_show_error(503, 72805, fn_t('dispensing_history_unavailable'), 'Historiek niet beschikbaar');
 }
 
-$rowsHtml = '';
+$sessionGroups = [];
 foreach ($history['rows'] as $row) {
+    $sessionGroups[$row['history_id']][] = $row;
+}
+$groupsHtml = '';
+foreach ($sessionGroups as $sessionRows) {
+    $firstRow = $sessionRows[0];
+    $sessionShort = substr((string) $firstRow['session_id'], 0, 8);
+    $groupsHtml .= '<section class="card mb-3 history-session-card">'
+        . '<div class="card-header d-flex align-items-center gap-3 flex-wrap">'
+        . '<strong>' . e($firstRow['completed_at_display']) . '</strong>'
+        . '<span><span class="text-secondary">' . e(fn_t('dispensing_history_session')) . ':</span> '
+        . '<code title="' . e($firstRow['session_id']) . '">' . e($sessionShort) . '…</code></span>'
+        . '<span><span class="text-secondary">' . e(fn_t('dispensing_history_prescription_number')) . ':</span> '
+        . ($firstRow['prescription_number'] === null ? '—' : '#' . e((string) $firstRow['prescription_number'])) . '</span>'
+        . '</div><div class="table-responsive"><table class="table table-sm table-striped table-hover align-middle mb-0">'
+        . '<thead><tr><th>' . e(fn_t('dispensing_history_recipient')) . '</th>'
+        . '<th>' . e(fn_t('dispensing_history_status')) . '</th>'
+        . '<th>' . e(fn_t('dispensing_history_cnk')) . '</th>'
+        . '<th>' . e(fn_t('dispensing_history_product')) . '</th>'
+        . '<th class="text-end">' . e(fn_t('dispensing_history_quantity')) . '</th></tr></thead><tbody>';
+    foreach ($sessionRows as $row) {
     $productName = $language === 'FR'
         ? ($row['product_name_fr'] ?: $row['product_name_nl'])
         : ($row['product_name_nl'] ?: $row['product_name_fr']);
     $package = $language === 'FR'
         ? ($row['package_display_fr'] ?: $row['package_display_nl'])
         : ($row['package_display_nl'] ?: $row['package_display_fr']);
-    $sessionShort = substr((string) $row['session_id'], 0, 8);
-    $rowsHtml .= '<tr>'
-        . '<td class="text-nowrap">' . e($row['completed_at_display']) . '</td>'
-        . '<td><code title="' . e($row['session_id']) . '">' . e($sessionShort) . '…</code></td>'
-        . '<td>' . ($row['prescription_number'] === null ? '—' : '#' . e((string) $row['prescription_number'])) . '</td>'
-        . '<td>' . e($row['party_name'])
+    $groupsHtml .= '<tr><td>' . e($row['party_name'])
         . ($row['customer_code'] !== '' ? '<span class="d-block small text-secondary">' . e($row['customer_code']) . '</span>' : '')
-        . '</td>'
-        . '<td><span class="badge text-bg-light">' . e($row['status_code']) . '</span></td>'
-        . '<td><small>' . e($row['cnk']) . '</small></td>'
-        . '<td><strong>' . e($productName) . '</strong>'
+        . '</td><td><span class="badge text-bg-light">' . e($row['status_code']) . '</span></td>'
+        . '<td><small>' . e($row['cnk']) . '</small></td><td><strong>' . e($productName) . '</strong>'
         . ($package !== '' ? '<span class="ms-2 fw-bold">' . e($package) . '</span>' : '')
-        . '</td>'
-        . '<td class="text-end">' . e((string) $row['quantity']) . '</td>'
-        . '</tr>';
+        . '</td><td class="text-end">' . e((string) $row['quantity']) . '</td></tr>';
+    }
+    $groupsHtml .= '</tbody></table></div></section>';
 }
-if ($rowsHtml === '') {
-    $rowsHtml = '<tr><td colspan="8" class="text-center text-secondary py-4">' . e(fn_t('dispensing_history_empty')) . '</td></tr>';
+if ($groupsHtml === '') {
+    $groupsHtml = '<div class="text-center text-secondary py-4">' . e(fn_t('dispensing_history_empty')) . '</div>';
 }
 
 $paginationHtml = '<nav aria-label="' . e(fn_t('dispensing_history_pagination')) . '"><ul class="pagination pagination-sm mb-0">';
@@ -184,7 +197,7 @@ echo fn_templateRender('dispensing_history.html', [
     'dispensing_history_previous' => fn_t('dispensing_history_previous'),
     'dispensing_history_next' => fn_t('dispensing_history_next'),
     'dispensing_history_last' => fn_t('dispensing_history_last'),
-    '_history_rows_html' => $rowsHtml,
+    '_history_groups_html' => $groupsHtml,
     '_history_pagination_html' => $paginationHtml,
     'history_query_value' => e($query),
     'history_date_from_value' => e($dateFrom ?? ''),

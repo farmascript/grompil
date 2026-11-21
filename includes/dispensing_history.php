@@ -32,7 +32,7 @@ function grompil_dispensing_history_date_boundary(?string $date, bool $exclusive
 }
 
 /**
- * Fetches completed dispensing lines with company, customer/anonymous scope and text filters.
+ * Fetches completed dispensing sessions with company, customer/anonymous scope and text filters.
  * @return array{rows:list<array<string,mixed>>,total:int,page:int,per_page:int,pages:int}
  */
 function grompil_dispensing_history_fetch(
@@ -59,30 +59,33 @@ function grompil_dispensing_history_fetch(
     $fromBoundary = grompil_dispensing_history_date_boundary($dateFrom);
     $toBoundary = grompil_dispensing_history_date_boundary($dateTo, true);
 
-    $where = <<<'SQL'
+    $sessionWhere = <<<'SQL'
         history.company_id = $1
-        AND (
-            (NULLIF($2::text, '') IS NOT NULL AND line.customer_code = NULLIF($2::text, ''))
-            OR (NULLIF($2::text, '') IS NULL AND (NOT $4::boolean OR line.party_type = 'anonymous'))
-        )
-        AND (NULLIF($3::text, '') IS NULL OR concat_ws(' ',
-            history.dispensing_session_id::text, line.party_name, line.customer_code,
-            history.prescription_number::text,
-            line.status_key, line.cnk, line.amp_code, line.ampp_code,
-            line.product_name_nl, line.product_name_fr,
-            line.package_display_nl, line.package_display_fr
-        ) ILIKE '%' || $3::text || '%')
         AND ($5::timestamptz IS NULL OR history.completed_at >= $5::timestamptz)
         AND ($6::timestamptz IS NULL OR history.completed_at < $6::timestamptz)
+        AND EXISTS (
+            SELECT 1
+            FROM st_dispensing_history_lines match_line
+            WHERE match_line.history_id = history.id
+              AND (
+                (NULLIF($2::text, '') IS NOT NULL AND match_line.customer_code = NULLIF($2::text, ''))
+                OR (NULLIF($2::text, '') IS NULL AND (NOT $4::boolean OR match_line.party_type = 'anonymous'))
+              )
+              AND (NULLIF($3::text, '') IS NULL OR concat_ws(' ',
+                history.dispensing_session_id::text, match_line.party_name, match_line.customer_code,
+                history.prescription_number::text, match_line.status_key, match_line.cnk,
+                match_line.amp_code, match_line.ampp_code, match_line.product_name_nl,
+                match_line.product_name_fr, match_line.package_display_nl, match_line.package_display_fr
+              ) ILIKE '%' || $3::text || '%')
+        )
         SQL;
     $baseParams = [$companyId, $customerCode, $query, $anonymousOnly ? 'true' : 'false', $fromBoundary, $toBoundary];
 
     $countResult = db_query_params(
         'dispensing.history_list_count',
         'SELECT count(*)
-         FROM st_dispensing_history_lines line
-         JOIN st_dispensing_history history ON history.id = line.history_id
-         WHERE ' . $where,
+         FROM st_dispensing_history history
+         WHERE ' . $sessionWhere,
         $baseParams
     );
     $total = (int) pg_fetch_result($countResult, 0, 0);
@@ -92,20 +95,27 @@ function grompil_dispensing_history_fetch(
 
     $result = db_query_params(
         'dispensing.history_list_page',
-        'SELECT history.id AS history_id, history.dispensing_session_id::text AS session_id,
+        'WITH page_history AS (
+            SELECT history.id, history.dispensing_session_id, history.prescription_number, history.completed_at
+            FROM st_dispensing_history history
+            WHERE ' . $sessionWhere . '
+            ORDER BY history.completed_at DESC, history.id DESC
+            LIMIT $8::integer OFFSET $9::integer
+         )
+         SELECT history.id AS history_id, history.dispensing_session_id::text AS session_id,
                 history.prescription_number,
                 history.completed_at, line.party_type, line.customer_code, line.party_name,
                 line.status_key,
                 COALESCE(status.short_codes ->> $7, status."key", line.status_key) AS status_code,
                 line.cnk, line.product_name_nl, line.product_name_fr,
                 line.package_display_nl, line.package_display_fr, line.quantity
-         FROM st_dispensing_history_lines line
-         JOIN st_dispensing_history history ON history.id = line.history_id
+         FROM page_history history
+         JOIN st_dispensing_history_lines line ON line.history_id = history.id
          LEFT JOIN ft_dd_varia status
            ON status.list_key = \'dispensing_statuses\' AND status."key" = line.status_key
-         WHERE ' . $where . '
-         ORDER BY history.completed_at DESC, history.id DESC, line.sort_order, line.id
-         LIMIT $8::integer OFFSET $9::integer',
+         WHERE (NULLIF($2::text, \'\') IS NOT NULL AND line.customer_code = NULLIF($2::text, \'\'))
+            OR (NULLIF($2::text, \'\') IS NULL AND (NOT $4::boolean OR line.party_type = \'anonymous\'))
+         ORDER BY history.completed_at DESC, history.id DESC, line.sort_order, line.id',
         [$companyId, $customerCode, $query, $anonymousOnly ? 'true' : 'false', $fromBoundary, $toBoundary,
             strtoupper($language), $perPage, $offset]
     );

@@ -4,16 +4,16 @@
     const dateFrom = document.querySelector('[data-history-date-from]');
     const dateTo = document.querySelector('[data-history-date-to]');
     const pageSize = document.querySelector('#history-per-page');
-    const body = document.querySelector('[data-history-rows]');
+    const groupsContainer = document.querySelector('[data-history-groups]');
     const count = document.querySelector('[data-history-count]');
     const pagination = document.querySelector('[data-history-pagination]');
-    if (!form || !input || !body || !count || !pagination) return;
+    if (!form || !input || !groupsContainer || !count || !pagination) return;
 
     let timer = 0;
     let requestId = 0;
     const minimumMessage = input.dataset.minimumMessage || '';
-    const emptyMessage = body.dataset.emptyMessage || '';
-    const errorMessage = body.dataset.errorMessage || '';
+    const emptyMessage = groupsContainer.dataset.emptyMessage || '';
+    const errorMessage = groupsContainer.dataset.errorMessage || '';
     const language = (form.dataset.language || 'nl').toLowerCase();
 
     function setCount(start, end, total) {
@@ -24,66 +24,101 @@
     }
 
     function showTableMessage(message) {
-        body.replaceChildren();
-        const row = body.insertRow();
-        const cell = row.insertCell();
-        cell.colSpan = 8;
-        cell.className = 'text-center text-secondary py-4';
-        cell.textContent = message;
+        groupsContainer.replaceChildren();
+        const messageElement = document.createElement('div');
+        messageElement.className = 'text-center text-secondary py-4';
+        messageElement.textContent = message;
+        groupsContainer.append(messageElement);
     }
 
     function renderRows(rows) {
-        body.replaceChildren();
+        groupsContainer.replaceChildren();
         if (!rows.length) {
             showTableMessage(emptyMessage);
             return;
         }
+        const sessions = new Map();
         for (const item of rows) {
-            const row = body.insertRow();
-            const sessionCell = row.insertCell();
-            sessionCell.className = 'text-nowrap';
-            sessionCell.textContent = String(item.completed_at_display || '');
+            const key = String(item.history_id || item.session_id || '');
+            if (!sessions.has(key)) sessions.set(key, []);
+            sessions.get(key).push(item);
+        }
+        const label = (name) => groupsContainer.dataset[`${name}Label`] || '';
+        const addHeaderItem = (header, name, value, title = '') => {
+            const item = document.createElement('span');
+            const prefix = document.createElement('span');
+            prefix.className = 'text-secondary';
+            prefix.textContent = `${label(name)}: `;
+            const content = document.createElement(title ? 'code' : 'span');
+            content.textContent = String(value ?? '—');
+            if (title) content.title = title;
+            item.append(prefix, content);
+            header.append(item);
+        };
+        for (const sessionRows of sessions.values()) {
+            const first = sessionRows[0];
+            const card = document.createElement('section');
+            card.className = 'card mb-3';
+            const header = document.createElement('div');
+            header.className = 'card-header d-flex align-items-center gap-3 flex-wrap';
+            const date = document.createElement('strong');
+            date.className = 'text-nowrap';
+            date.textContent = String(first.completed_at_display || '');
+            header.append(date);
+            addHeaderItem(header, 'session', `${String(first.session_id || '').slice(0, 8)}…`, String(first.session_id || ''));
+            addHeaderItem(header, 'prescription', first.prescription_number == null ? '—' : `#${first.prescription_number}`);
+            card.append(header);
 
-            const sessionReference = row.insertCell();
-            const code = document.createElement('code');
-            code.title = String(item.session_id || '');
-            code.textContent = `${String(item.session_id || '').slice(0, 8)}…`;
-            sessionReference.append(code);
-
-            row.insertCell().textContent = item.prescription_number == null ? '—' : `#${item.prescription_number}`;
-            const recipient = row.insertCell();
-            recipient.textContent = String(item.party_name || '');
-            if (item.customer_code) {
-                const codeLabel = document.createElement('span');
-                codeLabel.className = 'd-block small text-secondary';
-                codeLabel.textContent = String(item.customer_code);
-                recipient.append(codeLabel);
+            const responsive = document.createElement('div');
+            responsive.className = 'table-responsive';
+            const table = document.createElement('table');
+            table.className = 'table table-sm table-striped table-hover align-middle mb-0';
+            const thead = table.createTHead();
+            const headerRow = thead.insertRow();
+            ['recipient', 'status', 'cnk', 'product', 'quantity'].forEach((name) => {
+                const cell = document.createElement('th');
+                cell.textContent = label(name);
+                if (name === 'quantity') cell.className = 'text-end';
+                headerRow.append(cell);
+            });
+            const tbody = table.createTBody();
+            for (const item of sessionRows) {
+                const row = tbody.insertRow();
+                const recipient = row.insertCell();
+                recipient.textContent = String(item.party_name || '');
+                if (item.customer_code) {
+                    const codeLabel = document.createElement('span');
+                    codeLabel.className = 'd-block small text-secondary';
+                    codeLabel.textContent = String(item.customer_code);
+                    recipient.append(codeLabel);
+                }
+                const status = document.createElement('span');
+                status.className = 'badge text-bg-light';
+                status.textContent = String(item.status_code || '');
+                row.insertCell().append(status);
+                const cnkText = document.createElement('small');
+                cnkText.textContent = String(item.cnk || '');
+                row.insertCell().append(cnkText);
+                const product = row.insertCell();
+                const name = document.createElement('strong');
+                name.textContent = String((language === 'fr' ? item.product_name_fr : item.product_name_nl)
+                    || item.product_name_nl || item.product_name_fr || '');
+                product.append(name);
+                const packageText = String((language === 'fr' ? item.package_display_fr : item.package_display_nl)
+                    || item.package_display_nl || item.package_display_fr || '');
+                if (packageText) {
+                    const pack = document.createElement('span');
+                    pack.className = 'ms-2 fw-bold';
+                    pack.textContent = packageText;
+                    product.append(pack);
+                }
+                const quantity = row.insertCell();
+                quantity.className = 'text-end';
+                quantity.textContent = String(item.quantity ?? '');
             }
-            const statusCell = row.insertCell();
-            const status = document.createElement('span');
-            status.className = 'badge text-bg-light';
-            status.textContent = String(item.status_code || '');
-            statusCell.append(status);
-            const cnk = row.insertCell();
-            const cnkText = document.createElement('small');
-            cnkText.textContent = String(item.cnk || '');
-            cnk.append(cnkText);
-            const product = row.insertCell();
-            const name = document.createElement('strong');
-            name.textContent = String((language === 'fr' ? item.product_name_fr : item.product_name_nl)
-                || item.product_name_nl || item.product_name_fr || '');
-            product.append(name);
-            const packageText = String((language === 'fr' ? item.package_display_fr : item.package_display_nl)
-                || item.package_display_nl || item.package_display_fr || '');
-            if (packageText) {
-                const pack = document.createElement('span');
-                pack.className = 'ms-2 fw-bold';
-                pack.textContent = packageText;
-                product.append(pack);
-            }
-            const quantity = row.insertCell();
-            quantity.className = 'text-end';
-            quantity.textContent = String(item.quantity ?? '');
+            responsive.append(table);
+            card.append(responsive);
+            groupsContainer.append(card);
         }
     }
 

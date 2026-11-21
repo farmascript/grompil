@@ -776,10 +776,12 @@
 - Het potloodicoon voor patiëntbewerking staat nu direct na de contactenteller in de patiëntbalk. Het opent de bestaande bewerkmodal voor de actieve patiënt; dit werkt ook na wisselen tussen patiëntgroepen in een open afleversessie. Geen database-update nodig; versie verhoogd naar `0.18.43`.
 - De geneesmiddelzoekactie start na 120 ms in plaats van 220 ms. De zoekvoorwaarden vergelijken nu rechtstreeks Nederlandse en Franse productnamen en verpakkingen, zodat de bestaande trigram-indexen gebruikt kunnen worden. Versie verhoogd naar `0.18.44`.
 - De algemene afleverhistoriek heeft nu naast het smallere tekstzoekveld een datumbereikfilter met `Vanaf` en `Tot en met`. Beide velden starten op de huidige datum in de Brusselse tijdzone en ondersteunen handmatige invoer plus de kalenderkiezer van de browser. De gekozen periode filtert de resultaten en blijft behouden bij paginering; vertalingen zijn beschikbaar in NL, FR, EN en DE. Geen database-update nodig; versie verhoogd naar `0.18.45`.
+- De algemene afleverhistoriek groepeert nu alle regels van dezelfde afleversessie in één kaart. De paginering telt sessies, zodat een sessie niet over meerdere pagina's wordt gesplitst; binnen de kaart blijven ontvanger, status en productregels zichtbaar. Geen database-update nodig; versie verhoogd naar `0.18.46`.
 
 ### Volgende stap
 
 - Controleer op de testomgeving de standaardweergave van vandaag, een aangepast datumbereik, een lege datumgrens en paginering binnen het gekozen bereik.
+- Controleer in de afleverhistoriek dat alle producten met hetzelfde sessienummer in één kaart staan en dat zoeken/filteren en paginering volledige kaarten opleveren.
 - Voer `migrations/20261121_173559_remember_me.sql` uit op de testdatabase. Controleer daarna met een gewoon account en een MFA-account: zonder vinkje de bestaande 30-minutentime-out, met vinkje herstel na browsersluiten en een MFA-herhaling na de ingestelde dag, en intrekking bij uitloggen/wachtwoordwijziging.
 - Voer migratie `migrations/20261121_163331_customer_death_date.sql` uit op bestaande databases en controleer het toevoegen/wijzigen van overlijdensdatums, de standaardfiltering en de `+`-zoekoptie in beide patiëntzoekschermen.
 - Controleer de dubbele-registratiewaarschuwing met dezelfde naam/adres, met een afwijkend adres en met twee personen met dezelfde naam op hetzelfde adres.
