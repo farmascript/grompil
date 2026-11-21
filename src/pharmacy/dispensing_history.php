@@ -119,7 +119,6 @@ foreach ($sessionGroups as $sessionRows) {
         . '</div><div class="table-responsive"><table class="table table-sm table-striped table-hover align-middle mb-0">'
         . '<thead><tr><th>' . e(fn_t('dispensing_history_recipient')) . '</th>'
         . '<th>' . e(fn_t('dispensing_history_status')) . '</th>'
-        . '<th>' . e(fn_t('dispensing_history_cnk')) . '</th>'
         . '<th>' . e(fn_t('dispensing_history_product')) . '</th>'
         . '<th class="text-end">' . e(fn_t('dispensing_history_quantity')) . '</th></tr></thead><tbody>';
     foreach ($sessionRows as $row) {
@@ -131,7 +130,7 @@ foreach ($sessionGroups as $sessionRows) {
         : ($row['package_display_nl'] ?: $row['package_display_fr']);
     $groupsHtml .= '<tr><td><span' . ($row['customer_code'] !== '' ? ' title="' . e($row['customer_code']) . '"' : '') . '>'
         . e($row['party_name']) . '</span></td><td><span class="badge text-bg-light">' . e($row['status_code']) . '</span></td>'
-        . '<td><small>' . e($row['cnk']) . '</small></td><td><strong>' . e($productName) . '</strong>'
+        . '<td><strong' . ($row['cnk'] !== '' ? ' title="' . e($row['cnk']) . '"' : '') . '>' . e($productName) . '</strong>'
         . ($package !== '' ? '<span class="ms-2 fw-bold">' . e($package) . '</span>' : '')
         . '</td><td class="text-end">' . e((string) $row['quantity']) . '</td></tr>';
     }

@@ -97,7 +97,7 @@
             table.className = 'table table-sm table-striped table-hover align-middle mb-0';
             const thead = table.createTHead();
             const headerRow = thead.insertRow();
-            ['recipient', 'status', 'cnk', 'product', 'quantity'].forEach((name) => {
+            ['recipient', 'status', 'product', 'quantity'].forEach((name) => {
                 const cell = document.createElement('th');
                 cell.textContent = label(name);
                 if (name === 'quantity') cell.className = 'text-end';
@@ -117,13 +117,11 @@
                 status.className = 'badge text-bg-light';
                 appendHighlightedText(status, String(item.status_code || ''));
                 row.insertCell().append(status);
-                const cnkText = document.createElement('small');
-                appendHighlightedText(cnkText, String(item.cnk || ''));
-                row.insertCell().append(cnkText);
                 const product = row.insertCell();
                 const name = document.createElement('strong');
                 appendHighlightedText(name, String((language === 'fr' ? item.product_name_fr : item.product_name_nl)
                     || item.product_name_nl || item.product_name_fr || ''));
+                if (item.cnk) name.title = String(item.cnk);
                 product.append(name);
                 const packageText = String((language === 'fr' ? item.package_display_fr : item.package_display_nl)
                     || item.package_display_nl || item.package_display_fr || '');
