@@ -767,12 +767,14 @@
 - De patiëntbalk op het afleverscherm toont nu na de naam de leeftijd (in maanden onder 2 jaar, anders in jaren), gevolgd door straat/huisnummer, postcode en gemeente, Google Maps-link en de herbruikbare knop met het aantal contactgegevens. Bij overleden patiënten wordt de leeftijd berekend op de overlijdensdatum. Versie verhoogd naar `0.18.36`.
 - De patiëntbalk wordt nu bijgewerkt wanneer tijdens een afleversessie van naam/patiënt wordt gewisseld. De sessie-API levert hiervoor de naam, leeftijd, adres, kaartcoördinaten en contacttelling van iedere patiëntgroep mee. Versie verhoogd naar `0.18.37`.
 - Correctie contactgegevensmodal: de algemene modalachtergrond blijft wit; alleen de kaarten met contactvelden gebruiken `#f1f5f3`. De invoervelden blijven wit. De GUI-stijlgids beschrijft deze verdeling.
+- Het inlogscherm heeft een optionele functie `Mij onthouden op dit apparaat`. Het herinnerde apparaat blijft maximaal de ingestelde duur aangemeld; standaard is dit 1 dag, configureerbaar met `remember_me_days` (1–30) in `settings_local.php`. De token wordt gehasht opgeslagen, uitgegeven na succesvolle volledige login inclusief eventuele MFA, ingetrokken bij uitloggen en ongeldig na wachtwoordwijziging. Migratie `migrations/20261121_173559_remember_me.sql` is vereist op bestaande databases. Versie verhoogd naar `0.18.40`.
 - De herbruikbare GUI-kleurafspraken voor pagina-, witte en gedempte oppervlakken, randen en actieve suggesties zijn vastgelegd in `docs/gui-style-guide.md` en gelinkt vanuit de README.
 - De opslagparameter voor de uitvoerende gebruiker wordt in de SQL expliciet als `VARCHAR(6)` getypeerd. Dit verhelpt PostgreSQL-fout “inconsistent types deduced for parameter $3” bij het bevestigen van de afleverbon.
 - Het getal rechtsboven in de middenkolom telt de verschillende productregels, niet de aantallen stuks.
 
 ### Volgende stap
 
+- Voer `migrations/20261121_173559_remember_me.sql` uit op de testdatabase. Controleer daarna met een gewoon account en een MFA-account: zonder vinkje de bestaande 30-minutentime-out, met vinkje herstel na browsersluiten en een MFA-herhaling na de ingestelde dag, en intrekking bij uitloggen/wachtwoordwijziging.
 - Voer migratie `migrations/20261121_163331_customer_death_date.sql` uit op bestaande databases en controleer het toevoegen/wijzigen van overlijdensdatums, de standaardfiltering en de `+`-zoekoptie in beide patiëntzoekschermen.
 - Controleer de dubbele-registratiewaarschuwing met dezelfde naam/adres, met een afwijkend adres en met twee personen met dezelfde naam op hetzelfde adres.
 - Valideer de volledige functietoetsbalk op een tablet met alleen touchscreen en op een desktop met toetsenbord. Controleer daarbij alle drie de lagen, openen van URLs in dezelfde/nieuwe tab en dat een toegangsbeperkte modulepagina haar eigen controle blijft toepassen.

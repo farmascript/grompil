@@ -98,6 +98,7 @@ function db(): PgSql\Connection
 
 require_once __DIR__ . '/database_queries.php';
 require_once __DIR__ . '/user_codes.php';
+require_once __DIR__ . '/remember_me.php';
 
 /** Preserve bootstrap's existing false-based query handling with central logging. */
 function grompil_bootstrap_query(string $operation, string $sql, array $params = []): PgSql\Result|false
@@ -143,6 +144,9 @@ function redirect(string $path): never
  */
 function current_user(): ?array
 {
+    if (!isset($_SESSION['user_code'])) {
+        grompil_remember_me_restore();
+    }
     if (!isset($_SESSION['user_code'])) {
         return null;
     }
@@ -196,6 +200,7 @@ function current_user(): ?array
 
     if (!$user || $user['is_active'] !== 't' || $user['approval_status'] !== 'approved'
         || (int) $user['auth_version'] !== (int) ($_SESSION['auth_version'] ?? 0)) {
+        grompil_remember_me_revoke_current();
         $_SESSION = [];
         session_destroy();
 
@@ -209,6 +214,7 @@ function current_user(): ?array
     $user['permissions'] = json_decode($user['permissions'], true) ?: [];
     $user['company_role_permissions'] = json_decode((string) ($user['company_role_permissions'] ?? '[]'), true) ?: [];
     if (is_platform_operator($user) && ($_SESSION['platform_mfa_verified'] ?? false) !== true) {
+        grompil_remember_me_revoke_current();
         $_SESSION = [];
         session_destroy();
         return null;
@@ -219,12 +225,14 @@ function current_user(): ?array
         && (($_SESSION['company_mfa_verified'] ?? false) !== true
             || (int) ($_SESSION['company_mfa_company_id'] ?? 0) !== $activeCompanyId
             || (string) ($_SESSION['company_mfa_user_code'] ?? '') !== (string) $user['user_code'])) {
+        grompil_remember_me_revoke_current();
         $_SESSION = [];
         session_destroy();
         return null;
     }
     if ($user['company_id'] !== null
         && (int) ($_SESSION['active_company_id'] ?? 0) !== $user['company_id']) {
+        grompil_remember_me_revoke_current();
         $_SESSION = [];
         session_destroy();
         return null;

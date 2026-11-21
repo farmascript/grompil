@@ -27,6 +27,7 @@ verify_csrf();
 
 $companySlug = trim((string) ($_POST['c'] ?? ''));
 $company = $companySlug === '' ? null : resolve_company_slug($companySlug, false);
+grompil_remember_me_revoke_current();
 
 $_SESSION = [];
 

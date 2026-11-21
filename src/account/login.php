@@ -92,6 +92,7 @@ if (!empty($_SESSION['session_expired'])) {
     unset($_SESSION['session_expired']);
 }
 $email = (string) ($_POST['email'] ?? '');
+$rememberMeChecked = (string) ($_POST['remember_me'] ?? '') === '1';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -179,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['mfa_pending_company_slug']);
                 $_SESSION['mfa_pending_totp_label'] = 'platform beh';
                 $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
+                $_SESSION['mfa_pending_remember_me'] = $rememberMeChecked;
                 $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
                 $_SESSION['mfa_pending_attempt_email'] = $email;
                 $_SESSION['mfa_pending_ip'] = $ipAddress;
@@ -225,6 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['mfa_pending_company_slug'] = (string) $loginCompany['slug'];
                 $_SESSION['mfa_pending_totp_label'] = trim((string) $loginCompany['slug'] . ' ' . (string) $user['acronym']);
                 $_SESSION['mfa_pending_auth_version'] = (int) $user['auth_version'];
+                $_SESSION['mfa_pending_remember_me'] = $rememberMeChecked;
                 $_SESSION['mfa_pending_email'] = (string) ($user['email'] ?? $email);
                 $_SESSION['mfa_pending_attempt_email'] = $email;
                 $_SESSION['mfa_pending_ip'] = $ipAddress;
@@ -253,6 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $signedInUser = current_user();
             if ($signedInUser !== null) {
+                grompil_remember_me_finish_login($rememberMeChecked);
                 $lastLoginResult = $loginQuery(
                     'login.update_last_login',
                     'UPDATE bt_users SET last_login_at = now() WHERE user_code = $1',
@@ -278,6 +282,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 echo fn_templateRender('login.html', [
     '_login_intro_html' => $introHtml,
     'email_value' => $email,
+    '_remember_me_checked' => $rememberMeChecked ? 'checked' : '',
+    'login_remember_me_label' => fn_t('login_remember_me_label'),
+    'login_remember_me_help' => sprintf(
+        fn_t('login_remember_me_help'),
+        grompil_remember_me_days() . ' ' . fn_t(grompil_remember_me_days() === 1 ? 'login_day' : 'login_days')
+    ),
     '_error_html' => $errorHtml,
     '_csrf_field_html' => csrf_field(),
     '_registration_link_hidden' => $loginCompany ? '' : 'hidden',

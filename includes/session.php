@@ -75,12 +75,21 @@ function grompil_enforce_session_idle_timeout(): void
     }
 
     $now = time();
+    $rememberedSession = array_key_exists('remember_me_expires_at', $_SESSION);
+    $rememberExpiresAt = filter_var($_SESSION['remember_me_expires_at'] ?? null, FILTER_VALIDATE_INT);
+    if ($rememberedSession && $rememberExpiresAt !== false) {
+        if ($rememberExpiresAt > $now) {
+            $_SESSION['last_activity_at'] = $now;
+            return;
+        }
+    }
     $lastActivity = filter_var($_SESSION['last_activity_at'] ?? null, FILTER_VALIDATE_INT);
     if ($lastActivity === false || $lastActivity < 1 || $lastActivity > $now) {
         $lastActivity = $now;
     }
 
-    if ($now - $lastActivity >= grompil_session_idle_timeout_seconds()) {
+    if (($rememberedSession && ($rememberExpiresAt === false || $rememberExpiresAt <= $now))
+        || (!$rememberedSession && $now - $lastActivity >= grompil_session_idle_timeout_seconds())) {
         $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
         if (!in_array($language, ['NL', 'FR', 'EN', 'DE'], true)) {
             $language = 'NL';

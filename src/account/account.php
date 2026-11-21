@@ -617,7 +617,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $transaction = $accountQuery('account.change_password_and_profile.begin', 'BEGIN');
                     $saved = $transaction ? $accountQuery(
                         'account.change_password_and_profile',
-                        'UPDATE bt_users SET password_hash = $1, must_change_password = FALSE,
+                        'UPDATE bt_users SET password_hash = $1, auth_version = auth_version + 1, must_change_password = FALSE,
                             display_name = $2, acronym = NULLIF($3, \'\'), updated_at = now()
                          WHERE user_code = $4',
                         [password_hash($newPassword, PASSWORD_DEFAULT), $displayName, $acronym, $user['user_code']]
@@ -632,11 +632,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $saved = $accountQuery(
                         'account.change_password',
-                        'UPDATE bt_users SET password_hash = $1, must_change_password = FALSE, updated_at = now() WHERE user_code = $2',
+                        'UPDATE bt_users SET password_hash = $1, auth_version = auth_version + 1, must_change_password = FALSE, updated_at = now() WHERE user_code = $2',
                         [password_hash($newPassword, PASSWORD_DEFAULT), $user['user_code']]
                     );
                 }
                 if ($saved) {
+                    $_SESSION['auth_version'] = (int) ($_SESSION['auth_version'] ?? 0) + 1;
                     redirect('account.php?password_changed=1');
                 }
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_change_failed')) . '</div>';

@@ -49,6 +49,11 @@
                                 </label>
                                 <input class="form-control form-control-lg" id="password" name="password" type="password" autocomplete="current-password" required>
                             </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" id="remember-me" name="remember_me" type="checkbox" value="1" @_remember_me_checked@>
+                                <label class="form-check-label" for="remember-me">@login_remember_me_label@</label>
+                                <div class="form-text">@login_remember_me_help@</div>
+                            </div>
                             <button class="btn btn-grompil btn-lg w-100" type="submit">@login_submit@ <span class="ms-2">→</span></button>
                         </form>
                         <a class="d-inline-block mt-3" href="@forgot_password_link@">@forgot_password_link_text@</a>

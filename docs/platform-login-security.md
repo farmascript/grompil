@@ -14,6 +14,7 @@
 - Bij het opnieuw instellen van een authenticator kan naast een TOTP-code ook een ongebruikte herstelcode worden gebruikt, samen met het wachtwoord. Herstelcodes bevatten 16 hexadecimale tekens; spaties en streepjes in de invoer worden genegeerd. De gebruikte herstelcode wordt meteen verbruikt.
 - De authenticator-reset wordt na vijf mislukte pogingen tijdelijk geblokkeerd. `platform_mfa_reset_lockout_minutes` in `settings_local.php` bepaalt de wachttijd in minuten; de standaard is 15 en toegestane waarden zijn 1 tot en met 1440. Deze instelling geldt per installatie.
 - De time-out na inactiviteit wordt per installatie ingesteld met `session_idle_timeout_minutes` in `settings_local.php`. De standaardwaarde is 30 minuten. Na een time-out vraagt Grompil opnieuw om in te loggen.
+- Optioneel kan het inlogscherm `Mij onthouden op dit apparaat` tonen. De duur staat per installatie in `settings_local.php` met `remember_me_days`; de veilige standaard is 1 dag en toegestane waarden zijn 1 t/m 30 dagen. Voor de eerste test kan de instelling expliciet op `'remember_me_days' => 1` staan. Zonder aanvinken blijft `session_idle_timeout_minutes` gelden. Een herinnerde aanmelding verloopt absoluut na de ingestelde termijn; een nieuwe login en eventuele verplichte authenticatorcontrole zijn daarna nodig. De server bewaart alleen een hash van het willekeurige browser-token. Uitloggen trekt het token voor die browser in; een wachtwoordwijziging maakt eerder uitgegeven tokens ongeldig via `auth_version`.
 
 ## Voorbereiding per installatie
 
