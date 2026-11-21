@@ -517,6 +517,9 @@ if ($patientSuggestionRequest) {
                 'deceased_label' => !empty($patient['date_of_death']) ? $customerText('patient_deceased') : '',
                 'death_date_display' => !empty($patient['date_of_death'])
                     ? fn_formatDateDisplay((string) $patient['date_of_death']) : '',
+                'age_at_death' => fn_ageAtDate(
+                    (string) ($patient['date_of_birth'] ?? ''), (string) ($patient['date_of_death'] ?? '')
+                ),
             ];
         }
         echo json_encode(['results' => $suggestions], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
@@ -580,7 +583,9 @@ foreach ($patientMatches as $patient) {
         '_patient_deceased_class' => !empty($patient['date_of_death']) ? 'customer-deceased-option' : '',
         '_patient_deceased_html' => !empty($patient['date_of_death'])
             ? '<span class="d-block small customer-deceased-date">' . e($customerText('patient_deceased') . ' · '
-                . fn_formatDateDisplay((string) $patient['date_of_death'])) . '</span>' : '',
+                . fn_formatDeathDateDisplay(
+                    (string) ($patient['date_of_birth'] ?? ''), (string) $patient['date_of_death']
+                )) . '</span>' : '',
     ]);
 }
 
@@ -760,7 +765,8 @@ if ($selectedPatient) {
     }
     $dod = trim((string) ($selectedPatient['date_of_death'] ?? ''));
     if ($dod !== '') {
-        $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_death_date') . ': ' . fn_formatDateDisplay($dod));
+        $patientIdentityTooltipText .= '&#10;' . e($customerText('patient_death_date') . ': '
+            . fn_formatDeathDateDisplay($dob, $dod));
     }
     if (isset($selectedPatient['created_at'])) {
         $patientName = grompil_dispensing_display_name(

@@ -75,6 +75,9 @@ if (($_GET['ajax'] ?? '') === 'search') {
             'deceased_label' => !empty($row['date_of_death']) ? fn_t('patient_deceased') : '',
             'death_date_display' => !empty($row['date_of_death'])
                 ? fn_formatDateDisplay((string) $row['date_of_death']) : '',
+            'age_at_death' => fn_ageAtDate(
+                (string) ($row['date_of_birth'] ?? ''), (string) ($row['date_of_death'] ?? '')
+            ),
             'is_active' => $row['is_active'] === 't',
         ];
     }
@@ -112,7 +115,9 @@ if ($selectedCustomer !== null) {
         'customer_birth_date' => $selectedCustomer['date_of_birth'] === null
             ? fn_t('customers_not_recorded') : fn_formatDateDisplay((string) $selectedCustomer['date_of_birth']),
         'customer_death_date' => empty($selectedCustomer['date_of_death'])
-            ? fn_t('customers_not_recorded') : fn_formatDateDisplay((string) $selectedCustomer['date_of_death']),
+            ? fn_t('customers_not_recorded') : fn_formatDeathDateDisplay(
+                (string) ($selectedCustomer['date_of_birth'] ?? ''), (string) $selectedCustomer['date_of_death']
+            ),
         'customer_status' => fn_t($selectedCustomer['is_active'] === 't' ? 'active' : 'inactive'),
         'customer_created_at' => fn_formatDateDisplay((string) $selectedCustomer['created_at']),
         'customer_updated_at' => fn_formatDateDisplay((string) $selectedCustomer['updated_at']),

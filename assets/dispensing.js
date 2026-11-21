@@ -133,7 +133,9 @@
                     link.classList.add('customer-deceased-option');
                     const deathDate = document.createElement('span');
                     deathDate.className = 'd-block small customer-deceased-date';
-                    deathDate.textContent = [patient.deceased_label, patient.death_date_display].filter(Boolean).join(' · ');
+                    const age = Number.isInteger(patient.age_at_death) ? ` (${patient.age_at_death})` : '';
+                    deathDate.textContent = [patient.deceased_label, `${patient.death_date_display || ''}${age}`]
+                        .filter(Boolean).join(' · ');
                     link.append(deathDate);
                 }
                 patientSuggestions.append(link);

@@ -66,7 +66,9 @@
             if (customer.is_deceased) {
                 const deceased = document.createElement('span');
                 deceased.className = 'd-block small customer-deceased-date';
-                deceased.textContent = [customer.deceased_label, customer.death_date_display].filter(Boolean).join(' · ');
+                const age = Number.isInteger(customer.age_at_death) ? ` (${customer.age_at_death})` : '';
+                deceased.textContent = [customer.deceased_label, `${customer.death_date_display || ''}${age}`]
+                    .filter(Boolean).join(' · ');
                 option.append(deceased);
             }
             results.append(option);

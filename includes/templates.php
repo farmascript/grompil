@@ -344,6 +344,40 @@ function fn_formatDateDisplay(?string $value): string
 }
 
 /**
+ * Return the age in completed years on a given date.
+ */
+function fn_ageAtDate(?string $birthDateValue, ?string $dateValue): ?int
+{
+    $birthDateValue = trim((string) $birthDateValue);
+    $dateValue = trim((string) $dateValue);
+    if ($birthDateValue === '' || $dateValue === '') {
+        return null;
+    }
+
+    $birthDate = DateTimeImmutable::createFromFormat('!Y-m-d', $birthDateValue);
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $dateValue);
+    if ($birthDate === false || $birthDate->format('Y-m-d') !== $birthDateValue
+        || $date === false || $date->format('Y-m-d') !== $dateValue || $date < $birthDate) {
+        return null;
+    }
+
+    return $birthDate->diff($date)->y;
+}
+
+/**
+ * Format a death date with the age reached, when a valid birth date is known.
+ */
+function fn_formatDeathDateDisplay(?string $birthDateValue, ?string $deathDateValue): string
+{
+    $deathDateDisplay = fn_formatDateDisplay($deathDateValue);
+    if ($deathDateDisplay === '') {
+        return '';
+    }
+    $age = fn_ageAtDate($birthDateValue, $deathDateValue);
+    return $deathDateDisplay . ($age !== null ? ' (' . $age . ')' : '');
+}
+
+/**
  * Render the language selector control.
  *
  * @param string $class The CSS class attribute for the control.
