@@ -15,6 +15,7 @@ The pharmacy workbench is available at `dispense.php`. It requires an active com
 - `dispensing-history.php` provides a company-wide, searchable, paginated list of completed dispensing lines. The `open_patient_history` function-key action opens a modal for the active patient, or shows anonymous/walk-in dispensing when no patient is active; history is visible to company users with `pharmacy.dispense`, regardless of which employee completed the receipt.
 - Prescription dispensings receive a company-wide sequential prescription number starting at 1. The number is stored on the completed dispensing and shown in both history views. Only lines with the regular `prescription` status receive a number; `incomplete_prescription` stays unnumbered until a later regularization workflow assigns one.
 - Open dispensing lines can be edited in a modal: recipient, status, and quantity. Moving a free-sale line to a prescription can therefore also assign it to a named patient. If the destination already has the same product and status, the lines merge, unless their combined quantity would exceed 999.
+- Empty recipient groups are hidden from the product list. The anonymous/free-sale recipient is shown as a choice only while free sale is selected or it already has product lines.
 - The count at the upper right of the current dispensing panel shows the number of distinct product lines, not the sum of their quantities.
 - Electronic prescriptions, live stock, safety checks, reimbursement, prices, and checkout are not connected. Their controls are deliberately disabled.
 

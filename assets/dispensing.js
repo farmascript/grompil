@@ -444,7 +444,11 @@
     function renderPartySelector() {
         if (!partySelector) return;
         partySelector.replaceChildren();
-        for (const party of dispensingParties) {
+        const activeStatus = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale';
+        const visibleParties = dispensingParties.filter((party) => party.type !== 'anonymous'
+            || activeStatus === 'free_sale'
+            || Array.from(basket.values()).some((line) => Number(line.party_id) === Number(party.id)));
+        for (const party of visibleParties) {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = `btn btn-sm ${Number(party.id) === activePartyId ? 'btn-primary' : 'btn-outline-secondary'}`;
@@ -565,7 +569,7 @@
         if (closeDispensingButton) {
             closeDispensingButton.disabled = products.length === 0 || products.some((product) => product.pending);
         }
-        if (!dispensingParties.length) {
+        if (!products.length) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
             td.colSpan = 5;
@@ -578,6 +582,7 @@
         }
         for (const party of dispensingParties) {
             const partyProducts = products.filter((product) => Number(product.party_id) === Number(party.id));
+            if (!partyProducts.length) continue;
             const headingRow = document.createElement('tr');
             headingRow.className = 'dispense-party-heading';
             const heading = document.createElement('th');
@@ -586,17 +591,6 @@
             heading.textContent = party.name;
             headingRow.append(heading);
             rows.append(headingRow);
-
-            if (!partyProducts.length) {
-                const emptyRow = document.createElement('tr');
-                const emptyCell = document.createElement('td');
-                emptyCell.colSpan = 5;
-                emptyCell.className = 'empty-basket';
-                emptyCell.textContent = t.empty;
-                emptyRow.append(emptyCell);
-                rows.append(emptyRow);
-                continue;
-            }
 
             for (const product of partyProducts) {
                 const tr = document.createElement('tr');
@@ -828,6 +822,8 @@
 
     dispenseStatusSelect?.addEventListener('change', () => {
         applyDispenseStatus();
+        renderPartySelector();
+        renderBasket();
         void sessionReady.then(() => sessionRequest('status_set', { status_key: dispenseStatusSelect.value }))
             .catch(showSessionError);
     });
