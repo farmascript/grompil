@@ -780,6 +780,7 @@ $patientMetadata = '';
 $patientContactCount = 0;
 $contactManagerModalHtml = '';
 $patientContactButtonHtml = '';
+$patientEditButtonHtml = '';
 $patientIdentityTooltipText = '';
 $patientAge = '';
 if ($selectedPatient) {
@@ -825,6 +826,11 @@ if ($selectedPatient) {
             'contact_manager_count' => fn_t('contact_manager_count'),
             'contact_manager_count_number' => (string) $patientContactCount,
         ]);
+        $patientEditButtonHtml = fn_moduleTemplateRender('dispensing', 'dispensing_patient_edit_button.html', [
+            'customer_code' => e((string) $selectedPatient['customer_code']),
+            'dispense_status_key' => e($dispenseStatusKey),
+            'patient_edit' => e($customerText('patient_edit')),
+        ]);
     }
     $patientBarAddress = trim(implode(', ', array_filter([
         trim((string) ($selectedPatient['street'] ?? '') . ' ' . (string) ($selectedPatient['house_number'] ?? '')
@@ -839,6 +845,7 @@ if ($selectedPatient) {
             $patientAddress
         ),
         '_patient_contact_button_html' => $patientContactButtonHtml,
+        '_patient_edit_button_html' => $patientEditButtonHtml,
     ]);
 }
 if ($patientMetadata === '') {
@@ -846,6 +853,7 @@ if ($patientMetadata === '') {
         'patient_address' => '',
         '_patient_map_link_html' => '',
         '_patient_contact_button_html' => '',
+        '_patient_edit_button_html' => '',
     ]);
 }
 $auditLine = $selectedPatient
@@ -892,13 +900,6 @@ $companyBrandHtml = $companyLogo !== ''
     : fn_moduleTemplateRender('dispensing', 'dispensing_company_monogram.html', [
         'company_monogram' => strtoupper(mb_substr((string) $companyIdentity['name'], 0, 1)),
     ]);
-$patientEditButtonHtml = $selectedPatient
-    ? fn_moduleTemplateRender('dispensing', 'dispensing_patient_edit_button.html', [
-        'customer_code' => $selectedPatientCode,
-        'dispense_status_key' => e($dispenseStatusKey),
-        'patient_edit' => $customerText('patient_edit'),
-    ])
-    : '';
 $addPatientButtonHtml = fn_moduleTemplateRender('dispensing', 'dispensing_add_patient_button.html', [
     'patient_add' => $customerText('patient_add'),
     'patient_add_url' => e(fn_appBaseHref() . 'dispense.php?dispense_status=' . rawurlencode($dispenseStatusKey) . '&new_patient=1'
@@ -1135,7 +1136,6 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     '_dispense_patient_title_html' => $patientTitleHtml,
     '_contact_manager_modal_html' => $contactManagerModalHtml,
     '_contact_manager_modal_open' => $contactManagerModalOpen && $selectedPatient !== null ? 'true' : 'false',
-    '_dispense_patient_edit_button_html' => $patientEditButtonHtml,
     '_dispense_brand_html' => $companyBrandHtml,
     '_dispense_alert_html' => $messageHtml,
     '_dispense_function_bar_html' => $functionBarHtml,

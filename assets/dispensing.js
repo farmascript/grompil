@@ -577,6 +577,18 @@
                 contactLink.setAttribute('aria-label', `${contactLink.title}: ${party.contact_count || 0}`);
                 contactLink.textContent = String(party.contact_count || 0);
                 patientDetails.append(contactLink);
+
+                const editLink = document.createElement('a');
+                editLink.className = 'btn btn-outline-secondary btn-sm patient-edit-trigger';
+                const editUrl = new URL(page.dataset.patientEndpoint, window.location.href);
+                editUrl.searchParams.set('patient', party.customer_code);
+                editUrl.searchParams.set('dispense_status', dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale');
+                editUrl.searchParams.set('edit', '1');
+                editLink.href = editUrl.href;
+                editLink.title = page.dataset.textPatientEdit || '';
+                editLink.setAttribute('aria-label', editLink.title);
+                editLink.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zM9.793 2.5 1 11.293V15h3.707L13.5 6.207z"/></svg>';
+                patientDetails.append(editLink);
             }
         }
         if (patientActions) patientActions.classList.toggle('d-none', !partyMatchesPageCustomer);
