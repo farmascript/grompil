@@ -899,6 +899,7 @@ $arrSubst = array (
   'dispense_select_patient' => 'Patient auswählen oder registrieren.',
   'dispense_no_patient' => 'Kein Patient ausgewählt',
   'dispense_product_search' => 'Arzneimittel suchen',
+  'dispense_withdrawn_filter' => 'Außer Handel',
   'dispense_product_help' => 'Im aktuellen SAM-Katalog suchen. Ein Ergebnis anklicken, um es vorläufig zum Warenkorb hinzuzufügen.',
   'dispense_patient_required' => 'Wählen Sie zuerst einen Patienten aus, um Arzneimittel zu dieser Abgabe hinzuzufügen.',
   'dispense_walkin_title' => 'Freiverkauf ohne Patient',

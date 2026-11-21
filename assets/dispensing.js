@@ -12,6 +12,7 @@
         bootstrap.Modal.getOrCreateInstance(contactModal).show();
     }
     const input = document.querySelector('[data-product-search]');
+    const withdrawnToggle = document.querySelector('[data-include-revoked]');
     const suggestions = document.querySelector('[data-product-suggestions]');
     const rows = document.querySelector('[data-basket-rows]');
     const count = document.querySelector('[data-basket-count]');
@@ -279,6 +280,7 @@
     let activeSuggestionIndex = -1;
 
     const sessionStorageKey = `grompil-dispensing-${page.dataset.sessionCompany || '0'}-${page.dataset.sessionUser || 'user'}`;
+    const withdrawnFilterStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-include-revoked`;
 
     let historyCustomerCode = '';
     let historyCurrentPage = 1;
@@ -512,6 +514,11 @@
                     const random = Math.floor(Math.random() * 16);
                     return (character === 'x' ? random : ((random & 3) | 8)).toString(16);
                 });
+        }
+        try {
+            withdrawnToggle.checked = sessionStorage.getItem(withdrawnFilterStorageKey()) === '1';
+        } catch {
+            withdrawnToggle.checked = false;
         }
         renderSessionReference();
         const session = await sessionRequest('load', {
@@ -875,6 +882,7 @@
                 sessionStorage.removeItem(sessionStorageKey);
                 sessionStorage.removeItem(`${sessionStorageKey}-party`);
                 sessionStorage.removeItem(`${sessionStorageKey}-page-customer`);
+                sessionStorage.removeItem(withdrawnFilterStorageKey());
             } catch {}
             if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).hide();
             window.location.reload();
@@ -897,6 +905,7 @@
                 sessionStorage.removeItem(sessionStorageKey);
                 sessionStorage.removeItem(`${sessionStorageKey}-party`);
                 sessionStorage.removeItem(`${sessionStorageKey}-page-customer`);
+                sessionStorage.removeItem(withdrawnFilterStorageKey());
             } catch {}
             window.location.reload();
         } catch {
@@ -966,6 +975,7 @@
                 url.searchParams.set('q', query);
                 url.searchParams.set('mode', page.dataset.dispenseMode || 'patient');
                 url.searchParams.set('dispense_status', page.dataset.dispenseStatus || 'free_sale');
+                url.searchParams.set('include_revoked', withdrawnToggle?.checked ? '1' : '0');
                 if (page.dataset.dispenseMode === 'patient' && page.dataset.patientCode) {
                     url.searchParams.set('patient', page.dataset.patientCode);
                 }
@@ -989,6 +999,14 @@
                 suggestions.classList.remove('d-none');
             }
         }, 220);
+    });
+    withdrawnToggle?.addEventListener('change', () => {
+        try {
+            if (withdrawnToggle.checked) sessionStorage.setItem(withdrawnFilterStorageKey(), '1');
+            else sessionStorage.removeItem(withdrawnFilterStorageKey());
+        } catch {}
+        hideSuggestions();
+        if (input?.value.trim()) input.dispatchEvent(new Event('input', { bubbles: true }));
     });
     input.addEventListener('keydown', (event) => {
         const buttons = productSuggestionButtons();

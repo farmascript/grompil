@@ -899,6 +899,7 @@ $arrSubst = array (
   'dispense_select_patient' => 'Selecteer of registreer een patiënt.',
   'dispense_no_patient' => 'Geen patiënt geselecteerd',
   'dispense_product_search' => 'Geneesmiddel zoeken',
+  'dispense_withdrawn_filter' => 'Uit de handel',
   'dispense_product_help' => 'Zoek in de actuele SAM-catalogus. Selecteer een resultaat om het tijdelijk aan de mand toe te voegen.',
   'dispense_patient_required' => 'Selecteer eerst een patiënt om geneesmiddelen aan deze aflevering toe te voegen.',
   'dispense_walkin_title' => 'Vrije verkoop zonder patiënt',

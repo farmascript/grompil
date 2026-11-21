@@ -197,6 +197,12 @@ if (isset($_GET['product_suggest']) && (string) $_GET['product_suggest'] === '1'
     $statuses = array_key_exists('status_filter', $_GET)
         ? (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : [])
         : (is_array($rawStatuses) ? array_values(array_filter($rawStatuses, 'is_string')) : null);
+    $includeRevoked = (string) ($_GET['include_revoked'] ?? '') === '1';
+    if (!$includeRevoked) {
+        $statuses = $statuses === null
+            ? ['AUTHORIZED', 'SUSPENDED']
+            : array_values(array_diff(array_map('strtoupper', $statuses), ['REVOKED']));
+    }
     try {
         $totalCount = 0;
         $matches = grompil_sam_product_search($productQuery, $limit, $statuses, $totalCount);
@@ -956,6 +962,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_select_patient' => $dispenseCustomerText('dispense_select_patient'),
     'dispense_edit_patient' => $customerText('patient_edit'),
     'dispense_product_search' => fn_t('dispense_product_search'),
+    'dispense_withdrawn_filter' => fn_t('dispense_withdrawn_filter'),
     'dispense_product_help' => fn_t('dispense_product_help'),
     'dispense_patient_required' => $dispenseCustomerText('dispense_patient_required'),
     'dispense_status' => fn_t('dispense_status'),

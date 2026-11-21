@@ -17,6 +17,7 @@ The pharmacy workbench is available at `dispense.php`. It requires an active com
 - Open dispensing lines can be edited in a modal: recipient, status, and quantity. Moving a free-sale line to a prescription can therefore also assign it to a named patient. If the destination already has the same product and status, the lines merge, unless their combined quantity would exceed 999.
 - Empty recipient groups are hidden from the product list. The anonymous/free-sale recipient is shown as a choice only while free sale is selected or it already has product lines.
 - The company-wide history search and the patient-history modal filter automatically after three typed characters; the manual search button remains available.
+- The product search hides products with a revoked AMP or AMPP status by default. The per-session `UH` toggle includes revoked products when selected and resets when that dispensing session is completed or discarded.
 - The count at the upper right of the current dispensing panel shows the number of distinct product lines, not the sum of their quantities.
 - Electronic prescriptions, live stock, safety checks, reimbursement, prices, and checkout are not connected. Their controls are deliberately disabled.
 

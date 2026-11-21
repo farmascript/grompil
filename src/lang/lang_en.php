@@ -899,6 +899,7 @@ $arrSubst = array (
   'dispense_select_patient' => 'Select or register a patient.',
   'dispense_no_patient' => 'No patient selected',
   'dispense_product_search' => 'Find a medicine',
+  'dispense_withdrawn_filter' => 'Withdrawn from the market',
   'dispense_product_help' => 'Search the current SAM catalogue. Select a result to add it temporarily to the basket.',
   'dispense_patient_required' => 'Select a patient first to add medicines to this dispensing.',
   'dispense_walkin_title' => 'Walk-in sale without a patient',
