@@ -3,6 +3,12 @@
     if (!page) return;
 
     const modal = document.getElementById('patientModal');
+    modal?.addEventListener('shown.bs.modal', () => {
+        const action = modal.querySelector('.customer-edit-form input[name="action"]')?.value;
+        if (action === 'create_patient') {
+            modal.querySelector('#patient-first-name')?.focus();
+        }
+    });
     if (modal && page.dataset.modalOpen === 'true' && window.bootstrap) {
         bootstrap.Modal.getOrCreateInstance(modal).show();
     }
