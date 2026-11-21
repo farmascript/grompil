@@ -782,6 +782,7 @@
 - De zoek- en datumfilters van de afleverhistoriek staan nu in een aparte kaart met de afgesproken achtergrondkleur `#f1f5f3`; de invoervelden blijven wit. De stijlgids is hiervoor aangevuld. Versie verhoogd naar `0.18.49`.
 - Het sessienummer is niet langer zichtbaar in de afleverhistoriekkaart. Het volledige nummer verschijnt als tooltip bij het label ‘Receptnummer’; het receptnummer blijft zichtbaar. Versie verhoogd naar `0.18.50`.
 - De CNK-kolom is uit de afleverhistoriekkaart verwijderd. De CNK verschijnt als tooltip bij de productnaam en blijft doorzoekbaar. Versie verhoogd naar `0.18.51`.
+- Bij een zoekopdracht die een CNK van een productregel raakt, wordt de volledige productnaam en verpakking van die regel rood gemarkeerd; de overige regels van dezelfde sessie blijven als context zichtbaar. Versie verhoogd naar `0.18.52`.
 
 ### Volgende stap
 

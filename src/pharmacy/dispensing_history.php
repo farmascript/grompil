@@ -130,8 +130,9 @@ foreach ($sessionGroups as $sessionRows) {
         : ($row['package_display_nl'] ?: $row['package_display_fr']);
     $groupsHtml .= '<tr><td><span' . ($row['customer_code'] !== '' ? ' title="' . e($row['customer_code']) . '"' : '') . '>'
         . e($row['party_name']) . '</span></td><td><span class="badge text-bg-light">' . e($row['status_code']) . '</span></td>'
-        . '<td><strong' . ($row['cnk'] !== '' ? ' title="' . e($row['cnk']) . '"' : '') . '>' . e($productName) . '</strong>'
-        . ($package !== '' ? '<span class="ms-2 fw-bold">' . e($package) . '</span>' : '')
+        . '<td><strong class="' . ($row['cnk_matches_query'] ? 'text-danger' : '') . '"'
+        . ($row['cnk'] !== '' ? ' title="' . e($row['cnk']) . '"' : '') . '>' . e($productName) . '</strong>'
+        . ($package !== '' ? '<span class="ms-2 fw-bold' . ($row['cnk_matches_query'] ? ' text-danger' : '') . '">' . e($package) . '</span>' : '')
         . '</td><td class="text-end">' . e((string) $row['quantity']) . '</td></tr>';
     }
     $groupsHtml .= '</tbody></table></div></section>';

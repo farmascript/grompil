@@ -121,6 +121,7 @@
                 const name = document.createElement('strong');
                 appendHighlightedText(name, String((language === 'fr' ? item.product_name_fr : item.product_name_nl)
                     || item.product_name_nl || item.product_name_fr || ''));
+                if (item.cnk_matches_query) name.classList.add('text-danger');
                 if (item.cnk) name.title = String(item.cnk);
                 product.append(name);
                 const packageText = String((language === 'fr' ? item.package_display_fr : item.package_display_nl)
@@ -128,6 +129,7 @@
                 if (packageText) {
                     const pack = document.createElement('span');
                     pack.className = 'ms-2 fw-bold';
+                    if (item.cnk_matches_query) pack.classList.add('text-danger');
                     appendHighlightedText(pack, packageText);
                     product.append(pack);
                 }
