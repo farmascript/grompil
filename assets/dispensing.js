@@ -291,7 +291,7 @@
             } else {
                 const table = document.createElement('table');
                 table.className = 'table table-sm table-striped align-middle';
-                const headings = [t.historyDate, t.historySession, t.historyStatus, t.historyCnk, t.historyProduct, t.historyPackage, t.historyQuantity];
+                const headings = [t.historyDate, t.historySession, t.historyStatus, t.historyCnk, t.historyProduct, t.historyQuantity];
                 const thead = table.createTHead().insertRow();
                 headings.forEach((label) => { const th = document.createElement('th'); th.textContent = label || ''; thead.append(th); });
                 const tbody = table.createTBody();
@@ -299,9 +299,22 @@
                     const tr = tbody.insertRow();
                     const product = language === 'fr' ? (row.product_name_fr || row.product_name_nl) : (row.product_name_nl || row.product_name_fr);
                     const pack = language === 'fr' ? (row.package_display_fr || row.package_display_nl) : (row.package_display_nl || row.package_display_fr);
-                    [row.completed_at_display, String(row.session_id).slice(0, 8) + '…', row.status_code, row.cnk, product, pack, row.quantity].forEach((value) => {
+                    [row.completed_at_display, String(row.session_id).slice(0, 8) + '…', row.status_code, row.cnk].forEach((value) => {
                         const cell = tr.insertCell(); cell.textContent = String(value ?? '');
                     });
+                    const productCell = tr.insertCell();
+                    const productLabel = document.createElement('strong');
+                    productLabel.textContent = String(product ?? '');
+                    productCell.append(productLabel);
+                    if (pack) {
+                        const packageLabel = document.createElement('strong');
+                        packageLabel.className = 'ms-2';
+                        packageLabel.textContent = pack;
+                        productCell.append(packageLabel);
+                    }
+                    const quantityCell = tr.insertCell();
+                    quantityCell.className = 'text-end';
+                    quantityCell.textContent = String(row.quantity ?? '');
                 });
                 const responsiveTable = document.createElement('div');
                 responsiveTable.className = 'table-responsive';

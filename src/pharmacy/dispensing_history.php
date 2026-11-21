@@ -90,13 +90,14 @@ foreach ($history['rows'] as $row) {
         . '</td>'
         . '<td><span class="badge text-bg-light">' . e($row['status_code']) . '</span></td>'
         . '<td><small>' . e($row['cnk']) . '</small></td>'
-        . '<td><strong>' . e($productName) . '</strong></td>'
-        . '<td><strong>' . e($package) . '</strong></td>'
+        . '<td><strong>' . e($productName) . '</strong>'
+        . ($package !== '' ? '<span class="ms-2 fw-bold">' . e($package) . '</span>' : '')
+        . '</td>'
         . '<td class="text-end">' . e((string) $row['quantity']) . '</td>'
         . '</tr>';
 }
 if ($rowsHtml === '') {
-    $rowsHtml = '<tr><td colspan="8" class="text-center text-secondary py-4">' . e(fn_t('dispensing_history_empty')) . '</td></tr>';
+    $rowsHtml = '<tr><td colspan="7" class="text-center text-secondary py-4">' . e(fn_t('dispensing_history_empty')) . '</td></tr>';
 }
 
 $paginationHtml = '<nav aria-label="' . e(fn_t('dispensing_history_pagination')) . '"><ul class="pagination pagination-sm mb-0">';
