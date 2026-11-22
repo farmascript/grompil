@@ -6,7 +6,7 @@ Table prefixes describe a table's data family. They do not encode its dependency
 |---|---|---|
 | `bt_` | Basic business entities | Companies, user identities, and future Grompil-owned product records |
 | `dt_` | Detail records owned by a basic entity | User/company contacts and addresses |
-| `xt_` | External source data | SAM catalog and classification imports |
+| `xt_` | External source data and shared external product master | SAM catalog imports, chemical references, and the consolidated CNK product catalogue |
 | `ft_` | Shared facilities and platform reference/configuration data | Lookup lists, roles, shared settings, and translation overrides |
 | `ct_` | Company-scoped records and configuration | Company memberships, roles, pages, domains, and preferences |
 | `st_` | System operation and security records | Login/reset attempts, tokens, MFA credentials, and recovery codes |
@@ -66,8 +66,9 @@ The prefix and level answer different questions. For example, `ct_company_users`
 | `sam_public_products` | `xt_sam_public_products` | 0 |
 | `sam_atc_classifications` | `xt_sam_atc_classifications` | 0 |
 | `pharmacies` | `xt_pharmacies` | 0 |
+| shared CNK product master | `xt_prod` | 0 |
 
-There is currently no pure Level 2 table. If one is introduced, use the `rt_` family. External SAM and AFMPS records remain `xt_`; a separately maintained Grompil product entity can use `bt_products` if and when that table is introduced.
+There is currently no pure Level 2 table. If one is introduced, use the `rt_` family. External SAM and AFMPS source mirrors remain `xt_`. The shared canonical product catalogue is `xt_prod`, keyed by CNK; Grompil-owned products without an external CNK can use `bt_products` if and when that need arises.
 
 ## Applying the table rename
 
