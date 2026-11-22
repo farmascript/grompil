@@ -2,7 +2,7 @@
 /**
  *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Sun 2026-11-15 21:34:02
+ * @date_mut: Sun 2026-11-22 20:53:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -596,6 +596,12 @@ $employeeAcronym = trim((string) ($currentUser['acronym'] ?? ''));
 $employeeTooltip = $employeeAcronym !== ''
     ? $employeeDisplayName . ' - ' . $employeeAcronym
     : $employeeDisplayName;
+$employeeRoleName = trim((string) ($company['company_role_name'] ?? ''));
+if ($employeeRoleName === '') {
+    $employeeRoleName = is_platform_operator($currentUser)
+        ? fn_t('manager_platform_operator')
+        : trim((string) ($currentUser['role_name'] ?? ''));
+}
 $nameParts = preg_split('/\s+/u', trim((string) $currentUser['display_name']), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 $initials = strtoupper(mb_substr($nameParts[0] ?? '?', 0, 1) . mb_substr($nameParts[count($nameParts) - 1] ?? '', 0, 1));
 
@@ -1091,7 +1097,6 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_line_edit_error' => fn_t('dispense_line_edit_error'),
     'dispense_remove' => fn_t('delete'),
     'dispense_price_unavailable' => fn_t('dispense_price_unavailable'),
-    'dispense_working_user' => fn_t('dispense_working_user'),
     'dispense_logged_in' => fn_t('dispense_logged_in'),
     'dispense_prescriptions' => fn_t('dispense_prescriptions'),
     'dispense_right_panel' => fn_t('dispense_right_panel'),
@@ -1106,6 +1111,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_receipt_confirm' => fn_t('dispense_receipt_confirm'),
     'dispense_patient_modal_title' => $patientModalTitle,
     'dispense_company' => (string) $companyIdentity['name'],
+    'dispense_employee_role' => $employeeRoleName,
     'dispense_employee' => (string) $currentUser['display_name'],
     'dispense_employee_title' => $employeeTooltip,
     'dispense_employee_initials' => $initials,
