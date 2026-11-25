@@ -442,8 +442,20 @@ function fn_templateRenderPath(string $path, array $values = []): string
     static $showTranslationKeyTooltips = null;
     if ($showTranslationKeyTooltips === null) {
         $user = current_user();
-        $showTranslationKeyTooltips = $user !== null
-            && (int) ($user['role_level'] ?? 100) < 100;
+        $managementPermissions = [
+            'company.users.manage',
+            'company.roles.manage',
+            'company.translations.manage',
+            'company.settings.manage',
+        ];
+        $companyPermissions = is_array($user['company_role_permissions'] ?? null)
+            ? $user['company_role_permissions']
+            : [];
+        $showTranslationKeyTooltips = $user !== null && (
+            is_platform_operator($user)
+            || (int) ($user['role_level'] ?? 100) < 100
+            || array_intersect($managementPermissions, $companyPermissions) !== []
+        );
     }
 
     $rendered = preg_replace_callback(
