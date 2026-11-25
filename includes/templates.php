@@ -479,7 +479,7 @@ function fn_templateRenderPath(string $path, array $values = []): string
                     && array_key_exists($key, $translations)
                     && fn_templateTokenIsVisibleText($html, $offset)
                 ) {
-                    return '<span data-bs-toggle="tooltip" data-bs-title="' . e($key)
+                    return '<span data-bs-toggle="tooltip" title="' . e($key) . '" data-bs-title="' . e($key)
                         . '" tabindex="0">' . $value . '</span>';
                 }
                 return $value;
@@ -497,7 +497,7 @@ function fn_templateRenderPath(string $path, array $values = []): string
                 return $translated;
             }
 
-            return '<span data-bs-toggle="tooltip" data-bs-title="' . e((string) $key)
+            return '<span data-bs-toggle="tooltip" title="' . e((string) $key) . '" data-bs-title="' . e((string) $key)
                 . '" tabindex="0">' . $translated . '</span>';
         },
         $html,
