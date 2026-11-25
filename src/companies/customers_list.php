@@ -16,7 +16,6 @@ if (!grompil_can_access_module('customers-list.php', $actor, $company)) {
 $companyId = (int) $company['id'];
 $columns = [
     'id' => 'customers_list_col_id',
-    'company_id' => 'customers_list_col_company_id',
     'customer_code' => 'customers_list_col_customer_code',
     'name_first' => 'customers_list_col_name_first',
     'name_last' => 'customers_list_col_name_last',
@@ -169,9 +168,7 @@ if ($bodyRows === '') {
 
 $pageStart = $totalRows === 0 ? 0 : $offset + 1;
 $pageEnd = min($totalRows, $offset + count($rows));
-$pageCount = $queryFailed ? 1 : $totalPages;
-
-page_start(fn_t('customers_list_title'), $actor);
+page_start(fn_t('customers_list_title'), $actor, true);
 echo fn_templateRender('customers_list.html', [
     'customers_list_title' => fn_t('customers_list_title'),
     'customers_list_intro' => fn_t('customers_list_intro'),

@@ -324,7 +324,6 @@ $arrSubst = array (
   'customers_list_empty' => 'Keine Kundendaten gefunden.',
   'customers_list_unavailable' => 'Die Kundenliste ist vorübergehend nicht verfügbar.',
   'customers_list_col_id' => 'ID',
-  'customers_list_col_company_id' => 'Unternehmens-ID',
   'customers_list_col_customer_code' => 'Kundencode',
   'customers_list_col_name_first' => 'Vorname',
   'customers_list_col_name_last' => 'Nachname',

@@ -324,7 +324,6 @@ $arrSubst = array (
   'customers_list_empty' => 'Geen klantgegevens gevonden.',
   'customers_list_unavailable' => 'De klantenlijst is tijdelijk niet beschikbaar.',
   'customers_list_col_id' => 'ID',
-  'customers_list_col_company_id' => 'Bedrijf-ID',
   'customers_list_col_customer_code' => 'Klantcode',
   'customers_list_col_name_first' => 'Voornaam',
   'customers_list_col_name_last' => 'Achternaam',
