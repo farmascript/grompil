@@ -243,6 +243,7 @@ if ($notes === []) {
             $messageHtml .= '<div>' . e($messageLine) . $wikiLink . '</div>';
         }
         echo '<article class="card mb-3"><div class="card-body"><div class="small text-secondary mb-2">'
+            . '<strong class="text-body">' . e((string) $note['wiki_page_id']) . '</strong> · '
             . e(fn_formatDateDisplay((string) $note['created_at'])) . ' · ' . e($language)
             . '</div><div class="release-note-message">' . $messageHtml . '</div></div></article>';
     }
