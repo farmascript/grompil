@@ -470,9 +470,19 @@ function fn_templateRenderPath(string $path, array $values = []): string
             }
 
             if (array_key_exists($key, $values)) {
-                return str_starts_with($key, '_')
-                    ? (string) $values[$key]
-                    : e((string) $values[$key]);
+                if (str_starts_with($key, '_')) {
+                    return (string) $values[$key];
+                }
+                $value = e((string) $values[$key]);
+                if (
+                    $showTranslationKeyTooltips
+                    && array_key_exists($key, $translations)
+                    && fn_templateTokenIsVisibleText($html, $offset)
+                ) {
+                    return '<span data-bs-toggle="tooltip" data-bs-title="' . e($key)
+                        . '" tabindex="0">' . $value . '</span>';
+                }
+                return $value;
             }
 
             if (!array_key_exists($key, $translations)) {

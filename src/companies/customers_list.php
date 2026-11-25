@@ -128,7 +128,8 @@ $headers = '';
 foreach ($columns as $column => $translationKey) {
     $nextDirection = $sort === $column && $direction === 'ASC' ? 'desc' : 'asc';
     $indicator = $sort === $column ? ($direction === 'ASC' ? ' ▲' : ' ▼') : '';
-    $headers .= '<th scope="col"><a class="link-body-emphasis text-decoration-none" href="'
+    $headers .= '<th scope="col"><a class="link-body-emphasis text-decoration-none" data-bs-toggle="tooltip" data-bs-title="'
+        . e($translationKey) . '" tabindex="0" href="'
         . e($makeUrl(['sort' => $column, 'direction' => $nextDirection, 'page' => 1])) . '">'
         . e(fn_t($translationKey)) . $indicator . '</a></th>';
 }
