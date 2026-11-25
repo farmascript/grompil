@@ -484,6 +484,36 @@ window.GROMPIL_NAVIGATION = {
             "action": "manage"
         },
         {
+            "id": 63503,
+            "module": "customers-list.php",
+            "group": "company",
+            "public_visibility": true,
+            "i18n": {
+                "nl": {
+                    "title": "Klantenlijst",
+                    "description": "Doorzoek en bekijk alle klantgegevens van dit bedrijf.",
+                    "keywords": ["klanten", "klantenlijst", "zoeken"]
+                },
+                "fr": {
+                    "title": "Liste des clients",
+                    "description": "Rechercher et consulter toutes les données clients de cette entreprise.",
+                    "keywords": ["clients", "liste", "recherche"]
+                },
+                "en": {
+                    "title": "Customer list",
+                    "description": "Search and view all customer data for this company.",
+                    "keywords": ["customers", "list", "search"]
+                },
+                "de": {
+                    "title": "Kundenliste",
+                    "description": "Alle Kundendaten dieses Unternehmens durchsuchen und anzeigen.",
+                    "keywords": ["kunden", "liste", "suche"]
+                }
+            },
+            "sequence_number": 15,
+            "action": "manage"
+        },
+        {
             "id": 28614,
             "module": "dd-varia.php",
             "group": "platform",
