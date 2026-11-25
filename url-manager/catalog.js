@@ -1,7 +1,7 @@
 window.GROMPIL_NAVIGATION = {
     "schemaVersion": 1,
     "application": "grompil",
-    "applicationVersion": "0.18.55",
+    "applicationVersion": "0.18.57",
     "defaultLanguage": "nl",
     "languages": [
         "nl",
@@ -662,6 +662,36 @@ window.GROMPIL_NAVIGATION = {
             },
             "sequence_number": 20,
             "action": "manage"
+        },
+        {
+            "id": 72194,
+            "module": "release-notes.php",
+            "group": "platform",
+            "public_visibility": false,
+            "i18n": {
+                "nl": {
+                    "title": "Wat is nieuw in Grompil?",
+                    "description": "Overzicht van vooruitgang, wijzigingen en verbeteringen in de software.",
+                    "keywords": []
+                },
+                "fr": {
+                    "title": "Nouveautés dans Grompil",
+                    "description": "Aperçu des avancées, changements et améliorations du logiciel.",
+                    "keywords": []
+                },
+                "en": {
+                    "title": "What’s new in Grompil?",
+                    "description": "An overview of progress, changes, and improvements to the software.",
+                    "keywords": []
+                },
+                "de": {
+                    "title": "Neuigkeiten in Grompil",
+                    "description": "Übersicht über Fortschritte, Änderungen und Verbesserungen der Software.",
+                    "keywords": []
+                }
+            },
+            "sequence_number": 21,
+            "action": "view"
         }
     ],
     "managerI18n": {

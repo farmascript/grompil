@@ -970,6 +970,7 @@ $arrSubst = array (
   'dispense_ready' => 'Confirm dispensing',
   'release_notes_title' => 'What’s new in Grompil?',
   'release_notes_intro' => 'An overview of progress, changes, and improvements to the software.',
+  'release_notes_return_previous_module' => 'Back to previous module',
   'release_notes_subscription_email' => 'Notifications for this email address',
   'release_notes_no_email' => 'No email address is set in your profile.',
   'release_notes_subscribe' => 'Subscribe to updates',

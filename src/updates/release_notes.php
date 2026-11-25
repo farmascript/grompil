@@ -186,8 +186,16 @@ $languageFieldLabels = [
     'EN' => fn_t('release_notes_language_en'),
     'DE' => fn_t('release_notes_language_de'),
 ];
+$returnUrl = fn_releaseNotesReturnUrl(
+    is_scalar($_GET['return_to'] ?? null)
+        ? (string) $_GET['return_to']
+        : (string) ($_SERVER['HTTP_REFERER'] ?? ''),
+    fn_appBaseHref()
+);
 
 page_start(fn_t('release_notes_title'), $user);
+echo '<a class="btn btn-outline-secondary btn-sm mb-3" href="' . e($returnUrl) . '">'
+    . '<span aria-hidden="true">←</span> ' . e(fn_t('release_notes_return_previous_module')) . '</a>';
 echo '<header class="mb-4"><h1>' . e(fn_t('release_notes_title')) . '</h1><p class="text-secondary">'
     . e(fn_t('release_notes_intro')) . '</p></header>';
 
@@ -260,4 +268,55 @@ function fn_translationForLanguage(string $key, string $language): string
         $translations[$language] = fn_readSourceLanguage($language);
     }
     return (string) ($translations[$language][$key] ?? $key);
+}
+
+/**
+ * Return only to an internal page under this installation's application path.
+ */
+function fn_releaseNotesReturnUrl(string $candidate, string $appBasePath): string
+{
+    $fallback = rtrim($appBasePath, '/') . '/dashboard.php';
+    $parts = parse_url(trim($candidate));
+    if (!is_array($parts)) {
+        return $fallback;
+    }
+
+    if (isset($parts['host'])) {
+        $candidateHost = strtolower((string) $parts['host'])
+            . (isset($parts['port']) ? ':' . (int) $parts['port'] : '');
+        $currentHost = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+        if ($currentHost === '' || $candidateHost !== $currentHost) {
+            return $fallback;
+        }
+    } elseif (isset($parts['scheme']) || str_starts_with($candidate, '//')) {
+        return $fallback;
+    }
+
+    $path = (string) ($parts['path'] ?? '');
+    $prefix = rtrim($appBasePath, '/') . '/';
+    if ($path === '' || !str_starts_with($path, $prefix)
+        || preg_match('~[^A-Za-z0-9_./-]~', $path) === 1
+        || preg_match('~(?:^|/)\.\.?(/|$)~', substr($path, strlen($prefix))) === 1) {
+        return $fallback;
+    }
+
+    $relativePath = substr($path, strlen($prefix));
+    $isApplicationPage = preg_match('/^[A-Za-z0-9_-]+\.php$/D', $relativePath) === 1
+        && !in_array($relativePath, ['release-notes.php', 'settings_local.php', 'setup-admin.php'], true)
+        && is_file(GROMPIL_ROOT . '/' . $relativePath);
+    $isUrlManager = $relativePath === 'url-manager/index.html'
+        && is_file(GROMPIL_ROOT . '/url-manager/index.html');
+    if ($relativePath === '' || $relativePath === 'release-notes.php'
+        || (!$isApplicationPage && !$isUrlManager)) {
+        return $fallback;
+    }
+
+    $url = $prefix . $relativePath;
+    if (isset($parts['query']) && $parts['query'] !== '') {
+        $url .= '?' . $parts['query'];
+    }
+    if (isset($parts['fragment']) && $parts['fragment'] !== '') {
+        $url .= '#' . $parts['fragment'];
+    }
+    return $url;
 }

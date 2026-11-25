@@ -33,12 +33,16 @@ $modules = [
     ['companies.manage', 'companies.php', 'nav_companies', 'admin_companies_description'],
     ['companies.manage', 'platform-settings.php', 'platform_settings_title', 'platform_settings_intro'],
     ['companies.manage', 'platform-dispensing-keys.php', 'platform_dispensing_shortcuts_title', 'platform_dispensing_shortcuts_intro'],
+    ['companies.manage', 'release-notes.php', 'release_notes_title', 'release_notes_intro'],
     ['companies.manage', 'platform-security.php', 'platform_security_title', 'platform_security_intro'],
     ['companies.manage', 'dd-varia.php', 'dd_varia_title', 'dd_varia_intro'],
 ];
 $cards = '';
 foreach ($modules as [$permission, $path, $titleKey, $descriptionKey]) {
     if (!has_permission($permission, $currentUser)) {
+        continue;
+    }
+    if ($path === 'release-notes.php' && !is_platform_operator($currentUser)) {
         continue;
     }
     if ($path === 'dd-varia.php'
