@@ -31,6 +31,8 @@ function fn_dispensingShortcutActions(): array
         'open_customer_modal' => ['title' => 'dispensing_shortcut_add_customer', 'tooltip' => 'dispensing_shortcut_add_customer_help'],
         'toggle_customer_regex' => ['title' => 'dispensing_shortcut_toggle_regex', 'tooltip' => 'dispensing_shortcut_toggle_regex_help'],
         'clear_product_search' => ['title' => 'dispensing_shortcut_clear_product_search', 'tooltip' => 'dispensing_shortcut_clear_product_search_help'],
+        'set_status_free_sale' => ['title' => 'dispensing_shortcut_status_free_sale', 'tooltip' => 'dispensing_shortcut_status_free_sale_help'],
+        'set_status_prescription' => ['title' => 'dispensing_shortcut_status_prescription', 'tooltip' => 'dispensing_shortcut_status_prescription_help'],
         'close_dispensing' => ['title' => 'dispensing_shortcut_close_dispensing', 'tooltip' => 'dispensing_shortcut_close_dispensing_help'],
         'discard_dispensing' => ['title' => 'dispensing_shortcut_discard_dispensing', 'tooltip' => 'dispensing_shortcut_discard_dispensing_help'],
         'open_patient_history' => ['title' => 'dispensing_shortcut_patient_history', 'tooltip' => 'dispensing_shortcut_patient_history_help'],

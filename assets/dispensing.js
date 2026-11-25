@@ -1247,6 +1247,18 @@
                     hideSuggestions();
                     input.focus();
                     break;
+                case 'set_status_free_sale':
+                case 'set_status_prescription': {
+                    const status = actionKey === 'set_status_free_sale' ? 'free_sale' : 'prescription';
+                    if (!dispenseStatusSelect || dispenseStatusSelect.disabled
+                        || !Array.from(dispenseStatusSelect.options).some((option) => option.value === status)) {
+                        break;
+                    }
+                    dispenseStatusSelect.value = status;
+                    dispenseStatusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    input?.focus();
+                    break;
+                }
                 case 'close_dispensing':
                     void beginReceiptPreview();
                     break;
