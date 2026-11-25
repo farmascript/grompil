@@ -87,7 +87,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             }
         }
         $messagesJson = json_encode($messages, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-        if (!$hasActiveLanguage || preg_match('/^[0-9]{1,12}$/D', $wikiPageId) !== 1 || !is_string($messagesJson)) {
+        $wikiPageIdIsValid = $wikiPageId === '' || preg_match('/^[0-9]{1,12}$/D', $wikiPageId) === 1;
+        if (!$hasActiveLanguage || !$wikiPageIdIsValid || !is_string($messagesJson)) {
             $error = 'release_notes_publish_invalid';
         } else {
             try {
@@ -96,7 +97,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     'INSERT INTO ft_release_notes (messages, wiki_page_id, created_by_user_code)
                      VALUES ($1::jsonb, $2, $3)
                      RETURNING id',
-                    [$messagesJson, $wikiPageId, (string) $user['user_code']]
+                    [$messagesJson, $wikiPageId === '' ? null : $wikiPageId, (string) $user['user_code']]
                 );
                 $noteId = (int) pg_fetch_result($result, 0, 'id');
                 $mailFailures = 0;
@@ -233,7 +234,7 @@ if ($isPublisher) {
         . e(fn_t('release_notes_publish_help')) . '</p><form method="post">' . csrf_field()
         . '<input type="hidden" name="action" value="publish">' . $languageFields
         . '<div class="mb-3"><label class="form-label" for="release-wiki-page">' . e(fn_t('release_notes_wiki_page_id'))
-        . '</label><input class="form-control" type="text" inputmode="numeric" pattern="[0-9]{1,12}" maxlength="12" required'
+        . '</label><input class="form-control" type="text" inputmode="numeric" pattern="[0-9]{1,12}" maxlength="12"'
         . ' id="release-wiki-page" name="wiki_page_id" value="' . e($postedWikiPageId) . '"><div class="form-text">'
         . e(fn_t('release_notes_wiki_page_id_help')) . '</div></div>'
         . '<button class="btn btn-grompil" type="submit">' . e(fn_t('release_notes_publish')) . '</button></form></div></section>';
@@ -244,14 +245,16 @@ if ($notes === []) {
     echo '<div class="card"><div class="card-body text-secondary">' . e(fn_t('release_notes_empty')) . '</div></div>';
 } else {
     foreach ($notes as $note) {
-        $wikiLink = fn_dokuwikiIcon('users', (string) $note['wiki_page_id']);
+        $wikiPageId = trim((string) ($note['wiki_page_id'] ?? ''));
+        $displayId = $wikiPageId !== '' ? $wikiPageId : (string) $note['id'];
+        $wikiLink = $wikiPageId !== '' ? fn_dokuwikiIcon('users', $wikiPageId) : '';
         $messageLines = preg_split('/\R/u', (string) $note['message']) ?: [(string) $note['message']];
         $messageHtml = '';
         foreach ($messageLines as $messageLine) {
             $messageHtml .= '<div>' . e($messageLine) . $wikiLink . '</div>';
         }
         echo '<article class="card mb-3"><div class="card-body"><div class="small text-secondary mb-2">'
-            . '<strong class="text-body">' . e((string) $note['wiki_page_id']) . '</strong> · '
+            . '<strong class="text-body">' . e($displayId) . '</strong> · '
             . e(fn_formatDateDisplay((string) $note['created_at'])) . ' · ' . e($language)
             . '</div><div class="release-note-message">' . $messageHtml . '</div></div></article>';
     }

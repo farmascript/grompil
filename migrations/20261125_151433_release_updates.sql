@@ -7,8 +7,9 @@ CREATE TABLE IF NOT EXISTS ft_release_notes (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     messages JSONB NOT NULL
         CHECK (jsonb_typeof(messages) = 'object'),
-    wiki_page_id VARCHAR(12) NOT NULL
-        CHECK (wiki_page_id ~ '^[0-9]{1,12}$'),
+    wiki_page_id VARCHAR(12),
+    CONSTRAINT ft_release_notes_wiki_page_id_ck
+        CHECK (wiki_page_id IS NULL OR wiki_page_id ~ '^[0-9]{1,12}$'),
     created_by_user_code VARCHAR(6)
         REFERENCES bt_users(user_code) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
