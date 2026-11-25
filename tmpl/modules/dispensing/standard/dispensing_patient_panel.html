@@ -1,5 +1,4 @@
 <section class="dispense-panel patient-panel">
-    <div class="panel-heading"><div><h2>@dispense_patient_search@</h2><p>@dispense_select_patient@</p></div></div>
     <div class="patient-search-wrap">
         <form method="get" action="dispense.php" class="patient-search-form" data-patient-search-form>
             <input type="hidden" name="mode" value="patient">
@@ -13,4 +12,6 @@
         <div class="list-group patient-suggestions @_dispense_patient_suggestion_class@" id="patient-suggestions" role="listbox" data-patient-suggestions>@_dispense_patient_results_html@</div>
     </div>
     <div class="form-text mt-2" aria-live="polite" data-patient-search-status>@dispense_patient_search_feedback@</div>
+    <hr class="dispense-patient-divider">
+    <div class="dispense-party-selector dispense-party-selector--patients" data-dispense-parties role="group" aria-label="@dispense_parties_label@"></div>
 </section>

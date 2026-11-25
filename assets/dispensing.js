@@ -42,6 +42,7 @@
     const count = document.querySelector('[data-basket-count]');
     const summary = document.querySelector('[data-basket-summary]');
     const partySelector = document.querySelector('[data-dispense-parties]');
+    const activePartyLabel = document.querySelector('[data-dispense-active-party]');
     const sessionReferenceLabel = document.querySelector('[data-session-reference]');
     const copySessionButton = document.querySelector('[data-copy-session]');
     const closeDispensingButton = document.querySelector('[data-close-dispensing]');
@@ -514,6 +515,17 @@
         addButton.textContent = page.dataset.textAddParty || '';
         addButton.addEventListener('click', () => patientInput?.focus());
         partySelector.append(addButton);
+        renderActivePartyLabel();
+    }
+
+    function renderActivePartyLabel() {
+        if (!activePartyLabel) return;
+        const party = dispensingParties.find((item) => Number(item.id) === activePartyId);
+        const isAnonymous = !party || party.type === 'anonymous';
+        activePartyLabel.textContent = isAnonymous
+            ? (dispenseStatusSelect?.selectedOptions[0]?.textContent || page.dataset.dispenseStatus || '')
+            : (party.name || party.customer_code || '');
+        activePartyLabel.className = `dispense-active-party${isAnonymous ? ' status-pill' : ''}`;
     }
 
     function activateParty(partyId) {
@@ -695,11 +707,12 @@
 
     function renderBasket() {
         rows.replaceChildren();
-        const products = Array.from(basket.values());
+        const allProducts = Array.from(basket.values());
+        const products = allProducts.filter((product) => Number(product.party_id) === activePartyId);
         count.textContent = String(products.length);
         summary.textContent = t.productCount.replace('{count}', String(products.length));
         if (closeDispensingButton) {
-            closeDispensingButton.disabled = products.length === 0 || products.some((product) => product.pending);
+            closeDispensingButton.disabled = allProducts.length === 0 || allProducts.some((product) => product.pending);
         }
         if (!products.length) {
             const tr = document.createElement('tr');
@@ -712,19 +725,7 @@
             summary.textContent = t.empty;
             return;
         }
-        for (const party of dispensingParties) {
-            const partyProducts = products.filter((product) => Number(product.party_id) === Number(party.id));
-            if (!partyProducts.length) continue;
-            const headingRow = document.createElement('tr');
-            headingRow.className = 'dispense-party-heading';
-            const heading = document.createElement('th');
-            heading.colSpan = 5;
-            heading.scope = 'rowgroup';
-            heading.textContent = party.name;
-            headingRow.append(heading);
-            rows.append(headingRow);
-
-            for (const product of partyProducts) {
+        for (const product of products) {
                 const tr = document.createElement('tr');
                 tr.className = 'dispense-product-line';
                 const statusCell = document.createElement('td');
@@ -807,7 +808,6 @@
                 removeCell.append(edit, remove);
                 tr.append(statusCell, cnkCell, quantity, descriptionCell, removeCell);
                 rows.append(tr);
-            }
         }
     }
 
