@@ -1,6 +1,17 @@
 <?php
 /**
- * User-facing Grompil release notes and notification preferences.
+ * @date_cre: Wed 2026-11-25
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: chatGPT, codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Routes authenticated users to the release notes and notification preferences module.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:release-notes
  */
 
 declare(strict_types=1);

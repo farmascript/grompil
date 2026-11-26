@@ -1,6 +1,17 @@
 <?php
 /**
- * Multilingual release notes for authenticated Grompil users.
+ * @date_cre: Wed 2026-11-25
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: chatGPT, codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Publishes multilingual release notes and manages user subscriptions to update notifications.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:updates:release_notes
  */
 
 declare(strict_types=1);
@@ -287,7 +298,13 @@ if ($notes === []) {
 echo '</section>';
 page_end();
 
-/** Load a stock translation independent of the publisher's active language. */
+/**
+ * Load a stock translation independent of the publisher's active language.
+ *
+ * @param string $key The translation key.
+ * @param string $language The language code.
+ * @return string
+ */
 function fn_translationForLanguage(string $key, string $language): string
 {
     static $translations = [];
@@ -300,6 +317,10 @@ function fn_translationForLanguage(string $key, string $language): string
 
 /**
  * Return only to an internal page under this installation's application path.
+ *
+ * @param string $candidate The return URL supplied by the request or referrer.
+ * @param string $appBasePath The application base path.
+ * @return string A safe internal URL or the dashboard URL.
  */
 function fn_releaseNotesReturnUrl(string $candidate, string $appBasePath): string
 {
@@ -349,7 +370,12 @@ function fn_releaseNotesReturnUrl(string $candidate, string $appBasePath): strin
     return $url;
 }
 
-/** Sanitize editor HTML to the small formatting subset used by release notes. */
+/**
+ * Sanitize editor HTML to the small formatting subset used by release notes.
+ *
+ * @param string $input Untrusted HTML submitted by the rich-text editor.
+ * @return string Sanitized HTML containing only supported formatting.
+ */
 function fn_releaseNotesSanitizeHtml(string $input): string
 {
     if (trim($input) === '') {
@@ -375,7 +401,12 @@ function fn_releaseNotesSanitizeHtml(string $input): string
     return fn_releaseNotesSerializeChildren($root);
 }
 
-/** Recursively serialize only approved tags and attributes. */
+/**
+ * Recursively serialize only approved tags and attributes.
+ *
+ * @param DOMNode $parent The node whose child nodes are serialized.
+ * @return string Safe HTML for the supported formatting subset.
+ */
 function fn_releaseNotesSerializeChildren(DOMNode $parent): string
 {
     $html = '';
@@ -423,7 +454,12 @@ function fn_releaseNotesSerializeChildren(DOMNode $parent): string
     return $html;
 }
 
-/** Convert sanitized rich text to a readable plain-text email alternative. */
+/**
+ * Convert sanitized rich text to a readable plain-text email alternative.
+ *
+ * @param string $html Sanitized release-note HTML.
+ * @return string Plain-text message with paragraph and list breaks.
+ */
 function fn_releaseNotesPlainText(string $html): string
 {
     $text = preg_replace('~<(?:br|/p|/li|/ul|/ol)>~i', "\n", $html) ?? $html;
@@ -432,7 +468,12 @@ function fn_releaseNotesPlainText(string $html): string
     return trim(implode("\n", array_filter($lines, static fn (string $line): bool => $line !== '')));
 }
 
-/** Render legacy plain-text release note values without interpreting markup. */
+/**
+ * Render legacy plain-text release note values without interpreting markup.
+ *
+ * @param string $text Previously stored plain-text message.
+ * @return string Escaped paragraphs for the release-note display.
+ */
 function fn_releaseNotesLegacyHtml(string $text): string
 {
     $lines = preg_split('/\R/u', trim($text)) ?: [trim($text)];
