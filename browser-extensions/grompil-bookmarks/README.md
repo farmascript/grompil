@@ -2,7 +2,7 @@
 
 Grompil Bookmarks adds two folders to the browser bookmarks bar:
 
-- **gromPil-functies** contains modules the signed-in user is allowed to open.
+- The localized **gromPil-** functions folder contains modules the signed-in user is allowed to open.
 - **gromPil-manager** contains the user's URL Manager layout and links.
 
 The extension only replaces the contents of the two folders it manages. Other

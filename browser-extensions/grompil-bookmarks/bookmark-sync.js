@@ -181,7 +181,12 @@
                 .map(([, group]) => ({ title: group.title, children: sortByNumber(group.children) }));
         }
 
-        const labels = ['gromPil-functies', 'gromPil-manager'];
+        const labels = {
+            nl: ['gromPil-functies', 'gromPil-manager'],
+            fr: ['gromPil-fonctions', 'gromPil-manager'],
+            en: ['gromPil-functions', 'gromPil-manager'],
+            de: ['gromPil-Funktionen', 'gromPil-manager'],
+        }[language] || ['gromPil-functies', 'gromPil-manager'];
         return [
             { title: labels[0], children: fixedNodes.filter((node) => node.children.length > 0) },
             { title: labels[1], children: pageTrees.filter((page) => page.children.length > 0).map((page) => ({ title: page.title, children: page.children })) },
