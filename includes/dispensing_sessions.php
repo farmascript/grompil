@@ -1,6 +1,28 @@
 <?php
+/**
+ * @date_cre: Fri 2026-11-20 11:24:48
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Manages per-tab dispensing sessions and their customer groups and product lines.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:dispensing_sessions
+ */
 declare(strict_types=1);
 
+/**
+ * Format a customer's display name with a sentence-case first name and uppercase surname.
+ *
+ * @param string $firstName The customer's first name.
+ * @param string $lastName The customer's surname.
+ *
+ * @return string The formatted display name.
+ */
 function grompil_dispensing_display_name(string $firstName, string $lastName): string
 {
     $firstName = mb_strtolower(trim($firstName), 'UTF-8');
