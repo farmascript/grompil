@@ -19,6 +19,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/database_config.php';
 require_once __DIR__ . '/error_page.php';
 require_once __DIR__ . '/contact_locations.php';
+require_once __DIR__ . '/password_policy.php';
 
 // A maintenance flag in settings_local.php blocks web requests before the app
 // starts a session or attempts a database connection. CLI migration scripts

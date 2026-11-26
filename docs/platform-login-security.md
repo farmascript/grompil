@@ -1,5 +1,7 @@
 # Platform- en bedrijfsbeveiliging
 
+Nieuwe wachtwoorden moeten minstens 12 tekens en 6 verschillende tekens bevatten. De applicatie weigert veelgebruikte wachtwoorden, sterke herhaling en eenvoudige oplopende of aflopende reeksen met letters, cijfers en toetsenbordtekens. Als een bestaand wachtwoord bij het aanmelden klopt maar niet aan deze controle voldoet, wordt het account gemarkeerd voor verplichte wachtwoordwijziging. De gebruiker kan aanmelden, eventuele MFA afronden en daarna een nieuw wachtwoord instellen via **Mijn account**.
+
 ## Gedrag
 
 - Platformbeheerders (globale rollen level 1–100) melden zich aan met wachtwoord en daarna een TOTP-code uit Google Authenticator, Microsoft Authenticator of een compatibele app.

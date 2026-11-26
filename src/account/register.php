@@ -84,8 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         && preg_match('/^[A-Z]{2}$/', $address['country_code']) === 1
         && grompil_address_selection_allowed($address, isset($_POST['manual_address_without_coordinates']))
         && !preg_match('/[\x00-\x1F\x7F]/', $acronym)
-        && strlen((string) ($_POST['password'] ?? '')) >= 12
-        && strlen((string) ($_POST['password'] ?? '')) <= 4096
+        && grompil_password_is_sane((string) ($_POST['password'] ?? ''))
         && hash_equals((string) ($_POST['password'] ?? ''), (string) ($_POST['password_confirm'] ?? ''));
 
     if (!$rate || (int) $rate['total'] >= 5) {
@@ -226,6 +225,7 @@ echo fn_templateRender('registration.html', [
     'name_first_value' => $firstName,
     'name_last_value' => $lastName,
     'email_value' => $email,
+    'password_quality_help' => fn_t('password_quality_help'),
     'acronym_value' => $acronym,
     '_message_html' => $message,
     '_csrf_field_html' => csrf_field(),

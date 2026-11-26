@@ -550,6 +550,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_current_invalid')) . '</div>';
         } elseif (strlen($newPassword) < 12) {
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_too_short')) . '</div>';
+        } elseif (!grompil_password_is_sane($newPassword)) {
+            $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_too_weak')) . '</div>';
         } elseif ($newPassword !== $confirmPassword) {
             $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_confirmation_mismatch')) . '</div>';
         } elseif (password_verify($newPassword, (string) $account['password_hash'])) {

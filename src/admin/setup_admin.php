@@ -34,10 +34,10 @@ $nameParts = preg_split('/\s+/u', $displayName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 $firstName = (string) array_shift($nameParts);
 $lastName = implode(' ', $nameParts);
 
-if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 12) {
+if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !grompil_password_is_sane($password)) {
     fwrite(
         STDERR,
-        "Stel GROMPIL_SETUP_ADMIN_EMAIL en GROMPIL_SETUP_ADMIN_PASSWORD in (min. 12 tekens).\n"
+        "Set valid GROMPIL_SETUP_ADMIN_EMAIL and GROMPIL_SETUP_ADMIN_PASSWORD values. The password must be at least 12 characters and not predictable.\n"
     );
     exit(1);
 }

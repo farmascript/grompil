@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userResult = $loginCompany
             ? $loginQuery(
                 'login.find_company_user',
-                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.company_id, u.acronym,
+                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.must_change_password, u.company_id, u.acronym,
                         COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version
                  FROM bt_users AS u
                  LEFT JOIN dt_user_contacts AS uc
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             )
             : $loginQuery(
                 'login.find_platform_user',
-                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.company_id,
+                'SELECT u.user_code, uc.contact_value AS email, u.password_hash, u.is_active, u.must_change_password, u.company_id,
                         r.name AS role_name, r.level AS role_level, r.permissions,
                         COALESCE((to_jsonb(u)->>\'auth_version\')::bigint, 0) AS auth_version
                  FROM bt_users AS u
@@ -147,6 +147,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $userResult && pg_num_rows($userResult) === 1 ? pg_fetch_assoc($userResult) : false;
 
     if ($user && $user['is_active'] === 't' && password_verify($password, $user['password_hash'])) {
+        $passwordPolicyReady = true;
+        if (!grompil_password_is_sane($password) && $user['must_change_password'] !== 't') {
+            $passwordPolicyReady = (bool) $loginQuery(
+                'login.require_password_change',
+                'UPDATE bt_users SET must_change_password = TRUE, updated_at = now() WHERE user_code = $1',
+                [(string) $user['user_code']]
+            );
+            if ($passwordPolicyReady) {
+                $user['must_change_password'] = 't';
+            } else {
+                error_log('A weak account password could not be marked for replacement.');
+            }
+        }
         $account = [
             'company_id' => $user['company_id'] === null ? null : (int) $user['company_id'],
             'role_level' => isset($user['role_level']) ? (int) $user['role_level'] : 0,
@@ -154,10 +167,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'permissions' => json_decode((string) ($user['permissions'] ?? '[]'), true) ?: [],
         ];
         $isPlatformLogin = !$loginCompany && is_platform_operator($account);
-        $ipAllowed = true;
+        $ipAllowed = $passwordPolicyReady;
         $requiresCompanyMfa = false;
 
-        if ($isPlatformLogin) {
+        if ($isPlatformLogin && $passwordPolicyReady) {
             $ipAllowed = platform_management_ip_allowed($ipAddress);
             if ($ipAllowed) {
                 try {
@@ -185,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['mfa_pending_ip'] = $ipAddress;
                 redirect('authenticator.php');
             }
-        } elseif ($loginCompany !== null) {
+        } elseif ($loginCompany !== null && $passwordPolicyReady) {
             set_database_tenant_context((int) $loginCompany['id'], (string) $user['user_code'], false);
             $membershipResult = $loginQuery(
                 'login.check_company_membership',

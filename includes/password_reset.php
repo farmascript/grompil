@@ -254,7 +254,7 @@ function password_reset_valid(PgSql\Connection $connection, ?int $companyId, str
  */
 function password_reset_consume(PgSql\Connection $connection, ?int $companyId, string $tokenHash, string $password): bool
 {
-    if (!preg_match('/^[a-f0-9]{64}$/', $tokenHash) || strlen($password) < 12 || strlen($password) > 4096) {
+    if (!preg_match('/^[a-f0-9]{64}$/', $tokenHash) || !grompil_password_is_sane($password)) {
         return false;
     }
     $newHash = password_hash($password, PASSWORD_DEFAULT);

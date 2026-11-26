@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($newUserFirstName === '' || $newUserLastName === ''
             || $firstLength > 120 || $lastLength > 120 || $displayLength > 255
             || !filter_var($newUserEmail, FILTER_VALIDATE_EMAIL) || strlen($newUserEmail) > 254
-            || strlen($password) < 12 || strlen($password) > 4096
+            || !grompil_password_is_sane($password)
             || !hash_equals($password, $passwordConfirm) || !$validRole
             || (function_exists('mb_strlen') ? mb_strlen($newUserAddress['street']) : strlen($newUserAddress['street'])) > 160
             || strlen($newUserAddress['house_number']) > 32 || strlen($newUserAddress['box_number']) > 32
@@ -287,6 +287,7 @@ $addUserForm = fn_templateRender('user_add_form.html', [
     'name_first_value' => $newUserFirstName,
     'name_last_value' => $newUserLastName,
     'email_value' => $newUserEmail,
+    'password_quality_help' => fn_t('password_quality_help'),
     '_address_fields_html' => fn_templateRender('address_fields.html', [
         'address_prefix' => 'new-user-address',
         'address_autosave' => '0',

@@ -55,6 +55,8 @@ try {
             $confirmation = (string) ($_POST['password_confirm'] ?? '');
             if (strlen($password) < 12 || strlen($password) > 4096 || str_contains($password, "\0")) {
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_too_short')) . '</div>';
+            } elseif (!grompil_password_is_sane($password)) {
+                $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_too_weak')) . '</div>';
             } elseif (!hash_equals($password, $confirmation)) {
                 $message = '<div class="alert alert-danger" role="alert">' . e(fn_t('password_confirmation_mismatch')) . '</div>';
             } elseif (password_reset_consume(db(), $companyId, $tokenHash, $password)) {

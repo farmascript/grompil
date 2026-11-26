@@ -40,7 +40,7 @@ schema.sql bevat gewone PostgreSQL-SQL. Het maakt de tabellen en startrollen in 
 
 De database-, KBO- en SMTP-instellingen komen uit het private credentialsbestand dat bij deze installatie hoort. Zie **Databaseconfiguratie** verderop.
 
-De eerste beheerder wordt momenteel via de PHP CLI aangemaakt. Stel tijdelijk GROMPIL_SETUP_ADMIN_EMAIL en GROMPIL_SETUP_ADMIN_PASSWORD in (minimaal 12 tekens) en voer php setup-admin.php uit. Verwijder de setup-variabelen daarna.
+De eerste beheerder wordt momenteel via de PHP CLI aangemaakt. Stel tijdelijk GROMPIL_SETUP_ADMIN_EMAIL en GROMPIL_SETUP_ADMIN_PASSWORD in. Het wachtwoord moet minstens 12 tekens en 6 verschillende tekens bevatten en niet voorspelbaar zijn. Voer daarna `php setup-admin.php` uit en verwijder de setup-variabelen.
 
 ### E-mail via SMTP
 
@@ -116,7 +116,7 @@ Geef desgewenst een taalcode mee, bijvoorbeeld `php scripts/translations_2_expor
 
 ## Registratie en accountgoedkeuring
 
-Publieke registratie verloopt via `register.php`. Klantaccounts krijgen de rol Publiek en worden direct actief. Personeelsaanvragen blijven inactief totdat een beheerder ze goedkeurt en een personeelsrol toewijst. Registratie vereist een wachtwoord van minimaal 12 tekens en is per IP beperkt. Voer na deze schemawijziging `schema.sql` opnieuw uit in Adminer; de wijzigingen vullen bestaande tabellen aan.
+Publieke registratie verloopt via `register.php`. Klantaccounts krijgen de rol Publiek en worden direct actief. Personeelsaanvragen blijven inactief totdat een beheerder ze goedkeurt en een personeelsrol toewijst. Een wachtwoord moet minstens 12 tekens en 6 verschillende tekens bevatten en mag geen veelgebruikt wachtwoord of eenvoudige tekenreeks zijn. Registratie is per IP beperkt. Voer na deze schemawijziging `schema.sql` opnieuw uit in Adminer; de wijzigingen vullen bestaande tabellen aan.
 
 Voeg nieuwe vertaaltermen toe via **Vertalingen beheren → Ontbrekende teksten importeren**. Die knop neemt ze op in de vertaaltabel en werkt de PHP-taalbestanden meteen bij.
 
