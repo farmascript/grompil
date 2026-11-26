@@ -181,12 +181,7 @@
                 .map(([, group]) => ({ title: group.title, children: sortByNumber(group.children) }));
         }
 
-        const labels = {
-            nl: ['gromPil-functies', 'gromPil-navigator'],
-            fr: ['gromPil-fonctions', 'gromPil-navigateur'],
-            en: ['gromPil-functions', 'gromPil-navigator'],
-            de: ['gromPil-Funktionen', 'gromPil-Navigator'],
-        }[language] || ['gromPil-functies', 'gromPil-navigator'];
+        const labels = ['gromPil-functies', 'gromPil-manager'];
         return [
             { title: labels[0], children: fixedNodes.filter((node) => node.children.length > 0) },
             { title: labels[1], children: pageTrees.filter((page) => page.children.length > 0).map((page) => ({ title: page.title, children: page.children })) },

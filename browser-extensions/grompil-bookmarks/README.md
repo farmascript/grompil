@@ -2,8 +2,8 @@
 
 Grompil Bookmarks adds two folders to the browser bookmarks bar:
 
-- **gromPil-functions** contains modules the signed-in user is allowed to open.
-- **gromPil-navigator** contains the user's URL Manager layout and links.
+- **gromPil-functies** contains modules the signed-in user is allowed to open.
+- **gromPil-manager** contains the user's URL Manager layout and links.
 
 The extension only replaces the contents of the two folders it manages. Other
 browser bookmarks are left untouched. After sign-in, or after changing company
