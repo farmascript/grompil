@@ -1,0 +1,31 @@
+.release-note-editor-source {
+  display: none;
+}
+
+.release-note-editor .ql-editor {
+  min-height: 7rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.release-note-editor .ql-toolbar.ql-snow,
+.release-note-editor .ql-container.ql-snow {
+  border-color: var(--bs-border-color, #dee2e6);
+}
+
+.release-note-editor .ql-toolbar.ql-snow {
+  border-radius: var(--bs-border-radius, 0.375rem) var(--bs-border-radius, 0.375rem) 0 0;
+}
+
+.release-note-editor .ql-container.ql-snow {
+  border-radius: 0 0 var(--bs-border-radius, 0.375rem) var(--bs-border-radius, 0.375rem);
+}
+
+.release-note-message p:last-child {
+  margin-bottom: 0;
+}
+
+.release-note-message li {
+  margin-bottom: 0.15rem;
+}
