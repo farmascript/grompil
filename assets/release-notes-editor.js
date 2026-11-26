@@ -38,7 +38,8 @@
     var sourceButton = document.createElement('button');
     sourceButton.type = 'button';
     sourceButton.className = 'release-note-source-toggle';
-    sourceButton.textContent = field.dataset.htmlModeLabel || 'HTML';
+    sourceButton.setAttribute('aria-label', field.dataset.htmlModeLabel || 'HTML');
+    sourceButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5.5 4.5-3.5 3.5 3.5 3.5M10.5 4.5 14 8l-3.5 3.5M9 3l-2 10"/></svg>';
     sourceButton.setAttribute('aria-pressed', 'false');
     sourceButton.title = field.dataset.htmlModeLabel || 'HTML';
     var toolbar = field.querySelector('.ql-toolbar');
@@ -58,10 +59,11 @@
         quill.clipboard.dangerouslyPasteHTML(textarea.value, 'silent');
         quill.focus();
       }
-      sourceButton.textContent = showingSource
+      var modeLabel = showingSource
         ? (field.dataset.visualModeLabel || 'Visual editor')
         : (field.dataset.htmlModeLabel || 'HTML');
-      sourceButton.title = sourceButton.textContent;
+      sourceButton.title = modeLabel;
+      sourceButton.setAttribute('aria-label', modeLabel);
       sourceButton.setAttribute('aria-pressed', showingSource ? 'true' : 'false');
     });
 
