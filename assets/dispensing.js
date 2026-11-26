@@ -494,10 +494,7 @@
     function renderPartySelector() {
         if (!partySelector) return;
         partySelector.replaceChildren();
-        const activeStatus = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale';
-        const visibleParties = dispensingParties.filter((party) => party.type !== 'anonymous'
-            || activeStatus === 'free_sale'
-            || Array.from(basket.values()).some((line) => Number(line.party_id) === Number(party.id)));
+        const visibleParties = dispensingParties.filter((party) => party.type !== 'anonymous');
         for (const party of visibleParties) {
             const button = document.createElement('button');
             button.type = 'button';
