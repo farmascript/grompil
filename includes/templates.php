@@ -305,6 +305,51 @@ function fn_t(string $key): string
 }
 
 /**
+ * Return a translated text for an explicitly selected language.
+ *
+ * @param string $key The translation key.
+ * @param string $language The requested language code.
+ * @return string
+ */
+function fn_tForLanguage(string $key, string $language): string
+{
+    static $cache = [];
+    $language = strtoupper($language);
+    if (!in_array($language, ['NL', 'FR', 'EN', 'DE'], true)) {
+        $language = 'NL';
+    }
+    if (!isset($cache[$language])) {
+        $translations = fn_readSourceLanguage($language);
+        $publishedPath = fn_languageFilePath($language);
+        if (is_file($publishedPath)) {
+            $arrSubst = [];
+            require $publishedPath;
+            $translations = array_replace($translations, $arrSubst);
+        }
+
+        $companyId = (int) ($_SESSION['active_company_id'] ?? 0);
+        if ($companyId > 0) {
+            $companyPath = fn_companyLanguageFilePath($companyId, $language);
+            if (is_file($companyPath)) {
+                $arrSubst = [];
+                require $companyPath;
+                $translations = array_replace($translations, $arrSubst);
+            }
+        }
+
+        $fallback = array_replace(fn_readSourceLanguage('EN'), fn_readLanguageFile('EN'));
+        foreach ($fallback as $fallbackKey => $fallbackValue) {
+            if (!isset($translations[$fallbackKey]) || trim((string) $translations[$fallbackKey]) === '') {
+                $translations[$fallbackKey] = $fallbackValue;
+            }
+        }
+        $cache[$language] = $translations;
+    }
+
+    return (string) ($cache[$language][$key] ?? $key);
+}
+
+/**
  * Format a date or timestamp for compact, localized display in the GUI.
  * Timestamp offsets are kept as supplied; the function does not convert time zones.
  *

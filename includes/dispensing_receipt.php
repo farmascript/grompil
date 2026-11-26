@@ -35,13 +35,17 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
     $margin = (float) ($layout['margin'] ?? 42);
     $lineHeight = (float) ($layout['line_height'] ?? 15);
     $maxChars = (int) ($layout['wrap_characters'] ?? 82);
-    $strings = [
-        'NL' => ['receipt' => 'Afleverbon', 'date' => 'Datum', 'session' => 'Sessie', 'subtotal' => 'producten: #', 'total' => 'Totaal aantal producten', 'price' => 'Te betalen', 'price_na' => 'Prijs nog niet beschikbaar', 'enterprise' => 'Ondernemingsnummer', 'vat' => 'BTW-nummer'],
-        'FR' => ['receipt' => 'Bon de délivrance', 'date' => 'Date', 'session' => 'Session', 'subtotal' => 'produits : #', 'total' => 'Nombre total de produits', 'price' => 'À payer', 'price_na' => 'Prix pas encore disponible', 'enterprise' => 'Numéro d’entreprise', 'vat' => 'Numéro de TVA'],
-        'EN' => ['receipt' => 'Dispensing receipt', 'date' => 'Date', 'session' => 'Session', 'subtotal' => 'products: #', 'total' => 'Total products', 'price' => 'Amount due', 'price_na' => 'Price not available yet', 'enterprise' => 'Enterprise number', 'vat' => 'VAT number'],
-        'DE' => ['receipt' => 'Abgabebeleg', 'date' => 'Datum', 'session' => 'Sitzung', 'subtotal' => 'Produkte: #', 'total' => 'Produkte insgesamt', 'price' => 'Zu zahlen', 'price_na' => 'Preis noch nicht verfügbar', 'enterprise' => 'Unternehmensnummer', 'vat' => 'Umsatzsteuer-ID'],
+    $text = [
+        'receipt' => fn_tForLanguage('dispensing_receipt_pdf_title', $language),
+        'date' => fn_tForLanguage('dispensing_receipt_date_label', $language),
+        'session' => fn_tForLanguage('dispensing_receipt_session_label', $language),
+        'subtotal' => fn_tForLanguage('dispensing_receipt_group_subtotal', $language),
+        'total' => fn_tForLanguage('dispensing_receipt_total_products', $language),
+        'price' => fn_tForLanguage('dispensing_receipt_amount_due', $language),
+        'price_na' => fn_tForLanguage('dispensing_receipt_price_unavailable', $language),
+        'enterprise' => fn_tForLanguage('dispensing_receipt_enterprise_number', $language),
+        'vat' => fn_tForLanguage('dispensing_receipt_vat_number', $language),
     ];
-    $text = $strings[strtoupper($language)] ?? $strings['NL'];
     $items = [];
     $add = static function (string $value, int $size = 10, bool $bold = false) use (&$items, $maxChars): void {
         $value = trim($value);
@@ -97,11 +101,11 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
             ];
         }
         $groupCount = array_sum(array_map(static fn(array $line): int => (int) ($line['quantity'] ?? 0), $group['lines'] ?? []));
-        $add($text['subtotal'] . $groupCount, 9, true);
+        $add(str_replace('{count}', (string) $groupCount, $text['subtotal']), 9, true);
         $items[] = ['', 5, false];
     }
     $items[] = ['----------------------------------------------------------------', 9, false];
-    $add($text['total'] . ': ' . $grandTotal, 11, true);
+    $add(str_replace('{count}', (string) $grandTotal, $text['total']), 11, true);
     $add($text['price'] . ': ' . $text['price_na'], 10, true);
     $items[] = ['', 12, false];
     $add((string) ($receipt['thank_you'] ?? ''), 10, false);
