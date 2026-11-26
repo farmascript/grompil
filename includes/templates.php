@@ -478,6 +478,21 @@ function fn_templateTokenIsVisibleText(string $html, int $offset): bool
 }
 
 /**
+ * Determine whether a template token is inside a label element.
+ *
+ * @param string $html The HTML content to inspect.
+ * @param int $offset The byte offset within the HTML string.
+ * @return bool
+ */
+function fn_templateTokenIsInsideLabel(string $html, int $offset): bool
+{
+    $before = substr($html, 0, $offset);
+    $labelOpen = strripos($before, '<label');
+    $labelClose = strripos($before, '</label>');
+    return $labelOpen !== false && ($labelClose === false || $labelOpen > $labelClose);
+}
+
+/**
  * Render a template file after replacing its tokens.
  *
  * @param string $path The application-relative path or filesystem path.
@@ -518,6 +533,7 @@ function fn_templateRenderPath(string $path, array $values = []): string
             $key = $match[1][0];
             $token = $match[0][0];
             $offset = $match[0][1];
+            $tooltipTabIndex = fn_templateTokenIsInsideLabel($html, $offset) ? '-1' : '0';
 
             if (preg_match('/^_page_help_html_(users|dev|testers|extern)_([0-9]+)$/D', $key, $helpMatch) === 1) {
                 return fn_dokuwikiIcon($helpMatch[1], $helpMatch[2]);
@@ -534,7 +550,7 @@ function fn_templateRenderPath(string $path, array $values = []): string
                     && fn_templateTokenIsVisibleText($html, $offset)
                 ) {
                     return '<span data-bs-toggle="tooltip" title="' . e($key) . '" data-bs-title="' . e($key)
-                        . '" tabindex="0">' . $value . '</span>';
+                        . '" tabindex="' . $tooltipTabIndex . '">' . $value . '</span>';
                 }
                 return $value;
             }
@@ -552,7 +568,7 @@ function fn_templateRenderPath(string $path, array $values = []): string
             }
 
             return '<span data-bs-toggle="tooltip" title="' . e((string) $key) . '" data-bs-title="' . e((string) $key)
-                . '" tabindex="0">' . $translated . '</span>';
+                . '" tabindex="' . $tooltipTabIndex . '">' . $translated . '</span>';
         },
         $html,
         -1,
