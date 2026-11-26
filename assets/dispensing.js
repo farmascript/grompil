@@ -76,7 +76,6 @@
     const patientIncludeDeceased = document.querySelector('[data-patient-include-deceased]');
     const dispenseStatusSelect = document.querySelector('[data-dispense-status-select]');
     const patientStatusInput = document.querySelector('[data-patient-status-input]');
-    const currentDispenseStatus = document.querySelector('[data-current-dispense-status]');
     const patientRequiredMessage = document.querySelector('[data-dispense-patient-required]');
     const initialPageCustomerCode = page.dataset.patientCode || '';
     let patientTimer = 0;
@@ -522,10 +521,19 @@
         if (!activePartyLabel) return;
         const party = dispensingParties.find((item) => Number(item.id) === activePartyId);
         const isAnonymous = !party || party.type === 'anonymous';
-        activePartyLabel.textContent = isAnonymous
-            ? (dispenseStatusSelect?.selectedOptions[0]?.textContent || page.dataset.dispenseStatus || '')
-            : (party.name || party.customer_code || '');
-        activePartyLabel.className = `dispense-active-party${isAnonymous ? ' status-pill' : ''}`;
+        const statusLabel = document.createElement('span');
+        statusLabel.className = 'status-pill';
+        statusLabel.textContent = dispenseStatusSelect?.selectedOptions[0]?.textContent || page.dataset.dispenseStatus || '';
+        activePartyLabel.replaceChildren();
+        if (isAnonymous) {
+            activePartyLabel.append(statusLabel);
+        } else {
+            const patientName = document.createElement('span');
+            patientName.className = 'dispense-active-party-name';
+            patientName.textContent = party.name || party.customer_code || '';
+            activePartyLabel.append(patientName, statusLabel);
+        }
+        activePartyLabel.className = 'dispense-active-party';
     }
 
     function activateParty(partyId) {
@@ -949,7 +957,7 @@
         page.dataset.dispenseMode = freeDispensing ? 'walk_in' : 'patient';
         dispenseStatusSelect.disabled = patientDeceased;
         if (patientStatusInput) patientStatusInput.value = status;
-        if (currentDispenseStatus) currentDispenseStatus.textContent = dispenseStatusSelect.selectedOptions[0]?.textContent || status;
+        renderActivePartyLabel();
         if (input) input.disabled = patientDeceased || (!freeDispensing && !page.dataset.patientCode);
         if (patientRequiredMessage) patientRequiredMessage.classList.toggle('d-none', patientDeceased || freeDispensing || Boolean(page.dataset.patientCode));
     }

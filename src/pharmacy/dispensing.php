@@ -116,9 +116,6 @@ $dispenseStatusKey = isset($dispensingStatusByKey[$requestedDispenseStatus])
     : (isset($dispensingStatusByKey['free_sale'])
         ? 'free_sale'
         : (isset($dispensingStatusByKey['prescription']) ? 'prescription' : (string) array_key_first($dispensingStatusByKey)));
-$dispenseStatusLabel = $dispensingStatusByKey[$dispenseStatusKey]['label'] ?? fn_t('dispense_status_prescription');
-$dispenseStatusShortCode = $dispensingStatusByKey[$dispenseStatusKey]['short_code'] ?? $dispenseStatusKey;
-$dispenseStatusDisplay = $dispenseStatusShortCode . ' — ' . $dispenseStatusLabel;
 $dispenseMode = $dispenseStatusKey === 'free_sale' ? 'walk_in' : 'patient';
 $dispenseStatusOptionsHtml = '';
 foreach ($dispensingStatuses as $statusOption) {
@@ -1020,7 +1017,6 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_title' => fn_t('dispense_title'),
     'dispense_mode' => $dispenseMode,
     'dispense_status_key' => e($dispenseStatusKey),
-    'dispense_status_label' => e($dispenseStatusDisplay),
     '_dispense_status_options_html' => $dispenseStatusOptionsHtml,
     '_dispense_status_disabled' => $selectedPatientIsDeceased ? 'disabled' : '',
     'dispense_customer_code' => $selectedPatient ? (string) $selectedPatient['customer_code'] : '',
