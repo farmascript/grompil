@@ -1,7 +1,28 @@
 <?php
+/**
+ * @date_cre: Fri 2026-11-20 12:50:11
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Manages dispensing receipt.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:dispensing_receipt
+ */
 declare(strict_types=1);
 
-/** Creates a small, dependency-free PDF from the fixed dispensing receipt layout. */
+/**
+ * Creates a small, dependency-free PDF from the fixed dispensing receipt layout.
+ *
+ * @param array $receipt The receipt.
+ * @param string $language Language code.
+ *
+ * @return string The resulting text.
+ */
 function grompil_dispensing_receipt_pdf(array $receipt, string $language): string
 {
     $layoutPath = GROMPIL_ROOT . '/tmpl/receipts/dispensing/default.json';

@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Wed 2026-10-21 17:00:00
- * @date_mut: Wed 2026-11-11
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex

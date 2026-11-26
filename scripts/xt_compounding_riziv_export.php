@@ -1,17 +1,32 @@
 <?php
 /**
- * Convert the official RIZIV magistral reference workbook into a normalized CSV.
+ * @date_cre: Fri 2026-11-13 14:43:11
+ * @date_mut: Thu 2026-11-26
  *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Convert the official RIZIV magistral reference workbook into a normalized CSV.
  * Usage:
- *   php xt_compounding_riziv_export.php <unzipped-xlsx-directory> <output.csv>
- *
+ * php xt_compounding_riziv_export.php <unzipped-xlsx-directory> <output.csv>
  * The workbook is read-only. The original workbook fields are retained in a
  * JSON column so reimbursement details are not lost while the schema evolves.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:xt_compounding_riziv_export
  */
 
 declare(strict_types=1);
 
+/**
+ * Print an error message and terminate the export with a failure status.
+ *
+ * @param string $message The message.
+ *
+ * @return never This function does not return.
+ */
 function fail(string $message): never
 {
     fwrite(STDERR, "ERROR: {$message}\n");
@@ -29,6 +44,13 @@ if (!is_file($sheetPath) || !is_readable($sheetPath) || !is_file($stringsPath) |
     fail('The extracted workbook is missing xl/worksheets/sheet1.xml or xl/sharedStrings.xml.');
 }
 
+/**
+ * Load xml.
+ *
+ * @param string $path The path.
+ *
+ * @return DOMDocument The function result.
+ */
 function loadXml(string $path): DOMDocument
 {
     $document = new DOMDocument();
@@ -42,6 +64,13 @@ function loadXml(string $path): DOMDocument
     return $document;
 }
 
+/**
+ * Convert an Excel column reference into its numeric index.
+ *
+ * @param string $cellReference The cell reference.
+ *
+ * @return int The resulting identifier.
+ */
 function columnNumber(string $cellReference): int
 {
     preg_match('/^[A-Z]+/', strtoupper($cellReference), $matches);
@@ -53,6 +82,13 @@ function columnNumber(string $cellReference): int
     return $number;
 }
 
+/**
+ * Convert a numeric column index into Excel column letters.
+ *
+ * @param int $number The number.
+ *
+ * @return string The resulting text.
+ */
 function columnLetters(int $number): string
 {
     $letters = '';
@@ -64,11 +100,26 @@ function columnLetters(int $number): string
     return $letters;
 }
 
+/**
+ * Remove Unicode whitespace from both ends of a string.
+ *
+ * @param string $value The value.
+ *
+ * @return string The resulting text.
+ */
 function trimUnicodeWhitespace(string $value): string
 {
     return preg_replace('/^[\s\p{Z}]+|[\s\p{Z}]+$/u', '', $value) ?? trim($value);
 }
 
+/**
+ * Read and normalize the text value of a workbook cell.
+ *
+ * @param DOMElement $cell The cell.
+ * @param array $sharedStrings The shared strings.
+ *
+ * @return string The resulting text.
+ */
 function cellValue(DOMElement $cell, array $sharedStrings): string
 {
     $type = $cell->getAttribute('t');

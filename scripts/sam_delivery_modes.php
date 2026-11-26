@@ -1,31 +1,58 @@
 <?php
 /**
- * Read-only inventory of SAM delivery-mode and delivery-mode-specification
- * values attached to current AMPP package records.
+ * @date_cre: Fri 2026-10-30 20:03:59
+ * @date_mut: Thu 2026-11-26
  *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Read-only inventory of SAM delivery-mode and delivery-mode-specification values attached to current AMPP package records.
  * Usage:
- *   php sam_delivery_modes.php "..\AMP-1793368804542.xml" [YYYY-MM-DD]
- *
+ * php sam_delivery_modes.php "..\AMP-1793368804542.xml" [YYYY-MM-DD]
  * The script streams the large XML file one AMP record at a time and writes
  * a compact text report in the current working directory. It does not modify
  * the source XML or connect to a database.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_delivery_modes
  */
 
 declare(strict_types=1);
 
+/**
+ * Print command-line usage instructions and exit.
+ *
+ * @param string $script The script.
+ *
+ * @return never This function does not return.
+ */
 function usage(string $script): never
 {
     fwrite(STDERR, "Usage: php {$script} <AMP-export.xml> [YYYY-MM-DD]\n");
     exit(2);
 }
 
+/**
+ * Return the lowercase local name of a DOM node.
+ *
+ * @param DOMNode $node The node.
+ *
+ * @return string The resulting text.
+ */
 function samLocalName(DOMNode $node): string
 {
     return strtolower($node->localName ?? $node->nodeName);
 }
 
-/** @return list<DOMElement> */
+/**
+ * Collect all descendant elements of a DOM element.
+ *
+ * @param DOMElement $parent The parent.
+ *
+ * @return array The resulting data.
+ */
 function samDescendants(DOMElement $parent): array
 {
     $matches = [];
@@ -42,7 +69,14 @@ function samDescendants(DOMElement $parent): array
     return $matches;
 }
 
-/** @return list<DOMElement> */
+/**
+ * Collect matching direct child elements of a DOM element.
+ *
+ * @param DOMElement $parent The parent.
+ * @param string $name The name.
+ *
+ * @return array The resulting data.
+ */
 function samDirectChildren(DOMElement $parent, string $name): array
 {
     $matches = [];
@@ -54,6 +88,14 @@ function samDirectChildren(DOMElement $parent, string $name): array
     return $matches;
 }
 
+/**
+ * Read the first matching attribute from a DOM element.
+ *
+ * @param DOMElement $element The element.
+ * @param string $names The names.
+ *
+ * @return ?string The resulting text.
+ */
 function samAttribute(DOMElement $element, string ...$names): ?string
 {
     foreach ($element->attributes as $attribute) {
@@ -67,6 +109,14 @@ function samAttribute(DOMElement $element, string ...$names): ?string
     return null;
 }
 
+/**
+ * Find the current data node for a SAM entity on a given date.
+ *
+ * @param DOMElement $entity The entity.
+ * @param string $asOf The as of.
+ *
+ * @return ?DOMElement The function result.
+ */
 function samCurrentData(DOMElement $entity, string $asOf): ?DOMElement
 {
     foreach (samDirectChildren($entity, 'Data') as $data) {
@@ -79,6 +129,13 @@ function samCurrentData(DOMElement $entity, string $asOf): ?DOMElement
     return null;
 }
 
+/**
+ * Read the authorization status from a SAM data node.
+ *
+ * @param ?DOMElement $data The data.
+ *
+ * @return string The resulting text.
+ */
 function samStatus(?DOMElement $data): string
 {
     if ($data === null) {
@@ -92,7 +149,13 @@ function samStatus(?DOMElement $data): string
     return '(geen status)';
 }
 
-/** Extract a code from an element represented as either an attribute or a child/text value. */
+/**
+ * Extract a code from an element represented as either an attribute or a child/text value.
+ *
+ * @param DOMElement $element The element.
+ *
+ * @return ?string The resulting text.
+ */
 function samCodeValue(DOMElement $element): ?string
 {
     $code = samAttribute($element, 'code', 'value');
@@ -115,7 +178,15 @@ function samCodeValue(DOMElement $element): ?string
     return null;
 }
 
-/** @return list<string> */
+/**
+ * Collect delivery field codes attached to an AMPP record.
+ *
+ * @param DOMElement $ampp The ampp.
+ * @param ?DOMElement $currentAmppData The current ampp data.
+ * @param string $kind The kind.
+ *
+ * @return array The resulting data.
+ */
 function samFieldCodes(DOMElement $ampp, ?DOMElement $currentAmppData, string $kind): array
 {
     $base = $kind === 'mode' ? 'deliverymodus' : 'deliverymodusspecification';
@@ -156,11 +227,26 @@ function samFieldCodes(DOMElement $ampp, ?DOMElement $currentAmppData, string $k
     return $codes;
 }
 
+/**
+ * Increment the count for a named field code.
+ *
+ * @param array $counts The counts.
+ * @param string $key The key.
+ *
+ * @return void No value is returned.
+ */
 function samIncrement(array &$counts, string $key): void
 {
     $counts[$key] = ($counts[$key] ?? 0) + 1;
 }
 
+/**
+ * Format field-code counts as sorted report lines.
+ *
+ * @param array $counts The counts.
+ *
+ * @return array The resulting data.
+ */
 function samSortedLines(array $counts): array
 {
     ksort($counts, SORT_NATURAL | SORT_FLAG_CASE);

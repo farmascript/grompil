@@ -1,6 +1,16 @@
 <?php
 /**
- * Read-only lookup helpers for the imported public SAM product catalog.
+ * @date_cre: Fri 2026-10-30 20:36:47
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Read-only lookup helpers for the imported public SAM product catalog.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:sam_products
  */
 
@@ -10,16 +20,19 @@ require_once __DIR__ . '/bootstrap.php';
 
 /**
  * Find SAM catalog rows by exact CNK or fuzzy Dutch/French prescription name.
- *
  * Numeric input is treated as an exact CNK lookup. Other input is matched
  * against the displayed prescription name and package display. PostgreSQL
  * pg_trgm similarity is added when the extension is available.
  * A CNK can belong to multiple AMP/AMPP registrations, so CNK lookups may
  * return multiple rows.
- *
  * Callers must enforce the appropriate authentication and company context.
  *
- * @return list<array<string, mixed>>
+ * @param string $query Search query.
+ * @param int $limit Maximum number of records to return.
+ * @param ?array $statuses The statuses.
+ * @param ?int $totalCount The total count.
+ *
+ * @return array The resulting data.
  */
 function grompil_sam_product_search(string $query, int $limit = 20, ?array $statuses = null, ?int &$totalCount = null): array
 {
@@ -280,7 +293,11 @@ function grompil_sam_product_search(string $query, int $limit = 20, ?array $stat
     return $matches;
 }
 
-/** Maximum rows per SAM product search, configurable per installation. */
+/**
+ * Maximum rows per SAM product search, configurable per installation.
+ *
+ * @return int The resulting identifier.
+ */
 function grompil_sam_product_search_limit(): int
 {
     try {
@@ -298,7 +315,11 @@ function grompil_sam_product_search_limit(): int
     }
 }
 
-/** Return the readable ATC hierarchy through the pharmacological subgroup. */
+/**
+ * Return the readable ATC hierarchy through the pharmacological subgroup.
+ *
+ * @return string The resulting text.
+ */
 function samAtcClassPathSql(): string
 {
     $atcCode = "COALESCE(ampp_data_json -> 'Atc' ->> '@code', amp_data_json -> 'Atc' ->> '@code')";

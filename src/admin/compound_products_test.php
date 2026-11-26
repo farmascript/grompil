@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-13
- * @date_mut: Fri 2026-11-13
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -10,6 +10,7 @@
  * @info_email: info@grompil.com
  *
  * @description: Platform-only read-only search page for compounding raw materials.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:compound_products_test
  */
 

@@ -1,29 +1,59 @@
 <?php
 /**
- * Export current SAM public-pharmacy CNK records to a one-row-per-DMPP/CNK CSV.
+ * @date_cre: Fri 2026-10-30 20:03:59
+ * @date_mut: Thu 2026-11-26
  *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Export current SAM public-pharmacy CNK records to a one-row-per-DMPP/CNK CSV.
  * Usage:
- *   php sam_public_catalog_export.php <AMP-export.xml> [output.csv] [YYYY-MM-DD]
- *
+ * php sam_public_catalog_export.php <AMP-export.xml> [output.csv] [YYYY-MM-DD]
  * This is an exploratory, read-only extractor. It does not connect to a
  * database. Current AMP/AMPP/DMPP Data slices are retained as JSON columns so
  * fields not yet mapped into the proposed catalog schema are not discarded.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_public_catalog_export
  */
 
 declare(strict_types=1);
 
+/**
+ * Print command-line usage instructions and exit.
+ *
+ * @param string $script The script.
+ *
+ * @return never This function does not return.
+ */
 function showUsage(string $script): never
 {
     fwrite(STDERR, "Usage: php {$script} <AMP-export.xml> [output.csv] [YYYY-MM-DD]\n");
     exit(2);
 }
 
+/**
+ * Return the lowercase local name of an XML node.
+ *
+ * @param DOMNode $node The node.
+ *
+ * @return string The resulting text.
+ */
 function xmlLocalName(DOMNode $node): string
 {
     return $node->localName ?? $node->nodeName;
 }
 
+/**
+ * Check whether an XML node matches one of the requested names.
+ *
+ * @param DOMNode $node The node.
+ * @param string $names The names.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function xmlNameIs(DOMNode $node, string ...$names): bool
 {
     $actual = strtolower(xmlLocalName($node));
@@ -35,7 +65,14 @@ function xmlNameIs(DOMNode $node, string ...$names): bool
     return false;
 }
 
-/** @return list<DOMElement> */
+/**
+ * Collect matching direct child elements of an XML node.
+ *
+ * @param DOMElement $parent The parent.
+ * @param string $names The names.
+ *
+ * @return array The resulting data.
+ */
 function xmlDirectChildren(DOMElement $parent, string ...$names): array
 {
     $result = [];
@@ -47,7 +84,13 @@ function xmlDirectChildren(DOMElement $parent, string ...$names): array
     return $result;
 }
 
-/** @return list<DOMElement> */
+/**
+ * Collect matching descendant elements of an XML node.
+ *
+ * @param DOMElement $parent The parent.
+ *
+ * @return array The resulting data.
+ */
 function xmlDescendants(DOMElement $parent): array
 {
     $result = [];
@@ -64,6 +107,14 @@ function xmlDescendants(DOMElement $parent): array
     return $result;
 }
 
+/**
+ * Read the first matching attribute from an XML element.
+ *
+ * @param DOMElement $element The element.
+ * @param string $names The names.
+ *
+ * @return ?string The resulting text.
+ */
 function xmlAttribute(DOMElement $element, string ...$names): ?string
 {
     foreach ($element->attributes as $attribute) {
@@ -77,6 +128,14 @@ function xmlAttribute(DOMElement $element, string ...$names): ?string
     return null;
 }
 
+/**
+ * Find the SAM data slice active on a specified date.
+ *
+ * @param DOMElement $entity The entity.
+ * @param string $date The date.
+ *
+ * @return ?DOMElement The function result.
+ */
 function currentDataSlice(DOMElement $entity, string $date): ?DOMElement
 {
     foreach (xmlDirectChildren($entity, 'Data') as $data) {
@@ -89,6 +148,14 @@ function currentDataSlice(DOMElement $entity, string $date): ?DOMElement
     return null;
 }
 
+/**
+ * Read text from the first matching descendant element.
+ *
+ * @param DOMElement $parent The parent.
+ * @param string $names The names.
+ *
+ * @return ?string The resulting text.
+ */
 function firstDescendantText(DOMElement $parent, string ...$names): ?string
 {
     foreach (xmlDescendants($parent) as $element) {
@@ -103,6 +170,14 @@ function firstDescendantText(DOMElement $parent, string ...$names): ?string
     return null;
 }
 
+/**
+ * Read text from the first matching direct child element.
+ *
+ * @param DOMElement $parent The parent.
+ * @param string $names The names.
+ *
+ * @return ?string The resulting text.
+ */
 function directChildText(DOMElement $parent, string ...$names): ?string
 {
     foreach ($parent->childNodes as $child) {
@@ -114,6 +189,15 @@ function directChildText(DOMElement $parent, string ...$names): ?string
     return null;
 }
 
+/**
+ * Read text in the requested language from a SAM element.
+ *
+ * @param ?DOMElement $parent The parent.
+ * @param string $containerName The container name.
+ * @param string $language Language code.
+ *
+ * @return ?string The resulting text.
+ */
 function languageText(?DOMElement $parent, string $containerName, string $language): ?string
 {
     if ($parent === null) {
@@ -135,7 +219,13 @@ function languageText(?DOMElement $parent, string $containerName, string $langua
     return null;
 }
 
-/** Convert an XML element into a JSON-safe map, preserving repeated elements and attributes. */
+/**
+ * Convert an XML element into a JSON-safe map, preserving repeated elements and attributes.
+ *
+ * @param DOMElement $element The element.
+ *
+ * @return mixed The function result.
+ */
 function xmlElementValue(DOMElement $element): mixed
 {
     $value = [];
@@ -181,7 +271,15 @@ function xmlElementValue(DOMElement $element): mixed
     return $value;
 }
 
-/** @return list<string> */
+/**
+ * Extract delivery codes from an AMPP record.
+ *
+ * @param DOMElement $ampp The ampp.
+ * @param ?DOMElement $currentData The current data.
+ * @param string $fieldName The field name.
+ *
+ * @return array The resulting data.
+ */
 function deliveryCodes(DOMElement $ampp, ?DOMElement $currentData, string $fieldName): array
 {
     $field = strtolower($fieldName);
@@ -225,6 +323,13 @@ function deliveryCodes(DOMElement $ampp, ?DOMElement $currentData, string $field
     return $codes;
 }
 
+/**
+ * Escape a value for inclusion in a CSV field.
+ *
+ * @param ?string $value The value.
+ *
+ * @return string The resulting text.
+ */
 function csvValue(?string $value): string
 {
     return $value ?? '';

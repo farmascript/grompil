@@ -1,30 +1,59 @@
 <?php
 /**
- * Read-only inventory of current SAM AMPP packages with a public CNK DMPP.
+ * @date_cre: Fri 2026-10-30 20:03:59
+ * @date_mut: Thu 2026-11-26
  *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Read-only inventory of current SAM AMPP packages with a public CNK DMPP.
  * Usage:
- *   php sam_public_inventory.php "..\AMP-1793368804542.xml" [YYYY-MM-DD]
- *
+ * php sam_public_inventory.php "..\AMP-1793368804542.xml" [YYYY-MM-DD]
  * The script streams the large XML file one AMP record at a time and writes
  * a compact text report in the current working directory. It does not modify
  * the source XML or connect to a database.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_public_inventory
  */
 
 declare(strict_types=1);
 
+/**
+ * Print command-line usage instructions and exit.
+ *
+ * @param string $script The script.
+ *
+ * @return never This function does not return.
+ */
 function usage(string $script): never
 {
     fwrite(STDERR, "Usage: php {$script} <AMP-export.xml> [YYYY-MM-DD]\n");
     exit(2);
 }
 
+/**
+ * Return the lowercase local name of an XML node.
+ *
+ * @param DOMNode $node The node.
+ *
+ * @return string The resulting text.
+ */
 function localName(DOMNode $node): string
 {
     return strtolower($node->localName ?? $node->nodeName);
 }
 
-/** @return list<DOMElement> */
+/**
+ * Collect direct child elements with the requested name.
+ *
+ * @param DOMElement $parent The parent.
+ * @param string $wanted The wanted.
+ *
+ * @return array The resulting data.
+ */
 function directChildrenNamed(DOMElement $parent, string $wanted): array
 {
     $matches = [];
@@ -36,7 +65,14 @@ function directChildrenNamed(DOMElement $parent, string $wanted): array
     return $matches;
 }
 
-/** @return list<DOMElement> */
+/**
+ * Collect descendant elements with the requested name.
+ *
+ * @param DOMElement $parent The parent.
+ * @param string $wanted The wanted.
+ *
+ * @return array The resulting data.
+ */
 function descendantsNamed(DOMElement $parent, string $wanted): array
 {
     $matches = [];
@@ -56,6 +92,14 @@ function descendantsNamed(DOMElement $parent, string $wanted): array
     return $matches;
 }
 
+/**
+ * Read the first matching attribute value from an XML element.
+ *
+ * @param DOMElement $element The element.
+ * @param string $names The names.
+ *
+ * @return ?string The resulting text.
+ */
 function attributeValue(DOMElement $element, string ...$names): ?string
 {
     foreach ($element->attributes as $attribute) {
@@ -69,6 +113,14 @@ function attributeValue(DOMElement $element, string ...$names): ?string
     return null;
 }
 
+/**
+ * Read text from the first matching direct child element.
+ *
+ * @param DOMElement $parent The parent.
+ * @param string $names The names.
+ *
+ * @return ?string The resulting text.
+ */
 function directChildText(DOMElement $parent, string ...$names): ?string
 {
     foreach ($parent->childNodes as $child) {
@@ -85,7 +137,14 @@ function directChildText(DOMElement $parent, string ...$names): ?string
     return null;
 }
 
-/** Return the Data slice valid on the requested date, if any. */
+/**
+ * Return the Data slice valid on the requested date, if any.
+ *
+ * @param DOMElement $entity The entity.
+ * @param string $asOf The as of.
+ *
+ * @return ?DOMElement The function result.
+ */
 function currentData(DOMElement $entity, string $asOf): ?DOMElement
 {
     foreach (directChildrenNamed($entity, 'Data') as $data) {
@@ -99,6 +158,13 @@ function currentData(DOMElement $entity, string $asOf): ?DOMElement
     return null;
 }
 
+/**
+ * Read the authorization status from a SAM data node.
+ *
+ * @param ?DOMElement $data The data.
+ *
+ * @return string The resulting text.
+ */
 function statusOf(?DOMElement $data): string
 {
     if ($data === null) {
@@ -107,11 +173,27 @@ function statusOf(?DOMElement $data): string
     return strtoupper(directChildText($data, 'Status') ?? '(geen status)');
 }
 
+/**
+ * Increment the count for a named item.
+ *
+ * @param array $counts The counts.
+ * @param string $key The key.
+ * @param int $amount The amount.
+ *
+ * @return void No value is returned.
+ */
 function increment(array &$counts, string $key, int $amount = 1): void
 {
     $counts[$key] = ($counts[$key] ?? 0) + $amount;
 }
 
+/**
+ * Format counts.
+ *
+ * @param array $counts The counts.
+ *
+ * @return array The resulting data.
+ */
 function formatCounts(array $counts): array
 {
     ksort($counts, SORT_NATURAL | SORT_FLAG_CASE);
@@ -316,6 +398,13 @@ if (file_put_contents($reportPath, $report) === false) {
 echo $report;
 echo PHP_EOL . 'Report saved: ' . $reportPath . PHP_EOL;
 
+/**
+ * Return the lowercase local name at the XML reader position.
+ *
+ * @param XMLReader $reader The reader.
+ *
+ * @return string The resulting text.
+ */
 function localNameFromReader(XMLReader $reader): string
 {
     return strtolower($reader->localName);

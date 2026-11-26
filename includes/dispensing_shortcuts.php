@@ -1,10 +1,26 @@
 <?php
 /**
- * Shared, allow-listed dispensing function-key actions and configuration.
+ * @date_cre: Thu 2026-11-19 10:52:55
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Shared, allow-listed dispensing function-key actions and configuration.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:dispensing_shortcuts
  */
 
 declare(strict_types=1);
 
+/**
+ * Load the configured dispensing shortcut slots.
+ *
+ * @return array The resulting data.
+ */
 function fn_dispensingShortcutSlots(): array
 {
     $slots = [];
@@ -22,6 +38,11 @@ function fn_dispensingShortcutSlots(): array
     return $slots;
 }
 
+/**
+ * Load the available dispensing shortcut actions.
+ *
+ * @return array The resulting data.
+ */
 function fn_dispensingShortcutActions(): array
 {
     return [
@@ -42,6 +63,13 @@ function fn_dispensingShortcutActions(): array
     ];
 }
 
+/**
+ * Determine whether safe dispensing shortcut url.
+ *
+ * @param string $url The url.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function fn_isSafeDispensingShortcutUrl(string $url): bool
 {
     $url = trim($url);
@@ -95,6 +123,13 @@ function fn_dispensingShortcutModuleTargets(): array
     return $targets;
 }
 
+/**
+ * Resolve and validate a module path for a dispensing shortcut.
+ *
+ * @param string $actionKey The action key.
+ *
+ * @return ?string The resulting text.
+ */
 function fn_dispensingShortcutModulePath(string $actionKey): ?string
 {
     if (!str_starts_with($actionKey, 'open_page:')) {
@@ -105,7 +140,11 @@ function fn_dispensingShortcutModulePath(string $actionKey): ?string
     return in_array($module, fn_dispensingShortcutModuleTargets(), true) ? $module : null;
 }
 
-/** @return array<string, array{action_key:string, action_config:array, labels:array}>|false */
+/**
+ * Load dispensing shortcut configuration.
+ *
+ * @return array<string, array{action_key:string, action_config:array, labels:array}>|false The resulting data.
+ */
 function fn_loadDispensingShortcutConfiguration(): array|false
 {
     try {

@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -19,7 +18,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
 
-/** Execute a KBO-related query while preserving this module's false-based flow. */
+/**
+ * Execute a KBO-related query while preserving this module's false-based flow.
+ *
+ * @param string $operation The operation.
+ * @param string $sql The sql.
+ * @param array $params The params.
+ *
+ * @return PgSql\Result|false The function result.
+ */
 function grompil_kbo_query(string $operation, string $sql, array $params = []): PgSql\Result|false
 {
     try {

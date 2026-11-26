@@ -1,7 +1,25 @@
 <?php
+/**
+ * @date_cre: Sat 2026-11-21 17:44:47
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Manages remember me.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:remember_me
+ */
 declare(strict_types=1);
 
-/** Configured absolute lifetime for an opted-in remembered browser. */
+/**
+ * Configured absolute lifetime for an opted-in remembered browser.
+ *
+ * @return int The resulting identifier.
+ */
 function grompil_remember_me_days(): int
 {
     static $days = null;
@@ -24,12 +42,25 @@ function grompil_remember_me_days(): int
     return $days;
 }
 
+/**
+ * Determine whether remember-me cookies require the secure flag.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function grompil_remember_me_secure_cookie(): bool
 {
     return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 }
 
+/**
+ * Set the remember-me cookie with its expiration time.
+ *
+ * @param string $value The value.
+ * @param int $expiresAt The expires at.
+ *
+ * @return void No value is returned.
+ */
 function grompil_remember_me_set_cookie(string $value, int $expiresAt): void
 {
     setcookie('grompil_remember', $value, [
@@ -46,7 +77,11 @@ function grompil_remember_me_set_cookie(string $value, int $expiresAt): void
     }
 }
 
-/** Revoke the token for this browser, if present, and remove its cookie. */
+/**
+ * Revoke the token for this browser, if present, and remove its cookie.
+ *
+ * @return void No value is returned.
+ */
 function grompil_remember_me_revoke_current(): void
 {
     $cookie = (string) ($_COOKIE['grompil_remember'] ?? '');
@@ -60,7 +95,13 @@ function grompil_remember_me_revoke_current(): void
     grompil_remember_me_set_cookie('', time() - 3600);
 }
 
-/** Issue a hashed, single-browser token after the complete login flow succeeds. */
+/**
+ * Issue a hashed, single-browser token after the complete login flow succeeds.
+ *
+ * @param bool $remember The remember.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function grompil_remember_me_finish_login(bool $remember): bool
 {
     grompil_remember_me_revoke_current();
@@ -98,7 +139,11 @@ function grompil_remember_me_finish_login(bool $remember): bool
     }
 }
 
-/** Restore an authenticated session from a valid browser token. */
+/**
+ * Restore an authenticated session from a valid browser token.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function grompil_remember_me_restore(): bool
 {
     if (isset($_SESSION['user_code'])) {

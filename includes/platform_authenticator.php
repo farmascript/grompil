@@ -1,7 +1,16 @@
 <?php
 /**
- * TOTP helpers for platform and company administrator accounts.
- * @date_mut: Thu 2026-11-12 14:15:48
+ * @date_cre: Sat 2026-10-31 14:32:44
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: TOTP helpers for platform and company administrator accounts.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:platform_authenticator
  */
 
@@ -10,7 +19,15 @@ declare(strict_types=1);
 use OTPHP\InternalClock;
 use OTPHP\TOTP;
 
-/** Keep this module's false-based error handling while centralizing query failures. */
+/**
+ * Keep this module's false-based error handling while centralizing query failures.
+ *
+ * @param string $operation The operation.
+ * @param string $sql The sql.
+ * @param array $params The params.
+ *
+ * @return PgSql\Result|false The function result.
+ */
 function grompil_platform_authenticator_query(string $operation, string $sql, array $params = []): PgSql\Result|false
 {
     try {
@@ -27,6 +44,8 @@ function grompil_platform_authenticator_query(string $operation, string $sql, ar
 
 /**
  * Load the OTP implementation through Composer only when MFA is used.
+ *
+ * @return void No value is returned.
  */
 function grompil_totp_library_ready(): void
 {
@@ -42,6 +61,8 @@ function grompil_totp_library_ready(): void
 
 /**
  * Read the deployment-specific secret encryption key.
+ *
+ * @return string The resulting text.
  */
 function grompil_totp_encryption_key(): string
 {
@@ -54,7 +75,13 @@ function grompil_totp_encryption_key(): string
     return $key;
 }
 
-/** Encrypt a Base32 TOTP secret for storage. */
+/**
+ * Encrypt a Base32 TOTP secret for storage.
+ *
+ * @param string $secret The secret.
+ *
+ * @return string The resulting text.
+ */
 function grompil_totp_encrypt_secret(string $secret): string
 {
     grompil_totp_library_ready();
@@ -63,7 +90,13 @@ function grompil_totp_encrypt_secret(string $secret): string
     return base64_encode($nonce . $ciphertext);
 }
 
-/** Decrypt a stored TOTP secret. */
+/**
+ * Decrypt a stored TOTP secret.
+ *
+ * @param string $encrypted The encrypted.
+ *
+ * @return string The resulting text.
+ */
 function grompil_totp_decrypt_secret(string $encrypted): string
 {
     grompil_totp_library_ready();
@@ -80,7 +113,14 @@ function grompil_totp_decrypt_secret(string $encrypted): string
     return $secret;
 }
 
-/** Create a standards-based 6 digit, 30 second authenticator object. */
+/**
+ * Create a standards-based 6 digit, 30 second authenticator object.
+ *
+ * @param string $secret The secret.
+ * @param string $label The label.
+ *
+ * @return TOTP The function result.
+ */
 function grompil_totp(string $secret, string $label): TOTP
 {
     grompil_totp_library_ready();
@@ -92,7 +132,14 @@ function grompil_totp(string $secret, string $label): TOTP
         ->withLabel($label);
 }
 
-/** Check the deployment-wide platform management IP rules. Empty means unrestricted. */
+/**
+ * Check the deployment-wide platform management IP rules. Empty means unrestricted.
+ *
+ * @param ?string $address The address.
+ * @param string $contextUserCode The context user code.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function platform_management_ip_allowed(?string $address = null, string $contextUserCode = ''): bool
 {
     $address ??= grompil_client_ip_address();
@@ -115,7 +162,15 @@ function platform_management_ip_allowed(?string $address = null, string $context
         && ((int) $row['rule_count'] === 0 || $row['address_allowed'] === 't');
 }
 
-/** Return the active encrypted TOTP secret for a platform account, if configured. */
+/**
+ * Return the active encrypted TOTP secret for a platform account, if configured.
+ *
+ * @param string $userCode User code.
+ * @param int $companyId Company identifier.
+ * @param bool $platformOperator The platform operator.
+ *
+ * @return ?string The resulting text.
+ */
 function grompil_platform_totp_ciphertext(string $userCode, int $companyId = 0, bool $platformOperator = true): ?string
 {
     set_database_tenant_context($companyId, $userCode, $platformOperator);
@@ -131,7 +186,15 @@ function grompil_platform_totp_ciphertext(string $userCode, int $companyId = 0, 
     return $row ? (string) $row['secret_ciphertext'] : null;
 }
 
-/** Generate single-use recovery codes and persist only password hashes. */
+/**
+ * Generate single-use recovery codes and persist only password hashes.
+ *
+ * @param string $userCode User code.
+ * @param int $companyId Company identifier.
+ * @param bool $platformOperator The platform operator.
+ *
+ * @return array The resulting data.
+ */
 function grompil_create_totp_recovery_codes(string $userCode, int $companyId = 0, bool $platformOperator = true): array
 {
     set_database_tenant_context($companyId, $userCode, $platformOperator);
@@ -156,7 +219,16 @@ function grompil_create_totp_recovery_codes(string $userCode, int $companyId = 0
     return $codes;
 }
 
-/** Verify and consume one single-use recovery code. */
+/**
+ * Verify and consume one single-use recovery code.
+ *
+ * @param string $userCode User code.
+ * @param string $code The code.
+ * @param int $companyId Company identifier.
+ * @param bool $platformOperator The platform operator.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function grompil_consume_totp_recovery_code(
     string $userCode,
     string $code,

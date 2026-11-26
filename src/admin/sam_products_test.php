@@ -1,6 +1,16 @@
 <?php
 /**
- * Platform-only test screen for the read-only SAM product search helper.
+ * @date_cre: Fri 2026-10-30 20:39:55
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Platform-only test screen for the read-only SAM product search helper.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:sam_products_test
  */
 

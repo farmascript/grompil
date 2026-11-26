@@ -1,14 +1,19 @@
 <?php
 /**
+ * @date_cre: Fri 2026-11-13
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Streams the CMP XML export and preserves multilingual names and source data for formula and ingredient records.
  * Export the SAM v2 CMP compounding formulas and ingredients to CSV.
  * Each source Data period is retained as a separate versioned row.
- *
- * @date_cre: Fri 2026-11-13
- * @date_mut: Fri 2026-11-13
- * @description: Streams the CMP XML export and preserves multilingual names and source data for formula and ingredient records.
- *
  * Usage:
- *   php sam_compounding_catalog_export.php <CMP-export.xml> [output.csv]
+ * php sam_compounding_catalog_export.php <CMP-export.xml> [output.csv]
  *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_compounding_catalog_export
  */
@@ -30,12 +35,26 @@ if (!class_exists(XMLReader::class)) {
     exit(1);
 }
 
+/**
+ * Normalize a date from the compounding catalogue export.
+ *
+ * @param ?string $value The value.
+ *
+ * @return ?string The resulting text.
+ */
 function cmpDate(?string $value): ?string
 {
     $value = trim((string) $value);
     return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : null;
 }
 
+/**
+ * Escape a value for inclusion in the compounding CSV export.
+ *
+ * @param ?string $value The value.
+ *
+ * @return string The resulting text.
+ */
 function cmpCsvValue(?string $value): string
 {
     return trim((string) $value);

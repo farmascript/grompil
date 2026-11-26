@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-13
- * @date_mut: Fri 2026-11-13
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -10,6 +10,7 @@
  * @info_email: info@grompil.com
  *
  * @description: Read-only lookup helpers for compounding raw materials and RIZIV codes.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:compounding_products
  */
 
@@ -25,7 +26,9 @@ require_once __DIR__ . '/bootstrap.php';
  * @param string $query CNK or partial name/description.
  * @param int $limit Maximum number of distinct raw materials to return.
  * @param int|null $totalCount Receives the total number of matching materials.
- * @return list<array<string, mixed>>
+ * @param ?int $rawMaterialId The raw material id.
+ *
+ * @return array The resulting data.
  */
 function grompil_compounding_product_search(
     string $query,

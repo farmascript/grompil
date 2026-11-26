@@ -1,5 +1,16 @@
 <?php
 /**
+ * @date_cre: Thu 2026-10-29 15:12:14
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Manages test db mysql.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:test_db_mysql
  */
 try {

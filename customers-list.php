@@ -1,6 +1,16 @@
 <?php
 /**
+ * @date_cre: Wed 2026-11-25 20:45:47
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
  * @description: Loads the sortable company customer directory.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:customers-list
  */
 

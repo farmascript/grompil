@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Sun 2026-11-01
- * @date_mut: Wed 2026-11-11
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -13,7 +12,6 @@
  * @description: Builds contextual documentation links and accessible information icons.
  *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:dokuwiki
- * 
  */
 
 declare(strict_types=1);
@@ -21,7 +19,15 @@ declare(strict_types=1);
 require_once __DIR__ . '/module_guard.php';
 require_once __DIR__ . '/credentials_config.php';
 
-/** Build a stable wiki URL; an empty configuration disables documentation links. */
+/**
+ * Build a stable wiki URL; an empty configuration disables documentation links.
+ *
+ * @param string $level The level.
+ * @param string $pageId The page id.
+ * @param ?string $language Language code.
+ *
+ * @return string The resulting text.
+ */
 function fn_dokuwikiUrl(string $level, string $pageId, ?string $language = null): string
 {
     if (!in_array($level, ['users', 'dev', 'testers', 'extern'], true)
@@ -50,7 +56,14 @@ function fn_dokuwikiUrl(string $level, string $pageId, ?string $language = null)
     return rtrim($baseUrl, '/') . '/doku.php?id=' . $languagePrefix . 'doc:grompil:' . $level . ':' . $pageId;
 }
 
-/** Render a keyboard-accessible information link with a localized accessible name. */
+/**
+ * Render a keyboard-accessible information link with a localized accessible name.
+ *
+ * @param string $level The level.
+ * @param string $pageId The page id.
+ *
+ * @return string The resulting text.
+ */
 function fn_dokuwikiIcon(string $level, string $pageId): string
 {
     $url = fn_dokuwikiUrl($level, $pageId);

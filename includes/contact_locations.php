@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Sat 2026-11-07 14:57:26
- * @date_mut: Thu 2026-11-12
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -160,7 +159,9 @@ function grompil_google_maps_url(mixed $latitude, mixed $longitude): ?string
  *
  * @param mixed $latitude Latitude.
  * @param mixed $longitude Longitude.
- * @return string
+ * @param string $address The address.
+ *
+ * @return string The resulting text.
  */
 function grompil_google_maps_link(mixed $latitude, mixed $longitude, string $address = ''): string
 {

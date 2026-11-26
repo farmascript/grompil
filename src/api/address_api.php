@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Thu 2026-11-12 17:19:20
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -35,7 +34,13 @@ function address_api_error(int $status, string $message): never
     exit;
 }
 
-/** Remove the BeSt version timestamp from an address URI, retaining its stable identifier. */
+/**
+ * Remove the BeSt version timestamp from an address URI, retaining its stable identifier.
+ *
+ * @param mixed $id The id.
+ *
+ * @return string The resulting text.
+ */
 function address_api_canonical_address_id(mixed $id): string
 {
     $id = trim((string) $id);

@@ -1,6 +1,27 @@
 <?php
+/**
+ * @date_cre: Sat 2026-11-21 14:45:25
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Manages dispensing history.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:dispensing_history
+ */
 declare(strict_types=1);
 
+/**
+ * Parse a date value supplied to the dispensing history filters.
+ *
+ * @param mixed $value The value.
+ *
+ * @return ?string The resulting text.
+ */
 function grompil_dispensing_history_parse_date(mixed $value): ?string
 {
     if (!is_scalar($value)) {
@@ -19,6 +40,14 @@ function grompil_dispensing_history_parse_date(mixed $value): ?string
     return $value;
 }
 
+/**
+ * Build a timestamp boundary for a dispensing history date filter.
+ *
+ * @param ?string $date The date.
+ * @param bool $exclusiveEnd The exclusive end.
+ *
+ * @return ?string The resulting text.
+ */
 function grompil_dispensing_history_date_boundary(?string $date, bool $exclusiveEnd = false): ?string
 {
     if ($date === null) {
@@ -33,7 +62,18 @@ function grompil_dispensing_history_date_boundary(?string $date, bool $exclusive
 
 /**
  * Fetches completed dispensing sessions with company, customer/anonymous scope and text filters.
- * @return array{rows:list<array<string,mixed>>,total:int,page:int,per_page:int,pages:int}
+ *
+ * @param int $companyId Company identifier.
+ * @param string $query Search query.
+ * @param string $customerCode Customer code.
+ * @param bool $anonymousOnly The anonymous only.
+ * @param int $page Page number.
+ * @param int $perPage The per page.
+ * @param string $language Language code.
+ * @param ?string $dateFrom The date from.
+ * @param ?string $dateTo The date to.
+ *
+ * @return array{rows:list<array<string,mixed>>,total:int,page:int,per_page:int,pages:int} The resulting data.
  */
 function grompil_dispensing_history_fetch(
     int $companyId,

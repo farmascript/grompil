@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Thu 2026-11-05
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -19,7 +18,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/credentials_config.php';
 
-/** Return the configured inactivity limit, defaulting safely to 30 minutes. */
+/**
+ * Return the configured inactivity limit, defaulting safely to 30 minutes.
+ *
+ * @return int The resulting identifier.
+ */
 function grompil_session_idle_timeout_seconds(): int
 {
     static $seconds = null;
@@ -38,7 +41,11 @@ function grompil_session_idle_timeout_seconds(): int
     return $seconds;
 }
 
-/** Start the session with persistent-cookie settings and expire idle logins. */
+/**
+ * Start the session with persistent-cookie settings and expire idle logins.
+ *
+ * @return void No value is returned.
+ */
 function grompil_start_session(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -67,7 +74,11 @@ function grompil_start_session(): void
     grompil_enforce_session_idle_timeout();
 }
 
-/** Expire an authenticated session after inactivity, preserving language for the login screen. */
+/**
+ * Expire an authenticated session after inactivity, preserving language for the login screen.
+ *
+ * @return void No value is returned.
+ */
 function grompil_enforce_session_idle_timeout(): void
 {
     if (!isset($_SESSION['user_code'])) {

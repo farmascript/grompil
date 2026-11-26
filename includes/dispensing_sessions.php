@@ -34,6 +34,14 @@ function grompil_dispensing_display_name(string $firstName, string $lastName): s
     return trim($firstName . ' ' . $lastName);
 }
 
+/**
+ * Build the localized deceased-customer notice.
+ *
+ * @param string $deathDate The death date.
+ * @param string $ageDisplay The age display.
+ *
+ * @return string The resulting text.
+ */
 function grompil_dispensing_deceased_display(string $deathDate, string $ageDisplay): string
 {
     $formattedDate = fn_formatDateDisplay($deathDate);
@@ -42,7 +50,16 @@ function grompil_dispensing_deceased_display(string $deathDate, string $ageDispl
     return strtr($template, ['{date}' => $formattedDate, '{age}' => $ageDisplay]);
 }
 
-/** JSON API for per-tab dispensing drafts and their customer groups/lines. */
+/**
+ * JSON API for per-tab dispensing drafts and their customer groups/lines.
+ *
+ * @param int $companyId Company identifier.
+ * @param string $actorCode The actor code.
+ * @param array $statusByKey Dispensing statuses indexed by stable key.
+ * @param string $walkinTitle Localized label for anonymous walk-in customers.
+ *
+ * @return never This function does not return.
+ */
 function grompil_dispensing_session_api(int $companyId, string $actorCode, array $statusByKey, string $walkinTitle): never
 {
     header('Content-Type: application/json; charset=utf-8');
@@ -515,7 +532,15 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
     }
 }
 
-/** @return array<string, mixed> */
+/**
+ * Load the company and product data for a dispensing receipt.
+ *
+ * @param int $companyId Company identifier.
+ * @param string $sessionId Dispensing session identifier.
+ * @param string $walkinTitle Localized label for anonymous walk-in customers.
+ *
+ * @return array<string, mixed> The resulting data.
+ */
 function grompil_dispensing_receipt_data(int $companyId, string $sessionId, string $walkinTitle): array
 {
     $companyResult = db_query_params(
@@ -601,6 +626,15 @@ function grompil_dispensing_receipt_data(int $companyId, string $sessionId, stri
     ];
 }
 
+/**
+ * Add a customer to an open dispensing session.
+ *
+ * @param int $companyId Company identifier.
+ * @param string $sessionId Dispensing session identifier.
+ * @param string $customerCode Customer code.
+ *
+ * @return int The resulting identifier.
+ */
 function grompil_dispensing_session_add_customer(int $companyId, string $sessionId, string $customerCode): int
 {
     $customerCode = strtoupper(trim($customerCode));
@@ -646,6 +680,15 @@ function grompil_dispensing_session_add_customer(int $companyId, string $session
     return (int) $row['id'];
 }
 
+/**
+ * Load the parties and their product lines in a dispensing session.
+ *
+ * @param int $companyId Company identifier.
+ * @param string $sessionId Dispensing session identifier.
+ * @param string $walkinTitle Localized label for anonymous walk-in customers.
+ *
+ * @return array The resulting data.
+ */
 function grompil_dispensing_session_parties(int $companyId, string $sessionId, string $walkinTitle = ''): array
 {
     $result = db_query_params(
@@ -716,7 +759,15 @@ function grompil_dispensing_session_parties(int $companyId, string $sessionId, s
     return $parties;
 }
 
-/** @param array<string, mixed> $line */
+/**
+ * Normalize a dispensing product line for display.
+ *
+ * @param array<string, mixed> $line The line.
+ * @param array $party The party.
+ * @param string $statusCode The status code.
+ *
+ * @return array The resulting data.
+ */
 function grompil_dispensing_session_line_data(array $line, array $party, string $statusCode): array
 {
     return [
@@ -737,6 +788,15 @@ function grompil_dispensing_session_line_data(array $line, array $party, string 
     ];
 }
 
+/**
+ * Load the product lines for a dispensing session.
+ *
+ * @param int $companyId Company identifier.
+ * @param string $sessionId Dispensing session identifier.
+ * @param string $walkinTitle Localized label for anonymous walk-in customers.
+ *
+ * @return array The resulting data.
+ */
 function grompil_dispensing_session_lines(int $companyId, string $sessionId, string $walkinTitle = ''): array
 {
     $result = db_query_params(

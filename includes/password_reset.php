@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Wed 2026-10-21 17:30:00
- * @date_mut: Sat 2026-11-07 14:54:17
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -43,7 +42,14 @@ function password_reset_query(
     }
 }
 
-/** Preserve the old best-effort rollback behavior while logging failures centrally. */
+/**
+ * Preserve the old best-effort rollback behavior while logging failures centrally.
+ *
+ * @param PgSql\Connection $connection The connection.
+ * @param string $operation The operation.
+ *
+ * @return void No value is returned.
+ */
 function password_reset_rollback(PgSql\Connection $connection, string $operation): void
 {
     try {

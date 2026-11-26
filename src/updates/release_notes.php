@@ -303,7 +303,8 @@ page_end();
  *
  * @param string $key The translation key.
  * @param string $language The language code.
- * @return string
+ *
+ * @return string The resulting text.
  */
 function fn_translationForLanguage(string $key, string $language): string
 {
@@ -320,6 +321,7 @@ function fn_translationForLanguage(string $key, string $language): string
  *
  * @param string $candidate The return URL supplied by the request or referrer.
  * @param string $appBasePath The application base path.
+ *
  * @return string A safe internal URL or the dashboard URL.
  */
 function fn_releaseNotesReturnUrl(string $candidate, string $appBasePath): string
@@ -374,6 +376,7 @@ function fn_releaseNotesReturnUrl(string $candidate, string $appBasePath): strin
  * Sanitize editor HTML to the small formatting subset used by release notes.
  *
  * @param string $input Untrusted HTML submitted by the rich-text editor.
+ *
  * @return string Sanitized HTML containing only supported formatting.
  */
 function fn_releaseNotesSanitizeHtml(string $input): string
@@ -405,6 +408,7 @@ function fn_releaseNotesSanitizeHtml(string $input): string
  * Recursively serialize only approved tags and attributes.
  *
  * @param DOMNode $parent The node whose child nodes are serialized.
+ *
  * @return string Safe HTML for the supported formatting subset.
  */
 function fn_releaseNotesSerializeChildren(DOMNode $parent): string
@@ -458,6 +462,7 @@ function fn_releaseNotesSerializeChildren(DOMNode $parent): string
  * Convert sanitized rich text to a readable plain-text email alternative.
  *
  * @param string $html Sanitized release-note HTML.
+ *
  * @return string Plain-text message with paragraph and list breaks.
  */
 function fn_releaseNotesPlainText(string $html): string
@@ -472,6 +477,7 @@ function fn_releaseNotesPlainText(string $html): string
  * Render legacy plain-text release note values without interpreting markup.
  *
  * @param string $text Previously stored plain-text message.
+ *
  * @return string Escaped paragraphs for the release-note display.
  */
 function fn_releaseNotesLegacyHtml(string $text): string

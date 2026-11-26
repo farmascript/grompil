@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Wed 2026-11-04
- * @date_mut: Thu 2026-11-12 16:39:45
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -81,7 +80,15 @@ function db_query_params(string $operation, string $sql, array $params = [], ?Pg
     return $result;
 }
 
-/** Execute an unparameterized statement or multi-statement script centrally. */
+/**
+ * Execute an unparameterized statement or multi-statement script centrally.
+ *
+ * @param string $operation The operation.
+ * @param string $sql The sql.
+ * @param ?PgSql\Connection $connection The connection.
+ *
+ * @return PgSql\Result The function result.
+ */
 function db_query_raw(string $operation, string $sql, ?PgSql\Connection $connection = null): PgSql\Result
 {
     if (!preg_match('/^[a-z][a-z0-9_.-]{1,79}$/', $operation)) {

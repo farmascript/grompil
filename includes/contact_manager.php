@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Sun 2026-11-15 18:42:41
- * @date_mut: Sun 2026-11-15 20:27:34
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +11,7 @@
  *
  * @description: Provides tenant-scoped reusable contact management for customers and users.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:contact_manager
  */
 
 declare(strict_types=1);

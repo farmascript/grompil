@@ -1,7 +1,16 @@
 <?php
 /**
- * Completes the password plus TOTP login for platform and company administrators.
- * @date_mut: Thu 2026-11-12 21:25:00
+ * @date_cre: Sat 2026-10-31 14:32:44
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Completes the password plus TOTP login for platform and company administrators.
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:src:account:authenticator
  */
 

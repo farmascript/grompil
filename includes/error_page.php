@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Sun 2026-10-18 20:35:48
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -12,6 +11,7 @@
  *
  * @description: Renders safe error pages with an internal error code.
  *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:error_page
  */
 
 declare(strict_types=1);

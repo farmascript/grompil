@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Wed 2026-10-14 19:34:29
- * @date_mut: Thu 2026-11-12 12:02:00
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -100,7 +99,15 @@ require_once __DIR__ . '/database_queries.php';
 require_once __DIR__ . '/user_codes.php';
 require_once __DIR__ . '/remember_me.php';
 
-/** Preserve bootstrap's existing false-based query handling with central logging. */
+/**
+ * Preserve bootstrap's existing false-based query handling with central logging.
+ *
+ * @param string $operation The operation.
+ * @param string $sql The sql.
+ * @param array $params The params.
+ *
+ * @return PgSql\Result|false The function result.
+ */
 function grompil_bootstrap_query(string $operation, string $sql, array $params = []): PgSql\Result|false
 {
     try {

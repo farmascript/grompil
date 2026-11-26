@@ -1,9 +1,18 @@
 <?php
 /**
- * Export SAM ATC classification code descriptions from a REF XML file to CSV.
+ * @date_cre: Fri 2026-10-30 22:19:33
+ * @date_mut: Thu 2026-11-26
  *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Export SAM ATC classification code descriptions from a REF XML file to CSV.
  * Usage:
- *   php sam_atc_classifications_export.php <REF-export.xml> [output.csv]
+ * php sam_atc_classifications_export.php <REF-export.xml> [output.csv]
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:scripts:sam_atc_classifications_export
  */
 

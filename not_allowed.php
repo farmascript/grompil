@@ -1,8 +1,16 @@
 <?php
 
 /**
+ * @date_cre: Sun 2026-10-25 22:02:08
+ * @date_mut: Thu 2026-11-26
  *
- * @file        not_allowed.php
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: @file        not_allowed.php.
  * @author      lm
  * @dateCreated Sat 2018-12-29 21:08:13
  * @dateLastMod Fri 2026-10-23 10:37:47

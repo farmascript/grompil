@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Sat 2026-11-07
- * @date_mut: Sat 2026-11-07 14:16:49
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -19,7 +18,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/do_6_char_code.php';
 
-/** Generate a six-character code from an independent random integer. */
+/**
+ * Generate a six-character code from an independent random integer.
+ *
+ * @return string The resulting text.
+ */
 function grompil_generate_user_code(): string
 {
     $code = getalNaarCode(random_int(0, 351519999));
@@ -30,7 +33,13 @@ function grompil_generate_user_code(): string
     return $code;
 }
 
-/** Check the required six-character, three-letter and three-digit format. */
+/**
+ * Check the required six-character, three-letter and three-digit format.
+ *
+ * @param string $code The code.
+ *
+ * @return bool Whether the operation succeeded.
+ */
 function grompil_is_valid_user_code(string $code): bool
 {
     return preg_match('/^[A-Z0-9]{6}$/D', $code) === 1
@@ -40,13 +49,14 @@ function grompil_is_valid_user_code(string $code): bool
 
 /**
  * Run a user insert with collision-safe code generation.
- *
  * The insert callback must include the candidate in the user_code column and
  * use ON CONFLICT DO NOTHING (or ON CONFLICT (user_code) DO NOTHING), returning
  * a result with the inserted row on success.
  *
- * @param callable(string): (PgSql\Result|false) $insertAttempt
- * @param int $maximumAttempts
+ * @param callable $insertAttempt The insert attempt.
+ * @param int $maximumAttempts The maximum attempts.
+ *
+ * @return PgSql\Result|false The function result.
  */
 function grompil_insert_user_with_unique_code(callable $insertAttempt, int $maximumAttempts = 5): PgSql\Result|false
 {

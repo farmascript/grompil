@@ -1,10 +1,19 @@
 <?php
 /**
- * Authenticated JSON endpoint for searching the imported SAM product catalog.
+ * @date_cre: Fri 2026-10-30 20:36:47
+ * @date_mut: Thu 2026-11-26
  *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Authenticated JSON endpoint for searching the imported SAM product catalog.
  * Examples:
- *   /sam-products.php?q=0046128
- *   /sam-products.php?q=Haldol%205%20mg%2Fml
+ * /sam-products.php?q=0046128
+ * /sam-products.php?q=Haldol%205%20mg%2Fml
+ *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:sam-products
  */
 

@@ -1,9 +1,8 @@
 <?php
 
 /**
- *
  * @date_cre: Wed 2026-11-04
- * @date_mut: Fri 2026-11-06
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -14,7 +13,6 @@
  * @description: Runs parameterized PostgreSQL queries with consistent failure handling.
  *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:do_6_char_code_test
- * 
  */
 
 require("do_6_char_code.php");

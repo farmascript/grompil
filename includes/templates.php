@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Fri 2026-11-13 00:00:00
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -345,6 +344,11 @@ function fn_formatDateDisplay(?string $value): string
 
 /**
  * Return the age in completed years on a given date.
+ *
+ * @param ?string $birthDateValue The birth date value.
+ * @param ?string $dateValue The date value.
+ *
+ * @return ?int The resulting identifier.
  */
 function fn_ageAtDate(?string $birthDateValue, ?string $dateValue): ?int
 {
@@ -366,6 +370,11 @@ function fn_ageAtDate(?string $birthDateValue, ?string $dateValue): ?int
 
 /**
  * Format a death date with the age reached, when a valid birth date is known.
+ *
+ * @param ?string $birthDateValue The birth date value.
+ * @param ?string $deathDateValue The death date value.
+ *
+ * @return string The resulting text.
  */
 function fn_formatDeathDateDisplay(?string $birthDateValue, ?string $deathDateValue): string
 {
@@ -644,7 +653,9 @@ function fn_appBaseHref(): string
  * Resolve an allow-listed template from a company, theme, or default theme.
  *
  * @param array $company The company record.
- * @return string
+ * @param string $template The template.
+ *
+ * @return string The resulting text.
  */
 function fn_companyThemeTemplatePath(array $company, string $template): string
 {
@@ -765,7 +776,9 @@ function fn_companyStoreThemeOptions(string $selected = 'default'): string
  *
  * @param string $title The response title.
  * @param array $user The authenticated user record.
- * @return void
+ * @param bool $fullWidth The full width.
+ *
+ * @return void No value is returned.
  */
 function page_start(string $title, array $user, bool $fullWidth = false): void
 {

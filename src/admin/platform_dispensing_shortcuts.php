@@ -1,6 +1,17 @@
 <?php
 /**
- * Platform-wide function-key assignments for the dispensing module.
+ * @date_cre: Thu 2026-11-19 10:52:55
+ * @date_mut: Thu 2026-11-26
+ *
+ * @credit_software: Lieven Maus
+ * @credit_code: ChatGPT, Codex
+ *
+ * @copyright: gromPil SaaS - copyright 1981-present - Lieven Maus
+ * @info_email: info@grompil.com
+ *
+ * @description: Platform-wide function-key assignments for the dispensing module.
+ *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:src:admin:platform_dispensing_shortcuts
  */
 
 declare(strict_types=1);

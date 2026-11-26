@@ -1,8 +1,7 @@
 <?php
 /**
- *
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-12 14:15:48
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -11,10 +10,9 @@
  * @info_email: info@grompil.com
  *
  * @description: Company-scoped pharmacy dispensing workbench entry point.
- *
- * https://dw.grompil.com/!saas/doku.php?id=broncode:dispense
  * https://dw.grompil.com/!saas/doku.php?id=nl:doc:grompil:dev:tables:aflevering
  *
+ * https://dw.grompil.com/!saas/doku.php?id=broncode:dispense
  */
 
 declare(strict_types=1);

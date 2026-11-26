@@ -4,7 +4,7 @@
 /**
  *
  * @date_cre: Wed 2026-11-04
- * @date_mut: Sat 2026-11-07
+ * @date_mut: Thu 2026-11-26
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -15,11 +15,14 @@
  * @description: Converts integers to reversible six-character alphanumeric codes.
  *
  * https://dw.grompil.com/!saas/doku.php?id=broncode:includes:do_6_char_code
- *
  */
 
 /**
  * Zet een uniek getal om naar een 6-karakter code (3 letters, 3 cijfers).
+ *
+ * @param int $getal The getal.
+ *
+ * @return string The resulting text.
  */
 function getalNaarCode(int $getal): string 
 {
@@ -75,6 +78,10 @@ function getalNaarCode(int $getal): string
 
 /**
  * Zet een 6-karakter code terug om naar het oorspronkelijke getal (inclusief automatische opschoning).
+ *
+ * @param string $code The code.
+ *
+ * @return int The resulting identifier.
  */
 function codeNaarGetal(string $code): int 
 {
