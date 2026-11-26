@@ -41,7 +41,7 @@
     sourceButton.textContent = field.dataset.htmlModeLabel || 'HTML';
     sourceButton.setAttribute('aria-pressed', 'false');
     sourceButton.title = field.dataset.htmlModeLabel || 'HTML';
-    var toolbar = editorHost.querySelector('.ql-toolbar');
+    var toolbar = field.querySelector('.ql-toolbar');
     if (toolbar) {
       var formatGroup = document.createElement('span');
       formatGroup.className = 'ql-formats';
