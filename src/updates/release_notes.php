@@ -225,7 +225,7 @@ $returnUrl = fn_releaseNotesReturnUrl(
 page_start(fn_t('release_notes_title'), $user);
 if ($isPublisher) {
     echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css">'
-        . '<link rel="stylesheet" href="' . e(fn_appBaseHref() . 'assets/release-notes-editor.css') . '">';
+        . '<link rel="stylesheet" href="' . e(fn_appBaseHref() . 'assets/release-notes-editor.css?v=' . rawurlencode(fn_appVersion())) . '">';
 }
 echo '<a class="btn btn-outline-secondary btn-sm mb-3" href="' . e($returnUrl) . '">'
     . '<span aria-hidden="true">←</span> ' . e(fn_t('release_notes_return_previous_module')) . '</a>';
