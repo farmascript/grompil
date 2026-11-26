@@ -352,7 +352,8 @@ if ($isPublisher) {
     $languageFields = '';
     foreach ($languages as $code) {
         $active = $code === $language;
-        $languageFields .= '<div class="mb-3 release-note-editor-field"><label class="form-label" for="release-message-' . strtolower($code) . '">'
+        $languageFields .= '<div class="mb-3 release-note-editor-field" data-html-mode-label="' . e(fn_t('release_notes_html_source_mode'))
+            . '" data-visual-mode-label="' . e(fn_t('release_notes_visual_mode')) . '"><label class="form-label" for="release-message-' . strtolower($code) . '">'
             . e($languageFieldLabels[$code]) . ($active ? ' · ' . e(fn_t('release_notes_current_language')) : '') . '</label>'
             . '<textarea class="form-control" id="release-message-' . strtolower($code) . '" name="message_' . strtolower($code)
             . '" rows="4"' . ($active ? ' required autofocus' : '') . '>'
@@ -372,7 +373,7 @@ if ($isPublisher) {
             . e(fn_t('release_notes_cancel_edit')) . '</a>' : '')
         . '</form></div></section>'
         . '<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>'
-        . '<script src="' . e(fn_appBaseHref() . 'assets/release-notes-editor.js') . '" defer></script>';
+        . '<script src="' . e(fn_appBaseHref() . 'assets/release-notes-editor.js?v=' . rawurlencode(fn_appVersion())) . '" defer></script>';
 }
 
 echo '<section aria-label="' . e(fn_t('release_notes_title')) . '">';
