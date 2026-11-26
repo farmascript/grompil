@@ -26,24 +26,18 @@ Daarom kunnen Franse of Duitse vertalingen tijdelijk leeg blijven: de app toont 
 
 1. Kies een unieke, beschrijvende key in lowercase, bijvoorbeeld `dispensing_receipt_pdf_title`.
 2. Voeg die key toe aan alle vier de bronbestanden onder `src/lang/`. Vul de waarden voor NL, FR, EN en DE in. Gebruik placeholders zoals `{count}` wanneer een variabel getal in de tekst komt.
-3. Importeer ontbrekende keys in de database:
-
-   ```powershell
-   php scripts/translations_1_import.php
-   ```
-
-   De importer voegt ontbrekende algemene rijen toe en overschrijft bestaande databasevertalingen niet.
-4. Open `translations.php`, controleer of pas de teksten per taal aan en publiceer de taalbestanden. De beheerpagina voegt de bronwaarden en databasewaarden samen bij het publiceren.
+3. Open **Vertalingen beheren** (`translations.php`) en klik op **Ontbrekende teksten importeren**. Deze knop voegt de ontbrekende algemene rijen toe aan `ft_substitutions` en publiceert daarna meteen alle taalbestanden. Bestaande databasevertalingen worden niet overschreven.
+4. Pas teksten per taal aan en klik op **Taalbestanden publiceren** om je wijzigingen naar de taalbestanden te publiceren.
 5. Neem de gewijzigde bron- en gegenereerde taalbestanden mee in de deployment. De PHP-bestanden moeten leesbaar zijn voor de applicatie; publiceren via de beheerpagina vereist schrijfrechten op de ingestelde taalmap.
 
-De CLI-export is een technische fallback, bijvoorbeeld:
+De beheerpagina is de normale werkwijze. De CLI-scripts zijn alleen een technische fallback voor beheer via de opdrachtregel:
 
 ```powershell
 php scripts/translations_2_export.php
 php scripts/translations_2_export.php FR
 ```
 
-De eerste opdracht exporteert alle ondersteunde talen; met een taalcode exporteer je alleen die taal. Voer eerst de importer uit: het CLI-exportscript schrijft de databasewaarden naar het bestand en voegt zelf geen bronwaarden toe. Voor dagelijks beheer is publiceren via `translations.php` het duidelijkst; die export voegt ontbrekende bronwaarden wel samen.
+Voer bij de CLI-werkwijze eerst `php scripts/translations_1_import.php` uit om ontbrekende keys toe te voegen. Daarna exporteert de eerste opdracht alle ondersteunde talen; met een taalcode exporteer je alleen die taal. Het CLI-exportscript schrijft de databasewaarden naar het bestand en voegt zelf geen bronwaarden toe. De beheerpagina voegt de bronwaarden en databasewaarden samen bij het publiceren.
 
 ## Company-specifieke teksten
 
