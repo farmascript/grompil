@@ -21,8 +21,16 @@
 }
 
 .release-note-editor .ql-editor p,
-.release-note-message p {
+.release-note-message > p {
   margin: 0;
+  line-height: 1.5;
+}
+
+.release-note-message > ul,
+.release-note-message > ol {
+  margin-block: 0;
+  padding-inline-start: 1.5rem;
+  line-height: 1.5;
 }
 
 .release-note-editor .ql-toolbar.ql-snow,
