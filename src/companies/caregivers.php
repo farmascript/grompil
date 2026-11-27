@@ -592,6 +592,9 @@ if ($selected !== null) {
             if ($entity === 'identifier') {
                 $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_add_identifier')) . '</button>'
                     . '<div class="d-none" data-caregiver-add-form data-focus-selector="[name=identifier_value]">' . $addForm . '</div></div>';
+            } elseif ($entity === 'contact') {
+                $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_add_contact')) . '</button>'
+                    . '<div class="d-none" data-caregiver-add-form data-focus-selector="[name=contact_value]">' . $addForm . '</div></div>';
             }
         } else {
             $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_new_address')) . '</button>'

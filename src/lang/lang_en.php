@@ -1090,6 +1090,7 @@ $arrSubst = array (
   'caregivers_riziv_competence_code' => 'INAMI competence code',
   'caregivers_riziv_title_help' => 'For an INAMI number, the check digits are validated and the title or specialty is filled in automatically.',
   'caregivers_add_identifier' => 'Add identification',
+  'caregivers_add_contact' => 'Add contact detail',
   'caregivers_code' => 'Provider code',
   'caregivers_scope_company' => 'Company detail',
   'caregivers_scope_shared' => 'Shared detail',

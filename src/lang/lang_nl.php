@@ -1090,6 +1090,7 @@ $arrSubst = array (
   'caregivers_riziv_competence_code' => 'RIZIV-bevoegdheidscode',
   'caregivers_riziv_title_help' => 'Bij een RIZIV-nummer controleren we de controlegetallen en vullen we titel of specialisme automatisch in.',
   'caregivers_add_identifier' => 'Identificatie toevoegen',
+  'caregivers_add_contact' => 'Contactgegeven toevoegen',
   'caregivers_code' => 'Zorgverlenercode',
   'caregivers_scope_company' => 'Bedrijfsgegeven',
   'caregivers_scope_shared' => 'Gedeeld gegeven',

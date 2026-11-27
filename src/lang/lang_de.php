@@ -1090,6 +1090,7 @@ $arrSubst = array (
   'caregivers_riziv_competence_code' => 'INAMI-Befugniscodierung',
   'caregivers_riziv_title_help' => 'Bei einer INAMI-Nummer werden die Prüfziffern geprüft und Titel oder Fachgebiet automatisch ausgefüllt.',
   'caregivers_add_identifier' => 'Kennnummer hinzufügen',
+  'caregivers_add_contact' => 'Kontaktangabe hinzufügen',
   'caregivers_code' => 'Leistungserbringer-Code',
   'caregivers_scope_company' => 'Unternehmensangabe',
   'caregivers_scope_shared' => 'Gemeinsame Angabe',
