@@ -115,12 +115,14 @@
     const missingCaregiverError = document.querySelector('[data-missing-caregiver-error]');
     const missingCaregiverContinue = document.querySelector('[data-missing-caregiver-continue]');
     const newPrescriptionModalElement = document.getElementById('dispensingNewPrescriptionModal');
+    const newPrescriptionTitle = document.querySelector('[data-new-prescription-title]');
     const newPrescriptionKeepLabel = document.querySelector('[data-new-prescription-keep-label]');
     const newPrescriptionCaregiverInput = document.querySelector('[data-new-prescription-caregiver-search]');
     const newPrescriptionCaregiverCode = document.querySelector('[data-new-prescription-caregiver-code]');
     const newPrescriptionCaregiverResults = document.querySelector('[data-new-prescription-caregiver-results]');
     const newPrescriptionError = document.querySelector('[data-new-prescription-error]');
     const newPrescriptionSave = document.querySelector('[data-new-prescription-save]');
+    let pendingPrescriptionStatusKey = '';
     let editingLine = null;
     const historyModalElement = document.getElementById('dispensingPatientHistoryModal');
     const historyBody = document.querySelector('[data-patient-history-body]');
@@ -138,6 +140,7 @@
     const patientRegex = document.querySelector('[data-patient-regex]');
     const patientIncludeDeceased = document.querySelector('[data-patient-include-deceased]');
     const dispenseStatusSelect = document.querySelector('[data-dispense-status-select]');
+    let lastPersistedDispenseStatus = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale';
     const patientStatusInput = document.querySelector('[data-patient-status-input]');
     const patientRequiredMessage = document.querySelector('[data-dispense-patient-required]');
     const initialPageCustomerCode = page.dataset.patientCode || '';
@@ -328,7 +331,7 @@
                 dispensingParties = data.parties || dispensingParties;
                 basket.clear();
                 for (const line of data.lines || []) basket.set(String(line.id), line);
-                activateParty(data.active_party_id);
+                activateParty(data.active_party_id, true);
                 patientInput.value = '';
                 hidePatientSuggestions();
                 setPatientStatus('');
@@ -387,6 +390,7 @@
     let dispensingParties = [];
     let activePartyId = 0;
     const caregiverByParty = new Map();
+    let pendingSessionCaregiver = null;
     let timer = 0;
     let requestController = null;
     let activeSuggestionIndex = -1;
@@ -394,6 +398,7 @@
     const sessionStorageKey = `grompil-dispensing-${page.dataset.sessionCompany || '0'}-${page.dataset.sessionUser || 'user'}`;
     const withdrawnFilterStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-include-revoked`;
     const prescriptionCaregiversStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-prescription-caregivers`;
+    const pendingCaregiverStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-pending-caregiver`;
 
     function saveCaregiverDefaults() {
         try {
@@ -658,9 +663,21 @@
         if (newPrescriptionCaregiverCode) newPrescriptionCaregiverCode.value = caregiver?.caregiver_code || '';
     });
 
-    function openNewPrescriptionModal() {
+    function openNewPrescriptionModal(forStatusChange = false) {
         if (!newPrescriptionModalElement || !window.bootstrap) return;
-        const currentCaregiver = caregiverByParty.get(String(activePartyId));
+        if (newPrescriptionTitle) {
+            newPrescriptionTitle.textContent = forStatusChange
+                ? newPrescriptionTitle.dataset.promptTitle || ''
+                : newPrescriptionTitle.dataset.defaultTitle || '';
+        }
+        if (newPrescriptionSave) {
+            newPrescriptionSave.textContent = forStatusChange
+                ? newPrescriptionSave.dataset.promptLabel || ''
+                : newPrescriptionSave.dataset.defaultLabel || '';
+        }
+        const currentParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
+        const currentCaregiver = caregiverByParty.get(String(activePartyId))
+            || (currentParty?.type !== 'customer' ? pendingSessionCaregiver : null);
         if (newPrescriptionKeepLabel) {
             newPrescriptionKeepLabel.textContent = currentCaregiver?.name
                 ? (t.prescriptionKeepCaregiver || '').replace('{name}', currentCaregiver.name)
@@ -680,16 +697,40 @@
         bootstrap.Modal.getOrCreateInstance(newPrescriptionModalElement).show();
     }
 
-    newPrescriptionSave?.addEventListener('click', () => {
-        const selectedCode = newPrescriptionCaregiverCode?.value || '';
-        if (selectedCode) {
-            const selectedCaregiver = {
-                caregiver_code: selectedCode,
-                name: newPrescriptionCaregiverInput?.value || '',
-            };
-            setPartyCaregiver(activePartyId, selectedCaregiver);
+    async function persistDispenseStatus(statusKey) {
+        if (!dispenseStatusSelect) return;
+        dispenseStatusSelect.value = statusKey;
+        applyDispenseStatus();
+        renderPartySelector();
+        renderBasket();
+        try {
+            await sessionReady;
+            await sessionRequest('status_set', { status_key: statusKey });
+            lastPersistedDispenseStatus = statusKey;
+        } catch {
+            dispenseStatusSelect.value = lastPersistedDispenseStatus;
+            applyDispenseStatus();
+            renderPartySelector();
+            renderBasket();
+            showSessionError();
         }
-        const currentCaregiver = caregiverByParty.get(String(activePartyId));
+    }
+
+    newPrescriptionSave?.addEventListener('click', async () => {
+        const selectedCode = newPrescriptionCaregiverCode?.value || '';
+        const activeParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
+        const selectedCaregiver = selectedCode ? {
+            caregiver_code: selectedCode,
+            name: newPrescriptionCaregiverInput?.value || '',
+        } : null;
+        if (selectedCaregiver && activeParty?.type === 'customer') {
+            setPartyCaregiver(activePartyId, selectedCaregiver);
+        } else if (selectedCaregiver) {
+            pendingSessionCaregiver = selectedCaregiver;
+            try { sessionStorage.setItem(pendingCaregiverStorageKey(), JSON.stringify(pendingSessionCaregiver)); } catch {}
+        }
+        const currentCaregiver = selectedCaregiver || caregiverByParty.get(String(activePartyId))
+            || (activeParty?.type !== 'customer' ? pendingSessionCaregiver : null);
         if (!currentCaregiver?.caregiver_code) {
             if (newPrescriptionError) {
                 newPrescriptionError.textContent = t.prescriptionChooseCaregiver || t.caregiverUnavailable || '';
@@ -698,9 +739,24 @@
             newPrescriptionCaregiverInput?.focus();
             return;
         }
+        const pendingStatusKey = pendingPrescriptionStatusKey;
+        pendingPrescriptionStatusKey = '';
         bootstrap.Modal.getOrCreateInstance(newPrescriptionModalElement).hide();
         renderActivePartyLabel();
-        input?.focus();
+        if (pendingStatusKey) {
+            await persistDispenseStatus(pendingStatusKey);
+        } else {
+            input?.focus();
+        }
+    });
+
+    newPrescriptionModalElement?.addEventListener('hidden.bs.modal', () => {
+        if (!pendingPrescriptionStatusKey) return;
+        pendingPrescriptionStatusKey = '';
+        if (dispenseStatusSelect) dispenseStatusSelect.value = lastPersistedDispenseStatus;
+        applyDispenseStatus();
+        renderPartySelector();
+        renderBasket();
     });
 
     function showMissingCaregiverModal(lines) {
@@ -792,7 +848,7 @@
             button.textContent = party.name;
             button.title = party.customer_code || party.name;
             button.setAttribute('aria-pressed', Number(party.id) === activePartyId ? 'true' : 'false');
-            button.addEventListener('click', () => activateParty(party.id));
+            button.addEventListener('click', () => activateParty(party.id, true));
             partySelector.append(button);
         }
         const addButton = document.createElement('button');
@@ -831,10 +887,15 @@
         activePartyLabel.className = 'dispense-active-party';
     }
 
-    function activateParty(partyId) {
+    function activateParty(partyId, promptForPrescriber = false) {
         const party = dispensingParties.find((item) => Number(item.id) === Number(partyId));
         if (!party) return;
         activePartyId = Number(party.id);
+        if (party.type === 'customer' && pendingSessionCaregiver && !caregiverByParty.has(String(activePartyId))) {
+            setPartyCaregiver(activePartyId, pendingSessionCaregiver);
+            pendingSessionCaregiver = null;
+            try { sessionStorage.removeItem(pendingCaregiverStorageKey()); } catch {}
+        }
         try { sessionStorage.setItem(`${sessionStorageKey}-party`, String(activePartyId)); } catch {}
         page.dataset.patientCode = party.customer_code || '';
         page.dataset.patientName = party.name || party.customer_code || '';
@@ -926,6 +987,11 @@
         applyDispenseStatus();
         renderPartySelector();
         renderBasket();
+        if (promptForPrescriber && party.type === 'customer'
+            && dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true'
+            && !caregiverByParty.has(String(activePartyId))) {
+            openNewPrescriptionModal(true);
+        }
     }
 
     async function initializeDispensingSession() {
@@ -961,6 +1027,10 @@
                 if (caregiver?.caregiver_code) caregiverByParty.set(String(partyId), caregiver);
             }
         } catch {}
+        try {
+            const savedPendingCaregiver = JSON.parse(sessionStorage.getItem(pendingCaregiverStorageKey()) || 'null');
+            if (savedPendingCaregiver?.caregiver_code) pendingSessionCaregiver = savedPendingCaregiver;
+        } catch {}
         dispensingParties = session.parties || [];
         for (const line of session.lines || []) {
             basket.set(String(line.id), line);
@@ -972,6 +1042,7 @@
             dispenseStatusSelect.value = session.status_key;
             page.dataset.dispenseStatus = session.status_key;
         }
+        lastPersistedDispenseStatus = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale';
         const pageCustomer = page.dataset.patientCode || '';
         const customerChanged = pageCustomer !== previouslyDisplayedCustomer;
         const preferredParty = (customerChanged && pageCustomer
@@ -1320,11 +1391,24 @@
     }
 
     dispenseStatusSelect?.addEventListener('change', () => {
-        applyDispenseStatus();
-        renderPartySelector();
-        renderBasket();
-        void sessionReady.then(() => sessionRequest('status_set', { status_key: dispenseStatusSelect.value }))
-            .catch(showSessionError);
+        const requestedStatus = dispenseStatusSelect.value;
+        void sessionReady.then(() => {
+            const requiresCaregiver = dispenseStatusSelect.selectedOptions[0]?.dataset.requiresCaregiver === 'true';
+            const activeParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
+            const hasKnownCaregiver = activeParty?.type === 'customer'
+                ? caregiverByParty.has(String(activePartyId))
+                : Boolean(pendingSessionCaregiver?.caregiver_code);
+            if (requiresCaregiver && !hasKnownCaregiver) {
+                pendingPrescriptionStatusKey = requestedStatus;
+                dispenseStatusSelect.value = lastPersistedDispenseStatus;
+                applyDispenseStatus();
+                renderPartySelector();
+                renderBasket();
+                openNewPrescriptionModal(true);
+                return;
+            }
+            return persistDispenseStatus(requestedStatus);
+        }).catch(showSessionError);
     });
     applyDispenseStatus();
 

@@ -106,17 +106,19 @@
 
 <div class="modal fade" id="dispensingNewPrescriptionModal" tabindex="-1" aria-labelledby="dispensingNewPrescriptionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-        <div class="modal-header"><h2 class="modal-title fs-5" id="dispensingNewPrescriptionModalLabel">@dispense_new_prescription@</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@close@"></button></div>
+        <div class="modal-header"><h2 class="modal-title fs-5" id="dispensingNewPrescriptionModalLabel" data-new-prescription-title data-default-title="@dispense_new_prescription@" data-prompt-title="@dispense_prescriber_required_title@">@dispense_new_prescription@</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@close@"></button></div>
         <div class="modal-body">
-            <p class="mb-3" data-new-prescription-keep-label></p>
-            <label class="form-label" for="new-prescription-caregiver">@dispense_caregiver_search@</label>
-            <input class="form-control" id="new-prescription-caregiver" type="search" autocomplete="off" data-new-prescription-caregiver-search>
-            <input type="hidden" data-new-prescription-caregiver-code>
-            <div class="list-group mt-1 d-none" data-new-prescription-caregiver-results></div>
-            <div class="form-text">@dispense_caregiver_minimum@</div>
-            <div class="alert alert-danger d-none mt-3 mb-0" role="alert" data-new-prescription-error></div>
+            <div class="dispensing-prescriber-fields">
+                <p class="mb-3" data-new-prescription-keep-label></p>
+                <label class="form-label" for="new-prescription-caregiver">@dispense_caregiver_search@</label>
+                <input class="form-control" id="new-prescription-caregiver" type="search" autocomplete="off" data-new-prescription-caregiver-search>
+                <input type="hidden" data-new-prescription-caregiver-code>
+                <div class="list-group mt-1 d-none" data-new-prescription-caregiver-results></div>
+                <div class="form-text">@dispense_caregiver_minimum@</div>
+                <div class="alert alert-danger d-none mt-3 mb-0" role="alert" data-new-prescription-error></div>
+            </div>
         </div>
-        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">@dispense_receipt_cancel@</button><button class="btn btn-primary" type="button" data-new-prescription-save>@dispense_prescription_start@</button></div>
+        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">@dispense_receipt_cancel@</button><button class="btn btn-primary" type="button" data-new-prescription-save data-default-label="@dispense_prescription_start@" data-prompt-label="@dispense_prescriber_continue@">@dispense_prescription_start@</button></div>
     </div></div>
 </div>
 

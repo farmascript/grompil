@@ -1150,6 +1150,8 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_prescription_keep_caregiver' => fn_t('dispensing_prescription_keep_caregiver'),
     'dispense_prescription_choose_caregiver' => fn_t('dispensing_prescription_choose_caregiver'),
     'dispense_prescription_start' => fn_t('dispensing_prescription_start'),
+    'dispense_prescriber_required_title' => fn_t('dispensing_prescriber_required_title'),
+    'dispense_prescriber_continue' => fn_t('dispensing_prescriber_continue'),
     'dispense_caregiver_endpoint' => fn_appBaseHref() . 'mb_caregivers.php?ajax=search',
     'dispense_remove' => fn_t('delete'),
     'dispense_price_unavailable' => fn_t('dispense_price_unavailable'),
