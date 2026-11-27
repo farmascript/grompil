@@ -45,6 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if (!$platformOperator) {
         grompil_show_error(403, 40152, fn_t('access_denied'), 'Platform administrator required');
     }
+    $activeCompanyId = (int) ($_SESSION['active_company_id'] ?? 0);
+    if ($activeCompanyId > 0) {
+        grompil_login_history_record('logout', $activeCompanyId, (string) $user['user_code'], true);
+    }
     unset($_SESSION['active_company_id']);
     set_database_tenant_context(0, (string) $user['user_code'], true);
     redirect('admin.php');

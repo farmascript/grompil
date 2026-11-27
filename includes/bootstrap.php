@@ -97,6 +97,7 @@ function db(): PgSql\Connection
 }
 
 require_once __DIR__ . '/database_queries.php';
+require_once __DIR__ . '/login_history.php';
 require_once __DIR__ . '/user_codes.php';
 require_once __DIR__ . '/remember_me.php';
 
@@ -512,8 +513,15 @@ function set_active_company(int $companyId, array $user): bool
     if (!$result || !pg_fetch_assoc($result)) {
         return false;
     }
+    $previousCompanyId = (int) ($_SESSION['active_company_id'] ?? 0);
+    if (is_platform_operator($user) && $previousCompanyId > 0 && $previousCompanyId !== $companyId) {
+        grompil_login_history_record('logout', $previousCompanyId, (string) $user['user_code'], true);
+    }
     $_SESSION['active_company_id'] = $companyId;
     set_database_tenant_context($companyId, (string) $user['user_code'], is_platform_operator($user));
+    if (is_platform_operator($user) && $previousCompanyId !== $companyId) {
+        grompil_login_history_record('login', $companyId, (string) $user['user_code'], true);
+    }
     return true;
 }
 

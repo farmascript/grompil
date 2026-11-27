@@ -266,6 +266,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($loginCompany) {
                 $_SESSION['active_company_id'] = (int) $loginCompany['id'];
             }
+            grompil_login_history_record(
+                'login',
+                $loginCompany ? (int) $loginCompany['id'] : null,
+                (string) $user['user_code'],
+                !$loginCompany
+            );
             $signedInUser = current_user();
             if ($signedInUser !== null) {
                 grompil_remember_me_finish_login($rememberMeChecked);

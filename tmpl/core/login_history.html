@@ -1,0 +1,43 @@
+<div class="mb-3">
+    <h1 class="h2">@login_history_title@</h1>
+    <p class="text-secondary">@login_history_intro@</p>
+</div>
+<section class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" action="login-history.php" class="row g-2 align-items-end mb-0">
+            @_login_history_company_field_html@
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="login-history-from">@login_history_from_label@</label>
+                <input class="form-control" id="login-history-from" type="date" name="from" value="@_login_history_from_value@">
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="login-history-to">@login_history_to_label@</label>
+                <input class="form-control" id="login-history-to" type="date" name="to" value="@_login_history_to_value@">
+            </div>
+            <div class="col-12 col-lg">
+                <label class="form-label" for="login-history-query">@login_history_query_label@</label>
+                <input class="form-control" id="login-history-query" type="search" name="q" value="@_login_history_query_value@" placeholder="@login_history_query_placeholder@">
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="login-history-per-page">@login_history_per_page@</label>
+                <select class="form-select" id="login-history-per-page" name="per_page">@_login_history_per_page_options_html@</select>
+            </div>
+            <div class="col-6 col-lg-auto"><button class="btn btn-primary" type="submit">@login_history_search_button@</button></div>
+        </form>
+    </div>
+</section>
+@_login_history_no_company_html@
+<section class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
+            <span class="small text-secondary">@login_history_page_summary@</span>
+            <div>@_login_history_pagination_html@</div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-sm align-middle mb-0">
+                <thead><tr>@_login_history_headers_html@</tr></thead>
+                <tbody>@_login_history_rows_html@</tbody>
+            </table>
+        </div>
+    </div>
+</section>

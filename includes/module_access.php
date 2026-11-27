@@ -63,6 +63,7 @@ function grompil_module_access_rules(): array
         'company_members.php' => ['company_permission' => 'company.users.manage', 'platform_without_company' => true],
         'customers.php' => ['company_permission' => 'company.users.manage'],
         'customers-list.php' => ['company_permission' => 'company.users.manage'],
+        'login-history.php' => ['company_permission' => 'company.users.manage', 'platform_without_company' => true],
         'mb_caregivers.php' => ['company_permission' => 'company.users.manage', 'platform_without_company' => true],
         'sam-products.php' => [],
         'dispense.php' => ['company_permission' => 'pharmacy.dispense'],

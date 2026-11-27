@@ -26,6 +26,15 @@ verify_csrf();
 
 $companySlug = trim((string) ($_POST['c'] ?? ''));
 $company = $companySlug === '' ? null : resolve_company_slug($companySlug, false);
+if (!empty($_SESSION['user_code'])) {
+    $activeCompanyId = (int) ($_SESSION['active_company_id'] ?? 0);
+    grompil_login_history_record(
+        'logout',
+        $activeCompanyId > 0 ? $activeCompanyId : null,
+        (string) $_SESSION['user_code'],
+        is_platform_operator()
+    );
+}
 grompil_remember_me_revoke_current();
 
 $_SESSION = [];

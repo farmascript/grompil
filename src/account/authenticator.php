@@ -155,6 +155,7 @@ $completeLogin = static function () use ($authenticatorQuery, $userCode, $authVe
         $_SESSION['company_mfa_user_code'] = $userCode;
     }
     $_SESSION['last_activity_at'] = time();
+    grompil_login_history_record('login', $platformOperator ? null : $companyId, $userCode, $platformOperator);
     $signedInUser = current_user();
     if ($signedInUser === null) {
         redirect('login.php');

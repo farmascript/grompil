@@ -216,5 +216,11 @@ function grompil_remember_me_restore(): bool
         $_SESSION['company_mfa_user_code'] = $userCode;
     }
     $_SESSION['bookmark_sync_nonce'] = bin2hex(random_bytes(16));
+    grompil_login_history_record(
+        'login',
+        $activeCompanyId > 0 ? $activeCompanyId : null,
+        $userCode,
+        $platformOperator
+    );
     return true;
 }
