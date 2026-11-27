@@ -223,10 +223,11 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                  ) SELECT $1, $2::UUID, party.id, $3, $4, $5, $6, $7, $8, $9, $10, 1
                    FROM dt_dispensing_parties party
                    WHERE party.company_id = $1 AND party.dispensing_session_id = $2::UUID AND party.id = $11
-                 ON CONFLICT (company_id, dispensing_session_id, party_id, cnk, amp_code, ampp_code, status_key)
+                 ON CONFLICT
                  DO UPDATE SET quantity = LEAST(999, dt_dispensing_lines.quantity + 1), updated_at = now()
                  RETURNING id, party_id, status_key, cnk, amp_code, ampp_code,
-                           product_name_nl, product_name_fr, package_display_nl, package_display_fr, quantity',
+                           product_name_nl, product_name_fr, package_display_nl, package_display_fr, quantity,
+                           caregiver_code',
                 [$companyId, $sessionId, $lineStatus, $cnk, $ampCode, $amppCode,
                     (string) $product['product_name_nl'], (string) $product['product_name_fr'],
                     (string) $product['package_display_nl'], (string) $product['package_display_fr'], $partyId]
@@ -283,7 +284,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $transactionStarted = true;
             $targetResult = db_query_params(
                 'dispensing.session_line_update_target',
-                'SELECT id, party_id, status_key, cnk, amp_code, ampp_code, quantity
+                'SELECT id, party_id, status_key, caregiver_code, cnk, amp_code, ampp_code, quantity
                  FROM dt_dispensing_lines
                  WHERE id = $1 AND company_id = $2 AND dispensing_session_id = $3::UUID
                  FOR UPDATE',
@@ -297,6 +298,28 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             }
             $newStatus = $requestedLineStatus ?? (string) $target['status_key'];
             $newPartyId = $requestedPartyId ?? (int) $target['party_id'];
+            $oldCaregiverCode = (string) ($target['caregiver_code'] ?? '');
+            $requestedCaregiverCode = array_key_exists('caregiver_code', $payload)
+                ? strtoupper(trim((string) $payload['caregiver_code']))
+                : $oldCaregiverCode;
+            $newCaregiverCode = $newStatus === 'prescription' && $requestedCaregiverCode !== ''
+                ? $requestedCaregiverCode
+                : null;
+            if ($newCaregiverCode !== null && $newCaregiverCode !== $oldCaregiverCode) {
+                $caregiverCheck = db_query_params(
+                    'dispensing.session_line_caregiver_validate',
+                    'SELECT caregiver_code FROM bt_caregivers
+                     WHERE caregiver_code = $1 AND is_active
+                       AND caregiver_type_key IN (\'physician\', \'dentist\')
+                       AND (owner_company_id IS NULL OR owner_company_id = $2)',
+                    [$newCaregiverCode, $companyId]
+                );
+                if (pg_num_rows($caregiverCheck) !== 1) {
+                    db_query_params('dispensing.session_line_update_rollback_caregiver', 'ROLLBACK');
+                    $transactionStarted = false;
+                    $respond(['error' => 'invalid_caregiver'], 400);
+                }
+            }
             $partyResult = db_query_params(
                 'dispensing.session_line_update_party_validate',
                 'SELECT party.id, party.party_type, customer.date_of_death
@@ -317,15 +340,18 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 $transactionStarted = false;
                 $respond(['error' => 'deceased_customer'], 409);
             }
-            $lineMoved = $newStatus !== (string) $target['status_key'] || $newPartyId !== (int) $target['party_id'];
+            $lineMoved = $newStatus !== (string) $target['status_key']
+                || $newPartyId !== (int) $target['party_id']
+                || ($newCaregiverCode ?? '') !== $oldCaregiverCode;
             if ($lineMoved) {
                 $duplicateResult = db_query_params(
                     'dispensing.session_line_update_duplicate',
                     'SELECT id, quantity FROM dt_dispensing_lines
                      WHERE company_id = $1 AND dispensing_session_id = $2::UUID AND party_id = $3
-                       AND status_key = $4 AND cnk = $5 AND amp_code = $6 AND ampp_code = $7 AND id <> $8
+                       AND status_key = $4 AND cnk = $5 AND amp_code = $6 AND ampp_code = $7
+                       AND caregiver_code IS NOT DISTINCT FROM $8 AND id <> $9
                      FOR UPDATE',
-                    [$companyId, $sessionId, $newPartyId, $newStatus, $target['cnk'], $target['amp_code'], $target['ampp_code'], $lineId]
+                    [$companyId, $sessionId, $newPartyId, $newStatus, $target['cnk'], $target['amp_code'], $target['ampp_code'], $newCaregiverCode, $lineId]
                 );
                 $duplicate = pg_fetch_assoc($duplicateResult);
                 if ($duplicate) {
@@ -348,17 +374,18 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 } else {
                     db_query_params(
                         'dispensing.session_line_update',
-                        'UPDATE dt_dispensing_lines SET quantity = $1, status_key = $2, party_id = $3, updated_at = now()
-                         WHERE id = $4 AND company_id = $5 AND dispensing_session_id = $6::UUID',
-                        [$quantity, $newStatus, $newPartyId, $lineId, $companyId, $sessionId]
+                        'UPDATE dt_dispensing_lines SET quantity = $1, status_key = $2, party_id = $3,
+                         caregiver_code = $4, updated_at = now()
+                         WHERE id = $5 AND company_id = $6 AND dispensing_session_id = $7::UUID',
+                        [$quantity, $newStatus, $newPartyId, $newCaregiverCode, $lineId, $companyId, $sessionId]
                     );
                 }
             } else {
                 db_query_params(
                     'dispensing.session_line_update',
-                    'UPDATE dt_dispensing_lines SET quantity = $1, updated_at = now()
-                     WHERE id = $2 AND company_id = $3 AND dispensing_session_id = $4::UUID',
-                    [$quantity, $lineId, $companyId, $sessionId]
+                    'UPDATE dt_dispensing_lines SET quantity = $1, caregiver_code = $2, updated_at = now()
+                     WHERE id = $3 AND company_id = $4 AND dispensing_session_id = $5::UUID',
+                    [$quantity, $newCaregiverCode, $lineId, $companyId, $sessionId]
                 );
             }
             db_query_params('dispensing.session_line_update_commit', 'COMMIT');
@@ -410,6 +437,22 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             if ($action === 'receipt_preview') {
                 $receipt = grompil_dispensing_receipt_data($companyId, $sessionId, $walkinTitle);
                 if ($receipt['lines'] === []) $respond(['error' => 'empty_session'], 409);
+                $missingCaregiverLines = [];
+                foreach ($receipt['lines'] as $receiptLine) {
+                    if (($receiptLine['status'] ?? '') === 'prescription'
+                        && trim((string) ($receiptLine['caregiver_code'] ?? '')) === '') {
+                        $missingCaregiverLines[] = [
+                            'id' => (int) $receiptLine['id'],
+                            'party_name' => (string) $receiptLine['party_name'],
+                            'cnk' => (string) $receiptLine['cnk'],
+                            'product_name' => (string) ($receiptLine['name_nl'] ?? ''),
+                            'quantity' => (int) $receiptLine['quantity'],
+                        ];
+                    }
+                }
+                if ($missingCaregiverLines !== []) {
+                    $respond(['error' => 'missing_caregiver', 'lines' => $missingCaregiverLines], 409);
+                }
                 $pdf = grompil_dispensing_receipt_pdf($receipt, strtoupper((string) ($_SESSION['language'] ?? 'NL')));
                 $respond(['pdf_base64' => base64_encode($pdf)]);
             }
@@ -430,6 +473,13 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 $transactionStarted = false;
                 $respond(['error' => 'session_unavailable'], 404);
             }
+            db_query_params(
+                'dispensing.session_complete_lock_lines',
+                'SELECT id FROM dt_dispensing_lines
+                 WHERE company_id = $1 AND dispensing_session_id = $2::UUID
+                 ORDER BY id FOR UPDATE',
+                [$companyId, $sessionId]
+            );
             $receipt = grompil_dispensing_receipt_data($companyId, $sessionId, $walkinTitle);
             if ($receipt['lines'] === []) {
                 db_query_params('dispensing.session_complete_rollback_empty', 'ROLLBACK');
@@ -437,11 +487,25 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 $respond(['error' => 'empty_session'], 409);
             }
             $hasPrescriptionLine = false;
+            $missingCaregiverLines = [];
             foreach ($receipt['lines'] as $receiptLine) {
                 if (($receiptLine['status'] ?? '') === 'prescription') {
                     $hasPrescriptionLine = true;
-                    break;
+                    if (trim((string) ($receiptLine['caregiver_code'] ?? '')) === '') {
+                        $missingCaregiverLines[] = [
+                            'id' => (int) $receiptLine['id'],
+                            'party_name' => (string) $receiptLine['party_name'],
+                            'cnk' => (string) $receiptLine['cnk'],
+                            'product_name' => (string) ($receiptLine['name_nl'] ?? ''),
+                            'quantity' => (int) $receiptLine['quantity'],
+                        ];
+                    }
                 }
+            }
+            if ($missingCaregiverLines !== []) {
+                db_query_params('dispensing.session_complete_rollback_missing_caregiver', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'missing_caregiver', 'lines' => $missingCaregiverLines], 409);
             }
             $prescriptionNumber = null;
             if ($hasPrescriptionLine) {
@@ -477,17 +541,21 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             db_query_params(
                 'dispensing.history_lines_create',
                 'INSERT INTO st_dispensing_history_lines
-                    (history_id, party_type, customer_code, party_name, status_key, cnk, amp_code, ampp_code,
-                     product_name_nl, product_name_fr, package_display_nl, package_display_fr, quantity, sort_order)
+                    (history_id, party_type, customer_code, party_name, status_key, caregiver_code, caregiver_name,
+                     cnk, amp_code, ampp_code, product_name_nl, product_name_fr, package_display_nl, package_display_fr,
+                     quantity, sort_order)
                  SELECT $1, party.party_type, party.customer_code,
                         CASE WHEN party.party_type = \'anonymous\' THEN $4::VARCHAR(260) ELSE party.display_name END,
-                        line.status_key, line.cnk,
+                        line.status_key, line.caregiver_code,
+                        btrim(COALESCE(caregiver.name_first, \'\') || \' \' || COALESCE(caregiver.name_last, \'\')),
+                        line.cnk,
                         line.amp_code, line.ampp_code, line.product_name_nl, line.product_name_fr,
                         line.package_display_nl, line.package_display_fr, line.quantity, line.sort_order
                  FROM dt_dispensing_lines line
                  JOIN dt_dispensing_parties party
                    ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
                   AND party.id = line.party_id
+                 LEFT JOIN bt_caregivers caregiver ON caregiver.caregiver_code = line.caregiver_code
                  WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID',
                 [$historyId, $companyId, $sessionId, $walkinTitle]
             );
@@ -776,7 +844,9 @@ function grompil_dispensing_session_line_data(array $line, array $party, string 
         'party_name' => (string) ($party['display_name'] ?? ''),
         'customer_code' => (string) ($party['customer_code'] ?? ''),
         'status' => (string) $line['status_key'],
-        'statusShortCode' => $statusCode,
+    'statusShortCode' => $statusCode,
+    'caregiver_code' => (string) ($line['caregiver_code'] ?? ''),
+    'caregiver_name' => trim((string) ($line['caregiver_first'] ?? '') . ' ' . (string) ($line['caregiver_last'] ?? '')),
         'cnk' => (string) $line['cnk'],
         'amp_code' => (string) $line['amp_code'],
         'ampp_code' => (string) $line['ampp_code'],
@@ -801,7 +871,9 @@ function grompil_dispensing_session_lines(int $companyId, string $sessionId, str
 {
     $result = db_query_params(
         'dispensing.session_lines_load',
-        'SELECT line.id, line.party_id, line.status_key, line.cnk, line.amp_code, line.ampp_code,
+        'SELECT line.id, line.party_id, line.status_key, line.caregiver_code,
+                caregiver.name_first AS caregiver_first, caregiver.name_last AS caregiver_last,
+                line.cnk, line.amp_code, line.ampp_code,
                 line.product_name_nl, line.product_name_fr,
                 line.package_display_nl, line.package_display_fr, line.quantity,
                 COALESCE(status.short_codes ->> $3, \'\') AS status_short_code,
@@ -812,6 +884,7 @@ function grompil_dispensing_session_lines(int $companyId, string $sessionId, str
           AND party.id = line.party_id
          LEFT JOIN ft_dd_varia status
            ON status.list_key = \'dispensing_statuses\' AND status."key" = line.status_key
+         LEFT JOIN bt_caregivers caregiver ON caregiver.caregiver_code = line.caregiver_code
          WHERE line.company_id = $1 AND line.dispensing_session_id = $2::UUID
          ORDER BY party.sort_order, party.id, line.sort_order, line.id',
         [$companyId, $sessionId, strtoupper((string) ($_SESSION['language'] ?? 'NL'))]

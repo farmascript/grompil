@@ -45,6 +45,7 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
         'price_na' => fn_tForLanguage('dispensing_receipt_price_unavailable', $language),
         'enterprise' => fn_tForLanguage('dispensing_receipt_enterprise_number', $language),
         'vat' => fn_tForLanguage('dispensing_receipt_vat_number', $language),
+        'caregiver' => fn_tForLanguage('dispensing_prescriber_label', $language),
     ];
     $items = [];
     $add = static function (string $value, int $size = 10, bool $bold = false) use (&$items, $maxChars): void {
@@ -99,6 +100,9 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
                 ],
                 'size' => 8,
             ];
+            if (trim((string) ($line['caregiver_name'] ?? '')) !== '') {
+                $add($text['caregiver'] . ': ' . (string) $line['caregiver_name'], 8);
+            }
         }
         $groupCount = array_sum(array_map(static fn(array $line): int => (int) ($line['quantity'] ?? 0), $group['lines'] ?? []));
         $add(str_replace('{count}', (string) $groupCount, $text['subtotal']), 9, true);

@@ -153,6 +153,7 @@ foreach ($sessionGroups as $sessionRows) {
         . '<td><strong class="' . ($row['cnk_matches_query'] ? 'text-danger' : '') . '"'
         . ($row['cnk'] !== '' ? ' title="' . e($row['cnk']) . '"' : '') . '>' . e($productName) . '</strong>'
         . ($package !== '' ? '<span class="ms-2 fw-bold' . ($row['cnk_matches_query'] ? ' text-danger' : '') . '">' . e($package) . '</span>' : '')
+        . ($row['caregiver_name'] !== '' ? '<div class="small text-secondary mt-1">' . e(fn_t('dispensing_prescriber_label')) . ': ' . e($row['caregiver_name']) . '</div>' : '')
         . '</td><td class="text-end">' . e((string) $row['quantity']) . '</td></tr>';
     }
     $groupsHtml .= '</tbody></table></div></section>';
@@ -207,6 +208,7 @@ echo fn_templateRender('dispensing_history.html', [
     'dispensing_history_status' => fn_t('dispensing_history_status'),
     'dispensing_history_cnk' => fn_t('dispensing_history_cnk'),
     'dispensing_history_product' => fn_t('dispensing_history_product'),
+    'dispensing_prescriber_label' => fn_t('dispensing_prescriber_label'),
     'dispensing_history_package' => fn_t('dispensing_history_package'),
     'dispensing_history_quantity' => fn_t('dispensing_history_quantity'),
     'dispensing_history_search_button' => fn_t('dispensing_history_search_button'),

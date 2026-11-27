@@ -133,6 +133,12 @@
                     appendHighlightedText(pack, packageText);
                     product.append(pack);
                 }
+                if (item.caregiver_name) {
+                    const prescriber = document.createElement('div');
+                    prescriber.className = 'small text-secondary mt-1';
+                    prescriber.textContent = `${groupsContainer.dataset.prescriberLabel || ''}: ${item.caregiver_name}`;
+                    product.append(prescriber);
+                }
                 const quantity = row.insertCell();
                 quantity.className = 'text-end';
                 quantity.textContent = String(item.quantity ?? '');

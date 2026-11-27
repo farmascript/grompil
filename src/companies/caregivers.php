@@ -157,6 +157,7 @@ if (($_GET['ajax'] ?? '') === 'search') {
         $matches[] = [
             'caregiver_code' => (string) $row['caregiver_code'],
             'name' => trim((string) $row['name_first'] . ' ' . (string) $row['name_last']),
+            'type_key' => (string) $row['caregiver_type_key'],
             'type' => fn_t($caregiverTypes[(string) $row['caregiver_type_key']] ?? 'caregivers_type_other'),
             'identifiers' => (string) $row['identifiers'],
             'scope' => fn_t($row['owner_company_id'] !== null ? 'caregivers_scope_company' : 'caregivers_scope_shared'),

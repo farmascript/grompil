@@ -106,6 +106,14 @@
     const lineEditQuantity = document.querySelector('[data-line-edit-quantity]');
     const lineEditError = document.querySelector('[data-line-edit-error]');
     const lineEditSave = document.querySelector('[data-line-edit-save]');
+    const lineCaregiverWrap = document.querySelector('[data-line-caregiver-wrap]');
+    const lineCaregiverInput = document.querySelector('[data-line-caregiver-search]');
+    const lineCaregiverCode = document.querySelector('[data-line-caregiver-code]');
+    const lineCaregiverResults = document.querySelector('[data-line-caregiver-results]');
+    const missingCaregiverModal = document.getElementById('dispensingMissingCaregiverModal');
+    const missingCaregiverLines = document.querySelector('[data-missing-caregiver-lines]');
+    const missingCaregiverError = document.querySelector('[data-missing-caregiver-error]');
+    const missingCaregiverContinue = document.querySelector('[data-missing-caregiver-continue]');
     let editingLine = null;
     const historyModalElement = document.getElementById('dispensingPatientHistoryModal');
     const historyBody = document.querySelector('[data-patient-history-body]');
@@ -336,6 +344,13 @@
         lineEdit: page.dataset.textLineEdit,
         lineEditSave: page.dataset.textLineEditSave,
         lineEditError: page.dataset.textLineEditError,
+        caregiverSearch: page.dataset.textCaregiverSearch,
+        caregiverMinimum: page.dataset.textCaregiverMinimum,
+        caregiverUnavailable: page.dataset.textCaregiverUnavailable,
+        caregiverMissingMessage: page.dataset.textCaregiverMissingMessage,
+        caregiverContinue: page.dataset.textCaregiverContinue,
+        caregiverSelected: page.dataset.textCaregiverSelected,
+        caregiverAdd: page.dataset.textCaregiverAdd,
         productCount: page.dataset.textProductCount,
         discardConfirm: page.dataset.textDiscardConfirm,
         historyTitle: page.dataset.textHistoryTitle,
@@ -523,9 +538,158 @@
             }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || page.dataset.textSessionError || '');
+        if (!response.ok) {
+            const error = new Error(data.error || page.dataset.textSessionError || '');
+            error.data = data;
+            throw error;
+        }
         return data;
     }
+
+    function attachCaregiverSearch(searchInput, resultsElement, onSelect) {
+        if (!searchInput || !resultsElement) return;
+        let timer = 0;
+        let requestSequence = 0;
+        let activeIndex = -1;
+        const hide = () => {
+            resultsElement.replaceChildren();
+            resultsElement.classList.add('d-none');
+            searchInput.setAttribute('aria-expanded', 'false');
+        };
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim();
+            hide();
+            if (searchInput.dataset.selectedCode) {
+                delete searchInput.dataset.selectedCode;
+                onSelect(null);
+            }
+            if (query.length < 3) return;
+            window.clearTimeout(timer);
+            timer = window.setTimeout(async () => {
+                const sequence = ++requestSequence;
+                try {
+                    const url = new URL(page.dataset.caregiverEndpoint, window.location.href);
+                    url.searchParams.set('q', query);
+                    const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                    const data = await response.json();
+                    if (sequence !== requestSequence) return;
+                    const matches = (data.results || []).filter((caregiver) => ['physician', 'dentist'].includes(caregiver.type_key));
+                    resultsElement.replaceChildren();
+                    for (const caregiver of matches) {
+                        const option = document.createElement('button');
+                        option.type = 'button';
+                        option.className = 'list-group-item list-group-item-action';
+                        option.textContent = `${caregiver.name} · ${caregiver.caregiver_code}${caregiver.identifiers ? ` · ${caregiver.identifiers}` : ''}`;
+                        option.addEventListener('click', () => {
+                            searchInput.value = caregiver.name;
+                            searchInput.dataset.selectedCode = caregiver.caregiver_code;
+                            onSelect(caregiver);
+                            hide();
+                        });
+                        resultsElement.append(option);
+                    }
+                    activeIndex = -1;
+                    if (matches.length === 0) {
+                        const empty = document.createElement('div');
+                        empty.className = 'list-group-item small text-secondary';
+                        empty.textContent = t.caregiverUnavailable || '';
+                        resultsElement.append(empty);
+                    }
+                    resultsElement.classList.remove('d-none');
+                    searchInput.setAttribute('aria-expanded', 'true');
+                } catch {
+                    hide();
+                }
+            }, 220);
+        });
+        searchInput.addEventListener('keydown', (event) => {
+            const options = Array.from(resultsElement.querySelectorAll('button'));
+            if (event.key === 'ArrowDown' && options.length) {
+                event.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, options.length - 1);
+                options.forEach((option, index) => option.classList.toggle('active', index === activeIndex));
+                options[activeIndex].scrollIntoView({ block: 'nearest' });
+            } else if (event.key === 'ArrowUp' && options.length) {
+                event.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+                options.forEach((option, index) => option.classList.toggle('active', index === activeIndex));
+                options[activeIndex].scrollIntoView({ block: 'nearest' });
+            } else if (event.key === 'Enter' && activeIndex >= 0 && options[activeIndex]) {
+                event.preventDefault();
+                options[activeIndex].click();
+            }
+            if (event.key === 'Escape') hide();
+        });
+    }
+
+    attachCaregiverSearch(lineCaregiverInput, lineCaregiverResults, (caregiver) => {
+        if (lineCaregiverCode) lineCaregiverCode.value = caregiver?.caregiver_code || '';
+    });
+
+    function showMissingCaregiverModal(lines) {
+        if (!missingCaregiverModal || !missingCaregiverLines || !window.bootstrap) return;
+        missingCaregiverLines.replaceChildren();
+        if (missingCaregiverError) {
+            missingCaregiverError.textContent = '';
+            missingCaregiverError.classList.add('d-none');
+        }
+        if (missingCaregiverContinue) missingCaregiverContinue.disabled = true;
+        let remaining = lines.length;
+        const updateContinue = () => {
+            if (missingCaregiverContinue) missingCaregiverContinue.disabled = remaining !== 0;
+        };
+        for (const line of lines) {
+            const card = document.createElement('div');
+            card.className = 'border rounded p-3 mb-2';
+            const description = document.createElement('div');
+            description.className = 'fw-semibold mb-2';
+            description.textContent = `${line.party_name} · ${line.product_name} · ${line.cnk} · ${line.quantity}`;
+            const search = document.createElement('input');
+            search.type = 'search';
+            search.className = 'form-control';
+            search.placeholder = t.caregiverSearch || '';
+            search.autocomplete = 'off';
+            search.setAttribute('aria-label', t.caregiverSearch || '');
+            const results = document.createElement('div');
+            results.className = 'list-group mt-1 d-none';
+            card.append(description, search, results);
+            missingCaregiverLines.append(card);
+            attachCaregiverSearch(search, results, async (caregiver) => {
+                if (!caregiver) return;
+                search.disabled = true;
+                try {
+                    const updated = await sessionRequest('line_update', {
+                        line_id: line.id,
+                        quantity: Number(line.quantity),
+                        caregiver_code: caregiver.caregiver_code,
+                    });
+                    for (const [key, basketLine] of basket) {
+                        if (!basketLine.pending) basket.delete(key);
+                    }
+                    for (const basketLine of updated.lines || []) basket.set(String(basketLine.id), basketLine);
+                    renderBasket();
+                    card.replaceChildren(description, Object.assign(document.createElement('div'), {
+                        className: 'small text-success',
+                        textContent: `${t.caregiverSelected || ''}: ${caregiver.name}`,
+                    }));
+                    remaining -= 1;
+                    updateContinue();
+                } catch {
+                    search.disabled = false;
+                    if (missingCaregiverError) {
+                        missingCaregiverError.textContent = t.caregiverUnavailable || '';
+                        missingCaregiverError.classList.remove('d-none');
+                    }
+                }
+            });
+        }
+        bootstrap.Modal.getOrCreateInstance(missingCaregiverModal).show();
+    }
+
+    missingCaregiverContinue?.addEventListener('click', () => {
+        bootstrap.Modal.getOrCreateInstance(missingCaregiverModal).hide();
+        window.setTimeout(() => { void beginReceiptPreview(); }, 0);
+    });
 
     function showSessionError() {
         const panel = document.querySelector('.current-dispense-panel');
@@ -833,6 +997,22 @@
                     packageSize.textContent = packageText;
                     descriptionCell.append(separator, packageSize);
                 }
+                if (product.status === 'prescription') {
+                    const caregiverLabel = document.createElement('div');
+                    caregiverLabel.className = 'small text-secondary mt-1';
+                    caregiverLabel.textContent = product.caregiver_name
+                        ? `${t.caregiverSearch}: ${product.caregiver_name}`
+                        : '';
+                    descriptionCell.append(caregiverLabel);
+                    if (!product.caregiver_code && !product.pending) {
+                        const addCaregiver = document.createElement('button');
+                        addCaregiver.type = 'button';
+                        addCaregiver.className = 'btn btn-sm btn-outline-secondary mt-1';
+                        addCaregiver.textContent = t.caregiverAdd || '';
+                        addCaregiver.addEventListener('click', () => openLineEdit(product));
+                        descriptionCell.append(addCaregiver);
+                    }
+                }
 
                 const removeCell = document.createElement('td');
                 const edit = document.createElement('button');
@@ -877,6 +1057,15 @@
         }
         lineEditStatus.value = product.status;
         lineEditQuantity.value = String(product.quantity);
+        if (lineCaregiverWrap && lineCaregiverInput && lineCaregiverCode) {
+            lineCaregiverWrap.classList.toggle('d-none', product.status !== 'prescription');
+            lineCaregiverInput.value = product.caregiver_name || '';
+            lineCaregiverCode.value = product.caregiver_code || '';
+            if (product.caregiver_code) lineCaregiverInput.dataset.selectedCode = product.caregiver_code;
+            else delete lineCaregiverInput.dataset.selectedCode;
+            lineCaregiverResults?.replaceChildren();
+            lineCaregiverResults?.classList.add('d-none');
+        }
         const productName = (language === 'fr' ? product.name_fr : product.name_nl)
             || product.name_nl || product.name_fr || '';
         if (lineEditTitle) lineEditTitle.textContent = `${t.lineEdit || ''} · ${product.cnk} · ${productName}`;
@@ -886,6 +1075,18 @@
         }
         bootstrap.Modal.getOrCreateInstance(lineEditModalElement).show();
     }
+
+    lineEditStatus?.addEventListener('change', () => {
+        const isPrescription = lineEditStatus.value === 'prescription';
+        lineCaregiverWrap?.classList.toggle('d-none', !isPrescription);
+        if (!isPrescription) {
+            if (lineCaregiverInput) {
+                lineCaregiverInput.value = '';
+                delete lineCaregiverInput.dataset.selectedCode;
+            }
+            if (lineCaregiverCode) lineCaregiverCode.value = '';
+        }
+    });
 
     lineEditForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -903,6 +1104,7 @@
                 quantity,
                 status_key: lineEditStatus.value,
                 party_id: Number(lineEditParty.value),
+                caregiver_code: lineCaregiverCode?.value || '',
             });
             if (!result.updated) throw new Error(t.lineEditError || '');
             for (const [key, line] of basket) {
@@ -1035,8 +1237,12 @@
             if (receiptFrame) receiptFrame.src = receiptObjectUrl;
             if (receiptConfirmButton) receiptConfirmButton.disabled = false;
             if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).show();
-        } catch {
-            showSessionError();
+        } catch (error) {
+            if (error?.data?.error === 'missing_caregiver' && Array.isArray(error.data.lines)) {
+                showMissingCaregiverModal(error.data.lines);
+            } else {
+                showSessionError();
+            }
         } finally {
             renderBasket();
         }
@@ -1055,7 +1261,13 @@
             } catch {}
             if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).hide();
             window.location.reload();
-        } catch {
+        } catch (error) {
+            if (error?.data?.error === 'missing_caregiver' && Array.isArray(error.data.lines)) {
+                if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).hide();
+                showMissingCaregiverModal(error.data.lines);
+                receiptConfirmButton.disabled = false;
+                return;
+            }
             if (receiptError) {
                 receiptError.textContent = page.dataset.textSessionError || '';
                 receiptError.classList.remove('d-none');
