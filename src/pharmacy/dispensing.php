@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Fri 2026-11-27 16:35:37
+ * @date_mut: Fri 2026-11-27 16:50:25
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -1153,6 +1153,9 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_prescription_start' => fn_t('dispensing_prescription_start'),
     'dispense_prescriber_required_title' => fn_t('dispensing_prescriber_required_title'),
     'dispense_prescriber_continue' => fn_t('dispensing_prescriber_continue'),
+    'dispense_prescriber_add' => fn_t('dispensing_prescriber_add'),
+    'dispense_caregiver_manage_url' => grompil_can_access_module('mb_caregivers.php', $currentUser, $company)
+        ? fn_appBaseHref() . 'mb_caregivers.php' : '',
     'dispense_caregiver_endpoint' => fn_appBaseHref() . 'mb_caregivers.php?ajax=search',
     'dispense_remove' => fn_t('delete'),
     'dispense_price_unavailable' => fn_t('dispense_price_unavailable'),

@@ -1064,6 +1064,7 @@ $arrSubst = array (
   'dispensing_prescription_start' => 'Commencer la nouvelle prescription',
   'dispensing_prescriber_required_title' => 'Choisir le prescripteur',
   'dispensing_prescriber_continue' => 'Continuer avec la prescription',
+  'dispensing_prescriber_add' => 'Ajouter un prescripteur',
   'dispense_price_unavailable' => 'Prix pas encore disponible',
   'dispense_working_user' => 'Personnel de la pharmacie',
   'dispense_logged_in' => 'Session de travail sécurisée',

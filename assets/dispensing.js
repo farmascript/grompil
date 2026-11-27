@@ -664,6 +664,20 @@
                         empty.className = 'list-group-item small text-secondary';
                         empty.textContent = t.caregiverUnavailable || '';
                         resultsElement.append(empty);
+                        if (searchInput.dataset.addLabel) {
+                            const hasManageAccess = Boolean(searchInput.dataset.manageUrl);
+                            const addPrescriber = document.createElement(hasManageAccess ? 'a' : 'span');
+                            addPrescriber.className = hasManageAccess
+                                ? 'list-group-item list-group-item-action text-primary'
+                                : 'list-group-item small text-secondary';
+                            addPrescriber.textContent = searchInput.dataset.addLabel;
+                            if (hasManageAccess) {
+                                addPrescriber.href = searchInput.dataset.manageUrl;
+                                addPrescriber.target = '_blank';
+                                addPrescriber.rel = 'noopener noreferrer';
+                            }
+                            resultsElement.append(addPrescriber);
+                        }
                     }
                     resultsElement.classList.remove('d-none');
                     searchInput.setAttribute('aria-expanded', 'true');

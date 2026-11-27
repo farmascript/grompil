@@ -1064,6 +1064,7 @@ $arrSubst = array (
   'dispensing_prescription_start' => 'Neues Rezept beginnen',
   'dispensing_prescriber_required_title' => 'Verordnende Person auswählen',
   'dispensing_prescriber_continue' => 'Mit dem Rezept fortfahren',
+  'dispensing_prescriber_add' => 'Verordnende Person hinzufügen',
   'dispense_price_unavailable' => 'Preis noch nicht verfügbar',
   'dispense_working_user' => 'Apothekenpersonal',
   'dispense_logged_in' => 'Geschützte Arbeitssitzung',

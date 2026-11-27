@@ -1064,6 +1064,7 @@ $arrSubst = array (
   'dispensing_prescription_start' => 'Nieuw voorschrift starten',
   'dispensing_prescriber_required_title' => 'Voorschrijver kiezen',
   'dispensing_prescriber_continue' => 'Doorgaan met voorschrift',
+  'dispensing_prescriber_add' => 'Voorschrijver toevoegen',
   'dispense_price_unavailable' => 'Prijs nog niet beschikbaar',
   'dispense_working_user' => 'Apotheekmedewerker',
   'dispense_logged_in' => 'Beveiligde werksessie',
