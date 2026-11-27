@@ -146,7 +146,6 @@
         if (typeof match === 'function') patientSearchShortcuts.push(match);
     }
     function findPatientSearchShortcut(value) {
-        if ([...value].length !== 1) return null;
         for (const match of patientSearchShortcuts) {
             const shortcut = match(value);
             if (shortcut) return shortcut;
@@ -154,6 +153,7 @@
         return null;
     }
     registerPatientSearchShortcut((value) => {
+        if ([...value].length !== 1) return null;
         const option = [...(dispenseStatusSelect?.options || [])].find((item) => {
             const code = String(item.dataset.shortCode || '').trim();
             return [...code].length === 1 && code.toLocaleLowerCase() === value.toLocaleLowerCase();
@@ -165,6 +165,10 @@
             },
         } : null;
     });
+    registerPatientSearchShortcut((value) => /^\d{11}$/.test(value) ? {
+        runOnInput: true,
+        run: () => { void handleScannedRiziv(value); },
+    } : null);
     const patientStatusInput = document.querySelector('[data-patient-status-input]');
     const patientRequiredMessage = document.querySelector('[data-dispense-patient-required]');
     const initialPageCustomerCode = page.dataset.patientCode || '';
@@ -300,7 +304,19 @@
     }
 
     if (patientInput && patientForm && patientSuggestions) {
-        patientInput.addEventListener('input', schedulePatientSearch);
+        patientInput.addEventListener('input', () => {
+            const shortcut = findPatientSearchShortcut(patientInput.value.trim());
+            if (!shortcut?.runOnInput) {
+                schedulePatientSearch();
+                return;
+            }
+            window.clearTimeout(patientTimer);
+            if (patientRequestController) patientRequestController.abort();
+            patientInput.value = '';
+            hidePatientSuggestions();
+            setPatientStatus('');
+            shortcut.run();
+        });
         patientRegex?.addEventListener('change', schedulePatientSearch);
         patientIncludeDeceased?.addEventListener('change', schedulePatientSearch);
         patientForm.addEventListener('submit', (event) => {
@@ -452,6 +468,45 @@
         });
         saveCaregiverDefaults();
         if (Number(partyId) === activePartyId) renderActivePartyLabel();
+    }
+
+    async function handleScannedRiziv(rizivNumber) {
+        try {
+            await sessionReady;
+            const endpoint = new URL(page.dataset.caregiverEndpoint, window.location.href);
+            endpoint.searchParams.set('q', rizivNumber);
+            endpoint.searchParams.set('riziv', '1');
+            const response = await fetch(endpoint, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' },
+                cache: 'no-store',
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'RIZIV lookup unavailable');
+
+            const caregiver = (data.results || []).find((item) => ['physician', 'dentist'].includes(item.type_key));
+            if (caregiver) {
+                const activeParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
+                if (!activeParty) throw new Error('Active dispensing party unavailable');
+                const selectedCaregiver = { caregiver_code: caregiver.caregiver_code, name: caregiver.name || '' };
+                if (activeParty.type === 'customer') {
+                    setPartyCaregiver(activePartyId, selectedCaregiver);
+                } else {
+                    pendingSessionCaregiver = selectedCaregiver;
+                    try { sessionStorage.setItem(pendingCaregiverStorageKey(), JSON.stringify(pendingSessionCaregiver)); } catch {}
+                }
+                setPatientStatus([caregiver.name, t.caregiverSelected].filter(Boolean).join(' · '));
+                return;
+            }
+
+            const manageUrl = new URL(patientInput?.dataset.caregiverManageUrl || '', window.location.href);
+            if (!patientInput?.dataset.caregiverManageUrl) throw new Error('Caregiver management unavailable');
+            manageUrl.searchParams.set('return_to_dispense', '1');
+            manageUrl.searchParams.set('return_riziv', rizivNumber);
+            window.location.assign(manageUrl.href);
+        } catch {
+            setPatientStatus(page.dataset.textPatientUnavailable || '');
+        }
     }
 
     let historyCustomerCode = '';
@@ -1200,6 +1255,7 @@
                 pendingSessionCaregiver = selectedCaregiver;
                 try { sessionStorage.setItem(pendingCaregiverStorageKey(), JSON.stringify(pendingSessionCaregiver)); } catch {}
             }
+            setPatientStatus([caregiver.name, t.caregiverSelected].filter(Boolean).join(' · '));
 
             const returnStatus = returnParameters.get('return_status') || '';
             if (returnStatus && Array.from(dispenseStatusSelect?.options || []).some((option) => option.value === returnStatus)) {

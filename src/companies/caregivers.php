@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27 17:57:00
+ * @date_mut: Fri 2026-11-27 21:29:28
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -113,6 +113,48 @@ if (($_GET['ajax'] ?? '') === 'search') {
     header('Content-Type: application/json; charset=utf-8');
     $rawQuery = $_GET['q'] ?? '';
     $query = is_scalar($rawQuery) ? trim((string) $rawQuery) : '';
+    if (($_GET['riziv'] ?? '') === '1') {
+        if (preg_match('/^[0-9]{11}$/', $query) !== 1) {
+            echo json_encode(['results' => []], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            exit;
+        }
+        try {
+            $result = db_query_params(
+                'caregivers.search.riziv_exact',
+                "SELECT bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id,
+                        string_agg(DISTINCT ci.identifier_value, ', ' ORDER BY ci.identifier_value) AS identifiers
+                 FROM bt_caregivers bc
+                 JOIN dt_caregiver_identifiers ci ON ci.caregiver_code=bc.caregiver_code
+                    AND ci.identifier_type_key='riziv' AND left(ci.identifier_value, 8)=left($2, 8) AND ci.is_active
+                    AND (ci.company_id IS NULL OR ci.company_id=$1)
+                 WHERE (bc.owner_company_id IS NULL OR bc.owner_company_id=$1)
+                   AND bc.is_active AND bc.caregiver_type_key IN ('physician','dentist')
+                 GROUP BY bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id
+                 ORDER BY lower(bc.name_last), lower(bc.name_first), bc.caregiver_code LIMIT 2",
+                [$companyId, $query]
+            );
+        } catch (GrompilDatabaseQueryException) {
+            $result = false;
+        }
+        if (!$result) {
+            http_response_code(503);
+            echo json_encode(['results' => [], 'error' => 'search_unavailable']);
+            exit;
+        }
+        $matches = [];
+        while ($row = pg_fetch_assoc($result)) {
+            $matches[] = [
+                'caregiver_code' => (string) $row['caregiver_code'],
+                'name' => trim((string) $row['name_first'] . ' ' . (string) $row['name_last']),
+                'type_key' => (string) $row['caregiver_type_key'],
+                'type' => fn_t($caregiverTypes[(string) $row['caregiver_type_key']] ?? 'caregivers_type_other'),
+                'identifiers' => (string) $row['identifiers'],
+                'scope' => fn_t($row['owner_company_id'] !== null ? 'caregivers_scope_company' : 'caregivers_scope_shared'),
+            ];
+        }
+        echo json_encode(['results' => $matches], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        exit;
+    }
     $queryLength = function_exists('mb_strlen') ? mb_strlen($query) : strlen($query);
     if ($queryLength < 3 || $queryLength > 100) {
         echo json_encode(['results' => []], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
@@ -176,6 +218,8 @@ if (preg_match('/^[A-Z0-9]{3}[A-Z0-9]{3}$/', $selectedCode) !== 1) {
 $queryRaw = $_GET['q'] ?? '';
 $query = is_scalar($queryRaw) ? trim((string) $queryRaw) : '';
 $returnToDispense = (string) ($_GET['return_to_dispense'] ?? $_POST['return_to_dispense'] ?? '') === '1';
+$returnRiziv = is_scalar($_GET['return_riziv'] ?? null) ? trim((string) $_GET['return_riziv']) : '';
+if (preg_match('/^[0-9]{11}$/', $returnRiziv) !== 1) $returnRiziv = '';
 $returnDispenseStatus = is_scalar($_GET['return_status'] ?? $_POST['return_status'] ?? null)
     ? trim((string) ($_GET['return_status'] ?? $_POST['return_status'] ?? '')) : '';
 if (preg_match('/^[a-z0-9_-]{1,80}$/', $returnDispenseStatus) !== 1) {
@@ -536,6 +580,13 @@ try {
 } catch (GrompilDatabaseQueryException) { $caregiverCount = 0; }
 
 $caregiverFormValues = $selected ?? [];
+if ($returnToDispense && $returnRiziv !== '' && $selected === null) {
+    $caregiverFormValues = array_replace($caregiverFormValues, [
+        'caregiver_type_key' => 'physician',
+        'identifier_type_key' => 'riziv',
+        'identifier_value' => $returnRiziv,
+    ]);
+}
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'save_caregiver') {
     $caregiverFormValues = array_replace($caregiverFormValues, [
         'caregiver_type_key' => (string) ($_POST['caregiver_type_key'] ?? 'physician'),
