@@ -44,6 +44,7 @@ The prefix and level answer different questions. For example, `ct_company_users`
 | user contact channels | `dt_user_contacts` | 1 |
 | company contact channels | `dt_company_contacts` | 1 |
 | user addresses | `dt_user_locations` | 1 |
+| customer identifiers (for example, encrypted National Register numbers) | `dt_customer_identifiers` | 1 |
 | caregiver identities | `bt_caregivers` | 0 |
 | caregiver identifiers, contacts and addresses | `dt_caregiver_*` | 1 |
 | company addresses | `dt_company_locations` | 1 |

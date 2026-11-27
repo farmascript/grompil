@@ -3,6 +3,51 @@
     if (!page) return;
 
     const modal = document.getElementById('patientModal');
+    const nationalNumberInput = modal?.querySelector('#patient-national-register-number');
+    const birthDateInput = modal?.querySelector('#patient-dob');
+    const birthDateFromNationalNumber = (value) => {
+        if (!/^[0-9.\s-]+$/.test(value)) return null;
+        const digits = value.replace(/[.\s-]+/g, '');
+        if (!/^\d{11}$/.test(digits)) return null;
+
+        const firstNine = digits.slice(0, 9);
+        const checkDigits = Number.parseInt(digits.slice(9, 11), 10);
+        const shortYear = Number.parseInt(digits.slice(0, 2), 10);
+        let year;
+        if (checkDigits === 97 - (Number.parseInt(firstNine, 10) % 97)) {
+            year = 1900 + shortYear;
+        } else if (checkDigits === 97 - (Number.parseInt(`2${firstNine}`, 10) % 97)) {
+            year = 2000 + shortYear;
+        } else {
+            return null;
+        }
+
+        const month = Number.parseInt(digits.slice(2, 4), 10);
+        const day = Number.parseInt(digits.slice(4, 6), 10);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1
+            || date.getUTCDate() !== day || year > new Date().getFullYear()) return null;
+        return `${year.toString().padStart(4, '0')}-${digits.slice(2, 4)}-${digits.slice(4, 6)}`;
+    };
+    const updateBirthDateFromNationalNumber = () => {
+        if (!nationalNumberInput || !birthDateInput) return;
+        const value = nationalNumberInput.value.trim();
+        if (value === '') {
+            nationalNumberInput.setCustomValidity('');
+            birthDateInput.readOnly = false;
+            return;
+        }
+        const birthDate = birthDateFromNationalNumber(value);
+        nationalNumberInput.setCustomValidity(birthDate ? '' : (nationalNumberInput.dataset.invalidMessage || ''));
+        if (birthDate) {
+            birthDateInput.value = birthDate;
+            birthDateInput.readOnly = true;
+        } else {
+            birthDateInput.readOnly = false;
+        }
+    };
+    nationalNumberInput?.addEventListener('input', updateBirthDateFromNationalNumber);
+    updateBirthDateFromNationalNumber();
     modal?.addEventListener('shown.bs.modal', () => {
         const action = modal.querySelector('.customer-edit-form input[name="action"]')?.value;
         if (action === 'create_patient') {

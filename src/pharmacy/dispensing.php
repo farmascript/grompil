@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27 13:19:15
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -17,6 +17,7 @@
 declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+require_once GROMPIL_ROOT . '/includes/customer_identifiers.php';
 require_once GROMPIL_ROOT . '/includes/contact_manager.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_shortcuts.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_sessions.php';
@@ -238,7 +239,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $patientCode = strtoupper(trim((string) ($_POST['customer_code'] ?? '')));
     $firstName = trim((string) ($_POST['name_first'] ?? ''));
     $lastName = trim((string) ($_POST['name_last'] ?? ''));
-    $birthDate = trim((string) ($_POST['date_of_birth'] ?? ''));
+    $nationalNumber = trim((string) ($_POST['national_register_number'] ?? ''));
+    $nationalNumberData = $nationalNumber === '' ? null : grompil_parse_national_register_number($nationalNumber);
+    $nationalNumberValid = $nationalNumber === '' || $nationalNumberData !== null;
+    $nationalNumberBirthDate = $nationalNumberData['date_of_birth'] ?? null;
+    $birthDate = $nationalNumberBirthDate ?? trim((string) ($_POST['date_of_birth'] ?? ''));
     $birthDateValue = $birthDate === '' ? null : $birthDate;
     $deathDate = trim((string) ($_POST['date_of_death'] ?? ''));
     $deathDateValue = $deathDate === '' ? null : $deathDate;
@@ -277,7 +282,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         && $deathDate <= date('Y-m-d'));
     $dateValid = $birthDateValid && $deathDateValid
         && ($deathDate === '' || $birthDate === '' || $deathDate >= $birthDate);
-    $valid = $firstName !== '' && mb_strlen($firstName) <= 120
+    $valid = $nationalNumberValid && $firstName !== '' && mb_strlen($firstName) <= 120
         && $lastName !== '' && mb_strlen($lastName) <= 120
         && $dateValid && preg_match('/^[A-Z]{2}$/D', $countryCode) === 1
         && mb_strlen($street) <= 160 && mb_strlen($houseNumber) <= 32
@@ -355,6 +360,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 throw new RuntimeException('Invalid patient operation.');
             }
 
+            grompil_customer_national_register_number_save(
+                $companyId,
+                $patientCode,
+                (string) ($nationalNumberData['number'] ?? ''),
+                $actorCode
+            );
+
             if ($locationId > 0) {
                 if ($addressIsPrimary) {
                     db_query_params(
@@ -418,6 +430,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $redirectUrl .= '&edit=1';
             }
             redirect($redirectUrl);
+        } catch (GrompilDuplicateCustomerIdentifierException $error) {
+            try {
+                db_query_raw('patients.transaction.rollback', 'ROLLBACK');
+            } catch (Throwable) {
+            }
+            $messageKey = 'patient_national_register_number_duplicate';
+            $editingPatientCode = $action === 'update_patient' ? $patientCode : '';
+            $openPatientModal = true;
+        } catch (GrompilCustomerIdentifierException $error) {
+            try {
+                db_query_raw('patients.transaction.rollback', 'ROLLBACK');
+            } catch (Throwable) {
+            }
+            error_log('Customer identifier save unavailable: ' . get_class($error));
+            $messageKey = 'patient_national_register_number_storage_unavailable';
+            $editingPatientCode = $action === 'update_patient' ? $patientCode : '';
+            $openPatientModal = true;
         } catch (Throwable $error) {
             try {
                 db_query_raw('patients.transaction.rollback', 'ROLLBACK');
@@ -444,7 +473,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $firstName !== '' && mb_strlen($firstName) <= 120 && $lastName !== '' && mb_strlen($lastName) <= 120 ? 'yes' : 'no',
             $dateValid ? 'yes' : 'no'
         ));
-        $messageKey = 'patient_form_invalid';
+        $messageKey = !$nationalNumberValid ? 'patient_national_register_number_invalid' : 'patient_form_invalid';
         $openPatientModal = true;
         $editingPatientCode = $action === 'update_patient' ? $patientCode : '';
     }
@@ -565,7 +594,8 @@ if ($editingPatientCode !== '' && $selectedPatient === null) {
         'customer_code' => $editingPatientCode,
         'name_first' => (string) ($_POST['name_first'] ?? ''),
         'name_last' => (string) ($_POST['name_last'] ?? ''),
-        'date_of_birth' => (string) ($_POST['date_of_birth'] ?? ''),
+        'national_register_number' => (string) ($_POST['national_register_number'] ?? ''),
+        'date_of_birth' => $nationalNumberBirthDate ?? (string) ($_POST['date_of_birth'] ?? ''),
         'date_of_death' => (string) ($_POST['date_of_death'] ?? ''),
         'location_id' => (string) ($_POST['location_id'] ?? ''),
         'street' => (string) ($_POST['street'] ?? ''),
@@ -635,6 +665,9 @@ $patientAddress = $selectedPatient ? trim(implode(', ', array_filter([
     (string) ($selectedPatient['country_code'] ?? ''),
 ]))) : '';
 $patientFormValues = $editingPatientCode !== '' ? ($selectedPatient ?? []) : [];
+if ($editingPatientCode !== '' && !array_key_exists('national_register_number', $patientFormValues)) {
+    $patientFormValues['national_register_number'] = grompil_customer_national_register_number_get($companyId, $editingPatientCode) ?? '';
+}
 $newAddressMode = ((string) ($_GET['new_address'] ?? '') === '1'
     || (string) ($_POST['add_another_address'] ?? '') === '1') && $editingPatientCode !== '';
 if ($newAddressMode) {
@@ -658,7 +691,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $patientFormValues = array_replace($patientFormValues, [
         'name_first' => (string) ($_POST['name_first'] ?? ''),
         'name_last' => (string) ($_POST['name_last'] ?? ''),
-        'date_of_birth' => (string) ($_POST['date_of_birth'] ?? ''),
+        'national_register_number' => (string) ($_POST['national_register_number'] ?? ''),
+        'date_of_birth' => $nationalNumberBirthDate ?? (string) ($_POST['date_of_birth'] ?? ''),
         'date_of_death' => (string) ($_POST['date_of_death'] ?? ''),
         'location_id' => (string) ($_POST['location_id'] ?? ''),
         'address_type_key' => (string) ($_POST['address_type_key'] ?? 'residential'),
@@ -750,10 +784,14 @@ $patientModalForm = fn_moduleTemplateRender('dispensing', 'dispensing_patient_fo
     'confirm_duplicate_patient' => '0',
     'patient_first_name_value' => (string) ($patientFormValues['name_first'] ?? ''),
     'patient_last_name_value' => (string) ($patientFormValues['name_last'] ?? ''),
+    'patient_national_register_number_value' => (string) ($patientFormValues['national_register_number'] ?? ''),
     'patient_birth_date_value' => (string) ($patientFormValues['date_of_birth'] ?? ''),
     'patient_death_date_value' => (string) ($patientFormValues['date_of_death'] ?? ''),
     'patient_first_name' => $customerText('patient_first_name'),
     'patient_last_name' => $customerText('patient_last_name'),
+    'patient_national_register_number' => $customerText('patient_national_register_number'),
+    'patient_national_register_number_help' => $customerText('patient_national_register_number_help'),
+    'patient_national_register_number_invalid' => $customerText('patient_national_register_number_invalid'),
     'patient_birth_date' => $customerText('patient_birth_date'),
     'patient_death_date' => $customerText('patient_death_date'),
     'patient_country_value' => (string) ($patientFormValues['country_code'] ?? 'BE'),
