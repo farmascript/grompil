@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Wed 2026-10-14 21:01:27
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27 12:51:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -478,18 +478,46 @@ function fn_templateTokenIsVisibleText(string $html, int $offset): bool
 }
 
 /**
- * Determine whether a template token is inside a label element.
+ * Determine whether a template token belongs to static text rather than an interactive control.
  *
  * @param string $html The HTML content to inspect.
  * @param int $offset The byte offset within the HTML string.
  * @return bool
  */
-function fn_templateTokenIsInsideLabel(string $html, int $offset): bool
+function fn_templateTokenShouldSkipTab(string $html, int $offset): bool
 {
     $before = substr($html, 0, $offset);
-    $labelOpen = strripos($before, '<label');
-    $labelClose = strripos($before, '</label>');
-    return $labelOpen !== false && ($labelClose === false || $labelOpen > $labelClose);
+    preg_match_all('/<\s*(\/?)\s*([a-z][a-z0-9:-]*)\b([^>]*)>/i', $before, $tags, PREG_SET_ORDER);
+    $stack = [];
+    $voidTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+
+    foreach ($tags as $tagMatch) {
+        $tagName = strtolower($tagMatch[2]);
+        if ($tagMatch[1] === '/') {
+            for ($index = count($stack) - 1; $index >= 0; $index--) {
+                if ($stack[$index]['name'] === $tagName) {
+                    array_splice($stack, $index);
+                    break;
+                }
+            }
+            continue;
+        }
+        if (!in_array($tagName, $voidTags, true) && !str_ends_with(trim($tagMatch[3]), '/')) {
+            $stack[] = ['name' => $tagName, 'attributes' => $tagMatch[3]];
+        }
+    }
+
+    foreach ($stack as $ancestor) {
+        if (in_array($ancestor['name'], ['label', 'legend', 'p', 'th', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
+            return true;
+        }
+        if (preg_match('/\bclass\s*=\s*"([^"]*)"/i', $ancestor['attributes'], $classMatch) === 1
+            && preg_match('/(?:^|\s)(?:form-label|form-text|card-header|modal-title)(?:\s|$)/', $classMatch[1]) === 1) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -533,7 +561,7 @@ function fn_templateRenderPath(string $path, array $values = []): string
             $key = $match[1][0];
             $token = $match[0][0];
             $offset = $match[0][1];
-            $tooltipTabIndex = fn_templateTokenIsInsideLabel($html, $offset) ? '-1' : '0';
+            $tooltipTabIndex = fn_templateTokenShouldSkipTab($html, $offset) ? '-1' : '0';
 
             if (preg_match('/^_page_help_html_(users|dev|testers|extern)_([0-9]+)$/D', $key, $helpMatch) === 1) {
                 return fn_dokuwikiIcon($helpMatch[1], $helpMatch[2]);

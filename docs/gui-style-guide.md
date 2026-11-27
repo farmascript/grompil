@@ -49,6 +49,16 @@ move focus to its first useful input; expose the expanded/collapsed state with
 `aria-expanded`. Use this pattern consistently for additional records instead
 of adding another permanently empty card.
 
+## Keyboard order in forms
+
+Keep the browser's natural Tab order aligned with the form's visual and data-entry
+order. Tab should move through enabled inputs, selects, text areas, and intentional
+actions in that order. Field labels, section titles, card headings, and explanatory
+text must not become extra Tab stops, even when they carry a translation-key
+tooltip for administrators. Keep those tooltips available on hover and use
+`tabindex="-1"` for their non-interactive text wrappers. Do not use positive
+`tabindex` values to reorder a form; arrange the controls in the correct DOM order.
+
 ## Search suggestions
 
 For name and code lookup fields, use type-ahead suggestions after at least three
