@@ -749,6 +749,10 @@
         bootstrap.Modal.getOrCreateInstance(newPrescriptionModalElement).show();
     }
 
+    newPrescriptionModalElement?.addEventListener('shown.bs.modal', () => {
+        newPrescriptionCaregiverInput?.focus();
+    });
+
     async function persistDispenseStatus(statusKey) {
         if (!dispenseStatusSelect) return;
         dispenseStatusSelect.value = statusKey;
