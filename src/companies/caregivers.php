@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27 12:37:00
+ * @date_mut: Fri 2026-11-27 12:38:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -537,8 +537,18 @@ if ($selected !== null) {
                     'address_house_number' => fn_t('address_house_number'),
                     'address_box_number' => fn_t('address_box_number'),
                 ]);
+                $mapAddress = trim(implode(' ', array_filter([
+                    trim((string) $detail['street'] . ' ' . (string) $detail['house_number']),
+                    trim((string) $detail['box_number']) !== '' ? 'bus ' . trim((string) $detail['box_number']) : '',
+                    trim((string) $detail['postal_code'] . ' ' . (string) $detail['city']),
+                ])));
+                $mapLink = grompil_google_maps_link(
+                    $detail['wgs84_latitude'],
+                    $detail['wgs84_longitude'],
+                    $mapAddress
+                );
                 $fields = '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_address_type')) . '</label><select class="form-select" name="address_type_key"' . ($isShared ? ' disabled' : '') . '>' . $opts . '</select></div>'
-                    . '<div class="col-md-5"><label class="form-label">' . e(fn_t('caregivers_label')) . '</label><input class="form-control" name="label" value="' . e((string) $detail['label']) . '"' . ($isShared ? ' disabled' : '') . '></div>'
+                    . '<div class="col-md-5"><label class="form-label">' . e(fn_t('caregivers_label')) . '</label><div class="d-flex align-items-center gap-2"><input class="form-control" name="label" value="' . e((string) $detail['label']) . '"' . ($isShared ? ' disabled' : '') . '>' . $mapLink . '</div></div>'
                     . '<input type="hidden" name="country_code" value="' . e((string) $detail['country_code']) . '">'
                     . ($isShared ? '<fieldset class="col-12 border-0 p-0 m-0" disabled>' . $addressFields . '</fieldset>' : $addressFields);
             }
