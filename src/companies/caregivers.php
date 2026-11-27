@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27 17:15:00
+ * @date_mut: Fri 2026-11-27 17:24:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -246,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                AND caregiver_code<>$3
                                AND (company_id IS NULL OR company_id=$4 OR $5::boolean)
                              LIMIT 1',
-                            ['riziv', $identifierValue, $selectedCode, $companyId, $globalScope]
+                            ['riziv', $identifierValue, $selectedCode, $companyId, $globalScope ? 'true' : 'false']
                         );
                         if ($duplicate && pg_num_rows($duplicate) > 0) {
                             $messageKey = 'caregivers_riziv_exists';
@@ -334,7 +334,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        AND caregiver_code<>$3
                                        AND (company_id IS NULL OR company_id=$4 OR $5::boolean)
                                      LIMIT 1',
-                                    ['riziv', $value, $postedCode, $companyId, $globalScope]);
+                                    ['riziv', $value, $postedCode, $companyId, $globalScope ? 'true' : 'false']);
                                 if ($duplicate && pg_num_rows($duplicate) > 0) {
                                     $messageKey = 'caregivers_riziv_exists';
                                 }
