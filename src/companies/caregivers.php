@@ -338,30 +338,46 @@ if ($selectedCode !== '') {
 $listRows = '';
 $escapedQuery = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], strtolower($query));
 $pattern = '%' . $escapedQuery . '%';
+$caregiverCount = 0;
 try {
-    $list = db_query_params('caregivers.list',
-        "SELECT bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id,
-                COALESCE(string_agg(DISTINCT ci.identifier_value, ', ' ORDER BY ci.identifier_value), '') AS identifiers
-         FROM bt_caregivers bc LEFT JOIN dt_caregiver_identifiers ci ON ci.caregiver_code=bc.caregiver_code
-           AND ci.is_active AND (ci.company_id IS NULL OR ci.company_id=$1)
-         WHERE (bc.owner_company_id IS NULL OR bc.owner_company_id=$1) AND bc.is_active
-           AND ($2='' OR lower(bc.name_first || ' ' || bc.name_last) LIKE $3
-                OR lower(bc.name_last || ' ' || bc.name_first) LIKE $3 OR bc.caregiver_code ILIKE $3
-                OR EXISTS (SELECT 1 FROM dt_caregiver_identifiers ix WHERE ix.caregiver_code=bc.caregiver_code
-                    AND ix.is_active AND (ix.company_id IS NULL OR ix.company_id=$1) AND ix.identifier_value ILIKE $3))
-         GROUP BY bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id
-         ORDER BY lower(bc.name_last), lower(bc.name_first), bc.caregiver_code LIMIT 100",
-        [$companyId, $query, $pattern]);
-    while ($list && $row = pg_fetch_assoc($list)) {
-        $isLocal = $row['owner_company_id'] !== null;
-        $listRows .= '<a class="list-group-item list-group-item-action" href="mb_caregivers.php?code=' . e((string) $row['caregiver_code']) . '&q=' . rawurlencode($query) . '">'
-            . '<strong>' . e(trim((string) $row['name_first'] . ' ' . (string) $row['name_last'])) . '</strong>'
-            . ' <span class="badge text-bg-light">' . e(fn_t($caregiverTypes[(string) $row['caregiver_type_key']] ?? 'caregivers_type_other')) . '</span>'
-            . ' <span class="small text-secondary">' . e((string) $row['caregiver_code']) . ($row['identifiers'] !== '' ? ' · ' . e((string) $row['identifiers']) : '')
-            . ' · ' . e(fn_t($isLocal ? 'caregivers_scope_company' : 'caregivers_scope_shared')) . '</span></a>';
+    $countResult = db_query_params('caregivers.count',
+        'SELECT COUNT(*) AS caregiver_count FROM bt_caregivers
+         WHERE (owner_company_id IS NULL OR owner_company_id=$1) AND is_active',
+        [$companyId]);
+    if ($countResult && ($countRow = pg_fetch_assoc($countResult))) {
+        $caregiverCount = (int) $countRow['caregiver_count'];
     }
-} catch (GrompilDatabaseQueryException) { $listRows = ''; }
-if ($listRows === '') $listRows = '<div class="list-group-item text-secondary">' . e(fn_t('caregivers_empty')) . '</div>';
+} catch (GrompilDatabaseQueryException) { $caregiverCount = 0; }
+
+$queryLength = function_exists('mb_strlen') ? mb_strlen($query) : strlen($query);
+if ($queryLength < 2) {
+    $listRows = '<div class="list-group-item text-secondary">' . e(fn_t('caregivers_search_hint')) . '</div>';
+} else {
+    try {
+        $list = db_query_params('caregivers.list',
+            "SELECT bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id,
+                    COALESCE(string_agg(DISTINCT ci.identifier_value, ', ' ORDER BY ci.identifier_value), '') AS identifiers
+             FROM bt_caregivers bc LEFT JOIN dt_caregiver_identifiers ci ON ci.caregiver_code=bc.caregiver_code
+               AND ci.is_active AND (ci.company_id IS NULL OR ci.company_id=$1)
+             WHERE (bc.owner_company_id IS NULL OR bc.owner_company_id=$1) AND bc.is_active
+               AND (lower(bc.name_first || ' ' || bc.name_last) LIKE $2
+                    OR lower(bc.name_last || ' ' || bc.name_first) LIKE $2 OR bc.caregiver_code ILIKE $2
+                    OR EXISTS (SELECT 1 FROM dt_caregiver_identifiers ix WHERE ix.caregiver_code=bc.caregiver_code
+                        AND ix.is_active AND (ix.company_id IS NULL OR ix.company_id=$1) AND ix.identifier_value ILIKE $2))
+             GROUP BY bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id
+             ORDER BY lower(bc.name_last), lower(bc.name_first), bc.caregiver_code LIMIT 100",
+            [$companyId, $pattern]);
+        while ($list && $row = pg_fetch_assoc($list)) {
+            $isLocal = $row['owner_company_id'] !== null;
+            $listRows .= '<a class="list-group-item list-group-item-action" href="mb_caregivers.php?code=' . e((string) $row['caregiver_code']) . '&q=' . rawurlencode($query) . '">'
+                . '<strong>' . e(trim((string) $row['name_first'] . ' ' . (string) $row['name_last'])) . '</strong>'
+                . ' <span class="badge text-bg-light">' . e(fn_t($caregiverTypes[(string) $row['caregiver_type_key']] ?? 'caregivers_type_other')) . '</span>'
+                . ' <span class="small text-secondary">' . e((string) $row['caregiver_code']) . ($row['identifiers'] !== '' ? ' · ' . e((string) $row['identifiers']) : '')
+                . ' · ' . e(fn_t($isLocal ? 'caregivers_scope_company' : 'caregivers_scope_shared')) . '</span></a>';
+        }
+    } catch (GrompilDatabaseQueryException) { $listRows = ''; }
+    if ($listRows === '') $listRows = '<div class="list-group-item text-secondary">' . e(fn_t('caregivers_empty')) . '</div>';
+}
 
 $typeOptions = '';
 foreach ($caregiverTypes as $key => $translationKey) {
@@ -398,8 +414,9 @@ if ($selected !== null) {
         ['dt_caregiver_locations', 'caregivers_locations_heading', 'location', 'caregiver_locations'],
     ] as [$table, $headingKey, $entity, $resultName]) {
         try {
+            $detailOrder = $entity === 'identifier' ? 'company_id NULLS FIRST, id' : 'company_id NULLS FIRST, sort_order, id';
             $rows = db_query_params('caregivers.' . $resultName,
-                "SELECT * FROM {$table} WHERE caregiver_code=$1 AND is_active AND (company_id IS NULL OR company_id=$2) ORDER BY company_id NULLS FIRST, sort_order, id",
+                "SELECT * FROM {$table} WHERE caregiver_code=$1 AND is_active AND (company_id IS NULL OR company_id=$2) ORDER BY {$detailOrder}",
                 [$selectedCode, $detailCompanyId]);
         } catch (GrompilDatabaseQueryException) { $rows = false; }
         $cards = '';
@@ -529,7 +546,7 @@ echo fn_templateRender('mb_caregivers.html', [
     'caregivers_title' => fn_t('caregivers_title'),
     'caregivers_intro' => fn_t('caregivers_intro'),
     '_caregivers_message_html' => $messageKey === '' || $successModalHtml !== '' ? '' : '<div class="alert alert-info" role="status">' . e(fn_t($messageKey)) . '</div>',
-    '_caregivers_search_html' => '<form method="get" action="mb_caregivers.php"><label class="form-label" for="caregiver-query">' . e(fn_t('caregivers_search')) . '</label><div class="input-group">'
+    '_caregivers_search_html' => '<form method="get" action="mb_caregivers.php"><label class="form-label d-flex justify-content-between align-items-center" for="caregiver-query"><span>' . e(fn_t('caregivers_search')) . '</span><span class="badge text-bg-light">' . e(sprintf(fn_t('caregivers_total_count'), (string) $caregiverCount)) . '</span></label><div class="input-group">'
         . '<input class="form-control" id="caregiver-query" type="search" name="q" value="' . e($query) . '" placeholder="' . e(fn_t('caregivers_search_placeholder')) . '"><button class="btn btn-outline-primary" type="submit">' . e(fn_t('caregivers_search_button')) . '</button></div></form>',
     '_caregivers_list_html' => $listRows,
     '_caregivers_add_button_html' => '<a class="btn btn-success mt-3" href="mb_caregivers.php">' . e(fn_t('caregivers_add')) . '</a>',
