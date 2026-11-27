@@ -70,6 +70,14 @@
     </div></div>
 </div>
 
+<div class="modal fade" id="dispensingDiscardConfirmModal" tabindex="-1" aria-labelledby="dispensingDiscardConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title fs-5" id="dispensingDiscardConfirmModalLabel">@dispense_discard_action@</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@close@"></button></div>
+        <div class="modal-body"><div class="alert alert-danger d-none" role="alert" data-discard-error></div><p class="mb-0">@dispense_discard_confirm@</p></div>
+        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">@dispense_receipt_cancel@</button><button class="btn btn-danger" type="button" data-discard-confirm>@dispense_discard_action@</button></div>
+    </div></div>
+</div>
+
 <div class="modal fade" id="dispensingLineEditModal" tabindex="-1" aria-labelledby="dispensingLineEditModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
         <form data-line-edit-form>

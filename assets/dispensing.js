@@ -95,6 +95,9 @@
     const receiptFrame = document.querySelector('[data-receipt-frame]');
     const receiptError = document.querySelector('[data-receipt-error]');
     const receiptConfirmButton = document.querySelector('[data-receipt-confirm]');
+    const discardModalElement = document.getElementById('dispensingDiscardConfirmModal');
+    const discardConfirmButton = document.querySelector('[data-discard-confirm]');
+    const discardError = document.querySelector('[data-discard-error]');
     const lineEditModalElement = document.getElementById('dispensingLineEditModal');
     const lineEditForm = document.querySelector('[data-line-edit-form]');
     const lineEditTitle = document.querySelector('[data-line-edit-title]');
@@ -1063,7 +1066,9 @@
     }
 
     async function discardDispensing() {
-        if (!window.confirm(t.discardConfirm || '')) return;
+        if (!discardConfirmButton || discardConfirmButton.disabled) return;
+        discardConfirmButton.disabled = true;
+        if (discardError) discardError.classList.add('d-none');
         try {
             await sessionReady;
             await sessionRequest('discard');
@@ -1074,13 +1079,28 @@
                 sessionStorage.removeItem(withdrawnFilterStorageKey());
             } catch {}
             const destination = new URL(window.location.href);
-            ['new_patient', 'edit', 'contacts', 'contact_status', 'saved'].forEach((key) => destination.searchParams.delete(key));
+            ['patient', 'q', 'regex', 'include_deceased', 'dispense_status', 'mode',
+                'new_patient', 'edit', 'contacts', 'contact_status', 'saved']
+                .forEach((key) => destination.searchParams.delete(key));
             destination.hash = '';
             window.location.replace(destination.href);
         } catch {
-            showSessionError();
+            if (discardError) {
+                discardError.textContent = page.dataset.textSessionError || '';
+                discardError.classList.remove('d-none');
+            }
+            discardConfirmButton.disabled = false;
         }
     }
+
+    function requestDiscardDispensing() {
+        if (discardModalElement && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(discardModalElement).show();
+        }
+    }
+
+    discardConfirmButton?.addEventListener('click', () => { void discardDispensing(); });
+    discardModalElement?.addEventListener('shown.bs.modal', () => discardConfirmButton?.focus());
 
     closeDispensingButton?.addEventListener('click', () => { void beginReceiptPreview(); });
     receiptConfirmButton?.addEventListener('click', () => { void confirmReceipt(); });
@@ -1313,7 +1333,7 @@
                     void beginReceiptPreview();
                     break;
                 case 'discard_dispensing':
-                    void discardDispensing();
+                    requestDiscardDispensing();
                     break;
                 case 'open_patient_history':
                     void openPatientHistory();
