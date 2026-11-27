@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27 17:24:00
+ * @date_mut: Fri 2026-11-27 17:30:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -529,12 +529,13 @@ $identifierTypeOptions = '';
 foreach ($identifierTypes as $key => $labelKey) {
     $identifierTypeOptions .= '<option value="' . e($key) . '"' . (($caregiverFormValues['identifier_type_key'] ?? 'riziv') === $key ? ' selected' : '') . '>' . e(fn_t($labelKey)) . '</option>';
 }
+$caregiverLastAutofocus = $selected === null && $messageKey === '' ? ' autofocus' : '';
 $identityForm = '<section class="card shadow-sm mb-4"><div class="card-header fw-semibold">' . e(fn_t($selected ? 'caregivers_edit' : 'caregivers_add')) . '</div><div class="card-body">'
     . '<form method="post" action="mb_caregivers.php' . ($query !== '' ? '?q=' . rawurlencode($query) : '') . '" data-caregiver-riziv-form data-riziv-error="' . e(fn_t('caregivers_invalid_riziv')) . '">' . csrf_field()
     . '<input type="hidden" name="action" value="save_caregiver"><input type="hidden" name="caregiver_code" value="' . e((string) ($selected['caregiver_code'] ?? '')) . '">'
     . '<div class="row g-3"><div class="col-md-4"><label class="form-label" for="caregiver-type">' . e(fn_t('caregivers_type')) . '</label><select class="form-select" id="caregiver-type" name="caregiver_type_key" required>' . $typeOptions . '</select></div>'
+    . '<div class="col-md-4"><label class="form-label" for="caregiver-last">' . e(fn_t('patient_last_name')) . '</label><input class="form-control" id="caregiver-last" name="name_last" maxlength="160" required value="' . e((string) ($caregiverFormValues['name_last'] ?? '')) . '"' . $caregiverLastAutofocus . '></div>'
     . '<div class="col-md-4"><label class="form-label" for="caregiver-first">' . e(fn_t('patient_first_name')) . '</label><input class="form-control" id="caregiver-first" name="name_first" maxlength="120" value="' . e((string) ($caregiverFormValues['name_first'] ?? '')) . '"></div>'
-    . '<div class="col-md-4"><label class="form-label" for="caregiver-last">' . e(fn_t('patient_last_name')) . '</label><input class="form-control" id="caregiver-last" name="name_last" maxlength="160" required value="' . e((string) ($caregiverFormValues['name_last'] ?? '')) . '"></div>'
     . (($selected['title'] ?? '') !== ''
         ? '<div class="col-12"><div class="form-label">' . e(fn_t('caregivers_professional_title')) . '</div><div class="form-control-plaintext py-0">' . e((string) $selected['title']) . '</div></div>'
         : '') . '</div>'
