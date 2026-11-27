@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Fri 2026-11-27 13:19:15
+ * @date_mut: Fri 2026-11-27 13:29:38
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -714,6 +714,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 }
 $formAction = $editingPatientCode !== '' ? 'update_patient' : 'create_patient';
 $patientModalTitle = $editingPatientCode !== '' ? $customerText('patient_edit') : $customerText('patient_add');
+$patientFormAlertHtml = $messageKey !== ''
+    ? fn_moduleTemplateRender('dispensing', 'dispensing_alert.html', [
+        'alert_type' => 'danger', 'alert_role' => 'alert',
+        'alert_message' => str_starts_with($messageKey, 'patient_')
+            ? $customerText($messageKey) : fn_t($messageKey),
+    ])
+    : '';
 $customerAddressesHtml = '';
 if ($editingPatientCode !== '') {
     $addressRows = db_query_params(
@@ -771,6 +778,7 @@ $patientModalForm = fn_moduleTemplateRender('dispensing', 'dispensing_patient_fo
     'dispense_status_key' => e($dispenseStatusKey),
     'customer_code' => $editingPatientCode,
     'patient_location_id' => (string) ($patientFormValues['location_id'] ?? ''),
+    '_patient_form_alert_html' => $patientFormAlertHtml,
     '_customer_addresses_html' => $customerAddressesHtml,
     '_customer_address_type_options_html' => $addressTypeOptionsHtml,
     'account_address_type' => fn_t('account_address_type'),

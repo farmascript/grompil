@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 13:19:15
- * @date_mut: Fri 2026-11-27 13:19:15
+ * @date_mut: Fri 2026-11-27 13:29:38
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -79,13 +79,31 @@ function grompil_customer_identifier_encryption_key(): string
     if (!extension_loaded('sodium')) {
         throw new GrompilCustomerIdentifierException('The sodium extension is unavailable.');
     }
-    $settings = grompil_deployment_settings(GROMPIL_ROOT);
+    try {
+        $settings = grompil_deployment_settings(GROMPIL_ROOT);
+    } catch (Throwable $error) {
+        throw new GrompilCustomerIdentifierException('Customer identifier encryption settings are unavailable.', 0, $error);
+    }
     $encoded = $settings['customer_identifier_encryption_key'] ?? '';
     $key = is_string($encoded) ? base64_decode($encoded, true) : false;
     if (!is_string($key) || strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES) {
         throw new GrompilCustomerIdentifierException('Customer identifier encryption is not configured.');
     }
     return $key;
+}
+
+/**
+ * Check whether the customer identifier migration is installed.
+ *
+ * @return bool True when the identifier table exists in the public schema.
+ */
+function grompil_customer_identifier_table_available(): bool
+{
+    $result = db_query_raw(
+        'customers.identifier_table_available',
+        "SELECT to_regclass('public.dt_customer_identifiers') IS NOT NULL AS available"
+    );
+    return pg_fetch_result($result, 0, 'available') === 't';
 }
 
 /**
@@ -144,6 +162,9 @@ function grompil_customer_identifier_fingerprint(string $value): string
  */
 function grompil_customer_national_register_number_get(int $companyId, string $customerCode): ?string
 {
+    if (!grompil_customer_identifier_table_available()) {
+        return null;
+    }
     $result = db_query_params(
         'customers.identifier_national_register_get',
         "SELECT encrypted_value FROM dt_customer_identifiers
@@ -172,6 +193,13 @@ function grompil_customer_national_register_number_save(
     string $number,
     string $actorCode
 ): void {
+    if (!grompil_customer_identifier_table_available()) {
+        if ($number === '') {
+            return;
+        }
+        throw new GrompilCustomerIdentifierException('The customer identifier database migration has not been installed.');
+    }
+
     if ($number === '') {
         db_query_params(
             'customers.identifier_national_register_clear',

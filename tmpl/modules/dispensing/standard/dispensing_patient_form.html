@@ -1,4 +1,5 @@
 <form method="post" action="dispense.php" class="customer-edit-form">
+    @_patient_form_alert_html@
     <input type="hidden" name="csrf_token" value="@csrf_token@">
     <input type="hidden" name="action" value="@patient_form_action@">
     <input type="hidden" name="dispense_status" value="@dispense_status_key@">
