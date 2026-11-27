@@ -1371,7 +1371,12 @@
                 sessionStorage.removeItem(prescriptionCaregiversStorageKey());
             } catch {}
             if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).hide();
-            window.location.reload();
+            const destination = new URL(window.location.href);
+            ['patient', 'q', 'regex', 'include_deceased', 'dispense_status', 'mode',
+                'new_patient', 'edit', 'contacts', 'contact_status', 'saved']
+                .forEach((key) => destination.searchParams.delete(key));
+            destination.hash = '';
+            window.location.replace(destination.href);
         } catch (error) {
             if (error?.data?.error === 'missing_caregiver' && Array.isArray(error.data.lines)) {
                 if (receiptModalElement && window.bootstrap) bootstrap.Modal.getOrCreateInstance(receiptModalElement).hide();
