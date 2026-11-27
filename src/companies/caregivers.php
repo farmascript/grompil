@@ -16,6 +16,72 @@
 
 declare(strict_types=1);
 
+/**
+ * Validate the RIZIV check digits against the supported official moduli.
+ *
+ * @param string $number The 11-digit RIZIV number.
+ * @return bool
+ */
+function grompil_caregiver_valid_riziv_number(string $number): bool
+{
+    if (preg_match('/^[0-9]{11}$/', $number) !== 1) {
+        return false;
+    }
+    $base = (int) substr($number, 0, 6);
+    $checkDigits = (int) substr($number, 6, 2);
+    foreach ([97, 89, 83, 79] as $modulus) {
+        if ($modulus - ($base % $modulus) === $checkDigits) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Derive a readable title from a RIZIV competence code where known.
+ *
+ * @param string $caregiverType The provider type.
+ * @param string $number The 11-digit RIZIV number.
+ * @return string
+ */
+function grompil_caregiver_riziv_title(string $caregiverType, string $number): string
+{
+    $code = substr($number, 8, 3);
+    $titles = [
+        'physician' => [
+            '000' => 'Arts', '009' => 'Arts',
+            '001' => 'Huisarts op basis van verworven rechten', '002' => 'Huisarts op basis van verworven rechten',
+            '003' => 'Erkend huisarts', '004' => 'Erkend huisarts', '005' => 'Huisarts in opleiding', '006' => 'Huisarts in opleiding',
+            '007' => 'Huisarts, bijzondere beroepstitel functionele en professionele revalidatie',
+            '008' => 'Erkend huisarts, bijzondere beroepstitel functionele en professionele revalidatie',
+            '100' => 'Arts-specialist in de anesthesie-reanimatie', '140' => 'Arts-specialist in de heelkunde',
+            '170' => 'Arts-specialist in de neurochirurgie', '180' => 'Arts-specialist in de geriatrie',
+            '210' => 'Arts-specialist in de plastische chirurgie', '240' => 'Arts-specialist in de heelkunde op het abdomen',
+            '270' => 'Arts-specialist in de heelkunde op de thorax', '310' => 'Arts-specialist in de bloedvatenheelkunde',
+            '340' => 'Arts-specialist in de gynaecologie en verloskunde', '370' => 'Arts-specialist in de oftalmologie',
+            '410' => 'Arts-specialist in de otorhinolaryngologie', '450' => 'Arts-specialist in de urologie',
+            '480' => 'Arts-specialist in de orthopedische heelkunde', '520' => 'Arts-specialist in de stomatologie',
+            '550' => 'Arts-specialist in de dermato-venereologie', '580' => 'Arts-specialist in de inwendige geneeskunde',
+            '620' => 'Arts-specialist in de pneumologie', '650' => 'Arts-specialist in de gastro-enterologie',
+            '660' => 'Arts-specialist in de medische oncologie', '690' => 'Arts-specialist in de kindergeneeskunde',
+            '730' => 'Arts-specialist in de cardiologie', '770' => 'Arts-specialist in de neurologie',
+            '780' => 'Arts-specialist in de psychiatrie', '790' => 'Arts-specialist in de reumatologie',
+            '800' => 'Arts-specialist in de acute geneeskunde', '810' => 'Arts-specialist in de klinische genetica',
+            '830' => 'Arts-specialist in de fysische geneeskunde en revalidatie', '860' => 'Arts-specialist in de klinische biologie',
+            '870' => 'Arts-specialist in de pathologische anatomie', '880' => 'Arts-specialist in de gerechtelijke geneeskunde',
+            '900' => 'Arts-specialist in de urgentiegeneeskunde', '930' => 'Arts-specialist in de röntgendiagnose',
+            '960' => 'Arts-specialist in de radiotherapie-oncologie', '970' => 'Arts-specialist in de nucleaire geneeskunde',
+        ],
+        'dentist' => [
+            '001' => 'Algemeen tandarts', '002' => 'Bevoegd tandarts', '003' => 'Arts-tandarts gediplomeerd voor 1929',
+            '004' => 'Arts-tandarts', '005' => 'Erkend arts-stomatoloog', '006' => 'Tandarts-specialist in de parodontologie',
+            '007' => 'Tandarts-specialist in de orthodontie', '010' => 'Algemeen tandarts in opleiding',
+            '060' => 'Tandarts-specialist in de parodontologie in opleiding', '070' => 'Tandarts-specialist in de orthodontie in opleiding',
+        ],
+    ];
+    return $titles[$caregiverType][$code] ?? fn_t('caregivers_riziv_competence_code') . ' ' . $code;
+}
+
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 require_once GROMPIL_ROOT . '/includes/do_6_char_code.php';
 $actor = require_login();
@@ -124,7 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $type = (string) ($_POST['caregiver_type_key'] ?? '');
             $firstName = trim((string) ($_POST['name_first'] ?? ''));
             $lastName = trim((string) ($_POST['name_last'] ?? ''));
-            $title = trim((string) ($_POST['title'] ?? ''));
             $validTypes = ['physician', 'dentist', 'veterinarian', 'midwife', 'other'];
             if ($lastName === '' || !in_array($type, $validTypes, true)) {
                 $messageKey = 'caregivers_invalid';
@@ -132,9 +197,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = db_query_params(
                     'caregivers.update',
                     'UPDATE bt_caregivers SET caregiver_type_key=$1, name_first=$2, name_last=$3,
-                        title=$4, updated_by_user_code=$5, updated_at=now()
-                     WHERE caregiver_code=$6 AND owner_company_id IS NOT DISTINCT FROM $7',
-                    [$type, $firstName, $lastName, $title, $actorCode, $postedCode, $detailCompanyId]
+                        updated_by_user_code=$4, updated_at=now()
+                     WHERE caregiver_code=$5 AND owner_company_id IS NOT DISTINCT FROM $6',
+                    [$type, $firstName, $lastName, $actorCode, $postedCode, $detailCompanyId]
                 );
                 $success = $result !== false && pg_affected_rows($result) === 1;
                 $selectedCode = $postedCode;
@@ -146,7 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'INSERT INTO bt_caregivers (caregiver_code, owner_company_id, caregiver_type_key,
                             name_first, name_last, title, created_by_user_code, updated_by_user_code)
                          VALUES ($1,$2,$3,$4,$5,$6,$7,$7) ON CONFLICT (caregiver_code) DO NOTHING',
-                         [$newCode, $detailCompanyId, $type, $firstName, $lastName, $title, $actorCode]
+                         [$newCode, $detailCompanyId, $type, $firstName, $lastName, '', $actorCode]
                     );
                     $success = $result !== false && pg_affected_rows($result) === 1;
                     if ($success) {
@@ -159,13 +224,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             && $postedCode !== '') {
             $ownerResult = db_query_params(
                 'caregivers.detail_owner',
-                'SELECT caregiver_code FROM bt_caregivers
+                'SELECT caregiver_code, caregiver_type_key FROM bt_caregivers
                  WHERE caregiver_code=$1 AND (owner_company_id IS NULL OR owner_company_id=$2)',
                 [$postedCode, $companyId]
             );
             if (!$ownerResult || pg_num_rows($ownerResult) !== 1) {
                 $messageKey = 'caregivers_not_found';
             } else {
+                $owner = pg_fetch_assoc($ownerResult);
                 $selectedCode = $postedCode;
                 if (str_starts_with($action, 'deactivate_')) {
                     [$table, $entity] = match ($action) {
@@ -191,9 +257,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $issuer = trim((string) ($_POST['issuer'] ?? ''));
                         $source = trim((string) ($_POST['source_key'] ?? 'manual')) ?: 'manual';
                         $sourceRef = trim((string) ($_POST['source_reference'] ?? ''));
-                        if (!in_array($kind, ['riziv', 'veterinary', 'professional', 'other'], true)
-                            || $value === '' || ($kind === 'riziv' && preg_match('/^[0-9]{11}$/', $value) !== 1)) {
+                        if (!in_array($kind, ['riziv', 'veterinary', 'professional', 'other'], true) || $value === '') {
                             $messageKey = 'caregivers_invalid';
+                        } elseif ($kind === 'riziv' && !grompil_caregiver_valid_riziv_number($value)) {
+                            $messageKey = 'caregivers_invalid_riziv';
                         } else {
                             $result = $detailId
                                 ? db_query_params('caregivers.identifier_update',
@@ -207,6 +274,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)',
                                     [$postedCode, $detailCompanyId, $kind, $value, $issuer, $source, $sourceRef, $actorCode]);
                             $success = $result !== false;
+                            if ($success && $kind === 'riziv'
+                                && in_array((string) $owner['caregiver_type_key'], ['physician', 'dentist'], true)) {
+                                $title = grompil_caregiver_riziv_title((string) $owner['caregiver_type_key'], $value);
+                                db_query_params('caregivers.riziv_title_update',
+                                    'UPDATE bt_caregivers SET title=$1, updated_by_user_code=$2, updated_at=now()
+                                     WHERE caregiver_code=$3 AND owner_company_id IS NOT DISTINCT FROM $4',
+                                    [$title, $actorCode, $postedCode, $detailCompanyId]);
+                            }
                         }
                     } elseif ($action === 'save_contact') {
                         $kind = (string) ($_POST['contact_type_key'] ?? '');
@@ -275,6 +350,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } catch (GrompilDatabaseQueryException) {
+        $messageKey = 'caregivers_save_failed';
+    } catch (Throwable $error) {
+        error_log('Caregiver module action failed [' . $action . ']: ' . get_class($error));
         $messageKey = 'caregivers_save_failed';
     }
     if ($success) {
@@ -389,7 +467,9 @@ $identityForm = '<section class="card shadow-sm mb-4"><div class="card-header fw
     . '<div class="row g-3"><div class="col-md-4"><label class="form-label" for="caregiver-type">' . e(fn_t('caregivers_type')) . '</label><select class="form-select" id="caregiver-type" name="caregiver_type_key" required>' . $typeOptions . '</select></div>'
     . '<div class="col-md-4"><label class="form-label" for="caregiver-first">' . e(fn_t('patient_first_name')) . '</label><input class="form-control" id="caregiver-first" name="name_first" maxlength="120" value="' . e((string) ($selected['name_first'] ?? '')) . '"></div>'
     . '<div class="col-md-4"><label class="form-label" for="caregiver-last">' . e(fn_t('patient_last_name')) . '</label><input class="form-control" id="caregiver-last" name="name_last" maxlength="160" required value="' . e((string) ($selected['name_last'] ?? '')) . '"></div>'
-    . '<div class="col-md-6"><label class="form-label" for="caregiver-title">' . e(fn_t('caregivers_professional_title')) . '</label><input class="form-control" id="caregiver-title" name="title" maxlength="120" value="' . e((string) ($selected['title'] ?? '')) . '"><div class="form-text">' . e(fn_t('caregivers_professional_title_help')) . '</div></div></div>'
+    . (($selected['title'] ?? '') !== ''
+        ? '<div class="col-12"><div class="form-label">' . e(fn_t('caregivers_professional_title')) . '</div><div class="form-control-plaintext py-0">' . e((string) $selected['title']) . '</div></div>'
+        : '') . '</div>'
     . '<div class="d-flex gap-2 align-items-center mt-3"><button class="btn btn-primary" type="submit">' . e(fn_t('save')) . '</button>'
     . (!empty($selected['caregiver_code']) ? '<span class="small text-secondary">' . e(fn_t('caregivers_code')) . ': ' . e((string) $selected['caregiver_code']) . '</span>' : '')
     . (!empty($selected) && ($selected['is_editable'] ?? 'f') !== 't' ? '<span class="small text-secondary">' . e(fn_t('caregivers_shared_read_only')) . '</span>' : '')
@@ -428,7 +508,8 @@ if ($selected !== null) {
                 $opts = '';
                 foreach ($identifierTypes as $key => $labelKey) $opts .= '<option value="' . e($key) . '"' . ($detail['identifier_type_key'] === $key ? ' selected' : '') . '>' . e(fn_t($labelKey)) . '</option>';
                 $fields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_type')) . '</label><select class="form-select" name="identifier_type_key"' . ($isShared ? ' disabled' : '') . '>' . $opts . '</select></div>'
-                    . '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" value="' . e((string) $detail['identifier_value']) . '"' . ($isShared ? ' disabled' : '') . '></div>'
+                    . '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" value="' . e((string) $detail['identifier_value']) . '"' . ($isShared ? ' disabled' : '') . '>'
+                    . ($detail['identifier_type_key'] === 'riziv' ? '<div class="form-text">' . e(fn_t('caregivers_riziv_title_help')) . '</div>' : '') . '</div>'
                     . '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_issuer')) . '</label><input class="form-control" name="issuer" value="' . e((string) $detail['issuer']) . '"' . ($isShared ? ' disabled' : '') . '></div>';
             } elseif ($entity === 'contact') {
                 $opts = '';
@@ -474,7 +555,10 @@ if ($selected !== null) {
                     . '<input type="hidden" name="country_code" value="' . e((string) $detail['country_code']) . '">'
                     . ($isShared ? '<fieldset class="col-12 border-0 p-0 m-0" disabled>' . $addressFields . '</fieldset>' : $addressFields);
             }
-            $cards .= '<div class="border rounded p-3 mb-2"><div class="small text-secondary mb-2">' . e($scopeText) . '</div><form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '">' . csrf_field()
+            $identifierFormAttributes = $entity === 'identifier'
+                ? ' data-caregiver-riziv-form data-riziv-error="' . e(fn_t('caregivers_invalid_riziv')) . '"'
+                : '';
+            $cards .= '<div class="border rounded p-3 mb-2"><div class="small text-secondary mb-2">' . e($scopeText) . '</div><form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '"' . $identifierFormAttributes . '>' . csrf_field()
                 . '<input type="hidden" name="action" value="save_' . e($entity) . '"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '"><input type="hidden" name="detail_id" value="' . (int) $detail['id'] . '">'
                 . '<div class="row g-2 align-items-end">' . $fields . '<div class="col-md-auto">' . ($isShared ? '' : '<button class="btn btn-primary" type="submit">' . e(fn_t('save')) . '</button>') . '</div></div></form>'
                 . ($isShared ? '' : '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="mt-2">' . csrf_field()
@@ -484,7 +568,7 @@ if ($selected !== null) {
         $addFields = '';
         if ($entity === 'identifier') {
             foreach ($identifierTypes as $key => $labelKey) $addFields .= '<option value="' . e($key) . '">' . e(fn_t($labelKey)) . '</option>';
-            $addFields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_type')) . '</label><select class="form-select" name="identifier_type_key">' . $addFields . '</select></div><div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" required></div><div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_issuer')) . '</label><input class="form-control" name="issuer"></div>';
+            $addFields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_type')) . '</label><select class="form-select" name="identifier_type_key">' . $addFields . '</select></div><div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" required><div class="form-text">' . e(fn_t('caregivers_riziv_title_help')) . '</div></div><div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_issuer')) . '</label><input class="form-control" name="issuer"></div>';
         } elseif ($entity === 'contact') {
             $opts = '';
             foreach ($contactTypes as $key => $label) $opts .= '<option value="' . e($key) . '">' . e($label) . '</option>';
@@ -521,7 +605,10 @@ if ($selected !== null) {
                 'address_house_number' => fn_t('address_house_number'),
                 'address_box_number' => fn_t('address_box_number'),
             ]);
-            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3">' . csrf_field()
+            $identifierFormAttributes = $entity === 'identifier'
+                ? ' data-caregiver-riziv-form data-riziv-error="' . e(fn_t('caregivers_invalid_riziv')) . '"'
+                : '';
+            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3"' . $identifierFormAttributes . '>' . csrf_field()
                 . '<input type="hidden" name="action" value="save_location"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '">'
                 . '<input type="hidden" name="country_code" value="BE"><div class="row g-2 align-items-end">'
                 . '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_address_type')) . '</label><select class="form-select" name="address_type_key">' . $opts . '</select></div>'
