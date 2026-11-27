@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Fri 2026-11-27 16:50:25
+ * @date_mut: Fri 2026-11-27 21:36:45
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -961,13 +961,17 @@ $companyBrandHtml = $companyLogo !== ''
     : fn_moduleTemplateRender('dispensing', 'dispensing_company_monogram.html', [
         'company_monogram' => strtoupper(mb_substr((string) $companyIdentity['name'], 0, 1)),
     ]);
+$patientAddLabel = $customerText('patient_add');
+$patientAddUrl = fn_appBaseHref() . 'dispense.php?dispense_status=' . rawurlencode($dispenseStatusKey) . '&new_patient=1'
+    . ($selectedPatientCode !== '' ? '&patient=' . rawurlencode($selectedPatientCode) : '');
 $addPatientButtonHtml = fn_moduleTemplateRender('dispensing', 'dispensing_add_patient_button.html', [
-    'patient_add' => $customerText('patient_add'),
-    'patient_add_url' => e(fn_appBaseHref() . 'dispense.php?dispense_status=' . rawurlencode($dispenseStatusKey) . '&new_patient=1'
-        . ($selectedPatientCode !== '' ? '&patient=' . rawurlencode($selectedPatientCode) : '')),
+    'patient_add' => $patientAddLabel,
+    'patient_add_url' => e($patientAddUrl),
 ]);
 $patientPanelHtml = fn_moduleTemplateRender('dispensing', 'dispensing_patient_panel.html', [
         'dispense_patient_search' => $dispenseCustomerText('dispense_patient_search'),
+        'dispense_patient_add' => e($patientAddLabel),
+        'dispense_patient_add_url' => e($patientAddUrl),
         'dispense_select_patient' => $dispenseCustomerText('dispense_select_patient'),
         'dispense_query_value' => e($query),
         'dispense_search' => $customerText('patient_search_button'),

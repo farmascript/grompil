@@ -216,7 +216,7 @@
         if (patientStatus) patientStatus.textContent = message;
     }
 
-    function showPatientSuggestions(results) {
+    function showPatientSuggestions(results, allowPatientAdd = false) {
         patientSuggestions.replaceChildren();
         activePatientSuggestionIndex = -1;
         if (!results.length) {
@@ -224,6 +224,24 @@
             empty.className = 'list-group-item small text-secondary';
             empty.textContent = page.dataset.textPatientNoResults || '';
             patientSuggestions.append(empty);
+            if (allowPatientAdd) {
+                const addItem = document.createElement('div');
+                addItem.className = 'list-group-item';
+                const addButton = document.createElement('button');
+                addButton.className = 'btn btn-sm btn-outline-primary';
+                addButton.type = 'button';
+                addButton.textContent = patientInput?.dataset.patientAddLabel || '';
+                addButton.setAttribute('aria-haspopup', 'dialog');
+                addButton.addEventListener('click', () => {
+                    if (modal && window.bootstrap?.Modal) {
+                        bootstrap.Modal.getOrCreateInstance(modal).show();
+                    } else if (patientInput?.dataset.patientAddUrl) {
+                        window.location.assign(patientInput.dataset.patientAddUrl);
+                    }
+                });
+                addItem.append(addButton);
+                patientSuggestions.append(addItem);
+            }
         } else {
             for (const [index, patient] of results.entries()) {
                 const url = new URL(page.dataset.patientEndpoint, window.location.href);
@@ -291,7 +309,7 @@
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || page.dataset.textPatientUnavailable || '');
-                showPatientSuggestions(data.results || []);
+                showPatientSuggestions(data.results || [], true);
             } catch (error) {
                 if (error.name === 'AbortError') return;
                 showPatientSuggestions([]);
