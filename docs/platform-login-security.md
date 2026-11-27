@@ -1,6 +1,16 @@
 # Platform- en bedrijfsbeveiliging
 
+<!--
+ * @date_mut: Fri 2026-11-27 22:13:23
+-->
+
 Nieuwe wachtwoorden moeten minstens 12 tekens en 6 verschillende tekens bevatten. De applicatie weigert veelgebruikte wachtwoorden, sterke herhaling en eenvoudige oplopende of aflopende reeksen met letters, cijfers en toetsenbordtekens. Als een bestaand wachtwoord bij het aanmelden klopt maar niet aan deze controle voldoet, wordt het account gemarkeerd voor verplichte wachtwoordwijziging. De gebruiker kan aanmelden, eventuele MFA afronden en daarna een nieuw wachtwoord instellen via **Mijn account**.
+
+## Tijdelijke diagnose tijdens de proefperiode
+
+Tijdens de testperiode toont de verplichte wachtwoordmodal na een geslaagde aanmelding welke wachtwoordcriteria niet voldeden. Bij een veelgebruikt patroon toont de diagnose ook het aangetroffen woord, bijvoorbeeld `admin`; het volledige wachtwoord wordt nooit opgeslagen of getoond. De diagnostische uitkomst staat alleen tijdelijk in de aanmeldsessie.
+
+**Actie vóór de productie-uitrol:** verwijder de tijdelijke diagnose-uitvoer en de sessieopslag van de diagnose uit `src/account/account.php` en `src/account/login.php`, de tijdelijke criteriafunctie en detailweergave uit `includes/password_policy.php`, en de bijbehorende `password_diagnostic_*` vertalingen uit de taalbestanden. Behoud de wachtwoordcontrole zelf en de algemene uitleg over de regels voor gebruikers.
 
 ## Gedrag
 

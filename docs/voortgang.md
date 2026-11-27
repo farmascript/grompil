@@ -17,6 +17,13 @@
 
 # Voortgang Grompil
 
+## 27 november 2026
+
+### Tijdelijke diagnose voor wachtwoordcontrole
+
+- Tijdens de proefperiode toont de verplichte wachtwoordmodal na een geslaagde aanmelding welke wachtwoordcriteria faalden. Bij een veelgebruikt patroon wordt ook de aangetroffen tekenreeks getoond; het volledige wachtwoord wordt niet opgeslagen of getoond.
+- **Actie vóór productie-uitrol:** verwijder de tijdelijke criteriumdiagnose, de sessieopslag en de weergave van het aangetroffen patroon. Behoud de wachtwoordbeleidcontrole en de algemene uitleg voor gebruikers. Details staan in `docs/platform-login-security.md`.
+
 ## 20 november 2026
 
 ### Naamgeving van SQL-migraties

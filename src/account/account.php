@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-27 22:09:13
+ * @date_mut: Fri 2026-11-27 22:15:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -782,34 +782,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST'
 }
 $mfaResetModalAutoOpen = $mfaResetPending || $mfaResetFormMessage !== '' || $mfaResetFlashCodesHtml !== '';
 $forcedProfileFieldsHtml = $mustChangePassword
-    ? '<input type="hidden" name="country_code" value="' . e($address['country_code']) . '">'
-        . '<div class="mb-3"><label class="form-label" for="setup-display-name">' . e(fn_t('display_name')) . '</label>'
+    ? '<div class="mb-3"><label class="form-label" for="setup-display-name">' . e(fn_t('display_name')) . '</label>'
         . '<input class="form-control" id="setup-display-name" name="display_name" maxlength="255" required value="' . e($displayName) . '"></div>'
         . '<div class="mb-3"><label class="form-label" for="setup-acronym">' . e(fn_t($accountAcronymLabelKey)) . '</label>'
         . '<input class="form-control" id="setup-acronym" name="acronym" maxlength="80" autocomplete="username" value="' . e($acronym) . '"'
         . ($accountAcronymRequired ? ' required' : '') . '>'
         . '<div class="form-text">' . e(fn_t($accountAcronymHelpKey)) . '</div></div>'
-        . fn_templateRender('address_fields.html', [
-            'address_prefix' => 'account-setup-address',
-            'address_autosave' => '0',
-            'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
-            'address_lookup_no_results' => fn_t('address_lookup_no_results'),
-            'address_postal_reminder' => fn_t('address_postal_reminder'),
-            'address_select_required' => fn_t('address_select_required'),
-            'address_manual_prompt' => fn_t('address_manual_prompt'),
-            'address_manual_required' => fn_t('address_manual_required'),
-            'address_manual_confirm' => fn_t('address_manual_confirm'),
-            'address_country_code_value' => $address['country_code'],
-            'address_reference_id_value' => $address['address_reference_id'],
-            'lambert72_x_value' => $address['lambert72_x'], 'lambert72_y_value' => $address['lambert72_y'],
-            'wgs84_latitude_value' => $address['wgs84_latitude'], 'wgs84_longitude_value' => $address['wgs84_longitude'],
-            'street_reference_id_value' => '',
-            'street_value' => $address['street'],
-            'house_number_value' => $address['house_number'],
-            'box_number_value' => $address['box_number'],
-            'postal_code_value' => $address['postal_code'],
-            'city_value' => $address['city'],
-        ])
     : '';
 $addressTypeOptionsHtml = '';
 foreach ($addressTypes as $addressType) {
