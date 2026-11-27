@@ -51,7 +51,7 @@
     modal?.addEventListener('shown.bs.modal', () => {
         const action = modal.querySelector('.customer-edit-form input[name="action"]')?.value;
         if (action === 'create_patient') {
-            modal.querySelector('#patient-first-name')?.focus();
+            modal.querySelector('#patient-last-name')?.focus();
         }
     });
     if (modal && page.dataset.modalOpen === 'true' && window.bootstrap) {
