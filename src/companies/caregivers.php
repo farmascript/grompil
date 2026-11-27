@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27 17:30:00
+ * @date_mut: Fri 2026-11-27 17:37:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -175,6 +175,12 @@ if (preg_match('/^[A-Z0-9]{3}[A-Z0-9]{3}$/', $selectedCode) !== 1) {
 }
 $queryRaw = $_GET['q'] ?? '';
 $query = is_scalar($queryRaw) ? trim((string) $queryRaw) : '';
+$returnToDispense = (string) ($_GET['return_to_dispense'] ?? $_POST['return_to_dispense'] ?? '') === '1';
+$returnDispenseStatus = is_scalar($_GET['return_status'] ?? $_POST['return_status'] ?? null)
+    ? trim((string) ($_GET['return_status'] ?? $_POST['return_status'] ?? '')) : '';
+if (preg_match('/^[a-z0-9_-]{1,80}$/', $returnDispenseStatus) !== 1) {
+    $returnDispenseStatus = '';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -455,7 +461,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageKey = 'caregivers_added';
         }
         $_SESSION['caregivers_flash_message'] = $messageKey;
-        $returnQuery = $selectedCode !== '' ? '?code=' . rawurlencode($selectedCode) : ($query !== '' ? '?q=' . rawurlencode($query) : '');
+        $returnParameters = [];
+        if ($selectedCode !== '') $returnParameters['code'] = $selectedCode;
+        elseif ($query !== '') $returnParameters['q'] = $query;
+        if ($action === 'save_caregiver' && $postedCode === '' && $returnToDispense) {
+            $returnParameters['return_to_dispense'] = '1';
+            if ($returnDispenseStatus !== '') $returnParameters['return_status'] = $returnDispenseStatus;
+        }
+        $returnQuery = $returnParameters !== [] ? '?' . http_build_query($returnParameters) : '';
         header('Location: mb_caregivers.php' . $returnQuery, true, 303);
         exit;
     }
@@ -463,10 +476,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $flashMessage = is_scalar($_SESSION['caregivers_flash_message'] ?? null) ? (string) $_SESSION['caregivers_flash_message'] : '';
 unset($_SESSION['caregivers_flash_message']);
 if ($messageKey === '') $messageKey = $flashMessage;
+$dispenseReturnHref = '';
+if ($returnToDispense && $messageKey === 'caregivers_added' && $selectedCode !== '') {
+    $dispenseReturnParameters = ['caregiver_added' => $selectedCode];
+    if ($returnDispenseStatus !== '') $dispenseReturnParameters['return_status'] = $returnDispenseStatus;
+    $dispenseReturnHref = fn_appBaseHref() . 'dispense.php?' . http_build_query($dispenseReturnParameters);
+}
 $successModalHtml = in_array($messageKey, [
     'caregivers_added', 'caregivers_saved', 'caregivers_deactivated', 'caregivers_detail_deactivated',
 ], true)
-    ? '<div class="modal fade" id="caregiver-save-success-modal" tabindex="-1" aria-labelledby="caregiver-save-success-title" aria-hidden="true" data-caregiver-success-modal><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="caregiver-save-success-title">'
+    ? '<div class="modal fade" id="caregiver-save-success-modal" tabindex="-1" aria-labelledby="caregiver-save-success-title" aria-hidden="true" data-caregiver-success-modal' . ($dispenseReturnHref !== '' ? ' data-caregiver-return-href="' . e($dispenseReturnHref) . '"' : '') . '><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="caregiver-save-success-title">'
         . e(fn_t('caregivers_saved_modal_title')) . '</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="' . e(fn_t('close')) . '"></button></div><div class="modal-body">'
         . e(fn_t($messageKey)) . '</div><div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">' . e(fn_t('close')) . '</button></div></div></div></div>'
     : '';
@@ -533,6 +552,7 @@ $caregiverLastAutofocus = $selected === null && $messageKey === '' ? ' autofocus
 $identityForm = '<section class="card shadow-sm mb-4"><div class="card-header fw-semibold">' . e(fn_t($selected ? 'caregivers_edit' : 'caregivers_add')) . '</div><div class="card-body">'
     . '<form method="post" action="mb_caregivers.php' . ($query !== '' ? '?q=' . rawurlencode($query) : '') . '" data-caregiver-riziv-form data-riziv-error="' . e(fn_t('caregivers_invalid_riziv')) . '">' . csrf_field()
     . '<input type="hidden" name="action" value="save_caregiver"><input type="hidden" name="caregiver_code" value="' . e((string) ($selected['caregiver_code'] ?? '')) . '">'
+    . '<input type="hidden" name="return_to_dispense" value="' . ($returnToDispense ? '1' : '0') . '"><input type="hidden" name="return_status" value="' . e($returnDispenseStatus) . '">'
     . '<div class="row g-3"><div class="col-md-4"><label class="form-label" for="caregiver-type">' . e(fn_t('caregivers_type')) . '</label><select class="form-select" id="caregiver-type" name="caregiver_type_key" required>' . $typeOptions . '</select></div>'
     . '<div class="col-md-4"><label class="form-label" for="caregiver-last">' . e(fn_t('patient_last_name')) . '</label><input class="form-control" id="caregiver-last" name="name_last" maxlength="160" required value="' . e((string) ($caregiverFormValues['name_last'] ?? '')) . '"' . $caregiverLastAutofocus . '></div>'
     . '<div class="col-md-4"><label class="form-label" for="caregiver-first">' . e(fn_t('patient_first_name')) . '</label><input class="form-control" id="caregiver-first" name="name_first" maxlength="120" value="' . e((string) ($caregiverFormValues['name_first'] ?? '')) . '"></div>'

@@ -673,9 +673,14 @@
                                 : 'list-group-item small text-secondary';
                             addPrescriber.textContent = searchInput.dataset.addLabel;
                             if (hasManageAccess) {
-                                addPrescriber.href = searchInput.dataset.manageUrl;
-                                addPrescriber.target = '_blank';
-                                addPrescriber.rel = 'noopener noreferrer';
+                                const manageUrl = new URL(searchInput.dataset.manageUrl, window.location.href);
+                                if (searchInput === newPrescriptionCaregiverInput) {
+                                    manageUrl.searchParams.set('return_to_dispense', '1');
+                                    if (pendingPrescriptionStatusKey) {
+                                        manageUrl.searchParams.set('return_status', pendingPrescriptionStatusKey);
+                                    }
+                                }
+                                addPrescriber.href = manageUrl.href;
                             }
                             resultsElement.append(addPrescriber);
                         }
@@ -1127,10 +1132,55 @@
         }
     }
 
+    async function restoreAddedCaregiver() {
+        const returnParameters = new URLSearchParams(window.location.search);
+        const caregiverCode = (returnParameters.get('caregiver_added') || '').toUpperCase();
+        if (!/^[A-Z0-9]{6}$/.test(caregiverCode)) return;
+
+        try {
+            await sessionReady;
+            const endpoint = new URL(page.dataset.caregiverEndpoint, window.location.href);
+            endpoint.searchParams.set('q', caregiverCode);
+            const response = await fetch(endpoint, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' },
+                cache: 'no-store',
+            });
+            if (!response.ok) throw new Error('Caregiver lookup failed');
+            const data = await response.json();
+            const caregiver = (data.results || []).find((item) => item.caregiver_code === caregiverCode);
+            const activeParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
+            if (!caregiver || !activeParty) throw new Error('Caregiver or active party unavailable');
+
+            const selectedCaregiver = { caregiver_code: caregiverCode, name: caregiver.name || '' };
+            if (activeParty.type === 'customer') {
+                setPartyCaregiver(activePartyId, selectedCaregiver);
+            } else {
+                pendingSessionCaregiver = selectedCaregiver;
+                try { sessionStorage.setItem(pendingCaregiverStorageKey(), JSON.stringify(pendingSessionCaregiver)); } catch {}
+            }
+
+            const returnStatus = returnParameters.get('return_status') || '';
+            if (returnStatus && Array.from(dispenseStatusSelect?.options || []).some((option) => option.value === returnStatus)) {
+                await persistDispenseStatus(returnStatus);
+            }
+
+            returnParameters.delete('caregiver_added');
+            returnParameters.delete('return_status');
+            const cleanQuery = returnParameters.toString();
+            window.history.replaceState(null, '', window.location.pathname + (cleanQuery ? `?${cleanQuery}` : '') + window.location.hash);
+            renderActivePartyLabel();
+            if (!input?.disabled) input?.focus();
+        } catch {
+            showSessionError();
+        }
+    }
+
     const sessionReady = initializeDispensingSession().catch((error) => {
         showSessionError();
         if (input) input.disabled = true;
     });
+    void restoreAddedCaregiver();
 
     function productSuggestionButtons() {
         return [...suggestions.querySelectorAll('button.product-suggestion')];

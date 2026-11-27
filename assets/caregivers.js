@@ -1,6 +1,6 @@
 /**
  * @date_cre: Fri 2026-11-27 11:20:00
- * @date_mut: Fri 2026-11-27 12:22:00
+ * @date_mut: Fri 2026-11-27 17:37:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -196,6 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const successModal = document.querySelector('[data-caregiver-success-modal]');
     if (successModal && window.bootstrap?.Modal) {
+        const returnHref = successModal.dataset.caregiverReturnHref || '';
+        if (returnHref) {
+            successModal.addEventListener('hidden.bs.modal', () => {
+                window.location.assign(returnHref);
+            }, { once: true });
+        }
         window.bootstrap.Modal.getOrCreateInstance(successModal).show();
     }
 });
