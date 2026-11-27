@@ -19,6 +19,7 @@ The pharmacy workbench is available at `dispense.php`. It requires an active com
 - The company-wide history search and the patient-history modal filter automatically after three typed characters; the manual search button remains available.
 - The product search hides products with a revoked AMP or AMPP status by default. The per-session `UH` toggle includes revoked products when selected and resets when that dispensing session is completed or discarded.
 - The patient add/edit modal body uses the same pale green-gray background as the address suggestion list (`#f1f5f3`) so the white input fields stand out more clearly.
+- The line-edit modal keeps its general background white and groups its inputs on a `#f1f5f3` card; the form controls remain white, following `docs/gui-style-guide.md`.
 - The count at the upper right of the current dispensing panel shows the number of distinct product lines, not the sum of their quantities.
 - Electronic prescriptions, live stock, safety checks, reimbursement, prices, and checkout are not connected. Their controls are deliberately disabled.
 

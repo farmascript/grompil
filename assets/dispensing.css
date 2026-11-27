@@ -37,5 +37,6 @@
 #contact-manager-modal .modal-body{background-color:#fff}
 #contact-manager-modal .contact-manager-row{background-color:#f1f5f3}
 #contact-manager-modal .contact-manager-row .form-control,#contact-manager-modal .contact-manager-row .form-select{background-color:#fff}
+.dispensing-line-edit-fields{padding:1rem;background-color:#f1f5f3;border:1px solid #dce4e8;border-radius:.6rem}.dispensing-line-edit-fields .form-control,.dispensing-line-edit-fields .form-select{background-color:#fff}
 .dispense-page .dispense-columns{grid-template-columns:minmax(220px,.7fr) minmax(380px,1.45fr) minmax(245px,.7fr)}@media(max-width:1050px){.dispense-page .dispense-columns{grid-template-columns:minmax(220px,.65fr) minmax(350px,1.35fr)}}@media(max-width:700px){.dispense-page .dispense-columns{grid-template-columns:1fr}}
 .patient-search-form{display:grid;grid-template-columns:minmax(0,1fr);gap:.4rem;align-items:start}.patient-search-form>[data-patient-search-input]{width:100%;min-width:0}.patient-search-options{display:flex;align-items:center;gap:.8rem;padding-inline:.2rem}.patient-deceased-check{font-size:.76rem}
