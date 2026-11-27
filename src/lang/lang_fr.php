@@ -953,6 +953,7 @@ $arrSubst = array (
   'dispensing_receipt_pdf_title' => 'Bon de délivrance',
   'dispensing_receipt_date_label' => 'Date',
   'dispensing_receipt_session_label' => 'Session',
+  'dispensing_receipt_prescription_number' => 'N° d’ordonnance',
   'dispensing_receipt_group_subtotal' => 'produits : #{count}',
   'dispensing_receipt_total_products' => 'Nombre total de produits : {count}',
   'dispensing_receipt_amount_due' => 'À payer',

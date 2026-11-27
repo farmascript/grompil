@@ -953,6 +953,7 @@ $arrSubst = array (
   'dispensing_receipt_pdf_title' => 'Afleverbon',
   'dispensing_receipt_date_label' => 'Datum',
   'dispensing_receipt_session_label' => 'Sessie',
+  'dispensing_receipt_prescription_number' => 'Receptnummer',
   'dispensing_receipt_group_subtotal' => 'producten: #{count}',
   'dispensing_receipt_total_products' => 'Totaal aantal producten: {count}',
   'dispensing_receipt_amount_due' => 'Te betalen',

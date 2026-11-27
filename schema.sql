@@ -648,6 +648,7 @@ CREATE TABLE IF NOT EXISTS dt_dispensing_sessions (
         CHECK (status_list_key = 'dispensing_statuses'),
     status_key VARCHAR(80) NOT NULL DEFAULT 'prescription',
     state VARCHAR(16) NOT NULL DEFAULT 'open' CHECK (state IN ('open', 'completed', 'cancelled')),
+    prescription_number BIGINT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     completed_at TIMESTAMPTZ,
@@ -658,6 +659,9 @@ CREATE TABLE IF NOT EXISTS dt_dispensing_sessions (
 CREATE INDEX IF NOT EXISTS dt_dispensing_sessions_open_idx
     ON dt_dispensing_sessions (company_id, created_by_user_code, updated_at DESC)
     WHERE state = 'open';
+CREATE UNIQUE INDEX IF NOT EXISTS dt_dispensing_sessions_prescription_number_uidx
+    ON dt_dispensing_sessions (company_id, prescription_number)
+    WHERE prescription_number IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS dt_dispensing_parties (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

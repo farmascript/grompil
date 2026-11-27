@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-20 12:50:11
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -39,6 +39,7 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
         'receipt' => fn_tForLanguage('dispensing_receipt_pdf_title', $language),
         'date' => fn_tForLanguage('dispensing_receipt_date_label', $language),
         'session' => fn_tForLanguage('dispensing_receipt_session_label', $language),
+        'prescription_number' => fn_tForLanguage('dispensing_receipt_prescription_number', $language),
         'subtotal' => fn_tForLanguage('dispensing_receipt_group_subtotal', $language),
         'total' => fn_tForLanguage('dispensing_receipt_total_products', $language),
         'price' => fn_tForLanguage('dispensing_receipt_amount_due', $language),
@@ -76,6 +77,9 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
     $add($text['receipt'], 13, true);
     $add($text['date'] . ': ' . (string) ($receipt['date'] ?? ''), 10);
     $add($text['session'] . ': ' . (string) ($receipt['session_id'] ?? ''), 9);
+    if (($receipt['prescription_number'] ?? null) !== null) {
+        $add($text['prescription_number'] . ': #' . (string) $receipt['prescription_number'], 10, true);
+    }
     $items[] = ['', 7, false];
     $grandTotal = 0;
     foreach (($receipt['groups'] ?? []) as $group) {

@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-20 11:24:48
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -43,6 +43,29 @@ function grompil_dispensing_display_name(string $firstName, string $lastName): s
 function grompil_dispensing_status_requires_caregiver(string $statusKey): bool
 {
     return in_array(strtolower(trim($statusKey)), ['prescription', 'v'], true);
+}
+
+/**
+ * Allocate the next prescription number for a company.
+ *
+ * @param int $companyId Company identifier.
+ *
+ * @return int The allocated prescription number.
+ */
+function grompil_dispensing_next_prescription_number(int $companyId): int
+{
+    $counter = db_query_params(
+        'dispensing.prescription_number_next',
+        'INSERT INTO dt_company_prescription_counters (company_id, last_number)
+         VALUES ($1, 1)
+         ON CONFLICT (company_id) DO UPDATE
+             SET last_number = dt_company_prescription_counters.last_number + 1
+         RETURNING last_number',
+        [$companyId]
+    );
+    $counterRow = pg_fetch_assoc($counter);
+    if (!$counterRow) throw new RuntimeException('Could not allocate prescription number.');
+    return (int) $counterRow['last_number'];
 }
 
 /**
@@ -476,12 +499,34 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
 
         if (in_array($action, ['receipt_preview', 'complete'], true)) {
             if ($action === 'receipt_preview') {
+                $begin = db_query_params('dispensing.receipt_preview_begin', 'BEGIN');
+                if (!$begin) throw new RuntimeException('Could not start receipt preview transaction.');
+                $transactionStarted = true;
+                $lockedSession = db_query_params(
+                    'dispensing.receipt_preview_lock',
+                    'SELECT prescription_number FROM dt_dispensing_sessions
+                     WHERE id = $1::UUID AND company_id = $2 AND created_by_user_code = $3 AND state = \'open\'
+                     FOR UPDATE',
+                    [$sessionId, $companyId, $actorCode]
+                );
+                $lockedSessionRow = pg_fetch_assoc($lockedSession);
+                if (!$lockedSessionRow) {
+                    db_query_params('dispensing.receipt_preview_rollback_missing', 'ROLLBACK');
+                    $transactionStarted = false;
+                    $respond(['error' => 'session_unavailable'], 404);
+                }
                 $receipt = grompil_dispensing_receipt_data($companyId, $sessionId, $walkinTitle);
-                if ($receipt['lines'] === []) $respond(['error' => 'empty_session'], 409);
+                if ($receipt['lines'] === []) {
+                    db_query_params('dispensing.receipt_preview_rollback_empty', 'ROLLBACK');
+                    $transactionStarted = false;
+                    $respond(['error' => 'empty_session'], 409);
+                }
+                $hasPrescriptionLine = false;
                 $missingCaregiverLines = [];
                 foreach ($receipt['lines'] as $receiptLine) {
-                    if (grompil_dispensing_status_requires_caregiver((string) ($receiptLine['status'] ?? ''))
-                        && trim((string) ($receiptLine['caregiver_code'] ?? '')) === '') {
+                    if (!grompil_dispensing_status_requires_caregiver((string) ($receiptLine['status'] ?? ''))) continue;
+                    $hasPrescriptionLine = true;
+                    if (trim((string) ($receiptLine['caregiver_code'] ?? '')) === '') {
                         $missingCaregiverLines[] = [
                             'id' => (int) $receiptLine['id'],
                             'party_name' => (string) $receiptLine['party_name'],
@@ -492,8 +537,27 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                     }
                 }
                 if ($missingCaregiverLines !== []) {
+                    db_query_params('dispensing.receipt_preview_rollback_missing_caregiver', 'ROLLBACK');
+                    $transactionStarted = false;
                     $respond(['error' => 'missing_caregiver', 'lines' => $missingCaregiverLines], 409);
                 }
+                $prescriptionNumber = $lockedSessionRow['prescription_number'] === null
+                    ? null
+                    : (int) $lockedSessionRow['prescription_number'];
+                if ($hasPrescriptionLine && $prescriptionNumber === null) {
+                    $prescriptionNumber = grompil_dispensing_next_prescription_number($companyId);
+                    db_query_params(
+                        'dispensing.receipt_preview_reserve_prescription_number',
+                        'UPDATE dt_dispensing_sessions
+                         SET prescription_number = $1, updated_at = now()
+                         WHERE id = $2::UUID AND company_id = $3 AND created_by_user_code = $4 AND state = \'open\'',
+                        [$prescriptionNumber, $sessionId, $companyId, $actorCode]
+                    );
+                }
+                $receipt['prescription_number'] = $hasPrescriptionLine ? $prescriptionNumber : null;
+                $commit = db_query_params('dispensing.receipt_preview_commit', 'COMMIT');
+                if (!$commit) throw new RuntimeException('Could not commit receipt preview reservation.');
+                $transactionStarted = false;
                 $pdf = grompil_dispensing_receipt_pdf($receipt, strtoupper((string) ($_SESSION['language'] ?? 'NL')));
                 $respond(['pdf_base64' => base64_encode($pdf)]);
             }
@@ -503,7 +567,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $transactionStarted = true;
             $lockedSession = db_query_params(
                 'dispensing.session_complete_lock',
-                'SELECT id, status_key FROM dt_dispensing_sessions
+                'SELECT id, status_key, prescription_number FROM dt_dispensing_sessions
                  WHERE id = $1::UUID AND company_id = $2 AND created_by_user_code = $3 AND state = \'open\'
                  FOR UPDATE',
                 [$sessionId, $companyId, $actorCode]
@@ -550,19 +614,20 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             }
             $prescriptionNumber = null;
             if ($hasPrescriptionLine) {
-                $counter = db_query_params(
-                    'dispensing.prescription_number_next',
-                    'INSERT INTO dt_company_prescription_counters (company_id, last_number)
-                     VALUES ($1, 1)
-                     ON CONFLICT (company_id) DO UPDATE
-                         SET last_number = dt_company_prescription_counters.last_number + 1
-                     RETURNING last_number',
-                    [$companyId]
-                );
-                $counterRow = pg_fetch_assoc($counter);
-                if (!$counterRow) throw new RuntimeException('Could not allocate prescription number.');
-                $prescriptionNumber = (int) $counterRow['last_number'];
+                $prescriptionNumber = $lockedSessionRow['prescription_number'] === null
+                    ? grompil_dispensing_next_prescription_number($companyId)
+                    : (int) $lockedSessionRow['prescription_number'];
+                if ($lockedSessionRow['prescription_number'] === null) {
+                    db_query_params(
+                        'dispensing.session_complete_reserve_prescription_number',
+                        'UPDATE dt_dispensing_sessions
+                         SET prescription_number = $1, updated_at = now()
+                         WHERE id = $2::UUID AND company_id = $3 AND created_by_user_code = $4 AND state = \'open\'',
+                        [$prescriptionNumber, $sessionId, $companyId, $actorCode]
+                    );
+                }
             }
+            $receipt['prescription_number'] = $prescriptionNumber;
             $snapshotJson = json_encode($receipt, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
             $history = db_query_params(
                 'dispensing.history_create',
@@ -669,7 +734,7 @@ function grompil_dispensing_receipt_data(int $companyId, string $sessionId, stri
     $company = pg_fetch_assoc($companyResult) ?: [];
     $sessionResult = db_query_params(
         'dispensing.receipt_session',
-        'SELECT created_at, status_key FROM dt_dispensing_sessions
+        'SELECT created_at, status_key, prescription_number FROM dt_dispensing_sessions
          WHERE company_id = $1 AND id = $2::UUID AND state = \'open\'',
         [$companyId, $sessionId]
     );
@@ -726,6 +791,7 @@ function grompil_dispensing_receipt_data(int $companyId, string $sessionId, stri
         'vat_number' => trim((string) ($company['vat_number'] ?? '')),
         'address' => implode(' · ', array_values(array_filter($addressParts, static fn(string $part): bool => $part !== ''))),
         'session_id' => $sessionId,
+        'prescription_number' => $session['prescription_number'] === null ? null : (int) $session['prescription_number'],
         'status_key' => (string) $session['status_key'],
         'date' => $weekdays[(int) $receiptAt->format('w')] . ' ' . $receiptAt->format('d-m-Y H:i'),
         'thank_you' => $thankYou,
