@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27 12:22:00
+ * @date_mut: Fri 2026-11-27 12:37:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -267,25 +267,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         } elseif ($kind === 'riziv' && !grompil_caregiver_valid_riziv_number($value)) {
                             $messageKey = 'caregivers_invalid_riziv';
                         } else {
-                            $result = $detailId
-                                ? db_query_params('caregivers.identifier_update',
-                                    'UPDATE dt_caregiver_identifiers SET identifier_type_key=$1, identifier_value=$2, issuer=$3,
-                                        updated_by_user_code=$4, updated_at=now()
-                                     WHERE id=$5 AND caregiver_code=$6 AND company_id IS NOT DISTINCT FROM $7',
-                                    [$kind, $value, $issuer, $actorCode, $detailId, $postedCode, $detailCompanyId])
-                                : db_query_params('caregivers.identifier_create',
-                                    'INSERT INTO dt_caregiver_identifiers (caregiver_code, company_id, identifier_type_key,
-                                        identifier_value, issuer, source_key, source_reference, created_by_user_code, updated_by_user_code)
-                                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)',
-                                    [$postedCode, $detailCompanyId, $kind, $value, $issuer, $source, $sourceRef, $actorCode]);
-                            $success = $result !== false;
-                            if ($success && $kind === 'riziv'
-                                && in_array((string) $owner['caregiver_type_key'], ['physician', 'dentist'], true)) {
-                                $title = grompil_caregiver_riziv_title((string) $owner['caregiver_type_key'], $value);
-                                db_query_params('caregivers.riziv_title_update',
-                                    'UPDATE bt_caregivers SET title=$1, updated_by_user_code=$2, updated_at=now()
-                                     WHERE caregiver_code=$3 AND owner_company_id IS NOT DISTINCT FROM $4',
-                                    [$title, $actorCode, $postedCode, $detailCompanyId]);
+                            if ($kind === 'riziv') {
+                                $duplicate = db_query_params('caregivers.riziv_duplicate_check',
+                                    'SELECT caregiver_code FROM dt_caregiver_identifiers
+                                     WHERE identifier_type_key=$1 AND is_active
+                                       AND left(identifier_value, 8)=left($2, 8)
+                                       AND caregiver_code<>$3
+                                       AND (company_id IS NULL OR company_id=$4 OR $5::boolean)
+                                     LIMIT 1',
+                                    ['riziv', $value, $postedCode, $companyId, $globalScope]);
+                                if ($duplicate && pg_num_rows($duplicate) > 0) {
+                                    $messageKey = 'caregivers_riziv_exists';
+                                }
+                            }
+                            if ($messageKey === '') {
+                                $result = $detailId
+                                    ? db_query_params('caregivers.identifier_update',
+                                        'UPDATE dt_caregiver_identifiers SET identifier_type_key=$1, identifier_value=$2, issuer=$3,
+                                            updated_by_user_code=$4, updated_at=now()
+                                         WHERE id=$5 AND caregiver_code=$6 AND company_id IS NOT DISTINCT FROM $7',
+                                        [$kind, $value, $issuer, $actorCode, $detailId, $postedCode, $detailCompanyId])
+                                    : db_query_params('caregivers.identifier_create',
+                                        'INSERT INTO dt_caregiver_identifiers (caregiver_code, company_id, identifier_type_key,
+                                            identifier_value, issuer, source_key, source_reference, created_by_user_code, updated_by_user_code)
+                                         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)',
+                                        [$postedCode, $detailCompanyId, $kind, $value, $issuer, $source, $sourceRef, $actorCode]);
+                                $success = $result !== false;
+                                if ($success && $kind === 'riziv'
+                                    && in_array((string) $owner['caregiver_type_key'], ['physician', 'dentist'], true)) {
+                                    $title = grompil_caregiver_riziv_title((string) $owner['caregiver_type_key'], $value);
+                                    db_query_params('caregivers.riziv_title_update',
+                                        'UPDATE bt_caregivers SET title=$1, updated_by_user_code=$2, updated_at=now()
+                                         WHERE caregiver_code=$3 AND owner_company_id IS NOT DISTINCT FROM $4',
+                                        [$title, $actorCode, $postedCode, $detailCompanyId]);
+                                }
                             }
                         }
                     } elseif ($action === 'save_contact') {
@@ -311,8 +326,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     } else {
                         $type = (string) ($_POST['address_type_key'] ?? '');
-                        $address = array_map(static fn (string $key): string => trim((string) ($_POST[$key] ?? '')),
-                            ['street', 'house_number', 'box_number', 'postal_code', 'city', 'country_code', 'label', 'address_reference_id']);
+                        $address = [];
+                        foreach (['street', 'house_number', 'box_number', 'postal_code', 'city', 'country_code', 'label', 'address_reference_id'] as $key) {
+                            $address[$key] = trim((string) ($_POST[$key] ?? ''));
+                        }
                         $address['country_code'] = strtoupper($address['country_code']);
                         $coordinates = [
                             grompil_address_coordinate($_POST['lambert72_x'] ?? '', -1000000, 1000000, 3),
@@ -327,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
                         if (!preg_match('/^[a-z0-9_]{1,80}$/', $type) || !preg_match('/^[A-Z]{2}$/', $address['country_code'])
                             || !$hasAddress || !$addressAllowed) {
-                            $messageKey = 'caregivers_invalid';
+                            $messageKey = !$addressAllowed ? 'caregivers_address_confirmation_required' : 'caregivers_invalid';
                         } else {
                             $result = $detailId
                                 ? db_query_params('caregivers.location_update',
