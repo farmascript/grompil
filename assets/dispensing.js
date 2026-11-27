@@ -450,6 +450,7 @@
             name: String(caregiver.name || ''),
         });
         saveCaregiverDefaults();
+        if (Number(partyId) === activePartyId) renderActivePartyLabel();
     }
 
     let historyCustomerCode = '';
@@ -927,6 +928,15 @@
             patientName.textContent = party.name || party.customer_code || '';
             activePartyLabel.append(patientName, statusLabel);
             if (dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true') {
+                const caregiver = caregiverByParty.get(String(activePartyId));
+                if (caregiver?.name) {
+                    const caregiverLabel = document.createElement('span');
+                    caregiverLabel.className = 'status-pill status-muted';
+                    caregiverLabel.textContent = caregiver.name;
+                    caregiverLabel.title = (t.prescriptionKeepCaregiver || '').replace('{name}', caregiver.name);
+                    caregiverLabel.setAttribute('aria-label', caregiverLabel.title);
+                    activePartyLabel.append(caregiverLabel);
+                }
                 const newPrescriptionButton = document.createElement('button');
                 newPrescriptionButton.type = 'button';
                 newPrescriptionButton.className = 'btn btn-sm btn-outline-primary';
