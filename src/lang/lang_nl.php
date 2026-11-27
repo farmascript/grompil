@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-10-22 21:20:11
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -1108,5 +1108,6 @@ $arrSubst = array (
   'caregivers_deactivate' => 'Deactiveren',
   'caregivers_detail_deactivated' => 'Gegeven gedeactiveerd.',
   'caregivers_deactivated' => 'Zorgverlener gedeactiveerd.',
+  'caregivers_admin_description' => 'Beheer de gedeelde basisgegevens van artsen, tandartsen en andere zorgverleners.',
   'you' => 'Jij',
 );

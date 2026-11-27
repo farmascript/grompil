@@ -259,9 +259,11 @@ same preparation concurrently.
    company-specific caregivers, professional identifiers, contacts and
    addresses are stored separately. `mb_caregivers.php` supports search and
    maintenance of local records and company-private details. Shared identity
-   and general details are read-only there. Its lookup endpoint can be reused
-   by the later prescription/dispensing workflow. No public bulk RIZIV import
-   is assumed; imported shared records need a verified source and provenance.
+   and general details are read-only for company managers; platform managers
+   can maintain shared master records without selecting a company. Its lookup
+   endpoint can be reused by the later prescription/dispensing workflow. No
+   public bulk RIZIV import is assumed; imported shared records need a verified
+   source and provenance.
 
 1. **Source analysis:** compare `xt_chem`, SAM CMP ingredients/formulas and
    RIZIV source rows. Document identifiers, overlap and source precedence.

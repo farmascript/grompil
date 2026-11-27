@@ -19,15 +19,24 @@ declare(strict_types=1);
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 require_once GROMPIL_ROOT . '/includes/do_6_char_code.php';
 $actor = require_login();
-$company = require_company_context($actor);
+$isPlatformOperator = is_platform_operator($actor);
+$company = current_company_context($actor);
+if ($company === null && !$isPlatformOperator) {
+    $company = require_company_context($actor);
+}
+$actorCode = (string) $actor['user_code'];
+if ($company === null && $isPlatformOperator) {
+    set_database_tenant_context(0, $actorCode, true);
+}
+$globalScope = $company === null && $isPlatformOperator;
 $isLookupRequest = ($_GET['ajax'] ?? '') === 'search';
 $canManageCaregivers = grompil_can_access_module('mb_caregivers.php', $actor, $company);
-$canLookupCaregivers = $isLookupRequest && has_company_permission('pharmacy.dispense', $company, $actor);
+$canLookupCaregivers = $isLookupRequest && $company !== null && has_company_permission('pharmacy.dispense', $company, $actor);
 if (!$canManageCaregivers && !$canLookupCaregivers) {
     grompil_show_error(403, 40152, fn_t('access_denied'), 'Geen toegang');
 }
-$companyId = (int) $company['id'];
-$actorCode = (string) $actor['user_code'];
+$companyId = $company === null ? null : (int) $company['id'];
+$detailCompanyId = $globalScope ? null : $companyId;
 
 if (($_GET['ajax'] ?? '') === 'search') {
     header('Cache-Control: no-store, private');
@@ -106,8 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'deactivate_caregiver' && $postedCode !== '') {
             $result = db_query_params('caregivers.deactivate',
                 'UPDATE bt_caregivers SET is_active=FALSE, updated_by_user_code=$1, updated_at=now()
-                 WHERE caregiver_code=$2 AND owner_company_id=$3 AND is_active',
-                [$actorCode, $postedCode, $companyId]);
+                 WHERE caregiver_code=$2 AND owner_company_id IS NOT DISTINCT FROM $3 AND is_active',
+                [$actorCode, $postedCode, $detailCompanyId]);
             $success = $result !== false && pg_affected_rows($result) === 1;
             $selectedCode = '';
             $messageKey = $success ? 'caregivers_deactivated' : 'caregivers_save_failed';
@@ -124,8 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'caregivers.update',
                     'UPDATE bt_caregivers SET caregiver_type_key=$1, name_first=$2, name_last=$3,
                         title=$4, updated_by_user_code=$5, updated_at=now()
-                     WHERE caregiver_code=$6 AND owner_company_id=$7',
-                    [$type, $firstName, $lastName, $title, $actorCode, $postedCode, $companyId]
+                     WHERE caregiver_code=$6 AND owner_company_id IS NOT DISTINCT FROM $7',
+                    [$type, $firstName, $lastName, $title, $actorCode, $postedCode, $detailCompanyId]
                 );
                 $success = $result !== false && pg_affected_rows($result) === 1;
                 $selectedCode = $postedCode;
@@ -137,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'INSERT INTO bt_caregivers (caregiver_code, owner_company_id, caregiver_type_key,
                             name_first, name_last, title, created_by_user_code, updated_by_user_code)
                          VALUES ($1,$2,$3,$4,$5,$6,$7,$7) ON CONFLICT (caregiver_code) DO NOTHING',
-                        [$newCode, $companyId, $type, $firstName, $lastName, $title, $actorCode]
+                         [$newCode, $detailCompanyId, $type, $firstName, $lastName, $title, $actorCode]
                     );
                     $success = $result !== false && pg_affected_rows($result) === 1;
                     if ($success) {
@@ -169,8 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $result = db_query_params(
                             'caregivers.deactivate_detail',
                             "UPDATE {$table} SET is_active=FALSE, updated_by_user_code=$1, updated_at=now()
-                             WHERE id=$2 AND caregiver_code=$3 AND company_id=$4 AND is_active",
-                            [$actorCode, $id, $postedCode, $companyId]
+                             WHERE id=$2 AND caregiver_code=$3 AND company_id IS NOT DISTINCT FROM $4 AND is_active",
+                            [$actorCode, $id, $postedCode, $detailCompanyId]
                         );
                         $success = $result !== false && pg_affected_rows($result) === 1;
                     }
@@ -190,13 +199,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 ? db_query_params('caregivers.identifier_update',
                                     'UPDATE dt_caregiver_identifiers SET identifier_type_key=$1, identifier_value=$2, issuer=$3,
                                         updated_by_user_code=$4, updated_at=now()
-                                     WHERE id=$5 AND caregiver_code=$6 AND company_id=$7',
-                                    [$kind, $value, $issuer, $actorCode, $detailId, $postedCode, $companyId])
+                                     WHERE id=$5 AND caregiver_code=$6 AND company_id IS NOT DISTINCT FROM $7',
+                                    [$kind, $value, $issuer, $actorCode, $detailId, $postedCode, $detailCompanyId])
                                 : db_query_params('caregivers.identifier_create',
                                     'INSERT INTO dt_caregiver_identifiers (caregiver_code, company_id, identifier_type_key,
                                         identifier_value, issuer, source_key, source_reference, created_by_user_code, updated_by_user_code)
                                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)',
-                                    [$postedCode, $companyId, $kind, $value, $issuer, $source, $sourceRef, $actorCode]);
+                                    [$postedCode, $detailCompanyId, $kind, $value, $issuer, $source, $sourceRef, $actorCode]);
                             $success = $result !== false;
                         }
                     } elseif ($action === 'save_contact') {
@@ -211,13 +220,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 ? db_query_params('caregivers.contact_update',
                                     'UPDATE dt_caregiver_contacts SET contact_type_key=$1, purpose_key=$2, contact_value=$3,
                                         label=$4, updated_by_user_code=$5, updated_at=now()
-                                     WHERE id=$6 AND caregiver_code=$7 AND company_id=$8',
-                                    [$kind, $purpose, $value, $label, $actorCode, $detailId, $postedCode, $companyId])
+                                     WHERE id=$6 AND caregiver_code=$7 AND company_id IS NOT DISTINCT FROM $8',
+                                    [$kind, $purpose, $value, $label, $actorCode, $detailId, $postedCode, $detailCompanyId])
                                 : db_query_params('caregivers.contact_create',
                                     'INSERT INTO dt_caregiver_contacts (caregiver_code, company_id, contact_type_key,
                                         purpose_key, contact_value, label, created_by_user_code, updated_by_user_code)
                                      VALUES ($1,$2,$3,$4,$5,$6,$7,$7)',
-                                    [$postedCode, $companyId, $kind, $purpose, $value, $label, $actorCode]);
+                                    [$postedCode, $detailCompanyId, $kind, $purpose, $value, $label, $actorCode]);
                             $success = $result !== false;
                         }
                     } else {
@@ -233,14 +242,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     'UPDATE dt_caregiver_locations SET address_type_key=$1, street=$2, house_number=$3,
                                         box_number=$4, postal_code=$5, city=$6, country_code=$7, label=$8,
                                         updated_by_user_code=$9, updated_at=now()
-                                     WHERE id=$10 AND caregiver_code=$11 AND company_id=$12',
-                                    [$type, $fields[0], $fields[1], $fields[2], $fields[3], $fields[4], $fields[5], $fields[6], $actorCode, $detailId, $postedCode, $companyId])
+                                     WHERE id=$10 AND caregiver_code=$11 AND company_id IS NOT DISTINCT FROM $12',
+                                    [$type, $fields[0], $fields[1], $fields[2], $fields[3], $fields[4], $fields[5], $fields[6], $actorCode, $detailId, $postedCode, $detailCompanyId])
                                 : db_query_params('caregivers.location_create',
                                     'INSERT INTO dt_caregiver_locations (caregiver_code, company_id, address_type_key,
                                         street, house_number, box_number, postal_code, city, country_code, label,
                                         created_by_user_code, updated_by_user_code)
                                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11)',
-                                    [$postedCode, $companyId, $type, $fields[0], $fields[1], $fields[2], $fields[3], $fields[4], $fields[5], $fields[6], $actorCode]);
+                                    [$postedCode, $detailCompanyId, $type, $fields[0], $fields[1], $fields[2], $fields[3], $fields[4], $fields[5], $fields[6], $actorCode]);
                             $success = $result !== false;
                         }
                     }
@@ -288,9 +297,9 @@ $selected = null;
 if ($selectedCode !== '') {
     try {
         $result = db_query_params('caregivers.load',
-            'SELECT bc.*, bc.owner_company_id=$2 AS is_company_owned FROM bt_caregivers bc
+            'SELECT bc.*, (bc.owner_company_id=$2 OR $3::boolean) AS is_editable FROM bt_caregivers bc
              WHERE bc.caregiver_code=$1 AND (bc.owner_company_id IS NULL OR bc.owner_company_id=$2)',
-            [$selectedCode, $companyId]);
+            [$selectedCode, $companyId, $globalScope ? 'true' : 'false']);
         $selected = $result ? pg_fetch_assoc($result) : false;
         if ($selected === false) $selected = null;
     } catch (GrompilDatabaseQueryException) { $selected = null; }
@@ -337,14 +346,14 @@ $identityForm = '<section class="card shadow-sm mb-4"><div class="card-header fw
     . '<div class="col-md-6"><label class="form-label" for="caregiver-title">' . e(fn_t('caregivers_professional_title')) . '</label><input class="form-control" id="caregiver-title" name="title" maxlength="120" value="' . e((string) ($selected['title'] ?? '')) . '"></div></div>'
     . '<div class="d-flex gap-2 align-items-center mt-3"><button class="btn btn-primary" type="submit">' . e(fn_t('save')) . '</button>'
     . (!empty($selected['caregiver_code']) ? '<span class="small text-secondary">' . e(fn_t('caregivers_code')) . ': ' . e((string) $selected['caregiver_code']) . '</span>' : '')
-    . (!empty($selected) && ($selected['is_company_owned'] ?? 'f') !== 't' ? '<span class="small text-secondary">' . e(fn_t('caregivers_shared_read_only')) . '</span>' : '')
+    . (!empty($selected) && ($selected['is_editable'] ?? 'f') !== 't' ? '<span class="small text-secondary">' . e(fn_t('caregivers_shared_read_only')) . '</span>' : '')
     . '</div></form></div></section>';
-if (!empty($selected) && ($selected['is_company_owned'] ?? 'f') === 't') {
+if (!empty($selected) && ($selected['is_editable'] ?? 'f') === 't') {
     $identityForm = str_replace('</div></form></div></section>', '</div></form><form method="post" action="mb_caregivers.php">' . csrf_field()
         . '<input type="hidden" name="action" value="deactivate_caregiver"><input type="hidden" name="caregiver_code" value="' . e((string) $selected['caregiver_code']) . '">'
         . '<button class="btn btn-sm btn-outline-danger mt-2" type="submit">' . e(fn_t('caregivers_deactivate')) . '</button></form></div></section>', $identityForm);
 }
-if (!empty($selected) && ($selected['is_company_owned'] ?? 'f') !== 't') {
+if (!empty($selected) && ($selected['is_editable'] ?? 'f') !== 't') {
     $identityForm = '<section class="card shadow-sm mb-4"><div class="card-header fw-semibold">' . e(fn_t('caregivers_profile')) . '</div><div class="card-body">'
         . '<div class="text-secondary small mb-2">' . e(fn_t('caregivers_shared_read_only')) . '</div><h2 class="h5">' . e(trim((string) $selected['name_first'] . ' ' . (string) $selected['name_last'])) . '</h2>'
         . '<div>' . e(fn_t($caregiverTypes[(string) $selected['caregiver_type_key']] ?? 'caregivers_type_other')) . ($selected['title'] !== '' ? ' · ' . e((string) $selected['title']) : '') . '</div>'
@@ -361,11 +370,11 @@ if ($selected !== null) {
         try {
             $rows = db_query_params('caregivers.' . $resultName,
                 "SELECT * FROM {$table} WHERE caregiver_code=$1 AND is_active AND (company_id IS NULL OR company_id=$2) ORDER BY company_id NULLS FIRST, sort_order, id",
-                [$selectedCode, $companyId]);
+                [$selectedCode, $detailCompanyId]);
         } catch (GrompilDatabaseQueryException) { $rows = false; }
         $cards = '';
         while ($rows && $detail = pg_fetch_assoc($rows)) {
-            $isShared = $detail['company_id'] === null;
+            $isShared = $detail['company_id'] === null && !$globalScope;
             $scopeText = fn_t($isShared ? 'caregivers_scope_shared' : 'caregivers_scope_company');
             $fields = '';
             if ($entity === 'identifier') {

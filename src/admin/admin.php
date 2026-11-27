@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Wed 2026-10-14 21:45:46
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -30,6 +30,7 @@ $modules = [
     ['companies.manage', 'navigation_keywords.php', 'translations_heading', 'admin_translations_description'],
     ['companies.manage', 'scripts/check_templates.php', 'template_check_heading', 'template_check_intro'],
     ['companies.manage', 'companies.php', 'nav_companies', 'admin_companies_description'],
+    ['companies.manage', 'mb_caregivers.php', 'caregivers_title', 'caregivers_admin_description'],
     ['companies.manage', 'platform-settings.php', 'platform_settings_title', 'platform_settings_intro'],
     ['companies.manage', 'platform-dispensing-keys.php', 'platform_dispensing_shortcuts_title', 'platform_dispensing_shortcuts_intro'],
     ['companies.manage', 'release-notes.php', 'release_notes_title', 'release_notes_intro'],
@@ -42,6 +43,9 @@ foreach ($modules as [$permission, $path, $titleKey, $descriptionKey]) {
         continue;
     }
     if ($path === 'release-notes.php' && !is_platform_operator($currentUser)) {
+        continue;
+    }
+    if ($path === 'mb_caregivers.php' && !is_platform_operator($currentUser)) {
         continue;
     }
     if ($path === 'dd-varia.php'
