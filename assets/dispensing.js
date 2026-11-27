@@ -997,7 +997,7 @@
                     packageSize.textContent = packageText;
                     descriptionCell.append(separator, packageSize);
                 }
-                if (product.status === 'prescription') {
+                if (product.requires_caregiver) {
                     const caregiverLabel = document.createElement('div');
                     caregiverLabel.className = 'small text-secondary mt-1';
                     caregiverLabel.textContent = product.caregiver_name
@@ -1058,7 +1058,7 @@
         lineEditStatus.value = product.status;
         lineEditQuantity.value = String(product.quantity);
         if (lineCaregiverWrap && lineCaregiverInput && lineCaregiverCode) {
-            lineCaregiverWrap.classList.toggle('d-none', product.status !== 'prescription');
+            lineCaregiverWrap.classList.toggle('d-none', !product.requires_caregiver);
             lineCaregiverInput.value = product.caregiver_name || '';
             lineCaregiverCode.value = product.caregiver_code || '';
             if (product.caregiver_code) lineCaregiverInput.dataset.selectedCode = product.caregiver_code;
@@ -1077,7 +1077,7 @@
     }
 
     lineEditStatus?.addEventListener('change', () => {
-        const isPrescription = lineEditStatus.value === 'prescription';
+        const isPrescription = lineEditStatus.selectedOptions[0]?.dataset.requiresCaregiver === 'true';
         lineCaregiverWrap?.classList.toggle('d-none', !isPrescription);
         if (!isPrescription) {
             if (lineCaregiverInput) {
@@ -1136,6 +1136,7 @@
             id: pendingId,
             party_id: activePartyId,
             status,
+            requires_caregiver: dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true',
             statusShortCode: dispenseStatusSelect?.selectedOptions[0]?.dataset.shortCode || status,
             cnk: String(product.cnk || ''),
             amp_code: String(product.amp_code || ''),

@@ -35,6 +35,17 @@ function grompil_dispensing_display_name(string $firstName, string $lastName): s
 }
 
 /**
+ * Identify prescription status keys that require a prescriber.
+ *
+ * @param string $statusKey Stable dispensing status key.
+ * @return bool Whether the status represents a prescription.
+ */
+function grompil_dispensing_status_requires_caregiver(string $statusKey): bool
+{
+    return in_array(strtolower(trim($statusKey)), ['prescription', 'v'], true);
+}
+
+/**
  * Build the localized deceased-customer notice.
  *
  * @param string $deathDate The death date.
@@ -305,7 +316,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $requestedCaregiverCode = array_key_exists('caregiver_code', $payload)
                 ? strtoupper(trim((string) $payload['caregiver_code']))
                 : $oldCaregiverCode;
-            $newCaregiverCode = $newStatus === 'prescription' && $requestedCaregiverCode !== ''
+            $newCaregiverCode = grompil_dispensing_status_requires_caregiver($newStatus) && $requestedCaregiverCode !== ''
                 ? $requestedCaregiverCode
                 : null;
             if ($newCaregiverCode !== null && $newCaregiverCode !== $oldCaregiverCode) {
@@ -442,7 +453,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 if ($receipt['lines'] === []) $respond(['error' => 'empty_session'], 409);
                 $missingCaregiverLines = [];
                 foreach ($receipt['lines'] as $receiptLine) {
-                    if (($receiptLine['status'] ?? '') === 'prescription'
+                    if (grompil_dispensing_status_requires_caregiver((string) ($receiptLine['status'] ?? ''))
                         && trim((string) ($receiptLine['caregiver_code'] ?? '')) === '') {
                         $missingCaregiverLines[] = [
                             'id' => (int) $receiptLine['id'],
@@ -492,7 +503,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $hasPrescriptionLine = false;
             $missingCaregiverLines = [];
             foreach ($receipt['lines'] as $receiptLine) {
-                if (($receiptLine['status'] ?? '') === 'prescription') {
+                if (grompil_dispensing_status_requires_caregiver((string) ($receiptLine['status'] ?? ''))) {
                     $hasPrescriptionLine = true;
                     if (trim((string) ($receiptLine['caregiver_code'] ?? '')) === '') {
                         $missingCaregiverLines[] = [
@@ -847,6 +858,7 @@ function grompil_dispensing_session_line_data(array $line, array $party, string 
         'party_name' => (string) ($party['display_name'] ?? ''),
         'customer_code' => (string) ($party['customer_code'] ?? ''),
         'status' => (string) $line['status_key'],
+        'requires_caregiver' => grompil_dispensing_status_requires_caregiver((string) $line['status_key']),
     'statusShortCode' => $statusCode,
     'caregiver_code' => (string) ($line['caregiver_code'] ?? ''),
     'caregiver_name' => trim((string) ($line['caregiver_first'] ?? '') . ' ' . (string) ($line['caregiver_last'] ?? '')),

@@ -125,7 +125,8 @@ foreach ($dispensingStatuses as $statusOption) {
     }
     $statusOptionLabel = $dispensingStatusByKey[$statusOptionKey]['label'];
     $statusOptionCode = $dispensingStatusByKey[$statusOptionKey]['short_code'];
-    $dispenseStatusOptionsHtml .= '<option value="' . e($statusOptionKey) . '" data-short-code="' . e($statusOptionCode) . '"'
+    $requiresCaregiver = in_array($statusOptionKey, ['prescription', 'v'], true);
+    $dispenseStatusOptionsHtml .= '<option value="' . e($statusOptionKey) . '" data-short-code="' . e($statusOptionCode) . '" data-requires-caregiver="' . ($requiresCaregiver ? 'true' : 'false') . '"'
         . ($statusOptionKey === $dispenseStatusKey ? ' selected' : '') . '>'
         . e($statusOptionCode . ' — ' . $statusOptionLabel) . '</option>';
 }
