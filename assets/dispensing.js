@@ -436,6 +436,7 @@
     const withdrawnFilterStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-include-revoked`;
     const prescriptionCaregiversStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-prescription-caregivers`;
     const pendingCaregiverStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-pending-caregiver`;
+    const pendingLineEditStorageKey = () => `${sessionStorageKey}-${dispensingSessionId}-pending-line-edit`;
 
     function saveCaregiverDefaults() {
         try {
@@ -679,6 +680,16 @@
                                     if (pendingPrescriptionStatusKey) {
                                         manageUrl.searchParams.set('return_status', pendingPrescriptionStatusKey);
                                     }
+                                } else if (searchInput === lineCaregiverInput && editingLine) {
+                                    manageUrl.searchParams.set('return_to_dispense', '1');
+                                    manageUrl.searchParams.set('return_line_id', String(editingLine.id));
+                                    try {
+                                        sessionStorage.setItem(pendingLineEditStorageKey(), JSON.stringify({
+                                            party_id: lineEditParty?.value || String(editingLine.party_id),
+                                            status: lineEditStatus?.value || editingLine.status,
+                                            quantity: lineEditQuantity?.value || String(editingLine.quantity),
+                                        }));
+                                    } catch {}
                                 }
                                 addPrescriber.href = manageUrl.href;
                             }
@@ -1136,6 +1147,7 @@
         const returnParameters = new URLSearchParams(window.location.search);
         const caregiverCode = (returnParameters.get('caregiver_added') || '').toUpperCase();
         if (!/^[A-Z0-9]{6}$/.test(caregiverCode)) return;
+        const returnLineId = returnParameters.get('return_line_id') || '';
 
         try {
             await sessionReady;
@@ -1149,8 +1161,37 @@
             if (!response.ok) throw new Error('Caregiver lookup failed');
             const data = await response.json();
             const caregiver = (data.results || []).find((item) => item.caregiver_code === caregiverCode);
+            if (!caregiver) throw new Error('Caregiver unavailable');
+
+            if (returnLineId) {
+                const product = basket.get(returnLineId);
+                if (!product || !lineEditForm) throw new Error('Dispensing line unavailable');
+                let editState = {};
+                try { editState = JSON.parse(sessionStorage.getItem(pendingLineEditStorageKey()) || '{}'); } catch {}
+                lineEditModalElement?.addEventListener('shown.bs.modal', () => lineEditForm.requestSubmit(), { once: true });
+                openLineEdit(product);
+                if (editState.party_id && Array.from(lineEditParty?.options || []).some((option) => option.value === String(editState.party_id))) {
+                    lineEditParty.value = String(editState.party_id);
+                }
+                if (editState.status && Array.from(lineEditStatus?.options || []).some((option) => option.value === editState.status)) {
+                    lineEditStatus.value = editState.status;
+                }
+                if (editState.quantity) lineEditQuantity.value = String(editState.quantity);
+                lineCaregiverWrap?.classList.toggle('d-none', lineEditStatus?.selectedOptions[0]?.dataset.requiresCaregiver !== 'true');
+                lineCaregiverInput.value = caregiver.name || '';
+                lineCaregiverInput.dataset.selectedCode = caregiverCode;
+                lineCaregiverCode.value = caregiverCode;
+                returnParameters.delete('caregiver_added');
+                returnParameters.delete('return_line_id');
+                returnParameters.delete('return_status');
+                const cleanQuery = returnParameters.toString();
+                window.history.replaceState(null, '', window.location.pathname + (cleanQuery ? `?${cleanQuery}` : '') + window.location.hash);
+                try { sessionStorage.removeItem(pendingLineEditStorageKey()); } catch {}
+                return;
+            }
+
             const activeParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
-            if (!caregiver || !activeParty) throw new Error('Caregiver or active party unavailable');
+            if (!activeParty) throw new Error('Active party unavailable');
 
             const selectedCaregiver = { caregiver_code: caregiverCode, name: caregiver.name || '' };
             if (activeParty.type === 'customer') {
