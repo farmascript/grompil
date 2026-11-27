@@ -699,6 +699,7 @@ $arrSubst = array (
   'password_diagnostic_variety' => 'The password has fewer than 6 different characters (letter case does not count as different).',
   'password_diagnostic_repetition' => 'One character occurs more than half the time (letter case does not count as different).',
   'password_diagnostic_common_pattern' => 'The password contains a common pattern such as password, qwerty, welcome, or admin.',
+  'password_diagnostic_matched_pattern' => 'The matched text is:',
   'password_diagnostic_sequence' => 'The password contains 5 consecutive characters such as abcde, 12345, or qwerty.',
   'perm_roles_manage' => 'Manage roles',
   'perm_translations_manage' => 'Manage translations',

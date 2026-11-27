@@ -699,6 +699,7 @@ $arrSubst = array (
   'password_diagnostic_variety' => 'Het wachtwoord bevat minder dan 6 verschillende tekens (hoofdletters tellen als dezelfde letter).',
   'password_diagnostic_repetition' => 'Eén teken komt meer dan de helft van het wachtwoord voor (hoofdletters tellen als dezelfde letter).',
   'password_diagnostic_common_pattern' => 'Het wachtwoord bevat een veelgebruikt patroon, zoals password, qwerty, welcome of admin.',
+  'password_diagnostic_matched_pattern' => 'De gevonden tekenreeks is:',
   'password_diagnostic_sequence' => 'Het wachtwoord bevat een reeks van 5 opeenvolgende tekens, zoals abcde, 12345 of qwerty.',
   'perm_roles_manage' => 'Rollen beheren',
   'perm_translations_manage' => 'Vertalingen beheren',

@@ -699,6 +699,7 @@ $arrSubst = array (
   'password_diagnostic_variety' => 'Das Passwort enthält weniger als 6 unterschiedliche Zeichen (Groß- und Kleinschreibung zählt nicht als Unterschied).',
   'password_diagnostic_repetition' => 'Ein Zeichen kommt mehr als halb so oft wie die Passwortlänge vor (Groß- und Kleinschreibung zählt gleich).',
   'password_diagnostic_common_pattern' => 'Das Passwort enthält ein häufiges Muster wie password, qwerty, welcome oder admin.',
+  'password_diagnostic_matched_pattern' => 'Der gefundene Text lautet:',
   'password_diagnostic_sequence' => 'Das Passwort enthält eine Folge von 5 aufeinanderfolgenden Zeichen wie abcde, 12345 oder qwerty.',
   'perm_roles_manage' => 'Rollen verwalten',
   'perm_translations_manage' => 'Übersetzungen verwalten',

@@ -699,6 +699,7 @@ $arrSubst = array (
   'password_diagnostic_variety' => 'Le mot de passe contient moins de 6 caractères différents (les majuscules et minuscules comptent comme le même caractère).',
   'password_diagnostic_repetition' => 'Un caractère apparaît plus de la moitié du temps (les majuscules et minuscules comptent comme le même caractère).',
   'password_diagnostic_common_pattern' => 'Le mot de passe contient un motif courant comme password, qwerty, welcome ou admin.',
+  'password_diagnostic_matched_pattern' => 'Le texte détecté est :',
   'password_diagnostic_sequence' => 'Le mot de passe contient une suite de 5 caractères consécutifs comme abcde, 12345 ou qwerty.',
   'perm_roles_manage' => 'Gérer les rôles',
   'perm_translations_manage' => 'Gérer les traductions',

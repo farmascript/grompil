@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-26 15:19:24
- * @date_mut: Fri 2026-11-27 22:05:55
+ * @date_mut: Fri 2026-11-27 22:09:13
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -59,7 +59,7 @@ function grompil_password_diagnostics(string $password): array
     $commonPatterns = ['password', 'qwerty', 'letmein', 'welcome', 'iloveyou', 'admin', 'changeme', 'secret'];
     foreach ($commonPatterns as $pattern) {
         if (str_contains($normalized, $pattern)) {
-            $diagnostics[] = 'password_diagnostic_common_pattern';
+            $diagnostics[] = 'password_diagnostic_common_pattern:' . $pattern;
             break;
         }
     }

@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Fri 2026-11-27 22:05:29
+ * @date_mut: Fri 2026-11-27 22:09:13
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -27,6 +27,7 @@ $accountQuery = static function (string $operation, string $sql, array $params =
 };
 $user = require_login();
 $passwordPolicyDiagnosticKeys = [];
+$passwordPolicyDiagnosticPattern = '';
 $passwordPolicyDiagnosticAvailable = false;
 $diagnosticUserCode = (string) ($_SESSION['password_policy_diagnostics_user_code'] ?? '');
 if ($diagnosticUserCode !== '' && hash_equals((string) $user['user_code'], $diagnosticUserCode)) {
@@ -41,10 +42,22 @@ if ($diagnosticUserCode !== '' && hash_equals((string) $user['user_code'], $diag
         'password_diagnostic_common_pattern',
         'password_diagnostic_sequence',
     ];
-    $passwordPolicyDiagnosticKeys = array_values(array_intersect(
-        $allowedPasswordDiagnostics,
-        (array) ($_SESSION['password_policy_diagnostics'] ?? [])
-    ));
+    foreach ((array) ($_SESSION['password_policy_diagnostics'] ?? []) as $diagnosticKey) {
+        $diagnosticKey = is_string($diagnosticKey) ? $diagnosticKey : '';
+        if (in_array($diagnosticKey, $allowedPasswordDiagnostics, true)) {
+            $passwordPolicyDiagnosticKeys[] = $diagnosticKey;
+            continue;
+        }
+        $commonPattern = 'password_diagnostic_common_pattern:';
+        if (str_starts_with($diagnosticKey, $commonPattern)) {
+            $pattern = substr($diagnosticKey, strlen($commonPattern));
+            if (in_array($pattern, ['password', 'qwerty', 'letmein', 'welcome', 'iloveyou', 'admin', 'changeme', 'secret'], true)) {
+                $passwordPolicyDiagnosticKeys[] = 'password_diagnostic_common_pattern';
+                $passwordPolicyDiagnosticPattern = $pattern;
+            }
+        }
+    }
+    $passwordPolicyDiagnosticKeys = array_values(array_unique($passwordPolicyDiagnosticKeys));
 }
 unset($_SESSION['password_policy_diagnostics_user_code'], $_SESSION['password_policy_diagnostics']);
 $message = '';
@@ -743,7 +756,12 @@ $passwordDiagnosticHtml = '';
 if ($mustChangePassword && $passwordPolicyDiagnosticAvailable) {
     $diagnosticItemsHtml = '';
     foreach ($passwordPolicyDiagnosticKeys as $diagnosticKey) {
-        $diagnosticItemsHtml .= '<li>' . e(fn_t($diagnosticKey)) . '</li>';
+        $diagnosticItemsHtml .= '<li>' . e(fn_t($diagnosticKey));
+        if ($diagnosticKey === 'password_diagnostic_common_pattern' && $passwordPolicyDiagnosticPattern !== '') {
+            $diagnosticItemsHtml .= '<br><span class="small">' . e(fn_t('password_diagnostic_matched_pattern'))
+                . ' <code>' . e($passwordPolicyDiagnosticPattern) . '</code></span>';
+        }
+        $diagnosticItemsHtml .= '</li>';
     }
     $passwordDiagnosticHtml = '<div class="alert alert-warning" role="status"><strong>'
         . e(fn_t('password_diagnostic_title')) . '</strong><p class="mb-2 mt-2">'
