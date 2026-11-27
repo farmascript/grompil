@@ -8,6 +8,7 @@
             <div class="patient-search-options">
                 <label class="form-check patient-regex-check"><input class="form-check-input" type="checkbox" name="regex" value="1" @_dispense_regex_checked@ data-patient-regex><span class="form-check-label">@dispense_patient_search_regex@</span></label>
                 <label class="form-check patient-deceased-check" title="@patient_show_deceased@"><input class="form-check-input" type="checkbox" name="include_deceased" value="1" aria-label="@patient_show_deceased@" @_dispense_deceased_checked@ data-patient-include-deceased><span class="form-check-label">+</span></label>
+                @_patient_search_help_html@
             </div>
         </form>
         <div class="list-group patient-suggestions @_dispense_patient_suggestion_class@" id="patient-suggestions" role="listbox" data-patient-suggestions>@_dispense_patient_results_html@</div>

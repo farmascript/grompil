@@ -141,6 +141,30 @@
     const patientIncludeDeceased = document.querySelector('[data-patient-include-deceased]');
     const dispenseStatusSelect = document.querySelector('[data-dispense-status-select]');
     let lastPersistedDispenseStatus = dispenseStatusSelect?.value || page.dataset.dispenseStatus || 'free_sale';
+    const patientSearchShortcuts = [];
+    function registerPatientSearchShortcut(match) {
+        if (typeof match === 'function') patientSearchShortcuts.push(match);
+    }
+    function findPatientSearchShortcut(value) {
+        if ([...value].length !== 1) return null;
+        for (const match of patientSearchShortcuts) {
+            const shortcut = match(value);
+            if (shortcut) return shortcut;
+        }
+        return null;
+    }
+    registerPatientSearchShortcut((value) => {
+        const option = [...(dispenseStatusSelect?.options || [])].find((item) => {
+            const code = String(item.dataset.shortCode || '').trim();
+            return [...code].length === 1 && code.toLocaleLowerCase() === value.toLocaleLowerCase();
+        });
+        return option ? {
+            run: () => {
+                dispenseStatusSelect.value = option.value;
+                dispenseStatusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            },
+        } : null;
+    });
     const patientStatusInput = document.querySelector('[data-patient-status-input]');
     const patientRequiredMessage = document.querySelector('[data-dispense-patient-required]');
     const initialPageCustomerCode = page.dataset.patientCode || '';
@@ -289,6 +313,19 @@
             if (event.key === 'Escape') {
                 hidePatientSuggestions();
                 return;
+            }
+            if (event.key === 'Enter') {
+                const shortcut = findPatientSearchShortcut(patientInput.value.trim());
+                if (shortcut) {
+                    event.preventDefault();
+                    window.clearTimeout(patientTimer);
+                    if (patientRequestController) patientRequestController.abort();
+                    patientInput.value = '';
+                    hidePatientSuggestions();
+                    setPatientStatus('');
+                    shortcut.run();
+                    return;
+                }
             }
             if (patientSuggestions.classList.contains('d-none')) return;
             const links = patientSuggestionLinks();

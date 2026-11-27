@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Fri 2026-11-27 13:29:38
+ * @date_mut: Fri 2026-11-27 16:35:37
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -973,6 +973,7 @@ $patientPanelHtml = fn_moduleTemplateRender('dispensing', 'dispensing_patient_pa
         'dispense_search' => $customerText('patient_search_button'),
         'dispense_patient_search_regex' => $customerText('patient_search_regex'),
         'patient_show_deceased' => $customerText('patient_show_deceased'),
+        '_patient_search_help_html' => fn_dokuwikiIcon('users', '629318'),
         '_dispense_deceased_checked' => $includeDeceased ? 'checked' : '',
         '_dispense_regex_checked' => $regexSearch ? 'checked' : '',
         '_dispense_patient_suggestion_class' => $patientSuggestionClass,
