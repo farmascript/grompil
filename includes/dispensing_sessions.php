@@ -223,7 +223,10 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                  ) SELECT $1, $2::UUID, party.id, $3, $4, $5, $6, $7, $8, $9, $10, 1
                    FROM dt_dispensing_parties party
                    WHERE party.company_id = $1 AND party.dispensing_session_id = $2::UUID AND party.id = $11
-                 ON CONFLICT
+                 ON CONFLICT (
+                    company_id, dispensing_session_id, party_id, cnk, amp_code, ampp_code, status_key,
+                    (COALESCE(caregiver_code, \'\'::VARCHAR))
+                 )
                  DO UPDATE SET quantity = LEAST(999, dt_dispensing_lines.quantity + 1), updated_at = now()
                  RETURNING id, party_id, status_key, cnk, amp_code, ampp_code,
                            product_name_nl, product_name_fr, package_display_nl, package_display_fr, quantity,
