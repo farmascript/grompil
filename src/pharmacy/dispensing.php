@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Fri 2026-11-27 21:36:45
+ * @date_mut: Fri 2026-11-27 21:44:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -964,6 +964,8 @@ $companyBrandHtml = $companyLogo !== ''
 $patientAddLabel = $customerText('patient_add');
 $patientAddUrl = fn_appBaseHref() . 'dispense.php?dispense_status=' . rawurlencode($dispenseStatusKey) . '&new_patient=1'
     . ($selectedPatientCode !== '' ? '&patient=' . rawurlencode($selectedPatientCode) : '');
+$caregiverManageUrl = grompil_can_access_module('mb_caregivers.php', $currentUser, $company)
+    ? fn_appBaseHref() . 'mb_caregivers.php' : '';
 $addPatientButtonHtml = fn_moduleTemplateRender('dispensing', 'dispensing_add_patient_button.html', [
     'patient_add' => $patientAddLabel,
     'patient_add_url' => e($patientAddUrl),
@@ -972,6 +974,7 @@ $patientPanelHtml = fn_moduleTemplateRender('dispensing', 'dispensing_patient_pa
         'dispense_patient_search' => $dispenseCustomerText('dispense_patient_search'),
         'dispense_patient_add' => e($patientAddLabel),
         'dispense_patient_add_url' => e($patientAddUrl),
+        'dispense_caregiver_manage_url' => e($caregiverManageUrl),
         'dispense_select_patient' => $dispenseCustomerText('dispense_select_patient'),
         'dispense_query_value' => e($query),
         'dispense_search' => $customerText('patient_search_button'),
@@ -1158,8 +1161,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_prescriber_required_title' => fn_t('dispensing_prescriber_required_title'),
     'dispense_prescriber_continue' => fn_t('dispensing_prescriber_continue'),
     'dispense_prescriber_add' => fn_t('dispensing_prescriber_add'),
-    'dispense_caregiver_manage_url' => grompil_can_access_module('mb_caregivers.php', $currentUser, $company)
-        ? fn_appBaseHref() . 'mb_caregivers.php' : '',
+    'dispense_caregiver_manage_url' => $caregiverManageUrl,
     'dispense_caregiver_endpoint' => fn_appBaseHref() . 'mb_caregivers.php?ajax=search',
     'dispense_remove' => fn_t('delete'),
     'dispense_price_unavailable' => fn_t('dispense_price_unavailable'),
