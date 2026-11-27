@@ -5,6 +5,27 @@
     const modal = document.getElementById('patientModal');
     const nationalNumberInput = modal?.querySelector('#patient-national-register-number');
     const birthDateInput = modal?.querySelector('#patient-dob');
+    const birthDateWeekday = modal?.querySelector('[data-patient-dob-weekday]');
+    const weekdayCodes = {
+        NL: ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
+        FR: ['di', 'lu', 'ma', 'me', 'je', 've', 'sa'],
+        EN: ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa'],
+        DE: ['so', 'mo', 'di', 'mi', 'do', 'fr', 'sa'],
+    };
+    const updateBirthDateWeekday = () => {
+        if (!birthDateInput || !birthDateWeekday) return;
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDateInput.value);
+        if (!match) {
+            birthDateWeekday.textContent = '';
+            birthDateWeekday.classList.add('d-none');
+            return;
+        }
+        const [, year, month, day] = match;
+        const date = new Date(Number(year), Number(month) - 1, Number(day));
+        const language = String(page.dataset.lang || 'NL').toUpperCase();
+        birthDateWeekday.textContent = (weekdayCodes[language] || weekdayCodes.NL)[date.getDay()];
+        birthDateWeekday.classList.remove('d-none');
+    };
     const birthDateFromNationalNumber = (value) => {
         if (!/^[0-9.\s-]+$/.test(value)) return null;
         const digits = value.replace(/[.\s-]+/g, '');
@@ -35,6 +56,7 @@
         if (value === '') {
             nationalNumberInput.setCustomValidity('');
             birthDateInput.readOnly = false;
+            updateBirthDateWeekday();
             return;
         }
         const birthDate = birthDateFromNationalNumber(value);
@@ -45,8 +67,11 @@
         } else {
             birthDateInput.readOnly = false;
         }
+        updateBirthDateWeekday();
     };
     nationalNumberInput?.addEventListener('input', updateBirthDateFromNationalNumber);
+    birthDateInput?.addEventListener('input', updateBirthDateWeekday);
+    birthDateInput?.addEventListener('change', updateBirthDateWeekday);
     updateBirthDateFromNationalNumber();
     modal?.addEventListener('shown.bs.modal', () => {
         const action = modal.querySelector('.customer-edit-form input[name="action"]')?.value;
