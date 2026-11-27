@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27
+ * @date_mut: Fri 2026-11-27 12:22:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -103,6 +103,10 @@ if (!$canManageCaregivers && !$canLookupCaregivers) {
 }
 $companyId = $company === null ? null : (int) $company['id'];
 $detailCompanyId = $globalScope ? null : $companyId;
+$caregiverTypes = [
+    'physician' => 'caregivers_type_physician', 'dentist' => 'caregivers_type_dentist',
+    'veterinarian' => 'caregivers_type_veterinarian', 'midwife' => 'caregivers_type_midwife', 'other' => 'caregivers_type_other',
+];
 
 if (($_GET['ajax'] ?? '') === 'search') {
     header('Cache-Control: no-store, private');
@@ -110,7 +114,7 @@ if (($_GET['ajax'] ?? '') === 'search') {
     $rawQuery = $_GET['q'] ?? '';
     $query = is_scalar($rawQuery) ? trim((string) $rawQuery) : '';
     $queryLength = function_exists('mb_strlen') ? mb_strlen($query) : strlen($query);
-    if ($queryLength < 2 || $queryLength > 100) {
+    if ($queryLength < 3 || $queryLength > 100) {
         echo json_encode(['results' => []], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         exit;
     }
@@ -121,7 +125,7 @@ if (($_GET['ajax'] ?? '') === 'search') {
     try {
         $result = db_query_params(
             'caregivers.search',
-            "SELECT bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last,
+            "SELECT bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id,
                     COALESCE(string_agg(DISTINCT ci.identifier_value, ', ' ORDER BY ci.identifier_value), '') AS identifiers
              FROM bt_caregivers bc
              LEFT JOIN dt_caregiver_identifiers ci ON ci.caregiver_code = bc.caregiver_code
@@ -136,7 +140,7 @@ if (($_GET['ajax'] ?? '') === 'search') {
                                WHERE ix.caregiver_code=bc.caregiver_code AND ix.is_active
                                  AND (ix.company_id IS NULL OR ix.company_id=$1)
                                  AND ix.identifier_value ILIKE $2))
-             GROUP BY bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last
+             GROUP BY bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id
              ORDER BY lower(bc.name_last), lower(bc.name_first), bc.caregiver_code LIMIT 20",
             [$companyId, $pattern, $code]
         );
@@ -153,8 +157,9 @@ if (($_GET['ajax'] ?? '') === 'search') {
         $matches[] = [
             'caregiver_code' => (string) $row['caregiver_code'],
             'name' => trim((string) $row['name_first'] . ' ' . (string) $row['name_last']),
-            'type' => (string) $row['caregiver_type_key'],
+            'type' => fn_t($caregiverTypes[(string) $row['caregiver_type_key']] ?? 'caregivers_type_other'),
             'identifiers' => (string) $row['identifiers'],
+            'scope' => fn_t($row['owner_company_id'] !== null ? 'caregivers_scope_company' : 'caregivers_scope_shared'),
         ];
     }
     echo json_encode(['results' => $matches], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
@@ -381,10 +386,6 @@ $successModalHtml = in_array($messageKey, [
         . e(fn_t($messageKey)) . '</div><div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">' . e(fn_t('close')) . '</button></div></div></div></div>'
     : '';
 
-$caregiverTypes = [
-    'physician' => 'caregivers_type_physician', 'dentist' => 'caregivers_type_dentist',
-    'veterinarian' => 'caregivers_type_veterinarian', 'midwife' => 'caregivers_type_midwife', 'other' => 'caregivers_type_other',
-];
 $identifierTypes = ['riziv' => 'caregivers_identifier_riziv', 'veterinary' => 'caregivers_identifier_veterinary',
     'professional' => 'caregivers_identifier_professional', 'other' => 'caregivers_type_other'];
 $contactTypes = [];
@@ -413,9 +414,6 @@ if ($selectedCode !== '') {
     } catch (GrompilDatabaseQueryException) { $selected = null; }
 }
 
-$listRows = '';
-$escapedQuery = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], strtolower($query));
-$pattern = '%' . $escapedQuery . '%';
 $caregiverCount = 0;
 try {
     $countResult = db_query_params('caregivers.count',
@@ -426,36 +424,6 @@ try {
         $caregiverCount = (int) $countRow['caregiver_count'];
     }
 } catch (GrompilDatabaseQueryException) { $caregiverCount = 0; }
-
-$queryLength = function_exists('mb_strlen') ? mb_strlen($query) : strlen($query);
-if ($queryLength < 2) {
-    $listRows = '<div class="list-group-item text-secondary">' . e(fn_t('caregivers_search_hint')) . '</div>';
-} else {
-    try {
-        $list = db_query_params('caregivers.list',
-            "SELECT bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id,
-                    COALESCE(string_agg(DISTINCT ci.identifier_value, ', ' ORDER BY ci.identifier_value), '') AS identifiers
-             FROM bt_caregivers bc LEFT JOIN dt_caregiver_identifiers ci ON ci.caregiver_code=bc.caregiver_code
-               AND ci.is_active AND (ci.company_id IS NULL OR ci.company_id=$1)
-             WHERE (bc.owner_company_id IS NULL OR bc.owner_company_id=$1) AND bc.is_active
-               AND (lower(bc.name_first || ' ' || bc.name_last) LIKE $2
-                    OR lower(bc.name_last || ' ' || bc.name_first) LIKE $2 OR bc.caregiver_code ILIKE $2
-                    OR EXISTS (SELECT 1 FROM dt_caregiver_identifiers ix WHERE ix.caregiver_code=bc.caregiver_code
-                        AND ix.is_active AND (ix.company_id IS NULL OR ix.company_id=$1) AND ix.identifier_value ILIKE $2))
-             GROUP BY bc.caregiver_code, bc.caregiver_type_key, bc.name_first, bc.name_last, bc.owner_company_id
-             ORDER BY lower(bc.name_last), lower(bc.name_first), bc.caregiver_code LIMIT 100",
-            [$companyId, $pattern]);
-        while ($list && $row = pg_fetch_assoc($list)) {
-            $isLocal = $row['owner_company_id'] !== null;
-            $listRows .= '<a class="list-group-item list-group-item-action" href="mb_caregivers.php?code=' . e((string) $row['caregiver_code']) . '&q=' . rawurlencode($query) . '">'
-                . '<strong>' . e(trim((string) $row['name_first'] . ' ' . (string) $row['name_last'])) . '</strong>'
-                . ' <span class="badge text-bg-light">' . e(fn_t($caregiverTypes[(string) $row['caregiver_type_key']] ?? 'caregivers_type_other')) . '</span>'
-                . ' <span class="small text-secondary">' . e((string) $row['caregiver_code']) . ($row['identifiers'] !== '' ? ' · ' . e((string) $row['identifiers']) : '')
-                . ' · ' . e(fn_t($isLocal ? 'caregivers_scope_company' : 'caregivers_scope_shared')) . '</span></a>';
-        }
-    } catch (GrompilDatabaseQueryException) { $listRows = ''; }
-    if ($listRows === '') $listRows = '<div class="list-group-item text-secondary">' . e(fn_t('caregivers_empty')) . '</div>';
-}
 
 $typeOptions = '';
 foreach ($caregiverTypes as $key => $translationKey) {
@@ -507,9 +475,11 @@ if ($selected !== null) {
             if ($entity === 'identifier') {
                 $opts = '';
                 foreach ($identifierTypes as $key => $labelKey) $opts .= '<option value="' . e($key) . '"' . ($detail['identifier_type_key'] === $key ? ' selected' : '') . '>' . e(fn_t($labelKey)) . '</option>';
+                $rizivHelp = $detail['identifier_type_key'] === 'riziv'
+                    ? '<div class="form-text mb-1">' . e(fn_t('caregivers_riziv_title_help')) . '</div>'
+                    : '';
                 $fields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_type')) . '</label><select class="form-select" name="identifier_type_key"' . ($isShared ? ' disabled' : '') . '>' . $opts . '</select></div>'
-                    . '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" value="' . e((string) $detail['identifier_value']) . '"' . ($isShared ? ' disabled' : '') . '>'
-                    . ($detail['identifier_type_key'] === 'riziv' ? '<div class="form-text">' . e(fn_t('caregivers_riziv_title_help')) . '</div>' : '') . '</div>'
+                    . '<div class="col-md-4">' . $rizivHelp . '<label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" value="' . e((string) $detail['identifier_value']) . '"' . ($isShared ? ' disabled' : '') . '></div>'
                     . '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_issuer')) . '</label><input class="form-control" name="issuer" value="' . e((string) $detail['issuer']) . '"' . ($isShared ? ' disabled' : '') . '></div>';
             } elseif ($entity === 'contact') {
                 $opts = '';
@@ -568,7 +538,7 @@ if ($selected !== null) {
         $addFields = '';
         if ($entity === 'identifier') {
             foreach ($identifierTypes as $key => $labelKey) $addFields .= '<option value="' . e($key) . '">' . e(fn_t($labelKey)) . '</option>';
-            $addFields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_type')) . '</label><select class="form-select" name="identifier_type_key">' . $addFields . '</select></div><div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" required><div class="form-text">' . e(fn_t('caregivers_riziv_title_help')) . '</div></div><div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_issuer')) . '</label><input class="form-control" name="issuer"></div>';
+            $addFields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_type')) . '</label><select class="form-select" name="identifier_type_key">' . $addFields . '</select></div><div class="col-md-4"><div class="form-text mb-1">' . e(fn_t('caregivers_riziv_title_help')) . '</div><label class="form-label">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" name="identifier_value" required></div><div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_identifier_issuer')) . '</label><input class="form-control" name="issuer"></div>';
         } elseif ($entity === 'contact') {
             $opts = '';
             foreach ($contactTypes as $key => $label) $opts .= '<option value="' . e($key) . '">' . e($label) . '</option>';
@@ -605,10 +575,7 @@ if ($selected !== null) {
                 'address_house_number' => fn_t('address_house_number'),
                 'address_box_number' => fn_t('address_box_number'),
             ]);
-            $identifierFormAttributes = $entity === 'identifier'
-                ? ' data-caregiver-riziv-form data-riziv-error="' . e(fn_t('caregivers_invalid_riziv')) . '"'
-                : '';
-            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3"' . $identifierFormAttributes . '>' . csrf_field()
+            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3">' . csrf_field()
                 . '<input type="hidden" name="action" value="save_location"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '">'
                 . '<input type="hidden" name="country_code" value="BE"><div class="row g-2 align-items-end">'
                 . '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_address_type')) . '</label><select class="form-select" name="address_type_key">' . $opts . '</select></div>'
@@ -616,12 +583,19 @@ if ($selected !== null) {
                 . '<div class="row g-2 mt-1">' . $addressFields . '</div><button class="btn btn-outline-primary mt-3" type="submit">' . e(fn_t('caregivers_add_detail')) . '</button></form>';
         }
         if ($entity !== 'location') {
-            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3">' . csrf_field()
+            $identifierFormAttributes = $entity === 'identifier'
+                ? ' data-caregiver-riziv-form data-riziv-error="' . e(fn_t('caregivers_invalid_riziv')) . '"'
+                : '';
+            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3"' . $identifierFormAttributes . '>' . csrf_field()
                 . '<input type="hidden" name="action" value="save_' . e($entity) . '"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '"><div class="row g-2 align-items-end">'
                 . $addFields . '<div class="col-md-auto"><button class="btn btn-outline-primary" type="submit">' . e(fn_t('caregivers_add_detail')) . '</button></div></div></form>';
+            if ($entity === 'identifier') {
+                $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_add_identifier')) . '</button>'
+                    . '<div class="d-none" data-caregiver-add-form data-focus-selector="[name=identifier_value]">' . $addForm . '</div></div>';
+            }
         } else {
-            $addForm = '<div data-caregiver-address-creator><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-address-toggle aria-expanded="false">' . e(fn_t('caregivers_new_address')) . '</button>'
-                . '<div class="d-none" data-caregiver-address-form>' . $addForm . '</div></div>';
+            $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_new_address')) . '</button>'
+                . '<div class="d-none" data-caregiver-add-form data-focus-selector="[data-address-role=postal]">' . $addForm . '</div></div>';
         }
         $detailHtml .= '<section class="card shadow-sm mb-3"><div class="card-header fw-semibold">' . e(fn_t($headingKey)) . '</div><div class="card-body">'
             . ($cards !== '' ? $cards : '<p class="text-secondary">' . e(fn_t('caregivers_no_details')) . '</p>') . $addForm . '</div></section>';
@@ -633,9 +607,10 @@ echo fn_templateRender('mb_caregivers.html', [
     'caregivers_title' => fn_t('caregivers_title'),
     'caregivers_intro' => fn_t('caregivers_intro'),
     '_caregivers_message_html' => $messageKey === '' || $successModalHtml !== '' ? '' : '<div class="alert alert-info" role="status">' . e(fn_t($messageKey)) . '</div>',
-    '_caregivers_search_html' => '<form method="get" action="mb_caregivers.php"><label class="form-label d-flex justify-content-between align-items-center" for="caregiver-query"><span>' . e(fn_t('caregivers_search')) . '</span><span class="badge text-bg-light">' . e(sprintf(fn_t('caregivers_total_count'), (string) $caregiverCount)) . '</span></label><div class="input-group">'
-        . '<input class="form-control" id="caregiver-query" type="search" name="q" value="' . e($query) . '" placeholder="' . e(fn_t('caregivers_search_placeholder')) . '"><button class="btn btn-outline-primary" type="submit">' . e(fn_t('caregivers_search_button')) . '</button></div></form>',
-    '_caregivers_list_html' => $listRows,
+    '_caregivers_search_html' => '<form method="get" action="mb_caregivers.php" data-caregiver-search data-search-minimum="3" data-search-hint="' . e(fn_t('caregivers_search_hint')) . '" data-search-empty="' . e(fn_t('caregivers_empty')) . '" data-search-unavailable="' . e(fn_t('caregivers_search_unavailable')) . '">'
+        . '<label class="form-label d-flex justify-content-between align-items-center" for="caregiver-query"><span>' . e(fn_t('caregivers_search')) . '</span><span class="badge text-bg-light">' . e(sprintf(fn_t('caregivers_total_count'), (string) $caregiverCount)) . '</span></label>'
+        . '<div class="caregiver-search-wrap"><div class="input-group"><input class="form-control" id="caregiver-query" type="search" name="q" value="' . e($query) . '" placeholder="' . e(fn_t('caregivers_search_placeholder')) . '" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="caregiver-search-results" aria-expanded="false"><button class="btn btn-outline-primary" type="submit">' . e(fn_t('caregivers_search_button')) . '</button></div>'
+        . '<div class="list-group caregiver-search-results" id="caregiver-search-results" data-caregiver-search-results role="listbox" hidden></div></div><div class="form-text" data-caregiver-search-status aria-live="polite"></div></form>',
     '_caregivers_add_button_html' => '<a class="btn btn-success mt-3" href="mb_caregivers.php">' . e(fn_t('caregivers_add')) . '</a>',
     '_caregivers_identity_html' => $identityForm,
     '_caregivers_details_html' => $detailHtml,

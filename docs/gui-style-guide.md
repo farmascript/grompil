@@ -38,3 +38,27 @@ Keep future screens aligned with these colors and roles.
 Mark deceased patient/customer suggestions with the muted rose surface and text
 colors above. This is a resting state distinct from the green-gray active and
 hover surfaces; keep the deceased marker and date readable in both states.
+
+## Progressive forms
+
+For optional, repeatable records such as an extra address, contact, or
+identification number, do not show an empty input card by default. Show a clear
+button such as **Add identification** and reveal the blank form only after the
+user activates it. Keep existing records visible. After revealing the form,
+move focus to its first useful input; expose the expanded/collapsed state with
+`aria-expanded`. Use this pattern consistently for additional records instead
+of adding another permanently empty card.
+
+## Search suggestions
+
+For name and code lookup fields, use type-ahead suggestions after at least three
+characters by default. Debounce requests (about 200 ms), cancel an older request
+when the query changes, and clear old results immediately so they cannot be
+mistaken for matches to the new text. Do not show the whole catalogue when the
+field is empty. Render suggestions in a positioned list below the input, keep
+the list usable with Arrow Up/Down, Enter, and Escape, and announce status or
+empty-result messages accessibly. Build suggestion labels with text nodes (for
+example `textContent`) rather than injecting server text as HTML. Keep an
+explicit submit/search fallback where the screen already has one. A module may
+use a different minimum only when its lookup requires it; document that local
+exception beside the module behavior.
