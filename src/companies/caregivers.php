@@ -231,25 +231,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     } else {
                         $type = (string) ($_POST['address_type_key'] ?? '');
-                        $fields = array_map(static fn (string $key): string => trim((string) ($_POST[$key] ?? '')),
-                            ['street', 'house_number', 'box_number', 'postal_code', 'city', 'country_code', 'label']);
-                        if (!preg_match('/^[a-z0-9_]{1,80}$/', $type) || !preg_match('/^[A-Z]{2}$/', $fields[5])
-                            || implode('', array_slice($fields, 0, 5)) === '') {
+                        $address = array_map(static fn (string $key): string => trim((string) ($_POST[$key] ?? '')),
+                            ['street', 'house_number', 'box_number', 'postal_code', 'city', 'country_code', 'label', 'address_reference_id']);
+                        $address['country_code'] = strtoupper($address['country_code']);
+                        $coordinates = [
+                            grompil_address_coordinate($_POST['lambert72_x'] ?? '', -1000000, 1000000, 3),
+                            grompil_address_coordinate($_POST['lambert72_y'] ?? '', -1000000, 1000000, 3),
+                            grompil_address_coordinate($_POST['wgs84_latitude'] ?? '', -90, 90, 7),
+                            grompil_address_coordinate($_POST['wgs84_longitude'] ?? '', -180, 180, 7),
+                        ];
+                        $hasAddress = implode('', array_slice($address, 0, 5)) !== '';
+                        $addressAllowed = grompil_address_selection_allowed(
+                            $address,
+                            isset($_POST['manual_address_without_coordinates'])
+                        );
+                        if (!preg_match('/^[a-z0-9_]{1,80}$/', $type) || !preg_match('/^[A-Z]{2}$/', $address['country_code'])
+                            || !$hasAddress || !$addressAllowed) {
                             $messageKey = 'caregivers_invalid';
                         } else {
                             $result = $detailId
                                 ? db_query_params('caregivers.location_update',
                                     'UPDATE dt_caregiver_locations SET address_type_key=$1, street=$2, house_number=$3,
                                         box_number=$4, postal_code=$5, city=$6, country_code=$7, label=$8,
-                                        updated_by_user_code=$9, updated_at=now()
-                                     WHERE id=$10 AND caregiver_code=$11 AND company_id IS NOT DISTINCT FROM $12',
-                                    [$type, $fields[0], $fields[1], $fields[2], $fields[3], $fields[4], $fields[5], $fields[6], $actorCode, $detailId, $postedCode, $detailCompanyId])
+                                        address_reference_id=$9, lambert72_x=$10::numeric, lambert72_y=$11::numeric,
+                                        wgs84_latitude=$12::numeric, wgs84_longitude=$13::numeric,
+                                        updated_by_user_code=$14, updated_at=now()
+                                     WHERE id=$15 AND caregiver_code=$16 AND company_id IS NOT DISTINCT FROM $17',
+                                    [$type, $address['street'], $address['house_number'], $address['box_number'], $address['postal_code'], $address['city'], $address['country_code'], $address['label'], $address['address_reference_id'], $coordinates[0], $coordinates[1], $coordinates[2], $coordinates[3], $actorCode, $detailId, $postedCode, $detailCompanyId])
                                 : db_query_params('caregivers.location_create',
                                     'INSERT INTO dt_caregiver_locations (caregiver_code, company_id, address_type_key,
                                         street, house_number, box_number, postal_code, city, country_code, label,
+                                        address_reference_id, lambert72_x, lambert72_y, wgs84_latitude, wgs84_longitude,
                                         created_by_user_code, updated_by_user_code)
-                                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11)',
-                                    [$postedCode, $detailCompanyId, $type, $fields[0], $fields[1], $fields[2], $fields[3], $fields[4], $fields[5], $fields[6], $actorCode]);
+                                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::numeric,$13::numeric,$14::numeric,$15::numeric,$16,$16)',
+                                    [$postedCode, $detailCompanyId, $type, $address['street'], $address['house_number'], $address['box_number'], $address['postal_code'], $address['city'], $address['country_code'], $address['label'], $address['address_reference_id'], $coordinates[0], $coordinates[1], $coordinates[2], $coordinates[3], $actorCode]);
                             $success = $result !== false;
                         }
                     }
@@ -263,6 +278,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageKey = 'caregivers_save_failed';
     }
     if ($success) {
+        $isAddition = $action === 'save_caregiver' && $postedCode === '';
+        if (in_array($action, ['save_identifier', 'save_contact', 'save_location'], true)
+            && trim((string) ($_POST['detail_id'] ?? '')) === '') {
+            $isAddition = true;
+        }
+        if ($isAddition) {
+            $messageKey = 'caregivers_added';
+        }
         $_SESSION['caregivers_flash_message'] = $messageKey;
         $returnQuery = $selectedCode !== '' ? '?code=' . rawurlencode($selectedCode) : ($query !== '' ? '?q=' . rawurlencode($query) : '');
         header('Location: mb_caregivers.php' . $returnQuery, true, 303);
@@ -272,6 +295,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $flashMessage = is_scalar($_SESSION['caregivers_flash_message'] ?? null) ? (string) $_SESSION['caregivers_flash_message'] : '';
 unset($_SESSION['caregivers_flash_message']);
 if ($messageKey === '') $messageKey = $flashMessage;
+$successModalHtml = in_array($messageKey, [
+    'caregivers_added', 'caregivers_saved', 'caregivers_deactivated', 'caregivers_detail_deactivated',
+], true)
+    ? '<div class="modal fade" id="caregiver-save-success-modal" tabindex="-1" aria-labelledby="caregiver-save-success-title" aria-hidden="true" data-caregiver-success-modal><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="caregiver-save-success-title">'
+        . e(fn_t('caregivers_saved_modal_title')) . '</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="' . e(fn_t('close')) . '"></button></div><div class="modal-body">'
+        . e(fn_t($messageKey)) . '</div><div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">' . e(fn_t('close')) . '</button></div></div></div></div>'
+    : '';
 
 $caregiverTypes = [
     'physician' => 'caregivers_type_physician', 'dentist' => 'caregivers_type_dentist',
@@ -343,7 +373,7 @@ $identityForm = '<section class="card shadow-sm mb-4"><div class="card-header fw
     . '<div class="row g-3"><div class="col-md-4"><label class="form-label" for="caregiver-type">' . e(fn_t('caregivers_type')) . '</label><select class="form-select" id="caregiver-type" name="caregiver_type_key" required>' . $typeOptions . '</select></div>'
     . '<div class="col-md-4"><label class="form-label" for="caregiver-first">' . e(fn_t('patient_first_name')) . '</label><input class="form-control" id="caregiver-first" name="name_first" maxlength="120" value="' . e((string) ($selected['name_first'] ?? '')) . '"></div>'
     . '<div class="col-md-4"><label class="form-label" for="caregiver-last">' . e(fn_t('patient_last_name')) . '</label><input class="form-control" id="caregiver-last" name="name_last" maxlength="160" required value="' . e((string) ($selected['name_last'] ?? '')) . '"></div>'
-    . '<div class="col-md-6"><label class="form-label" for="caregiver-title">' . e(fn_t('caregivers_professional_title')) . '</label><input class="form-control" id="caregiver-title" name="title" maxlength="120" value="' . e((string) ($selected['title'] ?? '')) . '"></div></div>'
+    . '<div class="col-md-6"><label class="form-label" for="caregiver-title">' . e(fn_t('caregivers_professional_title')) . '</label><input class="form-control" id="caregiver-title" name="title" maxlength="120" value="' . e((string) ($selected['title'] ?? '')) . '"><div class="form-text">' . e(fn_t('caregivers_professional_title_help')) . '</div></div></div>'
     . '<div class="d-flex gap-2 align-items-center mt-3"><button class="btn btn-primary" type="submit">' . e(fn_t('save')) . '</button>'
     . (!empty($selected['caregiver_code']) ? '<span class="small text-secondary">' . e(fn_t('caregivers_code')) . ': ' . e((string) $selected['caregiver_code']) . '</span>' : '')
     . (!empty($selected) && ($selected['is_editable'] ?? 'f') !== 't' ? '<span class="small text-secondary">' . e(fn_t('caregivers_shared_read_only')) . '</span>' : '')
@@ -393,11 +423,39 @@ if ($selected !== null) {
             } else {
                 $opts = '';
                 foreach ($addressTypes as $key => $label) $opts .= '<option value="' . e($key) . '"' . ($detail['address_type_key'] === $key ? ' selected' : '') . '>' . e($label) . '</option>';
-                $fields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_address_type')) . '</label><select class="form-select" name="address_type_key"' . ($isShared ? ' disabled' : '') . '>' . $opts . '</select></div>';
-                foreach (['street', 'house_number', 'box_number', 'postal_code', 'city', 'country_code', 'label'] as $field) {
-                    $fieldLabel = $field === 'street' ? 'address_street' : ($field === 'house_number' ? 'address_house_number' : ($field === 'box_number' ? 'address_box_number' : ($field === 'postal_code' ? 'address_postal_code' : ($field === 'city' ? 'address_city' : ($field === 'country_code' ? 'address_country' : 'caregivers_label')))));
-                    $fields .= '<div class="col-md-3"><label class="form-label">' . e(fn_t($fieldLabel)) . '</label><input class="form-control" name="' . e($field) . '" value="' . e((string) $detail[$field]) . '"' . ($isShared ? ' disabled' : '') . '></div>';
-                }
+                $addressFields = fn_templateRender('address_fields.html', [
+                    'address_prefix' => 'caregiver-address-' . (int) $detail['id'],
+                    'address_autosave' => '0',
+                    'address_title' => fn_t('caregivers_address_lookup_title'),
+                    'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
+                    'address_lookup_no_results' => fn_t('address_lookup_no_results'),
+                    'address_postal_reminder' => fn_t('address_postal_reminder'),
+                    'address_select_required' => fn_t('address_select_required'),
+                    'address_manual_prompt' => fn_t('address_manual_prompt'),
+                    'address_manual_required' => fn_t('address_manual_required'),
+                    'address_manual_confirm' => fn_t('address_manual_confirm'),
+                    'address_country_code_value' => (string) $detail['country_code'],
+                    'address_reference_id_value' => (string) $detail['address_reference_id'],
+                    'lambert72_x_value' => (string) ($detail['lambert72_x'] ?? ''),
+                    'lambert72_y_value' => (string) ($detail['lambert72_y'] ?? ''),
+                    'wgs84_latitude_value' => (string) ($detail['wgs84_latitude'] ?? ''),
+                    'wgs84_longitude_value' => (string) ($detail['wgs84_longitude'] ?? ''),
+                    'street_reference_id_value' => '',
+                    'street_value' => (string) $detail['street'],
+                    'house_number_value' => (string) $detail['house_number'],
+                    'box_number_value' => (string) $detail['box_number'],
+                    'postal_code_value' => (string) $detail['postal_code'],
+                    'city_value' => (string) $detail['city'],
+                    'company_city_label' => fn_t('address_city'),
+                    'company_postal_code' => fn_t('address_postal_code'),
+                    'company_street' => fn_t('address_street'),
+                    'address_house_number' => fn_t('address_house_number'),
+                    'address_box_number' => fn_t('address_box_number'),
+                ]);
+                $fields = '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_address_type')) . '</label><select class="form-select" name="address_type_key"' . ($isShared ? ' disabled' : '') . '>' . $opts . '</select></div>'
+                    . '<div class="col-md-5"><label class="form-label">' . e(fn_t('caregivers_label')) . '</label><input class="form-control" name="label" value="' . e((string) $detail['label']) . '"' . ($isShared ? ' disabled' : '') . '></div>'
+                    . '<input type="hidden" name="country_code" value="' . e((string) $detail['country_code']) . '">'
+                    . ($isShared ? '<fieldset class="col-12 border-0 p-0 m-0" disabled>' . $addressFields . '</fieldset>' : $addressFields);
             }
             $cards .= '<div class="border rounded p-3 mb-2"><div class="small text-secondary mb-2">' . e($scopeText) . '</div><form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '">' . csrf_field()
                 . '<input type="hidden" name="action" value="save_' . e($entity) . '"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '"><input type="hidden" name="detail_id" value="' . (int) $detail['id'] . '">'
@@ -417,16 +475,50 @@ if ($selected !== null) {
         } else {
             $opts = '';
             foreach ($addressTypes as $key => $label) $opts .= '<option value="' . e($key) . '">' . e($label) . '</option>';
-            $addFields = '<div class="col-md-3"><label class="form-label">' . e(fn_t('caregivers_address_type')) . '</label><select class="form-select" name="address_type_key">' . $opts . '</select></div>';
-            foreach (['street', 'house_number', 'box_number', 'postal_code', 'city', 'country_code', 'label'] as $field) {
-                $fieldLabel = $field === 'street' ? 'address_street' : ($field === 'house_number' ? 'address_house_number' : ($field === 'box_number' ? 'address_box_number' : ($field === 'postal_code' ? 'address_postal_code' : ($field === 'city' ? 'address_city' : ($field === 'country_code' ? 'address_country' : 'caregivers_label')))));
-                $value = $field === 'country_code' ? 'BE' : '';
-                $addFields .= '<div class="col-md-3"><label class="form-label">' . e(fn_t($fieldLabel)) . '</label><input class="form-control" name="' . e($field) . '" value="' . e($value) . '"></div>';
-            }
+            $addressFields = fn_templateRender('address_fields.html', [
+                'address_prefix' => 'caregiver-address-new',
+                'address_autosave' => '0',
+                'address_title' => fn_t('caregivers_address_lookup_title'),
+                'address_lookup_flow_help' => fn_t('address_lookup_flow_help'),
+                'address_lookup_no_results' => fn_t('address_lookup_no_results'),
+                'address_postal_reminder' => fn_t('address_postal_reminder'),
+                'address_select_required' => fn_t('address_select_required'),
+                'address_manual_prompt' => fn_t('address_manual_prompt'),
+                'address_manual_required' => fn_t('address_manual_required'),
+                'address_manual_confirm' => fn_t('address_manual_confirm'),
+                'address_country_code_value' => 'BE',
+                'address_reference_id_value' => '',
+                'lambert72_x_value' => '',
+                'lambert72_y_value' => '',
+                'wgs84_latitude_value' => '',
+                'wgs84_longitude_value' => '',
+                'street_reference_id_value' => '',
+                'street_value' => '',
+                'house_number_value' => '',
+                'box_number_value' => '',
+                'postal_code_value' => '',
+                'city_value' => '',
+                'company_city_label' => fn_t('address_city'),
+                'company_postal_code' => fn_t('address_postal_code'),
+                'company_street' => fn_t('address_street'),
+                'address_house_number' => fn_t('address_house_number'),
+                'address_box_number' => fn_t('address_box_number'),
+            ]);
+            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3">' . csrf_field()
+                . '<input type="hidden" name="action" value="save_location"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '">'
+                . '<input type="hidden" name="country_code" value="BE"><div class="row g-2 align-items-end">'
+                . '<div class="col-md-4"><label class="form-label">' . e(fn_t('caregivers_address_type')) . '</label><select class="form-select" name="address_type_key">' . $opts . '</select></div>'
+                . '<div class="col-md-5"><label class="form-label">' . e(fn_t('caregivers_label')) . '</label><input class="form-control" name="label"></div></div>'
+                . '<div class="row g-2 mt-1">' . $addressFields . '</div><button class="btn btn-outline-primary mt-3" type="submit">' . e(fn_t('caregivers_add_detail')) . '</button></form>';
         }
-        $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3">' . csrf_field()
-            . '<input type="hidden" name="action" value="save_' . e($entity) . '"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '"><div class="row g-2 align-items-end">'
-            . $addFields . '<div class="col-md-auto"><button class="btn btn-outline-primary" type="submit">' . e(fn_t('caregivers_add_detail')) . '</button></div></div></form>';
+        if ($entity !== 'location') {
+            $addForm = '<form method="post" action="mb_caregivers.php?code=' . rawurlencode($selectedCode) . '" class="border rounded p-3 mt-3">' . csrf_field()
+                . '<input type="hidden" name="action" value="save_' . e($entity) . '"><input type="hidden" name="caregiver_code" value="' . e($selectedCode) . '"><div class="row g-2 align-items-end">'
+                . $addFields . '<div class="col-md-auto"><button class="btn btn-outline-primary" type="submit">' . e(fn_t('caregivers_add_detail')) . '</button></div></div></form>';
+        } else {
+            $addForm = '<div data-caregiver-address-creator><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-address-toggle aria-expanded="false">' . e(fn_t('caregivers_new_address')) . '</button>'
+                . '<div class="d-none" data-caregiver-address-form>' . $addForm . '</div></div>';
+        }
         $detailHtml .= '<section class="card shadow-sm mb-3"><div class="card-header fw-semibold">' . e(fn_t($headingKey)) . '</div><div class="card-body">'
             . ($cards !== '' ? $cards : '<p class="text-secondary">' . e(fn_t('caregivers_no_details')) . '</p>') . $addForm . '</div></section>';
     }
@@ -436,12 +528,13 @@ page_start(fn_t('caregivers_title'), $actor);
 echo fn_templateRender('mb_caregivers.html', [
     'caregivers_title' => fn_t('caregivers_title'),
     'caregivers_intro' => fn_t('caregivers_intro'),
-    '_caregivers_message_html' => $messageKey === '' ? '' : '<div class="alert alert-info" role="status">' . e(fn_t($messageKey)) . '</div>',
+    '_caregivers_message_html' => $messageKey === '' || $successModalHtml !== '' ? '' : '<div class="alert alert-info" role="status">' . e(fn_t($messageKey)) . '</div>',
     '_caregivers_search_html' => '<form method="get" action="mb_caregivers.php"><label class="form-label" for="caregiver-query">' . e(fn_t('caregivers_search')) . '</label><div class="input-group">'
         . '<input class="form-control" id="caregiver-query" type="search" name="q" value="' . e($query) . '" placeholder="' . e(fn_t('caregivers_search_placeholder')) . '"><button class="btn btn-outline-primary" type="submit">' . e(fn_t('caregivers_search_button')) . '</button></div></form>',
     '_caregivers_list_html' => $listRows,
     '_caregivers_add_button_html' => '<a class="btn btn-success mt-3" href="mb_caregivers.php">' . e(fn_t('caregivers_add')) . '</a>',
     '_caregivers_identity_html' => $identityForm,
     '_caregivers_details_html' => $detailHtml,
+    '_caregivers_success_modal_html' => $successModalHtml,
 ]);
 page_end();
