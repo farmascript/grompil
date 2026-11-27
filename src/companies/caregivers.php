@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-27 11:02:00
- * @date_mut: Fri 2026-11-27 12:38:00
+ * @date_mut: Fri 2026-11-27 17:15:00
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -182,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postedCode = strtoupper(trim((string) ($_POST['caregiver_code'] ?? '')));
     $postedCode = preg_match('/^[A-Z0-9]{3}[A-Z0-9]{3}$/', $postedCode) === 1 ? $postedCode : '';
     $success = false;
+    $transactionActive = false;
 
     try {
         if ($action === 'deactivate_caregiver' && $postedCode !== '') {
@@ -196,36 +197,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $type = (string) ($_POST['caregiver_type_key'] ?? '');
             $firstName = trim((string) ($_POST['name_first'] ?? ''));
             $lastName = trim((string) ($_POST['name_last'] ?? ''));
+            $identifierType = (string) ($_POST['identifier_type_key'] ?? 'riziv');
+            $identifierValue = trim((string) ($_POST['identifier_value'] ?? ''));
+            $identifierIssuer = trim((string) ($_POST['issuer'] ?? ''));
+            $hasIdentifier = $identifierValue !== '';
             $validTypes = ['physician', 'dentist', 'veterinarian', 'midwife', 'other'];
             if ($lastName === '' || !in_array($type, $validTypes, true)) {
                 $messageKey = 'caregivers_invalid';
-            } elseif ($postedCode !== '') {
-                $result = db_query_params(
-                    'caregivers.update',
-                    'UPDATE bt_caregivers SET caregiver_type_key=$1, name_first=$2, name_last=$3,
-                        updated_by_user_code=$4, updated_at=now()
-                     WHERE caregiver_code=$5 AND owner_company_id IS NOT DISTINCT FROM $6',
-                    [$type, $firstName, $lastName, $actorCode, $postedCode, $detailCompanyId]
-                );
-                $success = $result !== false && pg_affected_rows($result) === 1;
-                $selectedCode = $postedCode;
+            } elseif ($hasIdentifier && !in_array($identifierType, ['riziv', 'veterinary', 'professional', 'other'], true)) {
+                $messageKey = 'caregivers_invalid';
+            } elseif ($hasIdentifier && $identifierType === 'riziv' && !grompil_caregiver_valid_riziv_number($identifierValue)) {
+                $messageKey = 'caregivers_invalid_riziv';
             } else {
-                for ($attempt = 0; $attempt < 8 && !$success; $attempt++) {
-                    $newCode = getalNaarCode(random_int(0, 351519999));
-                    $result = db_query_params(
-                        'caregivers.create',
-                        'INSERT INTO bt_caregivers (caregiver_code, owner_company_id, caregiver_type_key,
-                            name_first, name_last, title, created_by_user_code, updated_by_user_code)
-                         VALUES ($1,$2,$3,$4,$5,$6,$7,$7) ON CONFLICT (caregiver_code) DO NOTHING',
-                         [$newCode, $detailCompanyId, $type, $firstName, $lastName, '', $actorCode]
-                    );
-                    $success = $result !== false && pg_affected_rows($result) === 1;
-                    if ($success) {
-                        $selectedCode = $newCode;
+                $transactionActive = db_query_params('caregivers.profile_identifier.begin', 'BEGIN') !== false;
+                if (!$transactionActive) {
+                    $messageKey = 'caregivers_save_failed';
+                } else {
+                    if ($postedCode !== '') {
+                        $result = db_query_params(
+                            'caregivers.update',
+                            'UPDATE bt_caregivers SET caregiver_type_key=$1, name_first=$2, name_last=$3,
+                                updated_by_user_code=$4, updated_at=now()
+                             WHERE caregiver_code=$5 AND owner_company_id IS NOT DISTINCT FROM $6',
+                            [$type, $firstName, $lastName, $actorCode, $postedCode, $detailCompanyId]
+                        );
+                        $success = $result !== false && pg_affected_rows($result) === 1;
+                        $selectedCode = $postedCode;
+                    } else {
+                        for ($attempt = 0; $attempt < 8 && !$success; $attempt++) {
+                            $newCode = getalNaarCode(random_int(0, 351519999));
+                            $result = db_query_params(
+                                'caregivers.create',
+                                'INSERT INTO bt_caregivers (caregiver_code, owner_company_id, caregiver_type_key,
+                                    name_first, name_last, title, created_by_user_code, updated_by_user_code)
+                                 VALUES ($1,$2,$3,$4,$5,$6,$7,$7) ON CONFLICT (caregiver_code) DO NOTHING',
+                                [$newCode, $detailCompanyId, $type, $firstName, $lastName, '', $actorCode]
+                            );
+                            $success = $result !== false && pg_affected_rows($result) === 1;
+                            if ($success) $selectedCode = $newCode;
+                        }
                     }
+                    if ($success && $hasIdentifier && $identifierType === 'riziv') {
+                        $duplicate = db_query_params(
+                            'caregivers.profile_identifier.riziv_duplicate_check',
+                            'SELECT caregiver_code FROM dt_caregiver_identifiers
+                             WHERE identifier_type_key=$1 AND is_active
+                               AND left(identifier_value, 8)=left($2, 8)
+                               AND caregiver_code<>$3
+                               AND (company_id IS NULL OR company_id=$4 OR $5::boolean)
+                             LIMIT 1',
+                            ['riziv', $identifierValue, $selectedCode, $companyId, $globalScope]
+                        );
+                        if ($duplicate && pg_num_rows($duplicate) > 0) {
+                            $messageKey = 'caregivers_riziv_exists';
+                            $success = false;
+                        }
+                    }
+                    if ($success && $hasIdentifier) {
+                        $result = db_query_params(
+                            'caregivers.profile_identifier.create',
+                            'INSERT INTO dt_caregiver_identifiers (caregiver_code, company_id, identifier_type_key,
+                                identifier_value, issuer, source_key, source_reference, created_by_user_code, updated_by_user_code)
+                             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)',
+                            [$selectedCode, $detailCompanyId, $identifierType, $identifierValue, $identifierIssuer, 'manual', '', $actorCode]
+                        );
+                        $success = $result !== false;
+                        if ($success && $identifierType === 'riziv' && in_array($type, ['physician', 'dentist'], true)) {
+                            $title = grompil_caregiver_riziv_title($type, $identifierValue);
+                            $result = db_query_params(
+                                'caregivers.profile_identifier.title_update',
+                                'UPDATE bt_caregivers SET title=$1, updated_by_user_code=$2, updated_at=now()
+                                 WHERE caregiver_code=$3 AND owner_company_id IS NOT DISTINCT FROM $4',
+                                [$title, $actorCode, $selectedCode, $detailCompanyId]
+                            );
+                            $success = $result !== false && pg_affected_rows($result) === 1;
+                        }
+                    }
+                    if ($success) {
+                        $success = db_query_params('caregivers.profile_identifier.commit', 'COMMIT') !== false;
+                        $transactionActive = !$success;
+                    }
+                    if (!$success && $transactionActive) {
+                        db_query_params('caregivers.profile_identifier.rollback', 'ROLLBACK');
+                        $transactionActive = false;
+                    }
+                    if ($messageKey === '') $messageKey = $success ? 'caregivers_saved' : 'caregivers_save_failed';
                 }
             }
-            $messageKey = $success ? 'caregivers_saved' : ($messageKey ?: 'caregivers_save_failed');
         } elseif (in_array($action, ['save_identifier', 'save_contact', 'save_location', 'deactivate_identifier', 'deactivate_contact', 'deactivate_location'], true)
             && $postedCode !== '') {
             $ownerResult = db_query_params(
@@ -373,10 +431,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } catch (GrompilDatabaseQueryException) {
+        if ($transactionActive) {
+            try { db_query_params('caregivers.profile_identifier.rollback_exception', 'ROLLBACK'); } catch (Throwable) {}
+        }
         $messageKey = 'caregivers_save_failed';
     } catch (Throwable $error) {
+        if ($transactionActive) {
+            try { db_query_params('caregivers.profile_identifier.rollback_exception', 'ROLLBACK'); } catch (Throwable) {}
+        }
         error_log('Caregiver module action failed [' . $action . ']: ' . get_class($error));
         $messageKey = 'caregivers_save_failed';
+    }
+    if (!$success && $action === 'save_caregiver' && $postedCode !== '') {
+        $selectedCode = $postedCode;
     }
     if ($success) {
         $isAddition = $action === 'save_caregiver' && $postedCode === '';
@@ -443,19 +510,38 @@ try {
     }
 } catch (GrompilDatabaseQueryException) { $caregiverCount = 0; }
 
+$caregiverFormValues = $selected ?? [];
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'save_caregiver') {
+    $caregiverFormValues = array_replace($caregiverFormValues, [
+        'caregiver_type_key' => (string) ($_POST['caregiver_type_key'] ?? 'physician'),
+        'name_first' => (string) ($_POST['name_first'] ?? ''),
+        'name_last' => (string) ($_POST['name_last'] ?? ''),
+        'identifier_type_key' => (string) ($_POST['identifier_type_key'] ?? 'riziv'),
+        'identifier_value' => (string) ($_POST['identifier_value'] ?? ''),
+        'issuer' => (string) ($_POST['issuer'] ?? ''),
+    ]);
+}
 $typeOptions = '';
 foreach ($caregiverTypes as $key => $translationKey) {
-    $typeOptions .= '<option value="' . e($key) . '"' . (($selected['caregiver_type_key'] ?? 'physician') === $key ? ' selected' : '') . '>' . e(fn_t($translationKey)) . '</option>';
+    $typeOptions .= '<option value="' . e($key) . '"' . (($caregiverFormValues['caregiver_type_key'] ?? 'physician') === $key ? ' selected' : '') . '>' . e(fn_t($translationKey)) . '</option>';
+}
+$identifierTypeOptions = '';
+foreach ($identifierTypes as $key => $labelKey) {
+    $identifierTypeOptions .= '<option value="' . e($key) . '"' . (($caregiverFormValues['identifier_type_key'] ?? 'riziv') === $key ? ' selected' : '') . '>' . e(fn_t($labelKey)) . '</option>';
 }
 $identityForm = '<section class="card shadow-sm mb-4"><div class="card-header fw-semibold">' . e(fn_t($selected ? 'caregivers_edit' : 'caregivers_add')) . '</div><div class="card-body">'
-    . '<form method="post" action="mb_caregivers.php' . ($query !== '' ? '?q=' . rawurlencode($query) : '') . '">' . csrf_field()
+    . '<form method="post" action="mb_caregivers.php' . ($query !== '' ? '?q=' . rawurlencode($query) : '') . '" data-caregiver-riziv-form data-riziv-error="' . e(fn_t('caregivers_invalid_riziv')) . '">' . csrf_field()
     . '<input type="hidden" name="action" value="save_caregiver"><input type="hidden" name="caregiver_code" value="' . e((string) ($selected['caregiver_code'] ?? '')) . '">'
     . '<div class="row g-3"><div class="col-md-4"><label class="form-label" for="caregiver-type">' . e(fn_t('caregivers_type')) . '</label><select class="form-select" id="caregiver-type" name="caregiver_type_key" required>' . $typeOptions . '</select></div>'
-    . '<div class="col-md-4"><label class="form-label" for="caregiver-first">' . e(fn_t('patient_first_name')) . '</label><input class="form-control" id="caregiver-first" name="name_first" maxlength="120" value="' . e((string) ($selected['name_first'] ?? '')) . '"></div>'
-    . '<div class="col-md-4"><label class="form-label" for="caregiver-last">' . e(fn_t('patient_last_name')) . '</label><input class="form-control" id="caregiver-last" name="name_last" maxlength="160" required value="' . e((string) ($selected['name_last'] ?? '')) . '"></div>'
+    . '<div class="col-md-4"><label class="form-label" for="caregiver-first">' . e(fn_t('patient_first_name')) . '</label><input class="form-control" id="caregiver-first" name="name_first" maxlength="120" value="' . e((string) ($caregiverFormValues['name_first'] ?? '')) . '"></div>'
+    . '<div class="col-md-4"><label class="form-label" for="caregiver-last">' . e(fn_t('patient_last_name')) . '</label><input class="form-control" id="caregiver-last" name="name_last" maxlength="160" required value="' . e((string) ($caregiverFormValues['name_last'] ?? '')) . '"></div>'
     . (($selected['title'] ?? '') !== ''
         ? '<div class="col-12"><div class="form-label">' . e(fn_t('caregivers_professional_title')) . '</div><div class="form-control-plaintext py-0">' . e((string) $selected['title']) . '</div></div>'
         : '') . '</div>'
+    . '<hr class="my-3"><h3 class="h6">' . e(fn_t('caregivers_identifiers_heading')) . '</h3><div class="form-text mb-2">' . e(fn_t('caregivers_riziv_title_help')) . '</div>'
+    . '<div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label" for="caregiver-identifier-type">' . e(fn_t('caregivers_identifier_type')) . '</label><select class="form-select" id="caregiver-identifier-type" name="identifier_type_key">' . $identifierTypeOptions . '</select></div>'
+    . '<div class="col-md-4"><label class="form-label" for="caregiver-identifier-value">' . e(fn_t('caregivers_identifier_value')) . '</label><input class="form-control" id="caregiver-identifier-value" name="identifier_value" value="' . e((string) ($caregiverFormValues['identifier_value'] ?? '')) . '"></div>'
+    . '<div class="col-md-3"><label class="form-label" for="caregiver-identifier-issuer">' . e(fn_t('caregivers_identifier_issuer')) . '</label><input class="form-control" id="caregiver-identifier-issuer" name="issuer" value="' . e((string) ($caregiverFormValues['issuer'] ?? '')) . '"></div></div>'
     . '<div class="d-flex gap-2 align-items-center mt-3"><button class="btn btn-primary" type="submit">' . e(fn_t('save')) . '</button>'
     . (!empty($selected['caregiver_code']) ? '<span class="small text-secondary">' . e(fn_t('caregivers_code')) . ': ' . e((string) $selected['caregiver_code']) . '</span>' : '')
     . (!empty($selected) && ($selected['is_editable'] ?? 'f') !== 't' ? '<span class="small text-secondary">' . e(fn_t('caregivers_shared_read_only')) . '</span>' : '')
@@ -620,6 +706,9 @@ if ($selected !== null) {
             if ($entity === 'identifier') {
                 $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_add_identifier')) . '</button>'
                     . '<div class="d-none" data-caregiver-add-form data-focus-selector="[name=identifier_value]">' . $addForm . '</div></div>';
+                if (($selected['is_editable'] ?? 'f') === 't') {
+                    $addForm = '';
+                }
             } elseif ($entity === 'contact') {
                 $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_add_contact')) . '</button>'
                     . '<div class="d-none" data-caregiver-add-form data-focus-selector="[name=contact_value]">' . $addForm . '</div></div>';
@@ -627,6 +716,9 @@ if ($selected !== null) {
         } else {
             $addForm = '<div data-caregiver-add-form-group><button class="btn btn-outline-primary mt-3" type="button" data-caregiver-add-form-toggle aria-expanded="false">' . e(fn_t('caregivers_new_address')) . '</button>'
                 . '<div class="d-none" data-caregiver-add-form data-focus-selector="[data-address-role=postal]">' . $addForm . '</div></div>';
+        }
+        if ($entity === 'identifier' && $cards === '' && ($selected['is_editable'] ?? 'f') === 't') {
+            continue;
         }
         $detailHtml .= '<section class="card shadow-sm mb-3"><div class="card-header fw-semibold">' . e(fn_t($headingKey)) . '</div><div class="card-body">'
             . ($cards !== '' ? $cards : '<p class="text-secondary">' . e(fn_t('caregivers_no_details')) . '</p>') . $addForm . '</div></section>';
