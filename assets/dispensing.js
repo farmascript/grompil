@@ -807,12 +807,14 @@
     });
 
     newPrescriptionModalElement?.addEventListener('hidden.bs.modal', () => {
-        if (!pendingPrescriptionStatusKey) return;
-        pendingPrescriptionStatusKey = '';
-        if (dispenseStatusSelect) dispenseStatusSelect.value = lastPersistedDispenseStatus;
-        applyDispenseStatus();
-        renderPartySelector();
-        renderBasket();
+        if (pendingPrescriptionStatusKey) {
+            pendingPrescriptionStatusKey = '';
+            if (dispenseStatusSelect) dispenseStatusSelect.value = lastPersistedDispenseStatus;
+            applyDispenseStatus();
+            renderPartySelector();
+            renderBasket();
+        }
+        if (!input?.disabled) input?.focus();
     });
 
     function showMissingCaregiverModal(lines) {
