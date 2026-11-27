@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Sun 2026-10-18 20:35:46
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27 22:05:29
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -26,6 +26,27 @@ $accountQuery = static function (string $operation, string $sql, array $params =
     }
 };
 $user = require_login();
+$passwordPolicyDiagnosticKeys = [];
+$passwordPolicyDiagnosticAvailable = false;
+$diagnosticUserCode = (string) ($_SESSION['password_policy_diagnostics_user_code'] ?? '');
+if ($diagnosticUserCode !== '' && hash_equals((string) $user['user_code'], $diagnosticUserCode)) {
+    $passwordPolicyDiagnosticAvailable = true;
+    $allowedPasswordDiagnostics = [
+        'password_diagnostic_minimum_length',
+        'password_diagnostic_maximum_length',
+        'password_diagnostic_null_byte',
+        'password_diagnostic_invalid_encoding',
+        'password_diagnostic_variety',
+        'password_diagnostic_repetition',
+        'password_diagnostic_common_pattern',
+        'password_diagnostic_sequence',
+    ];
+    $passwordPolicyDiagnosticKeys = array_values(array_intersect(
+        $allowedPasswordDiagnostics,
+        (array) ($_SESSION['password_policy_diagnostics'] ?? [])
+    ));
+}
+unset($_SESSION['password_policy_diagnostics_user_code'], $_SESSION['password_policy_diagnostics']);
 $message = '';
 $acronym = '';
 $displayName = (string) ($user['display_name'] ?? '');
@@ -718,6 +739,20 @@ if (isset($_GET['password_changed'])) {
 page_start(fn_t('account_title'), $user);
 $mustChangePassword = ($user['must_change_password'] ?? 'f') === 't';
 $passwordModalMessageHtml = '';
+$passwordDiagnosticHtml = '';
+if ($mustChangePassword && $passwordPolicyDiagnosticAvailable) {
+    $diagnosticItemsHtml = '';
+    foreach ($passwordPolicyDiagnosticKeys as $diagnosticKey) {
+        $diagnosticItemsHtml .= '<li>' . e(fn_t($diagnosticKey)) . '</li>';
+    }
+    $passwordDiagnosticHtml = '<div class="alert alert-warning" role="status"><strong>'
+        . e(fn_t('password_diagnostic_title')) . '</strong><p class="mb-2 mt-2">'
+        . e(fn_t('password_diagnostic_intro')) . '</p>'
+        . ($diagnosticItemsHtml !== ''
+            ? '<ul class="mb-0">' . $diagnosticItemsHtml . '</ul>'
+            : '<p class="mb-0">' . e(fn_t('password_diagnostic_all_passed')) . '</p>')
+        . '</div>';
+}
 $passwordModalAutoOpen = $mustChangePassword;
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST'
     && (string) ($_POST['action'] ?? '') === 'password_change'
@@ -967,7 +1002,7 @@ echo fn_templateRender('account.html', [
     'password_confirm_label' => fn_t('password_confirm_label'),
     'password_save' => fn_t('password_save'),
     '_password_csrf_field_html' => csrf_field(),
-    '_password_modal_message_html' => $passwordModalMessageHtml,
+    '_password_modal_message_html' => $passwordDiagnosticHtml . $passwordModalMessageHtml,
     'password_modal_auto_open' => $passwordModalAutoOpen ? 'true' : 'false',
     '_platform_authenticator_html' => $platformAuthenticatorHtml,
 ]);

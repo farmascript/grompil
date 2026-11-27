@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Sun 2026-10-18 20:35:47
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Fri 2026-11-27 22:05:29
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -148,7 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && $user['is_active'] === 't' && password_verify($password, $user['password_hash'])) {
         $passwordPolicyReady = true;
-        if (!grompil_password_is_sane($password) && $user['must_change_password'] !== 't') {
+        $passwordDiagnostics = grompil_password_diagnostics($password);
+        $_SESSION['password_policy_diagnostics_user_code'] = (string) $user['user_code'];
+        $_SESSION['password_policy_diagnostics'] = $passwordDiagnostics;
+        if ($passwordDiagnostics !== [] && $user['must_change_password'] !== 't') {
             $passwordPolicyReady = (bool) $loginQuery(
                 'login.require_password_change',
                 'UPDATE bt_users SET must_change_password = TRUE, updated_at = now() WHERE user_code = $1',
