@@ -136,7 +136,7 @@ foreach ($sessionGroups as $sessionRows) {
         . '<span><span class="text-secondary" title="' . e($firstRow['session_id']) . '">'
         . e(fn_t('dispensing_history_prescription_number')) . ':</span> '
         . ($firstRow['prescription_number'] === null ? '—' : '#' . e((string) $firstRow['prescription_number'])) . '</span>'
-        . '</div><div class="table-responsive"><table class="table table-sm table-striped table-hover align-middle mb-0">'
+        . '</div><div class="table-responsive"><table class="table table-sm table-striped table-hover align-middle mb-0 dispensing-history-lines">'
         . '<thead><tr><th>' . e(fn_t('dispensing_history_recipient')) . '</th>'
         . '<th>' . e(fn_t('dispensing_history_status')) . '</th>'
         . '<th>' . e(fn_t('dispensing_history_product')) . '</th>'

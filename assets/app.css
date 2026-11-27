@@ -41,6 +41,20 @@ body {
     background-color: #f1f5f3;
 }
 
+.dispensing-history-lines {
+    min-width: 720px;
+    table-layout: fixed;
+}
+
+.dispensing-history-lines th:nth-child(1),
+.dispensing-history-lines td:nth-child(1) { width: 25%; }
+.dispensing-history-lines th:nth-child(2),
+.dispensing-history-lines td:nth-child(2) { width: 8%; }
+.dispensing-history-lines th:nth-child(3),
+.dispensing-history-lines td:nth-child(3) { width: 57%; }
+.dispensing-history-lines th:nth-child(4),
+.dispensing-history-lines td:nth-child(4) { width: 10%; }
+
 .caregiver-search-wrap {
     position: relative;
 }

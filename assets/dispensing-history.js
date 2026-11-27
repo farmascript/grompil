@@ -94,7 +94,7 @@
             const responsive = document.createElement('div');
             responsive.className = 'table-responsive';
             const table = document.createElement('table');
-            table.className = 'table table-sm table-striped table-hover align-middle mb-0';
+            table.className = 'table table-sm table-striped table-hover align-middle mb-0 dispensing-history-lines';
             const thead = table.createTHead();
             const headerRow = thead.insertRow();
             ['recipient', 'status', 'product', 'quantity'].forEach((name) => {
