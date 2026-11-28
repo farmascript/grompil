@@ -147,6 +147,7 @@
             customerProfileForm.elements.customer_code.value,
             profile.is_home_pharmacist === true,
         );
+        updateFixedCaregiverLink(customerProfileForm.elements.customer_code.value, profile);
     };
     attachCaregiverSearch(profileCaregiverInput, profileCaregiverResults, (caregiver) => {
         profileCaregiverCode.value = caregiver?.caregiver_code || '';
@@ -643,6 +644,27 @@
         if (!patientName || patientName.dataset.customerCode !== customerCode) return;
         patientName.classList.toggle('text-primary', isHomePharmacist);
     };
+    const updateFixedCaregiverLink = (customerCode, profile) => {
+        const patientDetails = document.querySelector('.dispense-patientbar .dispensing-patient-metadata');
+        if (!patientDetails || page.dataset.patientCode !== customerCode) return;
+        patientDetails.querySelector('[data-fixed-caregiver-add]')?.remove();
+        const caregiverCode = String(profile?.fixed_caregiver_code || '');
+        const caregiverName = String(profile?.fixed_caregiver_name || '');
+        if (!caregiverCode || !caregiverName) return;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-link p-0 fixed-caregiver-link text-secondary';
+        button.textContent = caregiverName;
+        button.dataset.fixedCaregiverAdd = '';
+        button.dataset.caregiverCode = caregiverCode;
+        button.dataset.caregiverName = caregiverName;
+        button.dataset.customerCode = customerCode;
+        button.setAttribute('aria-label', `${caregiverName} · ${t.caregiverAdd || ''}`);
+        const profileButton = patientDetails.querySelector('[data-customer-profile-trigger]');
+        if (profileButton) profileButton.after(button);
+        else patientDetails.append(button);
+    };
     const refreshPatientHomePharmacistIndicator = async (party) => {
         if (party?.type !== 'customer' || !party.customer_code) return;
         try {
@@ -653,6 +675,7 @@
             if (response.ok && data.profile && activePartyId === Number(party.id)) {
                 updateCustomerProfileTrigger(data.profile.has_data === true);
                 updatePatientHomePharmacistIndicator(party.customer_code, data.profile.is_home_pharmacist === true);
+                updateFixedCaregiverLink(party.customer_code, data.profile);
             }
         } catch {}
     };
@@ -1594,6 +1617,40 @@
         if (input) input.disabled = true;
     });
     void restoreAddedCaregiver();
+
+    document.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-fixed-caregiver-add]');
+        if (!button || !page.contains(button)) return;
+        event.preventDefault();
+        if (button.dataset.customerCode !== page.dataset.patientCode) return;
+        button.disabled = true;
+        try {
+            await sessionReady;
+            const party = dispensingParties.find((item) => Number(item.id) === activePartyId);
+            if (party?.type !== 'customer' || party.customer_code !== button.dataset.customerCode) {
+                throw new Error('Active dispensing party unavailable');
+            }
+            const caregiver = {
+                caregiver_code: button.dataset.caregiverCode || '',
+                name: button.dataset.caregiverName || '',
+            };
+            const assignment = await sessionRequest('party_caregiver_set', {
+                party_id: activePartyId,
+                caregiver_code: caregiver.caregiver_code,
+            });
+            dispensingParties = assignment.parties || dispensingParties;
+            for (const [key, line] of basket) {
+                if (!line.pending) basket.delete(key);
+            }
+            for (const line of assignment.lines || []) basket.set(String(line.id), line);
+            setPartyCaregiver(activePartyId, caregiver);
+            renderBasket();
+        } catch {
+            showSessionError();
+        } finally {
+            if (button.isConnected) button.disabled = false;
+        }
+    });
 
     function productSuggestionButtons() {
         return [...suggestions.querySelectorAll('button.product-suggestion')];

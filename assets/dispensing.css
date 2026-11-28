@@ -34,6 +34,7 @@
 #patientModal .modal-body{background-color:#f1f5f3}
 
 .dispensing-patient-metadata{display:flex;align-items:center;gap:.35rem;font-size:.82rem;color:#647780;flex-wrap:wrap}.dispensing-patient-metadata .contact-manager-trigger{padding:.15rem .45rem}
+.dispensing-patient-metadata .fixed-caregiver-link{font:inherit;line-height:1.2;align-self:flex-end;cursor:pointer}
 .customer-profile-trigger{display:inline-flex;align-items:center;justify-content:center;padding:.15rem .45rem}.customer-profile-trigger svg{flex:none}.customer-profile-fields{padding:1rem;background-color:#f1f5f3;border:1px solid #dce4e8;border-radius:.6rem}.customer-profile-fields .form-control{background-color:#fff}
 #contact-manager-modal .modal-body{background-color:#fff}
 #contact-manager-modal .contact-manager-row{background-color:#f1f5f3}
