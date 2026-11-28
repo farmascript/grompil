@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-10-30
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Sat 2026-11-28 15:51:24
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -17,6 +17,7 @@
 declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
+require_once GROMPIL_ROOT . '/includes/dd_varia.php';
 $currentUser = grompil_require_module_access('dd-varia.php');
 if (($currentUser['company_id'] ?? null) !== null || !is_platform_operator($currentUser)) {
     grompil_show_error(403, 40152, fn_t('access_denied'), 'Access denied');
@@ -411,7 +412,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 $formValues['list_key'] = (string) $editRow['list_key'];
                 $formValues['key'] = (string) $editRow['key'];
                 $formValues['parent_id'] = $editRow['parent_id'] === null ? '' : (string) $editRow['parent_id'];
-                $formValues['info'] = (string) $editRow['info'];
+                $formValues['info'] = dd_varia_parse_info((string) $editRow['info'])['text'];
                 $formValues['sort_order'] = (string) $editRow['sort_order'];
                 $formValues['is_active'] = $editRow['is_active'] === 't';
                 $formValues['is_mutable'] = true;
@@ -506,7 +507,7 @@ $renderRows = static function (?int $parentId, int $depth) use (&$renderRows, $c
             'dd_varia_key' => (string) $row['key'],
             'dd_varia_parent' => $parentLabel,
             'dd_varia_label' => fn_t(substr((string) $row['content'], 1, -1)),
-            'dd_varia_info' => (string) $row['info'],
+            'dd_varia_info' => e(dd_varia_parse_info((string) $row['info'])['text']),
             'dd_varia_order' => (string) $row['sort_order'],
             'dd_varia_status' => $row['is_active'] === 't' ? fn_t('active') : fn_t('inactive'),
             'dd_varia_mutability' => $row['is_mutable'] === 't' ? fn_t('dd_varia_mutable') : fn_t('dd_varia_immutable_label'),

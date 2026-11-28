@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-20 11:24:48
- * @date_mut: Sat 2026-11-28 14:38:35
+ * @date_mut: Sat 2026-11-28 15:51:24
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -42,7 +42,23 @@ function grompil_dispensing_display_name(string $firstName, string $lastName): s
  */
 function grompil_dispensing_status_requires_caregiver(string $statusKey): bool
 {
-    return in_array(strtolower(trim($statusKey)), ['prescription', 'v'], true);
+    static $requirementsByKey = null;
+    if ($requirementsByKey === null) {
+        $requirementsByKey = [];
+        foreach (dd_varia_get_options('dispensing_statuses', '_root') as $statusOption) {
+            if (is_bool($statusOption['need_prescription'] ?? null)) {
+                $requirementsByKey[(string) $statusOption['key']] = $statusOption['need_prescription'];
+            }
+        }
+    }
+
+    $statusKey = strtolower(trim($statusKey));
+    if (array_key_exists($statusKey, $requirementsByKey)) {
+        return $requirementsByKey[$statusKey];
+    }
+
+    // Keep older status values safe while an existing database is being migrated.
+    return in_array($statusKey, ['prescription', 'v'], true);
 }
 
 /**

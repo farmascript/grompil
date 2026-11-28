@@ -22,7 +22,11 @@ Removing a value deactivates it rather than deleting it, preserving references a
 
 `includes/dd_varia.php` provides `dd_varia_get_options($listKey, $parentKey, $includeInactive)`. It returns localized child options ordered by `sort_order`, then stable key. Passing a null parent key returns root rows; passing a parent key such as `media` returns its children. Inactive rows are omitted by default, and only a platform administrator can request them.
 
-Use each returned `key` as the stable application value and `label` for display. Do not save the translated label as the selected value.
+Use each returned `key` as the stable application value and `label` for display. Do not save the translated label as the selected value. The returned `info_text` contains the human-readable info note; `info` remains the stored database value. When `info` contains the structured JSON format described below, `need_prescription` is returned as a PHP boolean. For legacy plain-text values, that field is `null`.
+
+## Dispensing status metadata
+
+For rows in the `dispensing_statuses` list, store `info` as JSON with a `text` string and a `need_prescription` boolean, for example `{"text":"Prescription dispensing.","need_prescription":true}`. The text preserves the existing explanatory note. The boolean tells the application whether a prescriber is required; dispensing code must read this metadata rather than infer it from a status label or translated short code. The migration `migrations/20261128_155124_dispensing_status_prescription_metadata.sql` converts existing status notes and sets the flag for the prescription status.
 
 ## Company number statuses
 

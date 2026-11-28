@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-10-30
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Sat 2026-11-28 15:51:24
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -36,6 +36,29 @@ function dd_varia_clear_options_cache(): void
 {
     $cache =& dd_varia_options_cache();
     $cache = [];
+}
+
+/**
+ * Decode an optional structured info value while preserving legacy plain text.
+ *
+ * @param string $info The stored info value.
+ * @return array{text: string, need_prescription: ?bool}
+ */
+function dd_varia_parse_info(string $info): array
+{
+    $decoded = json_decode($info, true);
+    if (is_array($decoded)
+        && isset($decoded['text'])
+        && is_string($decoded['text'])
+        && array_key_exists('need_prescription', $decoded)
+        && is_bool($decoded['need_prescription'])) {
+        return [
+            'text' => $decoded['text'],
+            'need_prescription' => $decoded['need_prescription'],
+        ];
+    }
+
+    return ['text' => $info, 'need_prescription' => null];
 }
 
 /**
@@ -104,6 +127,9 @@ function dd_varia_get_options(string $listKey, ?string $parentKey = null, bool $
         $row['sort_order'] = (int) $row['sort_order'];
         $row['is_active'] = $row['is_active'] === 't';
         $row['is_mutable'] = ($row['is_mutable'] ?? 't') === 't';
+        $info = dd_varia_parse_info((string) ($row['info'] ?? ''));
+        $row['info_text'] = $info['text'];
+        $row['need_prescription'] = $info['need_prescription'];
         $shortCodes = json_decode((string) ($row['short_codes'] ?? '{}'), true);
         $language = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
         $row['short_code'] = is_array($shortCodes) ? (string) ($shortCodes[$language] ?? '') : '';

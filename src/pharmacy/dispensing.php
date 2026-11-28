@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Sat 2026-11-28 14:38:35
+ * @date_mut: Sat 2026-11-28 15:51:24
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -82,13 +82,13 @@ $dispensingStatuses = dd_varia_get_options('dispensing_statuses', '_root');
 $dispenseLanguage = strtoupper((string) ($_SESSION['language'] ?? 'NL'));
 if ($dispensingStatuses === []) {
     $dispensingStatuses = [
-        ['key' => 'free_sale', 'short_code' => ['NL' => 'z', 'FR' => 'l', 'EN' => 'f', 'DE' => 'f'][$dispenseLanguage] ?? 'z', 'label' => fn_t('dispense_status_free')],
-        ['key' => 'prescription', 'short_code' => ['NL' => 'v', 'FR' => 'o', 'EN' => 'p', 'DE' => 'r'][$dispenseLanguage] ?? 'v', 'label' => fn_t('dispense_status_prescription')],
-        ['key' => 'incomplete_prescription', 'short_code' => ['NL' => 'o', 'FR' => 'i', 'EN' => 'ip', 'DE' => 'ur'][$dispenseLanguage] ?? 'o', 'label' => fn_t('dispense_status_incomplete_prescription')],
-        ['key' => 'incomplete_attestation', 'short_code' => ['NL' => 'a', 'FR' => 'a', 'EN' => 'ia', 'DE' => 'ub'][$dispenseLanguage] ?? 'a', 'label' => fn_t('dispense_status_incomplete_attestation')],
-        ['key' => 'written_request', 'short_code' => ['NL' => 's', 'FR' => 'd', 'EN' => 'w', 'DE' => 's'][$dispenseLanguage] ?? 's', 'label' => fn_t('dispense_status_written_request')],
-        ['key' => 'veterinary', 'short_code' => ['NL' => 'e', 'FR' => 'v', 'EN' => 'v', 'DE' => 't'][$dispenseLanguage] ?? 'e', 'label' => fn_t('dispense_status_veterinary')],
-        ['key' => 'emergency_kit', 'short_code' => 'u', 'label' => fn_t('dispense_status_emergency_kit')],
+        ['key' => 'free_sale', 'short_code' => ['NL' => 'z', 'FR' => 'l', 'EN' => 'f', 'DE' => 'f'][$dispenseLanguage] ?? 'z', 'label' => fn_t('dispense_status_free'), 'need_prescription' => false],
+        ['key' => 'prescription', 'short_code' => ['NL' => 'v', 'FR' => 'o', 'EN' => 'p', 'DE' => 'r'][$dispenseLanguage] ?? 'v', 'label' => fn_t('dispense_status_prescription'), 'need_prescription' => true],
+        ['key' => 'incomplete_prescription', 'short_code' => ['NL' => 'o', 'FR' => 'i', 'EN' => 'ip', 'DE' => 'ur'][$dispenseLanguage] ?? 'o', 'label' => fn_t('dispense_status_incomplete_prescription'), 'need_prescription' => false],
+        ['key' => 'incomplete_attestation', 'short_code' => ['NL' => 'a', 'FR' => 'a', 'EN' => 'ia', 'DE' => 'ub'][$dispenseLanguage] ?? 'a', 'label' => fn_t('dispense_status_incomplete_attestation'), 'need_prescription' => false],
+        ['key' => 'written_request', 'short_code' => ['NL' => 's', 'FR' => 'd', 'EN' => 'w', 'DE' => 's'][$dispenseLanguage] ?? 's', 'label' => fn_t('dispense_status_written_request'), 'need_prescription' => false],
+        ['key' => 'veterinary', 'short_code' => ['NL' => 'e', 'FR' => 'v', 'EN' => 'v', 'DE' => 't'][$dispenseLanguage] ?? 'e', 'label' => fn_t('dispense_status_veterinary'), 'need_prescription' => false],
+        ['key' => 'emergency_kit', 'short_code' => 'u', 'label' => fn_t('dispense_status_emergency_kit'), 'need_prescription' => false],
     ];
 }
 $dispensingStatusByKey = [];
@@ -98,6 +98,7 @@ foreach ($dispensingStatuses as $statusOption) {
         $dispensingStatusByKey[$statusOptionKey] = [
             'label' => (string) ($statusOption['label'] ?? $statusOptionKey),
             'short_code' => (string) ($statusOption['short_code'] ?? $statusOptionKey),
+            'need_prescription' => $statusOption['need_prescription'] ?? null,
         ];
     }
 }
@@ -126,7 +127,9 @@ foreach ($dispensingStatuses as $statusOption) {
     }
     $statusOptionLabel = $dispensingStatusByKey[$statusOptionKey]['label'];
     $statusOptionCode = $dispensingStatusByKey[$statusOptionKey]['short_code'];
-    $requiresCaregiver = in_array($statusOptionKey, ['prescription', 'v'], true);
+    $requiresCaregiver = is_bool($dispensingStatusByKey[$statusOptionKey]['need_prescription'])
+        ? $dispensingStatusByKey[$statusOptionKey]['need_prescription']
+        : in_array($statusOptionKey, ['prescription', 'v'], true);
     $dispenseStatusOptionsHtml .= '<option value="' . e($statusOptionKey) . '" data-short-code="' . e($statusOptionCode) . '" data-requires-caregiver="' . ($requiresCaregiver ? 'true' : 'false') . '"'
         . ($statusOptionKey === $dispenseStatusKey ? ' selected' : '') . '>'
         . e($statusOptionCode . ' — ' . $statusOptionLabel) . '</option>';
