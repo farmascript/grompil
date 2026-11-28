@@ -1081,12 +1081,6 @@
             button.addEventListener('click', () => activateParty(party.id, true));
             partySelector.append(button);
         }
-        const addButton = document.createElement('button');
-        addButton.type = 'button';
-        addButton.className = 'btn btn-sm btn-outline-success';
-        addButton.textContent = page.dataset.textAddParty || '';
-        addButton.addEventListener('click', () => patientInput?.focus());
-        partySelector.append(addButton);
         renderActivePartyLabel();
     }
 
@@ -1115,13 +1109,21 @@
                     caregiverLabel.setAttribute('aria-label', caregiverLabel.title);
                     activePartyLabel.append(caregiverLabel);
                 }
-                const newPrescriptionButton = document.createElement('button');
-                newPrescriptionButton.type = 'button';
-                newPrescriptionButton.className = 'btn btn-sm btn-outline-primary';
-                newPrescriptionButton.textContent = t.newPrescription || '';
-                newPrescriptionButton.addEventListener('click', openNewPrescriptionModal);
-                activePartyLabel.append(newPrescriptionButton);
             }
+        }
+        const addPartyButton = document.createElement('button');
+        addPartyButton.type = 'button';
+        addPartyButton.className = 'btn btn-sm btn-outline-success';
+        addPartyButton.textContent = page.dataset.textAddParty || '';
+        addPartyButton.addEventListener('click', () => patientInput?.focus());
+        activePartyLabel.append(addPartyButton);
+        if (!isAnonymous && dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true') {
+            const newPrescriptionButton = document.createElement('button');
+            newPrescriptionButton.type = 'button';
+            newPrescriptionButton.className = 'btn btn-sm btn-outline-primary';
+            newPrescriptionButton.textContent = t.newPrescription || '';
+            newPrescriptionButton.addEventListener('click', openNewPrescriptionModal);
+            activePartyLabel.append(newPrescriptionButton);
         }
         activePartyLabel.className = 'dispense-active-party';
     }
