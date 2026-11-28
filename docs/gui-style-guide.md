@@ -59,6 +59,16 @@ tooltip for administrators. Keep those tooltips available on hover and use
 `tabindex="-1"` for their non-interactive text wrappers. Do not use positive
 `tabindex` values to reorder a form; arrange the controls in the correct DOM order.
 
+## Form control identifiers
+
+Give every form control a unique, stable `id` and a meaningful `name`. Use the
+`name` that the server expects for submitted values; controls handled by
+JavaScript still need an `id` and should have a meaningful `name` when they
+represent a setting. Connect visible labels to controls with `<label for="…">`;
+when there is no visible label, provide an accessible name with `aria-label`.
+Do not rely on `aria-label` alone to satisfy browser form and autofill guidance:
+the browser inspector may flag controls that have neither `id` nor `name`.
+
 ## Search suggestions
 
 For name and code lookup fields, use type-ahead suggestions after at least three
