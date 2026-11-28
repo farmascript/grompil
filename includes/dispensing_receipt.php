@@ -95,13 +95,13 @@ function grompil_dispensing_receipt_pdf(array $receipt, string $language): strin
                 : ((string) ($line['package_nl'] ?? '') ?: (string) ($line['package_fr'] ?? ''));
             $productName = trim(preg_replace('/[\s\p{Z}]+/u', ' ', $productName) ?? $productName);
             $package = trim(preg_replace('/[\s\p{Z}]+/u', ' ', $package) ?? $package);
+            $productDescription = trim($productName . ' ' . $package);
             $items[] = [
                 'segments' => [
                     ['text' => (string) ($line['statusShortCode'] ?? '')],
                     ['text' => ' · ' . (string) ($line['cnk'] ?? '')],
                     ['text' => ' · ' . $quantity . ' · '],
-                    ['text' => $productName, 'bold' => true],
-                    ...($package !== '' ? [['text' => ' · '], ['text' => $package, 'bold' => true]] : []),
+                    ['text' => $productDescription, 'bold' => true],
                 ],
                 'size' => 8,
             ];
