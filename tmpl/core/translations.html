@@ -301,14 +301,14 @@
             event.preventDefault();
             if (drafts.size === 0) return;
             saveButtons.forEach((button) => { button.disabled = true; });
-            const formData = new FormData(saveForm);
-            formData.set('_translation_ajax_save', '1');
+            const requestBody = new URLSearchParams(new FormData(saveForm));
+            requestBody.set('_translation_ajax_save', '1');
             try {
                 const response = await fetch(saveForm.action, {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: formData,
+                    body: requestBody,
                 });
                 const contentType = response.headers.get('content-type') || '';
                 if (!contentType.toLowerCase().includes('application/json')) {
