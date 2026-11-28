@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Wed 2026-10-14 19:35:56
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Sat 2026-11-28 10:29:18
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -33,8 +33,15 @@ if (grompil_can_access_module('dispense.php', $user, $company)) {
         'dispense_dashboard_action' => fn_t('dispense_dashboard_action'),
     ]);
 }
-foreach (['module_inventory', 'module_refills', 'module_team'] as $module) {
+foreach (['module_inventory', 'module_refills'] as $module) {
     $cards .= fn_templateRender('dashboard_module.html', ['module_name' => fn_t($module)]);
+}
+if (grompil_can_access_module('company_members.php', $user, $company)) {
+    $cards .= fn_templateRender('dashboard_team.html', [
+        'module_name' => fn_t('module_team'),
+        'module_description' => fn_t('company_members_intro'),
+        'module_action' => fn_t('company_members_link'),
+    ]);
 }
 
 echo fn_templateRender('dashboard.html', [
