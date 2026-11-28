@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Wed 2026-11-25
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Sat 2026-11-28 10:39:09
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -338,17 +338,26 @@ if ($notice !== '') {
     echo '<div class="alert alert-success" role="status">' . e($noticeText) . '</div>';
 }
 
-echo '<section class="card mb-4"><div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">'
+$isEditing = $isPublisher && $editingNoteId > 0 && $editingNote !== null;
+echo '<div class="row g-3 mb-4 align-items-stretch"><div class="col-12 col-md-6"><section class="card h-100"><div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">'
     . '<div><strong>' . e(fn_t('release_notes_subscription_email')) . '</strong><br><span>'
     . e($email !== '' ? $email : fn_t('release_notes_no_email')) . '</span></div>'
     . '<form method="post" class="m-0">' . csrf_field()
     . '<input type="hidden" name="action" value="' . ($subscribed ? 'unsubscribe' : 'subscribe') . '">'
     . '<button class="btn ' . ($subscribed ? 'btn-outline-secondary' : 'btn-grompil') . '" type="submit"'
     . ($email === '' ? ' disabled' : '') . '>'
-    . e(fn_t($subscribed ? 'release_notes_unsubscribe' : 'release_notes_subscribe')) . '</button></form></div></section>';
+    . e(fn_t($subscribed ? 'release_notes_unsubscribe' : 'release_notes_subscribe')) . '</button></form></div></section></div>';
 
 if ($isPublisher) {
-    $isEditing = $editingNoteId > 0 && $editingNote !== null;
+    echo '<div class="col-12 col-md-6 d-flex justify-content-md-end align-items-center">'
+        . '<button class="btn btn-grompil" type="submit" form="release-note-publish-form">'
+        . e(fn_t($isEditing ? 'release_notes_save_edits' : 'release_notes_publish')) . '</button></div>';
+} else {
+    echo '<div class="col-12 col-md-6"></div>';
+}
+echo '</div>';
+
+if ($isPublisher) {
     $languageFields = '';
     foreach ($languages as $code) {
         $active = $code === $language;
@@ -360,7 +369,7 @@ if ($isPublisher) {
             . e((string) ($postedMessages[$code] ?? '')) . '</textarea></div>';
     }
     echo '<section class="card mb-4"><div class="card-body"><h2 class="h5">' . e(fn_t($isEditing ? 'release_notes_edit_title' : 'release_notes_publish_title')) . '</h2><p class="text-secondary">'
-        . e(fn_t('release_notes_publish_help')) . '</p><form method="post">' . csrf_field()
+        . e(fn_t('release_notes_publish_help')) . '</p><form method="post" id="release-note-publish-form">' . csrf_field()
         . '<input type="hidden" name="action" value="' . ($isEditing ? 'update' : 'publish') . '">'
         . ($isEditing ? '<input type="hidden" name="note_id" value="' . $editingNoteId . '">' : '')
         . '<input type="hidden" name="return_to" value="' . e($returnUrl) . '">' . $languageFields
@@ -368,8 +377,7 @@ if ($isPublisher) {
         . '</label><input class="form-control" type="text" inputmode="numeric" pattern="[0-9]{1,12}" maxlength="12"'
         . ' id="release-wiki-page" name="wiki_page_id" value="' . e($postedWikiPageId) . '"><div class="form-text">'
         . e(fn_t('release_notes_wiki_page_id_help')) . '</div></div>'
-        . '<button class="btn btn-grompil" type="submit">' . e(fn_t($isEditing ? 'release_notes_save_edits' : 'release_notes_publish')) . '</button>'
-        . ($isEditing ? ' <a class="btn btn-outline-secondary ms-2" href="release-notes.php?return_to=' . rawurlencode($returnUrl) . '">'
+        . ($isEditing ? '<a class="btn btn-outline-secondary" href="release-notes.php?return_to=' . rawurlencode($returnUrl) . '">'
             . e(fn_t('release_notes_cancel_edit')) . '</a>' : '')
         . '</form></div></section>'
         . '<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>'
