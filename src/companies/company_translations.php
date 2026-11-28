@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Sun 2026-10-18 20:35:50
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Sat 2026-11-28 15:32:43
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -162,7 +162,7 @@ while ($result && $row = pg_fetch_assoc($result)) {
         'translation_value' => (string) $row['value'],
     ]);
 }
-$languageSelect = '<select class="form-select form-select-sm w-auto" aria-label="'
+$languageSelect = '<select id="company-translations-language" name="language" class="form-select form-select-sm w-auto" aria-label="'
     . e(fn_t('translations_language_label')) . '" data-language-parameter="language">';
 foreach ($languages as $item) {
     $selected = $item === $language ? ' selected' : '';

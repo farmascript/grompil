@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Wed 2026-10-14 21:45:46
- * @date_mut: Sat 2026-11-28 15:18:44
+ * @date_mut: Sat 2026-11-28 15:32:43
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -205,7 +205,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$languageLinks = '<select class="form-select form-select-sm w-auto" aria-label="Translation language" data-language-parameter="language">';
+$languageLinks = '<select id="translations-language" name="language" class="form-select form-select-sm w-auto" aria-label="'
+    . e(fn_t('translations_language_label')) . '" data-language-parameter="language">';
 foreach ($languages as $item) {
     $selected = $item === $language ? ' selected' : '';
     $languageLinks .= '<option value="' . e($item) . '"' . $selected . '>' . e($item) . '</option>';
