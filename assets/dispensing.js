@@ -150,6 +150,7 @@
     const prescriptionNotFoundModalElement = document.getElementById('dispensingPrescriptionNotFoundModal');
     const prescriptionNotFoundMessage = prescriptionNotFoundModalElement?.querySelector('[data-prescription-not-found-template]');
     let pendingPrescriptionStatusKey = '';
+    let caregiverModalMode = 'prescription';
     let editingLine = null;
     const historyModalElement = document.getElementById('dispensingPatientHistoryModal');
     const historyBody = document.querySelector('[data-patient-history-body]');
@@ -470,6 +471,7 @@
         caregiverContinue: page.dataset.textCaregiverContinue,
         caregiverSelected: page.dataset.textCaregiverSelected,
         caregiverAdd: page.dataset.textCaregiverAdd,
+        caregiverKeepForDispensing: page.dataset.textCaregiverKeepForDispensing,
         newPrescription: page.dataset.textNewPrescription,
         prescriptionKeepCaregiver: page.dataset.textPrescriptionKeepCaregiver,
         prescriptionChooseCaregiver: page.dataset.textPrescriptionChooseCaregiver,
@@ -750,7 +752,7 @@
             basket.clear();
             for (const line of data.lines || []) {
                 basket.set(String(line.id), line);
-                if (line.requires_caregiver && line.caregiver_code && !caregiverByParty.has(String(line.party_id))) {
+                if (line.caregiver_code && !caregiverByParty.has(String(line.party_id))) {
                     setPartyCaregiver(line.party_id, { caregiver_code: line.caregiver_code, name: line.caregiver_name });
                 }
             }
@@ -887,25 +889,36 @@
         if (newPrescriptionCaregiverCode) newPrescriptionCaregiverCode.value = caregiver?.caregiver_code || '';
     });
 
-    function openNewPrescriptionModal(forStatusChange = false) {
+    function openNewPrescriptionModal(forStatusChange = false, forOptionalCaregiver = false) {
         if (!newPrescriptionModalElement || !window.bootstrap) return;
+        caregiverModalMode = forOptionalCaregiver ? 'optional' : 'prescription';
         if (newPrescriptionTitle) {
             newPrescriptionTitle.textContent = forStatusChange
                 ? newPrescriptionTitle.dataset.promptTitle || ''
-                : newPrescriptionTitle.dataset.defaultTitle || '';
+                : (forOptionalCaregiver
+                    ? newPrescriptionTitle.dataset.optionalTitle || ''
+                    : newPrescriptionTitle.dataset.defaultTitle || '');
         }
         if (newPrescriptionSave) {
             newPrescriptionSave.textContent = forStatusChange
                 ? newPrescriptionSave.dataset.promptLabel || ''
-                : newPrescriptionSave.dataset.defaultLabel || '';
+                : (forOptionalCaregiver
+                    ? newPrescriptionSave.dataset.optionalLabel || ''
+                    : newPrescriptionSave.dataset.defaultLabel || '');
         }
         const currentParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
         const currentCaregiver = caregiverByParty.get(String(activePartyId))
             || (currentParty?.type !== 'customer' ? pendingSessionCaregiver : null);
         if (newPrescriptionKeepLabel) {
-            newPrescriptionKeepLabel.textContent = currentCaregiver?.name
-                ? (t.prescriptionKeepCaregiver || '').replace('{name}', currentCaregiver.name)
-                : (t.prescriptionChooseCaregiver || '');
+            if (forOptionalCaregiver) {
+                newPrescriptionKeepLabel.textContent = currentCaregiver?.name
+                    ? (newPrescriptionKeepLabel.dataset.optionalKeep || '').replace('{name}', currentCaregiver.name)
+                    : newPrescriptionKeepLabel.dataset.optionalChoose || '';
+            } else {
+                newPrescriptionKeepLabel.textContent = currentCaregiver?.name
+                    ? (t.prescriptionKeepCaregiver || '').replace('{name}', currentCaregiver.name)
+                    : (t.prescriptionChooseCaregiver || '');
+            }
         }
         if (newPrescriptionCaregiverInput) {
             newPrescriptionCaregiverInput.value = '';
@@ -946,25 +959,39 @@
 
     newPrescriptionSave?.addEventListener('click', async () => {
         const selectedCode = newPrescriptionCaregiverCode?.value || '';
-        const activeParty = dispensingParties.find((party) => Number(party.id) === activePartyId);
         const selectedCaregiver = selectedCode ? {
             caregiver_code: selectedCode,
             name: newPrescriptionCaregiverInput?.value || '',
         } : null;
-        if (selectedCaregiver && activeParty?.type === 'customer') {
-            setPartyCaregiver(activePartyId, selectedCaregiver);
-        } else if (selectedCaregiver) {
-            pendingSessionCaregiver = selectedCaregiver;
-            try { sessionStorage.setItem(pendingCaregiverStorageKey(), JSON.stringify(pendingSessionCaregiver)); } catch {}
-        }
         const currentCaregiver = selectedCaregiver || caregiverByParty.get(String(activePartyId))
-            || (activeParty?.type !== 'customer' ? pendingSessionCaregiver : null);
+            || pendingSessionCaregiver;
         if (!currentCaregiver?.caregiver_code) {
             if (newPrescriptionError) {
-                newPrescriptionError.textContent = t.prescriptionChooseCaregiver || t.caregiverUnavailable || '';
+                newPrescriptionError.textContent = caregiverModalMode === 'optional'
+                    ? newPrescriptionKeepLabel?.dataset.optionalChoose || t.caregiverUnavailable || ''
+                    : t.prescriptionChooseCaregiver || t.caregiverUnavailable || '';
                 newPrescriptionError.classList.remove('d-none');
             }
             newPrescriptionCaregiverInput?.focus();
+            return;
+        }
+        try {
+            await sessionReady;
+            const assignment = await sessionRequest('party_caregiver_set', {
+                party_id: activePartyId,
+                caregiver_code: currentCaregiver.caregiver_code,
+            });
+            dispensingParties = assignment.parties || dispensingParties;
+            for (const [key, line] of basket) {
+                if (!line.pending) basket.delete(key);
+            }
+            for (const line of assignment.lines || []) basket.set(String(line.id), line);
+            setPartyCaregiver(activePartyId, currentCaregiver);
+            pendingSessionCaregiver = null;
+            try { sessionStorage.removeItem(pendingCaregiverStorageKey()); } catch {}
+            renderBasket();
+        } catch {
+            showSessionError();
             return;
         }
         const pendingStatusKey = pendingPrescriptionStatusKey;
@@ -979,6 +1006,7 @@
     });
 
     newPrescriptionModalElement?.addEventListener('hidden.bs.modal', () => {
+        caregiverModalMode = 'prescription';
         if (pendingPrescriptionStatusKey) {
             pendingPrescriptionStatusKey = '';
             if (dispenseStatusSelect) dispenseStatusSelect.value = lastPersistedDispenseStatus;
@@ -1099,17 +1127,15 @@
             patientName.className = 'dispense-active-party-name';
             patientName.textContent = party.name || party.customer_code || '';
             activePartyLabel.append(patientName, statusLabel);
-            if (dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true') {
-                const caregiver = caregiverByParty.get(String(activePartyId));
-                if (caregiver?.name) {
-                    const caregiverLabel = document.createElement('span');
-                    caregiverLabel.className = 'status-pill status-muted';
-                    caregiverLabel.textContent = caregiver.name;
-                    caregiverLabel.title = (t.prescriptionKeepCaregiver || '').replace('{name}', caregiver.name);
-                    caregiverLabel.setAttribute('aria-label', caregiverLabel.title);
-                    activePartyLabel.append(caregiverLabel);
-                }
-            }
+        }
+        const caregiver = caregiverByParty.get(String(activePartyId));
+        if (caregiver?.name) {
+            const caregiverLabel = document.createElement('span');
+            caregiverLabel.className = 'status-pill status-muted';
+            caregiverLabel.textContent = caregiver.name;
+            caregiverLabel.title = (t.caregiverKeepForDispensing || '').replace('{name}', caregiver.name);
+            caregiverLabel.setAttribute('aria-label', caregiverLabel.title);
+            activePartyLabel.append(caregiverLabel);
         }
         const addPartyButton = document.createElement('button');
         addPartyButton.type = 'button';
@@ -1117,6 +1143,12 @@
         addPartyButton.textContent = page.dataset.textAddParty || '';
         addPartyButton.addEventListener('click', () => patientInput?.focus());
         activePartyLabel.append(addPartyButton);
+        const addCaregiverButton = document.createElement('button');
+        addCaregiverButton.type = 'button';
+        addCaregiverButton.className = 'btn btn-sm btn-outline-secondary';
+        addCaregiverButton.textContent = t.caregiverAdd || '';
+        addCaregiverButton.addEventListener('click', () => openNewPrescriptionModal(false, true));
+        activePartyLabel.append(addCaregiverButton);
         if (!isAnonymous && dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true') {
             const newPrescriptionButton = document.createElement('button');
             newPrescriptionButton.type = 'button';
@@ -1273,9 +1305,14 @@
             if (savedPendingCaregiver?.caregiver_code) pendingSessionCaregiver = savedPendingCaregiver;
         } catch {}
         dispensingParties = session.parties || [];
+        for (const party of dispensingParties) {
+            if (party.caregiver_code) {
+                setPartyCaregiver(party.id, { caregiver_code: party.caregiver_code, name: party.caregiver_name || '' });
+            }
+        }
         for (const line of session.lines || []) {
             basket.set(String(line.id), line);
-            if (line.requires_caregiver && line.caregiver_code && !caregiverByParty.has(String(line.party_id))) {
+            if (line.caregiver_code && !caregiverByParty.has(String(line.party_id))) {
                 setPartyCaregiver(line.party_id, { caregiver_code: line.caregiver_code, name: line.caregiver_name });
             }
         }
@@ -1482,20 +1519,20 @@
                     packageSize.textContent = packageText;
                     descriptionCell.append(separator, packageSize);
                 }
-                if (product.requires_caregiver) {
+                if (product.caregiver_name) {
                     const caregiverLabel = document.createElement('div');
                     caregiverLabel.className = 'small text-secondary mt-1';
                     caregiverLabel.classList.add('fst-italic');
                     caregiverLabel.textContent = product.caregiver_name || '';
                     descriptionCell.append(caregiverLabel);
-                    if (!product.caregiver_code && !product.pending) {
-                        const addCaregiver = document.createElement('button');
-                        addCaregiver.type = 'button';
-                        addCaregiver.className = 'btn btn-sm btn-outline-secondary mt-1';
-                        addCaregiver.textContent = t.caregiverAdd || '';
-                        addCaregiver.addEventListener('click', () => openLineEdit(product));
-                        descriptionCell.append(addCaregiver);
-                    }
+                }
+                if (product.requires_caregiver && !product.caregiver_code && !product.pending) {
+                    const addCaregiver = document.createElement('button');
+                    addCaregiver.type = 'button';
+                    addCaregiver.className = 'btn btn-sm btn-outline-secondary mt-1';
+                    addCaregiver.textContent = t.caregiverAdd || '';
+                    addCaregiver.addEventListener('click', () => openLineEdit(product));
+                    descriptionCell.append(addCaregiver);
                 }
 
                 const removeCell = document.createElement('td');
@@ -1636,12 +1673,8 @@
             package_nl: String(product.pack_display_nl || ''),
             package_fr: String(product.pack_display_fr || ''),
             quantity: 1,
-            caregiver_code: dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true'
-                ? (caregiverByParty.get(String(activePartyId))?.caregiver_code || '')
-                : '',
-            caregiver_name: dispenseStatusSelect?.selectedOptions[0]?.dataset.requiresCaregiver === 'true'
-                ? (caregiverByParty.get(String(activePartyId))?.name || '')
-                : '',
+            caregiver_code: caregiverByParty.get(String(activePartyId))?.caregiver_code || '',
+            caregiver_name: caregiverByParty.get(String(activePartyId))?.name || '',
             pending: true,
         };
         basket.set(pendingId, pendingLine);

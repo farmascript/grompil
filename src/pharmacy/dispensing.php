@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Sat 2026-11-28 14:23:44
+ * @date_mut: Sat 2026-11-28 14:38:35
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -1159,6 +1159,8 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_caregiver_continue' => fn_t('dispense_caregiver_continue'),
     'dispense_caregiver_selected' => fn_t('dispense_caregiver_selected'),
     'dispense_caregiver_add' => fn_t('dispense_caregiver_add'),
+    'dispense_caregiver_choose_for_dispensing' => fn_t('dispensing_caregiver_choose_for_dispensing'),
+    'dispense_caregiver_keep_for_dispensing' => fn_t('dispensing_caregiver_keep_for_dispensing'),
     'dispense_new_prescription' => fn_t('dispensing_new_prescription'),
     'dispense_prescription_keep_caregiver' => fn_t('dispensing_prescription_keep_caregiver'),
     'dispense_prescription_choose_caregiver' => fn_t('dispensing_prescription_choose_caregiver'),
