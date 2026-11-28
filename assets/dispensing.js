@@ -641,7 +641,7 @@
     const updatePatientHomePharmacistIndicator = (customerCode, isHomePharmacist) => {
         const patientName = document.querySelector('[data-patient-display-name]');
         if (!patientName || patientName.dataset.customerCode !== customerCode) return;
-        patientName.classList.toggle('text-success', isHomePharmacist);
+        patientName.classList.toggle('text-primary', isHomePharmacist);
     };
     const refreshPatientHomePharmacistIndicator = async (party) => {
         if (party?.type !== 'customer' || !party.customer_code) return;
@@ -651,6 +651,7 @@
             const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store' });
             const data = await response.json();
             if (response.ok && data.profile && activePartyId === Number(party.id)) {
+                updateCustomerProfileTrigger(data.profile.has_data === true);
                 updatePatientHomePharmacistIndicator(party.customer_code, data.profile.is_home_pharmacist === true);
             }
         } catch {}

@@ -1031,7 +1031,7 @@ $patientTitleHtml = $selectedPatient
         ),
         '_patient_audit_tooltip_text' => $auditTooltipText,
         '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
-        '_patient_home_pharmacist_class' => $patientProfile['is_home_pharmacist'] ? 'text-success' : '',
+        '_patient_home_pharmacist_class' => $patientProfile['is_home_pharmacist'] ? 'text-primary' : '',
         'customer_code' => e((string) $selectedPatient['customer_code']),
         '_patient_profile_button_html' => '',
         '_patient_age_html' => $selectedPatientIsDeceased
