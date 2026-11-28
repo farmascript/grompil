@@ -71,6 +71,16 @@
                 <span>@translations_language_label@ @language_name@</span>
                 <span class="small text-secondary" aria-live="polite" data-translation-page-status></span>
             </div>
+            <div class="card-body py-2 border-bottom" data-translation-pagination-top hidden>
+                <nav aria-label="@translations_search_pagination@" data-translation-pagination hidden>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="first">@translations_search_first@</button>
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="previous">@translations_search_previous@</button>
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="next">@translations_search_next@</button>
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="last">@translations_search_last@</button>
+                    </div>
+                </nav>
+            </div>
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
                     <thead>
@@ -109,7 +119,8 @@
         const pageStatusElement = document.querySelector('[data-translation-page-status]');
         const unsavedElement = document.querySelector('[data-translation-unsaved]');
         const saveMessageElement = document.querySelector('[data-translation-save-message]');
-        const pagination = document.querySelector('[data-translation-pagination]');
+        const topPaginationContainer = document.querySelector('[data-translation-pagination-top]');
+        const paginations = [...document.querySelectorAll('[data-translation-pagination]')];
         const saveButtons = [...document.querySelectorAll('[data-translation-save]')];
         const drafts = new Map();
         const hiddenInputs = new Map();
@@ -190,17 +201,20 @@
         const updatePagination = (page, total, perPage) => {
             currentPage = page;
             totalPages = Math.max(1, Math.ceil(total / perPage));
-            pagination.hidden = total === 0;
+            paginations.forEach((pagination) => {
+                pagination.hidden = total === 0;
+                pagination.querySelectorAll('[data-translation-page-action]').forEach((button) => {
+                    const action = button.dataset.translationPageAction;
+                    button.disabled = (action === 'first' || action === 'previous') ? page <= 1 : page >= totalPages;
+                });
+            });
+            topPaginationContainer.hidden = total === 0;
             const start = total === 0 ? 0 : (page - 1) * perPage + 1;
             const end = Math.min(total, page * perPage);
             pageStatusElement.textContent = message('Page')
                 .replace('{from}', String(start))
                 .replace('{to}', String(end))
                 .replace('{total}', String(total));
-            pagination.querySelectorAll('[data-translation-page-action]').forEach((button) => {
-                const action = button.dataset.translationPageAction;
-                button.disabled = (action === 'first' || action === 'previous') ? page <= 1 : page >= totalPages;
-            });
         };
 
         const runSearch = async (page = 1, all = showAll) => {
@@ -219,7 +233,8 @@
                 rowsElement.append(row);
                 statusElement.textContent = message('Prompt');
                 pageStatusElement.textContent = '';
-                pagination.hidden = true;
+                paginations.forEach((pagination) => { pagination.hidden = true; });
+                topPaginationContainer.hidden = true;
                 return;
             }
             showAll = all;
@@ -268,7 +283,7 @@
             textInput.value = '';
             runSearch(1, true);
         });
-        pagination.addEventListener('click', (event) => {
+        paginations.forEach((pagination) => pagination.addEventListener('click', (event) => {
             const button = event.target.closest('[data-translation-page-action]');
             if (!button || button.disabled) return;
             const action = button.dataset.translationPageAction;
@@ -276,7 +291,7 @@
                 : action === 'previous' ? currentPage - 1
                     : action === 'next' ? currentPage + 1 : totalPages;
             runSearch(nextPage, showAll);
-        });
+        }));
         saveForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (drafts.size === 0) return;
