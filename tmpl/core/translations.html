@@ -1,89 +1,325 @@
 <!-- 234254 b-->
 
 @_message_html@
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-    <div>
-        <h1 class="h2 mb-1">
-            @translations_heading@
-        </h1>
-        <p class="text-secondary mb-0">
-            @translations_intro@
-        </p>
+<div class="alert d-none" role="status" aria-live="polite" data-translation-save-message></div>
+<div data-translation-page>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div>
+            <h1 class="h2 mb-1">
+                @translations_heading@ @_page_help_html_dev_16721@
+            </h1>
+            <p class="text-secondary mb-0">
+                @translations_intro@
+            </p>
+        </div>
+        <div>
+            @_language_links_html@
+        </div>
     </div>
-    <div>
-        @_language_links_html@
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <form method="post" action="translations.php?language=@language@">
+            @_csrf_field_html@
+            <input type="hidden" name="language" value="@language@">
+            <button class="btn btn-outline-primary" name="action" value="import">@translations_import_button@</button>
+        </form>
+        <form method="post" action="translations.php?language=@language@">
+            @_csrf_field_html@
+            <input type="hidden" name="language" value="@language@">
+            <button class="btn btn-outline-secondary" name="action" value="export">@translations_export_button@</button>
+        </form>
+        <button class="btn btn-primary" type="submit" form="translations-form" data-translation-save disabled>@translations_save_button@</button>
     </div>
-</div>
-<div class="d-flex flex-wrap gap-2 mb-3">
-    <form method="post" action="translations.php?language=@language@">
+
+    <form class="card shadow-sm mb-3" data-translation-search
+          data-endpoint="translations.php" data-language="@language@"
+          data-text-prompt="@translations_search_prompt@"
+          data-text-loading="@translations_search_loading@"
+          data-text-no-results="@translations_search_no_results@"
+          data-text-error="@translations_search_error@"
+          data-text-results="@translations_search_results@"
+          data-text-page="@translations_search_page@"
+          data-text-unsaved="@translations_unsaved_count@"
+          data-text-unsaved-warning="@translations_unsaved_warning@">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-lg-5">
+                    <label class="form-label" for="translation-key-search">@translations_search_key@</label>
+                    <input class="form-control" id="translation-key-search" type="search" autocomplete="off" data-translation-key-search>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <label class="form-label" for="translation-text-search">@translations_search_text@</label>
+                    <input class="form-control" id="translation-text-search" type="search" autocomplete="off" data-translation-text-search>
+                </div>
+                <div class="col-12 col-lg-2 d-flex gap-2">
+                    <button class="btn btn-outline-primary" type="submit">@translations_search_button@</button>
+                    <button class="btn btn-outline-secondary" type="button" data-translation-show-all>@translations_search_all@</button>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                <div class="small text-secondary" role="status" aria-live="polite" data-translation-search-status>@translations_search_prompt@</div>
+                <div class="small text-secondary" data-translation-unsaved hidden></div>
+            </div>
+        </div>
+    </form>
+
+    <form id="translations-form" method="post" action="translations.php?language=@language@" data-translation-save-form>
         @_csrf_field_html@
         <input type="hidden" name="language" value="@language@">
-        <button class="btn btn-outline-primary" name="action" value="import">@translations_import_button@</button>
+        <input type="hidden" name="action" value="save">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <span>@translations_language_label@ @language_name@</span>
+                <span class="small text-secondary" aria-live="polite" data-translation-page-status></span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">@translations_key_label@</th>
+                            <th scope="col">@translations_text_label@</th>
+                        </tr>
+                    </thead>
+                    <tbody data-translation-rows>
+                        <tr><td class="text-secondary py-4" colspan="2">@translations_search_prompt@</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <nav aria-label="@translations_search_pagination@" data-translation-pagination hidden>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="first">@translations_search_first@</button>
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="previous">@translations_search_previous@</button>
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="next">@translations_search_next@</button>
+                        <button class="btn btn-outline-secondary" type="button" data-translation-page-action="last">@translations_search_last@</button>
+                    </div>
+                </nav>
+                <button class="btn btn-primary" type="submit" data-translation-save disabled>@translations_save_button@</button>
+            </div>
+        </div>
     </form>
-    <form method="post" action="translations.php?language=@language@">
-        @_csrf_field_html@
-        <input type="hidden" name="language" value="@language@">
-        <button class="btn btn-outline-secondary" name="action" value="export">@translations_export_button@</button>
-    </form>
-    <button class="btn btn-primary" type="submit" form="translations-form">@translations_save_button@</button>
 </div>
-<form id="translations-form" method="post" action="translations.php?language=@language@">
-    @_csrf_field_html@
-    <input type="hidden" name="language" value="@language@">
-    <input type="hidden" name="action" value="save">
-    <div class="card shadow-sm">
-        <div class="card-header">
-            @translations_language_label@ @language_name@
-        </div>
-        <div class="table-responsive">
-            <table class="table table-striped align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th scope="col">
-                            @translations_key_label@
-                        </th>
-                        <th scope="col">
-                            @translations_text_label@
-                        </th>
-                    </tr>
-                    <tr>
-                        <th>
-                            <input type="search" class="form-control form-control-sm" data-translation-filter="key" aria-label="@translations_key_label@" placeholder="@translations_key_label@" autocomplete="off">
-                        </th>
-                        <th>
-                            <input type="search" class="form-control form-control-sm" data-translation-filter="text" aria-label="@translations_text_label@" placeholder="@translations_text_label@" autocomplete="off">
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @_translation_rows_html@
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer text-end">
-            <button class="btn btn-primary" type="submit">@translations_save_button@</button>
-        </div>
-    </div>
-</form>
 <script>
     (() => {
-        const filters = [...document.querySelectorAll('[data-translation-filter]')];
-        const rows = [...document.querySelectorAll('table tbody tr')];
+        const searchForm = document.querySelector('[data-translation-search]');
+        const saveForm = document.querySelector('[data-translation-save-form]');
+        const keyInput = document.querySelector('[data-translation-key-search]');
+        const textInput = document.querySelector('[data-translation-text-search]');
+        const rowsElement = document.querySelector('[data-translation-rows]');
+        const statusElement = document.querySelector('[data-translation-search-status]');
+        const pageStatusElement = document.querySelector('[data-translation-page-status]');
+        const unsavedElement = document.querySelector('[data-translation-unsaved]');
+        const saveMessageElement = document.querySelector('[data-translation-save-message]');
+        const pagination = document.querySelector('[data-translation-pagination]');
+        const saveButtons = [...document.querySelectorAll('[data-translation-save]')];
+        const drafts = new Map();
+        const hiddenInputs = new Map();
+        let currentPage = 1;
+        let totalPages = 1;
+        let debounceTimer = 0;
+        let requestSequence = 0;
+        let requestController = null;
+        let showAll = false;
 
-        const updateRows = () => {
-            const keyFilter = document.querySelector('[data-translation-filter="key"]')
-                .value.trim().toLocaleLowerCase();
-            const textFilter = document.querySelector('[data-translation-filter="text"]')
-                .value.trim().toLocaleLowerCase();
+        if (!searchForm || !saveForm || !rowsElement) return;
 
-            rows.forEach((row) => {
-                const key = row.cells[0].textContent.toLocaleLowerCase();
-                const value = row.cells[1].querySelector('textarea').value.toLocaleLowerCase();
-                row.hidden = !key.includes(keyFilter) || !value.includes(textFilter);
+        const message = (key) => searchForm.dataset[`text${key}`] || '';
+        const updateSaveState = () => {
+            const count = drafts.size;
+            saveButtons.forEach((button) => { button.disabled = count === 0; });
+            unsavedElement.hidden = count === 0;
+            unsavedElement.textContent = count === 0
+                ? ''
+                : message('Unsaved').replace('{count}', String(count));
+        };
+
+        const setDraft = (key, value, originalValue) => {
+            if (value === originalValue) {
+                drafts.delete(key);
+                hiddenInputs.get(key)?.remove();
+                hiddenInputs.delete(key);
+            } else {
+                drafts.set(key, value);
+                let hidden = hiddenInputs.get(key);
+                if (!hidden) {
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = `translations[${key}]`;
+                    hidden.dataset.translationChange = key;
+                    saveForm.append(hidden);
+                    hiddenInputs.set(key, hidden);
+                }
+                hidden.value = value;
+            }
+            updateSaveState();
+        };
+
+        const renderItems = (items) => {
+            rowsElement.replaceChildren();
+            if (items.length === 0) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 2;
+                cell.className = 'text-secondary py-4';
+                cell.textContent = message('NoResults');
+                row.append(cell);
+                rowsElement.append(row);
+                return;
+            }
+            for (const item of items) {
+                const row = document.createElement('tr');
+                const keyCell = document.createElement('th');
+                keyCell.scope = 'row';
+                keyCell.className = 'text-nowrap';
+                const keyCode = document.createElement('code');
+                keyCode.textContent = item.key;
+                keyCell.append(keyCode);
+                const valueCell = document.createElement('td');
+                const textarea = document.createElement('textarea');
+                textarea.className = 'form-control';
+                textarea.rows = 2;
+                textarea.value = drafts.has(item.key) ? drafts.get(item.key) : item.value;
+                textarea.dataset.translationKey = item.key;
+                textarea.dataset.originalValue = item.value;
+                textarea.addEventListener('input', () => setDraft(item.key, textarea.value, item.value));
+                valueCell.append(textarea);
+                row.append(keyCell, valueCell);
+                rowsElement.append(row);
+            }
+        };
+
+        const updatePagination = (page, total, perPage) => {
+            currentPage = page;
+            totalPages = Math.max(1, Math.ceil(total / perPage));
+            pagination.hidden = total === 0;
+            const start = total === 0 ? 0 : (page - 1) * perPage + 1;
+            const end = Math.min(total, page * perPage);
+            pageStatusElement.textContent = message('Page')
+                .replace('{from}', String(start))
+                .replace('{to}', String(end))
+                .replace('{total}', String(total));
+            pagination.querySelectorAll('[data-translation-page-action]').forEach((button) => {
+                const action = button.dataset.translationPageAction;
+                button.disabled = (action === 'first' || action === 'previous') ? page <= 1 : page >= totalPages;
             });
         };
 
-        filters.forEach((filter) => filter.addEventListener('input', updateRows));
+        const runSearch = async (page = 1, all = showAll) => {
+            const key = keyInput.value.trim();
+            const text = textInput.value.trim();
+            if (key === '' && text === '' && !all) {
+                requestSequence++;
+                requestController?.abort();
+                rowsElement.replaceChildren();
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 2;
+                cell.className = 'text-secondary py-4';
+                cell.textContent = message('Prompt');
+                row.append(cell);
+                rowsElement.append(row);
+                statusElement.textContent = message('Prompt');
+                pageStatusElement.textContent = '';
+                pagination.hidden = true;
+                return;
+            }
+            showAll = all;
+            const sequence = ++requestSequence;
+            requestController?.abort();
+            requestController = new AbortController();
+            statusElement.textContent = message('Loading');
+            const params = new URLSearchParams({
+                ajax: 'search', language: searchForm.dataset.language,
+                key, text, page: String(page), all: all ? '1' : '0',
+            });
+            try {
+                const response = await fetch(`${searchForm.dataset.endpoint}?${params}`, {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    signal: requestController.signal,
+                });
+                const data = await response.json();
+                if (sequence !== requestSequence) return;
+                if (!response.ok) throw new Error(data.error || 'search_failed');
+                renderItems(data.items || []);
+                updatePagination(data.page || 1, data.total || 0, data.per_page || 50);
+                statusElement.textContent = (data.total || 0) === 0
+                    ? message('NoResults')
+                    : message('Results').replace('{count}', String(data.total));
+            } catch (error) {
+                if (error.name === 'AbortError' || sequence !== requestSequence) return;
+                statusElement.textContent = message('Error');
+            }
+        };
+
+        searchForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            window.clearTimeout(debounceTimer);
+            runSearch(1, false);
+        });
+        [keyInput, textInput].forEach((input) => input.addEventListener('input', () => {
+            showAll = false;
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(() => runSearch(1, false), 300);
+        }));
+        document.querySelector('[data-translation-show-all]')?.addEventListener('click', () => {
+            window.clearTimeout(debounceTimer);
+            keyInput.value = '';
+            textInput.value = '';
+            runSearch(1, true);
+        });
+        pagination.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-translation-page-action]');
+            if (!button || button.disabled) return;
+            const action = button.dataset.translationPageAction;
+            const nextPage = action === 'first' ? 1
+                : action === 'previous' ? currentPage - 1
+                    : action === 'next' ? currentPage + 1 : totalPages;
+            runSearch(nextPage, showAll);
+        });
+        saveForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (drafts.size === 0) return;
+            saveButtons.forEach((button) => { button.disabled = true; });
+            const formData = new FormData(saveForm);
+            try {
+                const response = await fetch(saveForm.action, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData,
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    saveMessageElement.className = 'alert alert-danger';
+                    saveMessageElement.textContent = data.message || message('Error');
+                    saveMessageElement.hidden = false;
+                    updateSaveState();
+                    return;
+                }
+                for (const [key, hidden] of hiddenInputs) hidden.remove();
+                hiddenInputs.clear();
+                drafts.clear();
+                rowsElement.querySelectorAll('[data-translation-key]').forEach((textarea) => {
+                    textarea.dataset.originalValue = textarea.value;
+                });
+                saveMessageElement.className = 'alert alert-success';
+                saveMessageElement.textContent = data.message || '';
+                saveMessageElement.hidden = false;
+                updateSaveState();
+            } catch (error) {
+                saveMessageElement.className = 'alert alert-danger';
+                saveMessageElement.textContent = message('Error');
+                saveMessageElement.hidden = false;
+                updateSaveState();
+            }
+        });
+        window.addEventListener('beforeunload', (event) => {
+            if (drafts.size === 0) return;
+            event.preventDefault();
+            event.returnValue = message('UnsavedWarning');
+        });
+        updateSaveState();
     })();
 </script>
 

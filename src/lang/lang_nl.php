@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-10-22 21:20:11
- * @date_mut: Fri 2026-11-27
+ * @date_mut: Sat 2026-11-28 14:57:26
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -834,9 +834,26 @@ $arrSubst = array (
   'translations_language_label' => 'Taal',
   'translations_publish_failed' => 'Databasebewerking gelukt, maar publiceren is mislukt. Controleer de schrijfrechten op de taalmap.',
   'translations_published' => 'De taalbestanden voor NL, FR, EN en DE zijn gepubliceerd.',
+  'translations_search_all' => 'Alle vertalingen tonen',
+  'translations_search_button' => 'Zoeken',
+  'translations_search_error' => 'De vertalingen konden niet worden opgehaald. Probeer opnieuw.',
+  'translations_search_first' => 'Eerste',
+  'translations_search_key' => 'Zoek op sleutel',
+  'translations_search_last' => 'Laatste',
+  'translations_search_loading' => 'Vertalingen laden…',
+  'translations_search_next' => 'Volgende',
+  'translations_search_no_results' => 'Geen vertalingen gevonden.',
+  'translations_search_page' => '{from}–{to} van {total}',
+  'translations_search_pagination' => 'Paginering vertalingen',
+  'translations_search_previous' => 'Vorige',
+  'translations_search_prompt' => 'Zoek op een sleutel of tekst om vertalingen te tonen.',
+  'translations_search_results' => 'Aantal gevonden vertalingen: {count}.',
+  'translations_search_text' => 'Zoek in vertaaltekst',
   'translations_save_button' => 'Opslaan en publiceren',
   'translations_saved' => 'Vertalingen opgeslagen en taalbestand gepubliceerd.',
   'translations_text_label' => 'Tekst',
+  'translations_unsaved_count' => 'Niet-opgeslagen vertalingen: {count}.',
+  'translations_unsaved_warning' => 'Er zijn niet-opgeslagen vertalingen. Weet je zeker dat je deze pagina wilt verlaten?',
   'user_add_button' => 'Voeg gebruiker toe',
   'user_add_choose_role' => 'Kies een rol',
   'user_add_failed' => 'Gebruiker kon niet worden aangemaakt. Mogelijk bestaat dit e-mailadres al.',

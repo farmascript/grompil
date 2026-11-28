@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-10-22 21:20:11
- * @date_mut: Fri 2026-11-27
+ * @date_mut: Sat 2026-11-28 14:57:26
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -834,9 +834,26 @@ $arrSubst = array (
   'translations_language_label' => 'Language',
   'translations_publish_failed' => 'The database operation succeeded, but publishing failed. Check write access to the language folder.',
   'translations_published' => 'The NL, FR, EN and DE language files were published.',
+  'translations_search_all' => 'Show all translations',
+  'translations_search_button' => 'Search',
+  'translations_search_error' => 'The translations could not be loaded. Please try again.',
+  'translations_search_first' => 'First',
+  'translations_search_key' => 'Search by key',
+  'translations_search_last' => 'Last',
+  'translations_search_loading' => 'Loading translations…',
+  'translations_search_next' => 'Next',
+  'translations_search_no_results' => 'No translations found.',
+  'translations_search_page' => '{from}–{to} of {total}',
+  'translations_search_pagination' => 'Translation pagination',
+  'translations_search_previous' => 'Previous',
+  'translations_search_prompt' => 'Search for a key or text to display translations.',
+  'translations_search_results' => 'Translations found: {count}.',
+  'translations_search_text' => 'Search translated text',
   'translations_save_button' => 'Save and publish',
   'translations_saved' => 'Translations saved and language file published.',
   'translations_text_label' => 'Text',
+  'translations_unsaved_count' => 'Unsaved translations: {count}.',
+  'translations_unsaved_warning' => 'Some translations are not saved. Are you sure you want to leave this page?',
   'user_add_button' => 'Add user',
   'user_add_choose_role' => 'Choose a role',
   'user_add_failed' => 'Could not create the user. This email address may already exist.',

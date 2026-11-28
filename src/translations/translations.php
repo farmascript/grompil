@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Wed 2026-10-14 21:45:46
- * @date_mut: Thu 2026-11-26
+ * @date_mut: Sat 2026-11-28 14:59:11
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -26,6 +26,62 @@ if (!in_array($language, $languages, true)) {
 }
 $messageKey = '';
 $messageType = 'info';
+
+if (($_GET['ajax'] ?? '') === 'search') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, private');
+    $respond = static function (array $data, int $status = 200): never {
+        http_response_code($status);
+        echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        exit;
+    };
+    $keyQuery = trim((string) ($_GET['key'] ?? ''));
+    $textQuery = trim((string) ($_GET['text'] ?? ''));
+    $showAll = ($_GET['all'] ?? '') === '1';
+    $page = max(1, min(1000000, (int) ($_GET['page'] ?? 1)));
+    $perPage = 50;
+    if (strlen($keyQuery) > 200 || strlen($textQuery) > 2000) {
+        $respond(['error' => 'invalid_query'], 400);
+    }
+    if ($keyQuery === '' && $textQuery === '' && !$showAll) {
+        $respond(['items' => [], 'total' => 0, 'page' => 1, 'per_page' => $perPage]);
+    }
+    $likePattern = static function (string $query): string {
+        return '%' . strtr($query, ['\\' => '\\\\', '%' => '\\%', '_' => '\\_']) . '%';
+    };
+    try {
+        $countResult = db_query_params(
+            'translations.search_count',
+            'SELECT COUNT(*) AS total
+             FROM ft_substitutions
+             WHERE company_id = 0 AND code = $1
+               AND ($2 = \'\' OR "key" ILIKE $3 ESCAPE E\'\\\\\')
+               AND ($4 = \'\' OR "value" ILIKE $5 ESCAPE E\'\\\\\')',
+            [$language, $keyQuery, $likePattern($keyQuery), $textQuery, $likePattern($textQuery)]
+        );
+        $total = (int) pg_fetch_result($countResult, 0, 'total');
+        $pageCount = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $pageCount);
+        $offset = ($page - 1) * $perPage;
+        $itemsResult = db_query_params(
+            'translations.search_items',
+            'SELECT "key", "value"
+             FROM ft_substitutions
+             WHERE company_id = 0 AND code = $1
+               AND ($2 = \'\' OR "key" ILIKE $3 ESCAPE E\'\\\\\')
+               AND ($4 = \'\' OR "value" ILIKE $5 ESCAPE E\'\\\\\')
+             ORDER BY "key" LIMIT $6 OFFSET $7',
+            [$language, $keyQuery, $likePattern($keyQuery), $textQuery, $likePattern($textQuery), $perPage, $offset]
+        );
+        $items = [];
+        while ($row = pg_fetch_assoc($itemsResult)) {
+            $items[] = ['key' => (string) $row['key'], 'value' => (string) $row['value']];
+        }
+        $respond(['items' => $items, 'total' => $total, 'page' => $page, 'per_page' => $perPage]);
+    } catch (GrompilDatabaseQueryException) {
+        $respond(['error' => 'search_failed'], 500);
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -135,24 +191,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageKey = $ok ? 'translations_published' : 'translations_publish_failed';
         $messageType = $ok ? 'success' : 'danger';
     }
+    if ($action === 'save' && strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest') {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store, private');
+        echo json_encode([
+            'success' => $messageType === 'success',
+            'message' => fn_t($messageKey),
+            'message_type' => $messageType,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        exit;
+    }
 }
 
-try {
-    $result = db_query_params(
-        'translations.list',
-        'SELECT "key", "value" FROM ft_substitutions WHERE company_id = 0 AND code = $1 ORDER BY "key"',
-        [$language]
-    );
-} catch (GrompilDatabaseQueryException) {
-    $result = false;
-}
-$rows = '';
-while ($result && $row = pg_fetch_assoc($result)) {
-    $rows .= fn_templateRender('translations_row.html', [
-        'translation_key' => $row['key'],
-        'translation_value' => $row['value'],
-    ]);
-}
 $languageLinks = '<select class="form-select form-select-sm w-auto" aria-label="Translation language" data-language-parameter="language">';
 foreach ($languages as $item) {
     $selected = $item === $language ? ' selected' : '';
@@ -164,7 +214,6 @@ page_start(fn_t('nav_translations'), $currentUser);
 echo fn_templateRender('translations.html', [
     '_message_html' => $message,
     '_language_links_html' => $languageLinks,
-    '_translation_rows_html' => $rows,
     'language' => $language,
     'language_name' => strtoupper($language),
     '_csrf_field_html' => csrf_field(),

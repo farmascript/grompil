@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-10-22 21:20:11
- * @date_mut: Fri 2026-11-27
+ * @date_mut: Sat 2026-11-28 14:57:26
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -834,9 +834,26 @@ $arrSubst = array (
   'translations_language_label' => 'Langue',
   'translations_publish_failed' => 'Enregistrement dans la base de données réussi, mais échec de la publication. Vérifiez les droits d’écriture du dossier des langues.',
   'translations_published' => 'Les fichiers de langue NL, FR, EN et DE ont été publiés.',
+  'translations_search_all' => 'Afficher toutes les traductions',
+  'translations_search_button' => 'Rechercher',
+  'translations_search_error' => 'Impossible de récupérer les traductions. Réessayez.',
+  'translations_search_first' => 'Première',
+  'translations_search_key' => 'Rechercher une clé',
+  'translations_search_last' => 'Dernière',
+  'translations_search_loading' => 'Chargement des traductions…',
+  'translations_search_next' => 'Suivante',
+  'translations_search_no_results' => 'Aucune traduction trouvée.',
+  'translations_search_page' => '{from}–{to} sur {total}',
+  'translations_search_pagination' => 'Pagination des traductions',
+  'translations_search_previous' => 'Précédente',
+  'translations_search_prompt' => 'Recherchez une clé ou un texte pour afficher les traductions.',
+  'translations_search_results' => 'Nombre de traductions trouvées : {count}.',
+  'translations_search_text' => 'Rechercher dans le texte traduit',
   'translations_save_button' => 'Enregistrer et publier',
   'translations_saved' => 'Traductions enregistrées et fichier de langue publié.',
   'translations_text_label' => 'Texte',
+  'translations_unsaved_count' => 'Traductions non enregistrées : {count}.',
+  'translations_unsaved_warning' => 'Des traductions ne sont pas enregistrées. Voulez-vous vraiment quitter cette page ?',
   'user_add_button' => 'Ajouter un utilisateur',
   'user_add_choose_role' => 'Choisir un rôle',
   'user_add_failed' => 'Impossible de créer l’utilisateur. Cette adresse e-mail existe peut-être déjà.',

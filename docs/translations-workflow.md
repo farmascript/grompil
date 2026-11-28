@@ -26,9 +26,13 @@ Daarom kunnen Franse of Duitse vertalingen tijdelijk leeg blijven: de app toont 
 
 1. Kies een unieke, beschrijvende key in lowercase, bijvoorbeeld `dispensing_receipt_pdf_title`.
 2. Voeg die key toe aan alle vier de bronbestanden onder `src/lang/`. Vul de waarden voor NL, FR, EN en DE in. Gebruik placeholders zoals `{count}` wanneer een variabel getal in de tekst komt.
-3. Open **Vertalingen beheren** (`translations.php`) en klik op **Ontbrekende teksten importeren**. Deze knop voegt de ontbrekende algemene rijen toe aan `ft_substitutions` en publiceert daarna meteen alle taalbestanden. Bestaande databasevertalingen worden niet overschreven.
-4. Pas teksten per taal aan en klik op **Taalbestanden publiceren** om je wijzigingen naar de taalbestanden te publiceren.
-5. Neem de gewijzigde bron- en gegenereerde taalbestanden mee in de deployment. De PHP-bestanden moeten leesbaar zijn voor de applicatie; publiceren via de beheerpagina vereist schrijfrechten op de ingestelde taalmap.
+3. Open **Vertalingen beheren** (`translations.php`) en klik op **Ontbrekende teksten importeren**. Deze knop voegt de ontbrekende algemene rijen voor alle talen toe aan `ft_substitutions` en publiceert daarna meteen alle taalbestanden. Bestaande databasevertalingen worden niet overschreven.
+4. De beheerpagina start leeg. Zoek op sleutel en/of vertaaltekst; overeenkomsten verschijnen per 50 regels. **Alle vertalingen tonen** laadt de volledige lijst in pagina's. Je kunt verschillende zoekopdrachten na elkaar uitvoeren: bewerkte waarden blijven tijdelijk in de browser bewaard.
+5. Klik op **Opslaan en publiceren** om alleen de gewijzigde regels voor de gekozen taal in `ft_substitutions` op te slaan en het taalbestand voor die taal opnieuw aan te maken. Niet-opgeslagen wijzigingen blijven bij volgende zoekopdrachten behouden; verlaten van de pagina geeft een waarschuwing.
+6. **Taalbestanden publiceren** wijzigt niets in de database en maakt de gepubliceerde taalbestanden voor alle talen opnieuw aan op basis van de huidige databasewaarden.
+7. Neem de gewijzigde bron- en gegenereerde taalbestanden mee in de deployment. De PHP-bestanden moeten leesbaar zijn voor de applicatie; publiceren via de beheerpagina vereist schrijfrechten op de ingestelde taalmap.
+
+De DokuWiki-hulp bij de titel van **Vertalingen beheren** verwijst op ontwikkelaarsniveau naar `doc:grompil:dev:16721`.
 
 De beheerpagina is de normale werkwijze. De CLI-scripts zijn alleen een technische fallback voor beheer via de opdrachtregel:
 

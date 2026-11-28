@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-10-22 21:20:11
- * @date_mut: Fri 2026-11-27
+ * @date_mut: Sat 2026-11-28 14:57:26
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -834,9 +834,26 @@ $arrSubst = array (
   'translations_language_label' => 'Sprache',
   'translations_publish_failed' => 'Datenbankänderung erfolgreich, aber Veröffentlichung fehlgeschlagen. Prüfen Sie die Schreibrechte des Sprachordners.',
   'translations_published' => 'Die Sprachdateien für NL, FR, EN und DE wurden veröffentlicht.',
+  'translations_search_all' => 'Alle Übersetzungen anzeigen',
+  'translations_search_button' => 'Suchen',
+  'translations_search_error' => 'Die Übersetzungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'translations_search_first' => 'Erste',
+  'translations_search_key' => 'Nach Schlüssel suchen',
+  'translations_search_last' => 'Letzte',
+  'translations_search_loading' => 'Übersetzungen werden geladen…',
+  'translations_search_next' => 'Nächste',
+  'translations_search_no_results' => 'Keine Übersetzungen gefunden.',
+  'translations_search_page' => '{from}–{to} von {total}',
+  'translations_search_pagination' => 'Seitennavigation für Übersetzungen',
+  'translations_search_previous' => 'Vorherige',
+  'translations_search_prompt' => 'Suchen Sie nach einem Schlüssel oder Text, um Übersetzungen anzuzeigen.',
+  'translations_search_results' => 'Gefundene Übersetzungen: {count}.',
+  'translations_search_text' => 'Im übersetzten Text suchen',
   'translations_save_button' => 'Speichern und veröffentlichen',
   'translations_saved' => 'Übersetzungen gespeichert und Sprachdatei veröffentlicht.',
   'translations_text_label' => 'Text',
+  'translations_unsaved_count' => 'Nicht gespeicherte Übersetzungen: {count}.',
+  'translations_unsaved_warning' => 'Es gibt nicht gespeicherte Übersetzungen. Möchten Sie diese Seite wirklich verlassen?',
   'user_add_button' => 'Benutzer hinzufügen',
   'user_add_choose_role' => 'Rolle auswählen',
   'user_add_failed' => 'Benutzer konnte nicht erstellt werden. Diese E-Mail-Adresse besteht möglicherweise bereits.',
