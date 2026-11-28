@@ -1771,17 +1771,18 @@
                 const removeCell = document.createElement('td');
                 const edit = document.createElement('button');
                 edit.type = 'button';
-                edit.className = 'basket-remove me-2';
-                edit.textContent = '✎';
+                edit.className = 'basket-remove';
+                edit.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zM9.793 2.5 1 11.293V15h3.707L13.5 6.207z"/></svg>';
                 edit.title = t.lineEdit || '';
                 edit.setAttribute('aria-label', t.lineEdit || '');
                 edit.disabled = Boolean(product.pending);
                 edit.addEventListener('click', () => openLineEdit(product));
                 const remove = document.createElement('button');
                 remove.type = 'button';
-                remove.className = 'basket-remove';
-                remove.textContent = '×';
+                remove.className = 'basket-remove basket-remove--delete';
+                remove.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 13.5V4h-.5a1 1 0 1 1 0-2h3.086l.707-.707A1 1 0 0 1 7 1h2a1 1 0 0 1 .707.293L10.414 2H13.5a1 1 0 0 1 1 1M4 4v9.5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V4zM6.414 2l-.5.5h4.172l-.5-.5z"/></svg>';
                 remove.title = t.remove;
+                remove.setAttribute('aria-label', t.remove || '');
                 remove.disabled = Boolean(product.pending);
                 remove.addEventListener('click', async () => {
                     try {
