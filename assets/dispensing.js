@@ -105,6 +105,95 @@
     if (contactModal && page.dataset.contactModalOpen === 'true' && window.bootstrap) {
         bootstrap.Modal.getOrCreateInstance(contactModal).show();
     }
+    const customerProfileModal = document.getElementById('customerProfileModal');
+    const customerProfileTrigger = document.querySelector('[data-customer-profile-trigger]');
+    const customerProfileForm = document.querySelector('[data-customer-profile-form]');
+    const customerProfileError = document.querySelector('[data-customer-profile-error]');
+    const customerProfileSave = document.querySelector('[data-customer-profile-save]');
+    const profileCaregiverInput = document.querySelector('[data-profile-caregiver-search]');
+    const profileCaregiverCode = document.querySelector('[data-profile-caregiver-code]');
+    const profileCaregiverResults = document.querySelector('[data-profile-caregiver-results]');
+    const profileCaregiverClear = document.querySelector('[data-profile-caregiver-clear]');
+    const profileHomePharmacist = document.querySelector('[data-profile-home-pharmacist]');
+    const profilePrintBvac = document.querySelector('[data-profile-print-bvac]');
+    const profileInvoiceGroup = document.querySelector('#customer-profile-invoice-group');
+    const profileVatNumber = document.querySelector('#customer-profile-vat-number');
+    const updateCustomerProfileTrigger = (hasData) => {
+        if (!customerProfileTrigger) return;
+        customerProfileTrigger.dataset.hasProfile = hasData ? 'true' : 'false';
+        customerProfileTrigger.classList.toggle('text-primary', hasData);
+        customerProfileTrigger.classList.toggle('text-secondary', !hasData);
+    };
+    const applyCustomerProfile = (profile) => {
+        if (!profile || !customerProfileForm) return;
+        profileCaregiverInput.value = profile.fixed_caregiver_name || '';
+        profileCaregiverCode.value = profile.fixed_caregiver_code || '';
+        if (profile.fixed_caregiver_code) profileCaregiverInput.dataset.selectedCode = profile.fixed_caregiver_code;
+        else delete profileCaregiverInput.dataset.selectedCode;
+        profileHomePharmacist.checked = profile.is_home_pharmacist === true;
+        profilePrintBvac.checked = profile.print_bvac === true;
+        profileInvoiceGroup.value = profile.invoice_group || '';
+        profileVatNumber.value = profile.vat_number || '';
+        updateCustomerProfileTrigger(profile.has_data === true);
+    };
+    attachCaregiverSearch(profileCaregiverInput, profileCaregiverResults, (caregiver) => {
+        profileCaregiverCode.value = caregiver?.caregiver_code || '';
+    });
+    customerProfileTrigger?.addEventListener('click', () => {
+        if (!customerProfileModal || !window.bootstrap) return;
+        bootstrap.Modal.getOrCreateInstance(customerProfileModal).show();
+    });
+    customerProfileModal?.addEventListener('shown.bs.modal', async () => {
+        customerProfileError.classList.add('d-none');
+        profileCaregiverInput?.focus();
+        try {
+            const url = new URL(page.dataset.customerProfileEndpoint, window.location.href);
+            url.searchParams.set('customer_code', customerProfileForm.elements.customer_code.value);
+            const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+            const data = await response.json();
+            if (!response.ok || !data.profile) throw new Error('profile_unavailable');
+            applyCustomerProfile(data.profile);
+        } catch {
+            customerProfileError.classList.remove('d-none');
+        }
+    });
+    profileCaregiverClear?.addEventListener('click', () => {
+        profileCaregiverInput.value = '';
+        profileCaregiverCode.value = '';
+        delete profileCaregiverInput.dataset.selectedCode;
+        profileCaregiverResults.replaceChildren();
+        profileCaregiverResults.classList.add('d-none');
+        profileCaregiverInput.focus();
+    });
+    customerProfileForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        customerProfileError.classList.add('d-none');
+        customerProfileSave.disabled = true;
+        try {
+            const url = new URL(page.dataset.customerProfileEndpoint, window.location.href);
+            const response = await fetch(url, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({
+                    customer_code: customerProfileForm.elements.customer_code.value,
+                    csrf_token: customerProfileForm.elements.csrf_token.value,
+                    fixed_caregiver_code: profileCaregiverCode.value,
+                    is_home_pharmacist: profileHomePharmacist.checked,
+                    print_bvac: profilePrintBvac.checked,
+                    invoice_group: profileInvoiceGroup.value,
+                    vat_number: profileVatNumber.value,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.profile) throw new Error(data.error || 'profile_unavailable');
+            applyCustomerProfile(data.profile);
+            bootstrap.Modal.getOrCreateInstance(customerProfileModal).hide();
+        } catch {
+            customerProfileError.classList.remove('d-none');
+        } finally {
+            customerProfileSave.disabled = false;
+        }
+    });
     const input = document.querySelector('[data-product-search]');
     const withdrawnToggle = document.querySelector('[data-include-revoked]');
     const suggestions = document.querySelector('[data-product-suggestions]');

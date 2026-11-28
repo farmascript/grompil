@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Sat 2026-11-28 15:51:24
+ * @date_mut: Sat 2026-11-28 16:56:21
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 require GROMPIL_ROOT . '/includes/bootstrap.php';
 require_once GROMPIL_ROOT . '/includes/customer_identifiers.php';
+require_once GROMPIL_ROOT . '/includes/customer_profile.php';
 require_once GROMPIL_ROOT . '/includes/contact_manager.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_shortcuts.php';
 require_once GROMPIL_ROOT . '/includes/dispensing_sessions.php';
@@ -137,6 +138,9 @@ foreach ($dispensingStatuses as $statusOption) {
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
     && (string) ($_GET['dispensing_session_api'] ?? '') === '1') {
     grompil_dispensing_session_api($companyId, $actorCode, $dispensingStatusByKey, $dispenseCustomerText('dispense_walkin_title'));
+}
+if ((string) ($_GET['customer_profile_api'] ?? '') === '1') {
+    grompil_customer_profile_api($companyId, $actorCode);
 }
 $messageKey = '';
 $editingPatientCode = '';
@@ -840,6 +844,12 @@ $patientContactCount = 0;
 $contactManagerModalHtml = '';
 $patientContactButtonHtml = '';
 $patientEditButtonHtml = '';
+$patientProfileButtonHtml = '';
+$patientProfileModalHtml = '';
+$patientProfile = [
+    'fixed_caregiver_code' => '', 'fixed_caregiver_name' => '', 'is_home_pharmacist' => false,
+    'print_bvac' => false, 'invoice_group' => '', 'vat_number' => '', 'has_data' => false,
+];
 $patientIdentityTooltipText = '';
 $patientAge = '';
 $selectedPatientIsDeceased = false;
@@ -892,6 +902,37 @@ if ($selectedPatient) {
             'dispense_status_key' => e($dispenseStatusKey),
             'patient_edit' => e($customerText('patient_edit')),
         ]);
+        $patientProfile = grompil_customer_profile_get($companyId, (string) $selectedPatient['customer_code']);
+        $patientProfileButtonHtml = fn_moduleTemplateRender('dispensing', 'dispensing_patient_profile_button.html', [
+            'customer_profile_title' => e(fn_t('customer_profile_title')),
+            '_customer_profile_has_data_class' => $patientProfile['has_data'] ? 'text-primary' : 'text-secondary',
+            '_customer_profile_has_data' => $patientProfile['has_data'] ? 'true' : 'false',
+        ]);
+        $patientProfileModalHtml = fn_moduleTemplateRender('dispensing', 'dispensing_customer_profile_modal.html', [
+            'customer_profile_title' => e(fn_t('customer_profile_title')),
+            'customer_profile_intro' => e(fn_t('customer_profile_intro')),
+            'customer_profile_fixed_caregiver' => e(fn_t('customer_profile_fixed_caregiver')),
+            'customer_profile_clear_caregiver' => e(fn_t('customer_profile_clear_caregiver')),
+            'dispense_caregiver_minimum' => e(fn_t('dispense_caregiver_minimum')),
+            'customer_profile_home_pharmacist' => e(fn_t('customer_profile_home_pharmacist')),
+            'customer_profile_print_bvac' => e(fn_t('customer_profile_print_bvac')),
+            'customer_profile_invoice_group' => e(fn_t('customer_profile_invoice_group')),
+            'customer_profile_vat_number' => e(fn_t('customer_profile_vat_number')),
+            'customer_profile_save' => e(fn_t('save')),
+            'cancel' => e(fn_t('cancel')),
+            'customer_profile_error' => e(fn_t('customer_profile_error')),
+            'dispense_caregiver_search' => e(fn_t('dispense_caregiver_search')),
+            'dispense_caregiver_unavailable' => e(fn_t('dispense_caregiver_unavailable')),
+            'dispense_caregiver_add' => e(fn_t('dispense_caregiver_add')),
+            'customer_code' => e((string) $selectedPatient['customer_code']),
+            'csrf_token' => e(csrf_token()),
+            'fixed_caregiver_code' => e((string) $patientProfile['fixed_caregiver_code']),
+            'fixed_caregiver_name' => e((string) $patientProfile['fixed_caregiver_name']),
+            '_home_pharmacist_checked' => $patientProfile['is_home_pharmacist'] ? 'checked' : '',
+            '_print_bvac_checked' => $patientProfile['print_bvac'] ? 'checked' : '',
+            'invoice_group_value' => e((string) $patientProfile['invoice_group']),
+            'vat_number_value' => e((string) $patientProfile['vat_number']),
+        ]);
     }
     $patientBarAddress = trim(implode(', ', array_filter([
         trim((string) ($selectedPatient['street'] ?? '') . ' ' . (string) ($selectedPatient['house_number'] ?? '')
@@ -907,6 +948,7 @@ if ($selectedPatient) {
         ),
         '_patient_contact_button_html' => $patientContactButtonHtml,
         '_patient_edit_button_html' => $patientEditButtonHtml,
+        '_patient_profile_button_html' => '',
     ]);
 }
 if ($patientMetadata === '') {
@@ -915,6 +957,7 @@ if ($patientMetadata === '') {
         '_patient_map_link_html' => '',
         '_patient_contact_button_html' => '',
         '_patient_edit_button_html' => '',
+        '_patient_profile_button_html' => '',
     ]);
 }
 $auditLine = $selectedPatient
@@ -951,6 +994,7 @@ $patientTitleHtml = $selectedPatient
         ),
         '_patient_audit_tooltip_text' => $auditTooltipText,
         '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
+        '_patient_profile_button_html' => $patientProfileButtonHtml,
         '_patient_age_html' => $selectedPatientIsDeceased
             ? '<span class="text-danger small">(' . e(grompil_dispensing_deceased_display($dod, $patientAge)) . ')</span>'
             : ($patientAge !== '' ? '<span class="text-secondary small">(' . e($patientAge) . ')</span>' : ''),
@@ -1173,6 +1217,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_prescriber_add' => fn_t('dispensing_prescriber_add'),
     'dispense_caregiver_manage_url' => $caregiverManageUrl,
     'dispense_caregiver_endpoint' => fn_appBaseHref() . 'mb_caregivers.php?ajax=search',
+    'dispense_customer_profile_endpoint' => fn_appBaseHref() . 'dispense.php?customer_profile_api=1',
     'dispense_remove' => fn_t('delete'),
     'dispense_price_unavailable' => fn_t('dispense_price_unavailable'),
     'dispense_logged_in' => fn_t('dispense_logged_in'),
@@ -1235,6 +1280,7 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_google_maps' => fn_t('address_google_maps'),
     '_dispense_patient_title_html' => $patientTitleHtml,
     '_contact_manager_modal_html' => $contactManagerModalHtml,
+    '_customer_profile_modal_html' => $patientProfileModalHtml,
     '_contact_manager_modal_open' => $contactManagerModalOpen && $selectedPatient !== null ? 'true' : 'false',
     '_dispense_brand_html' => $companyBrandHtml,
     '_dispense_alert_html' => $messageHtml,

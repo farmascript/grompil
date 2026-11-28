@@ -1,0 +1,29 @@
+<div class="modal fade" id="customerProfileModal" tabindex="-1" aria-labelledby="customerProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+        <form data-customer-profile-form>
+            <div class="modal-header"><h2 class="modal-title fs-5" id="customerProfileModalLabel">@customer_profile_title@</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@cancel@"></button></div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" role="alert" data-customer-profile-error>@customer_profile_error@</div>
+                <div class="customer-profile-fields">
+                    <p class="text-secondary">@customer_profile_intro@</p>
+                    <input type="hidden" name="customer_code" value="@customer_code@">
+                    <input type="hidden" name="csrf_token" value="@csrf_token@">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label" for="customer-profile-caregiver">@customer_profile_fixed_caregiver@</label>
+                        <div class="input-group"><input class="form-control" id="customer-profile-caregiver" type="search" autocomplete="off" data-profile-caregiver-search placeholder="@dispense_caregiver_search@"><button class="btn btn-outline-secondary" type="button" data-profile-caregiver-clear aria-label="@customer_profile_clear_caregiver@" title="@customer_profile_clear_caregiver@">×</button></div>
+                        <input type="hidden" name="fixed_caregiver_code" data-profile-caregiver-code value="@fixed_caregiver_code@">
+                        <div class="list-group mt-1 d-none" data-profile-caregiver-results></div>
+                        <div class="form-text">@dispense_caregiver_minimum@</div>
+                    </div>
+                    <div class="form-check mb-3"><input class="form-check-input" id="customer-profile-home-pharmacist" type="checkbox" name="is_home_pharmacist" data-profile-home-pharmacist @_home_pharmacist_checked@><label class="form-check-label" for="customer-profile-home-pharmacist">@customer_profile_home_pharmacist@</label></div>
+                    <div class="form-check mb-3"><input class="form-check-input" id="customer-profile-print-bvac" type="checkbox" name="print_bvac" data-profile-print-bvac @_print_bvac_checked@><label class="form-check-label" for="customer-profile-print-bvac">@customer_profile_print_bvac@</label></div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label" for="customer-profile-invoice-group">@customer_profile_invoice_group@</label><input class="form-control" id="customer-profile-invoice-group" name="invoice_group" maxlength="80" value="@invoice_group_value@"></div>
+                        <div class="col-md-6"><label class="form-label" for="customer-profile-vat-number">@customer_profile_vat_number@</label><input class="form-control" id="customer-profile-vat-number" name="vat_number" maxlength="32" value="@vat_number_value@"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">@cancel@</button><button class="btn btn-primary" type="submit" data-customer-profile-save>@customer_profile_save@</button></div>
+        </form>
+    </div></div>
+</div>
