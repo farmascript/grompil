@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-10-22 21:20:11
- * @date_mut: Sat 2026-11-28 14:57:26
+ * @date_mut: Sat 2026-11-28 15:18:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -850,6 +850,7 @@ $arrSubst = array (
   'translations_search_results' => 'Aantal gevonden vertalingen: {count}.',
   'translations_search_text' => 'Zoek in vertaaltekst',
   'translations_save_button' => 'Opslaan en publiceren',
+  'translations_save_error' => 'De vertalingen konden niet worden opgeslagen. Je wijzigingen zijn behouden. Probeer opnieuw.',
   'translations_saved' => 'Vertalingen opgeslagen en taalbestand gepubliceerd.',
   'translations_text_label' => 'Tekst',
   'translations_unsaved_count' => 'Niet-opgeslagen vertalingen: {count}.',

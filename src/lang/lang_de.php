@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-10-22 21:20:11
- * @date_mut: Sat 2026-11-28 14:57:26
+ * @date_mut: Sat 2026-11-28 15:18:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -850,6 +850,7 @@ $arrSubst = array (
   'translations_search_results' => 'Gefundene Übersetzungen: {count}.',
   'translations_search_text' => 'Im übersetzten Text suchen',
   'translations_save_button' => 'Speichern und veröffentlichen',
+  'translations_save_error' => 'Die Übersetzungen konnten nicht gespeichert werden. Ihre Änderungen bleiben erhalten. Bitte versuchen Sie es erneut.',
   'translations_saved' => 'Übersetzungen gespeichert und Sprachdatei veröffentlicht.',
   'translations_text_label' => 'Text',
   'translations_unsaved_count' => 'Nicht gespeicherte Übersetzungen: {count}.',

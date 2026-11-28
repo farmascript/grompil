@@ -36,6 +36,7 @@
           data-text-loading="@translations_search_loading@"
           data-text-no-results="@translations_search_no_results@"
           data-text-error="@translations_search_error@"
+          data-text-save-error="@translations_save_error@"
           data-text-results="@translations_search_results@"
           data-text-page="@translations_search_page@"
           data-text-unsaved="@translations_unsaved_count@"
@@ -253,6 +254,10 @@
                     cache: 'no-store',
                     signal: requestController.signal,
                 });
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.toLowerCase().includes('application/json')) {
+                    throw new Error('invalid_response');
+                }
                 const data = await response.json();
                 if (sequence !== requestSequence) return;
                 if (!response.ok) throw new Error(data.error || 'search_failed');
@@ -297,6 +302,7 @@
             if (drafts.size === 0) return;
             saveButtons.forEach((button) => { button.disabled = true; });
             const formData = new FormData(saveForm);
+            formData.set('_translation_ajax_save', '1');
             try {
                 const response = await fetch(saveForm.action, {
                     method: 'POST',
@@ -304,6 +310,10 @@
                     headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     body: formData,
                 });
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.toLowerCase().includes('application/json')) {
+                    throw new Error('invalid_response');
+                }
                 const data = await response.json();
                 if (!response.ok || !data.success) {
                     saveMessageElement.className = 'alert alert-danger';
@@ -324,7 +334,7 @@
                 updateSaveState();
             } catch (error) {
                 saveMessageElement.className = 'alert alert-danger';
-                saveMessageElement.textContent = message('Error');
+                saveMessageElement.textContent = message('SaveError');
                 saveMessageElement.hidden = false;
                 updateSaveState();
             }

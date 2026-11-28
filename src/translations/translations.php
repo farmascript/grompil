@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Wed 2026-10-14 21:45:46
- * @date_mut: Sat 2026-11-28 14:59:11
+ * @date_mut: Sat 2026-11-28 15:18:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -191,7 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageKey = $ok ? 'translations_published' : 'translations_publish_failed';
         $messageType = $ok ? 'success' : 'danger';
     }
-    if ($action === 'save' && strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest') {
+    if ($action === 'save'
+        && (($_POST['_translation_ajax_save'] ?? '') === '1'
+            || strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest')) {
         header('Content-Type: application/json; charset=utf-8');
         header('Cache-Control: no-store, private');
         echo json_encode([
