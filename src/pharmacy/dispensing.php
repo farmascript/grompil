@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Fri 2026-11-27 21:44:00
+ * @date_mut: Sat 2026-11-28 13:13:28
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -1136,6 +1136,10 @@ echo fn_moduleTemplateRender('dispensing', 'dispensing.html', [
     'dispense_parties_label' => fn_t('dispense_parties_label'),
     'dispense_add_party' => fn_t('dispense_add_party'),
     'dispense_session_error' => fn_t('dispense_session_error'),
+    'dispense_correction_session_not_empty' => fn_t('dispense_correction_session_not_empty'),
+    'dispense_prescription_already_open' => fn_t('dispense_prescription_already_open'),
+    'dispense_prescription_not_found_title' => fn_t('dispense_prescription_not_found_title'),
+    'dispense_prescription_not_found' => fn_t('dispense_prescription_not_found'),
     'dispense_discard_confirm' => fn_t('dispense_discard_confirm'),
     'dispense_discard_action' => fn_t('dispensing_shortcut_discard_dispensing'),
     'dispense_session_reference' => fn_t('dispense_session_reference'),

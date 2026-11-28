@@ -147,6 +147,8 @@
     const newPrescriptionCaregiverResults = document.querySelector('[data-new-prescription-caregiver-results]');
     const newPrescriptionError = document.querySelector('[data-new-prescription-error]');
     const newPrescriptionSave = document.querySelector('[data-new-prescription-save]');
+    const prescriptionNotFoundModalElement = document.getElementById('dispensingPrescriptionNotFoundModal');
+    const prescriptionNotFoundMessage = prescriptionNotFoundModalElement?.querySelector('[data-prescription-not-found-template]');
     let pendingPrescriptionStatusKey = '';
     let editingLine = null;
     const historyModalElement = document.getElementById('dispensingPatientHistoryModal');
@@ -194,6 +196,10 @@
         runOnInput: true,
         run: () => { void handleScannedRiziv(value); },
     } : null);
+    registerPatientSearchShortcut((value) => {
+        const match = /^!(\d+)$/.exec(value);
+        return match ? { run: () => { void copyPrescriptionToSession(match[1]); } } : null;
+    });
     const patientStatusInput = document.querySelector('[data-patient-status-input]');
     const patientRequiredMessage = document.querySelector('[data-dispense-patient-required]');
     const initialPageCustomerCode = page.dataset.patientCode || '';
@@ -348,6 +354,13 @@
 
     if (patientInput && patientForm && patientSuggestions) {
         patientInput.addEventListener('input', () => {
+            if (/^!\d*$/.test(patientInput.value.trim())) {
+                window.clearTimeout(patientTimer);
+                if (patientRequestController) patientRequestController.abort();
+                hidePatientSuggestions();
+                setPatientStatus('');
+                return;
+            }
             const shortcut = findPatientSearchShortcut(patientInput.value.trim());
             if (!shortcut?.runOnInput) {
                 schedulePatientSearch();
@@ -716,6 +729,51 @@
         return data;
     }
 
+    function showPrescriptionNotFound(prescriptionNumber) {
+        const normalizedNumber = String(prescriptionNumber).replace(/^0+(?=\d)/, '').padStart(3, '0');
+        const messageTemplate = prescriptionNotFoundMessage?.dataset.prescriptionNotFoundTemplate || '';
+        if (prescriptionNotFoundMessage) {
+            prescriptionNotFoundMessage.textContent = messageTemplate.replace('{number}', normalizedNumber);
+        }
+        if (prescriptionNotFoundModalElement && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(prescriptionNotFoundModalElement).show();
+        } else {
+            showSessionError();
+        }
+    }
+
+    async function copyPrescriptionToSession(prescriptionNumber) {
+        try {
+            await sessionReady;
+            const data = await sessionRequest('prescription_copy', { prescription_number: prescriptionNumber });
+            dispensingParties = data.parties || dispensingParties;
+            basket.clear();
+            for (const line of data.lines || []) {
+                basket.set(String(line.id), line);
+                if (line.requires_caregiver && line.caregiver_code && !caregiverByParty.has(String(line.party_id))) {
+                    setPartyCaregiver(line.party_id, { caregiver_code: line.caregiver_code, name: line.caregiver_name });
+                }
+            }
+            renderPartySelector();
+            if (data.active_party_id) activateParty(data.active_party_id);
+            if (data.default_status_key
+                && Array.from(dispenseStatusSelect?.options || []).some((option) => option.value === data.default_status_key)) {
+                await persistDispenseStatus(data.default_status_key);
+            }
+            if (!input?.disabled) input?.focus();
+        } catch (error) {
+            if (error?.data?.error === 'prescription_not_found') {
+                showPrescriptionNotFound(prescriptionNumber);
+            } else if (error?.data?.error === 'session_not_empty') {
+                showSessionError(page.dataset.textCorrectionSessionNotEmpty || '');
+            } else if (error?.data?.error === 'prescription_already_open') {
+                showSessionError(page.dataset.textPrescriptionAlreadyOpen || '');
+            } else {
+                showSessionError();
+            }
+        }
+    }
+
     function attachCaregiverSearch(searchInput, resultsElement, onSelect) {
         if (!searchInput || !resultsElement) return;
         let timer = 0;
@@ -997,7 +1055,7 @@
         window.setTimeout(() => { void beginReceiptPreview(); }, 0);
     });
 
-    function showSessionError() {
+    function showSessionError(message = '') {
         const panel = document.querySelector('.current-dispense-panel');
         if (!panel) return;
         let notice = panel.querySelector('.dispense-session-notice');
@@ -1006,7 +1064,7 @@
             notice.className = 'alert alert-danger small dispense-session-notice';
             panel.prepend(notice);
         }
-        notice.textContent = page.dataset.textSessionError || '';
+        notice.textContent = message || page.dataset.textSessionError || '';
     }
 
     function renderPartySelector() {

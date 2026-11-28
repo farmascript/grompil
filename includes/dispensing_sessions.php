@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Fri 2026-11-20 11:24:48
- * @date_mut: Fri 2026-11-27
+ * @date_mut: Sat 2026-11-28 13:13:28
  *
  * @credit_software: Lieven Maus
  * @credit_code: ChatGPT, Codex
@@ -197,6 +197,184 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $respond([
                 'parties' => grompil_dispensing_session_parties($companyId, $sessionId, $walkinTitle),
                 'active_party_id' => $partyId,
+                'lines' => grompil_dispensing_session_lines($companyId, $sessionId, $walkinTitle),
+            ]);
+        }
+
+        if ($action === 'prescription_copy') {
+            $rawPrescriptionNumber = trim((string) ($payload['prescription_number'] ?? ''));
+            $normalizedPrescriptionNumber = ltrim($rawPrescriptionNumber, '0');
+            $normalizedPrescriptionNumber = $normalizedPrescriptionNumber === '' ? '0' : $normalizedPrescriptionNumber;
+            if (preg_match('/^[0-9]{1,19}$/D', $rawPrescriptionNumber) !== 1
+                || strlen($normalizedPrescriptionNumber) > 19
+                || (strlen($normalizedPrescriptionNumber) === 19
+                    && strcmp($normalizedPrescriptionNumber, '9223372036854775807') > 0)) {
+                $respond(['error' => 'invalid_prescription_number'], 400);
+            }
+            $prescriptionNumber = (int) $normalizedPrescriptionNumber;
+            db_query_params('dispensing.prescription_copy_begin', 'BEGIN');
+            $transactionStarted = true;
+            $sessionState = db_query_params(
+                'dispensing.prescription_copy_session_state',
+                'SELECT session.source_history_id,
+                        EXISTS (
+                            SELECT 1 FROM dt_dispensing_lines line
+                            WHERE line.company_id = session.company_id
+                              AND line.dispensing_session_id = session.id
+                        ) AS has_lines
+                 FROM dt_dispensing_sessions session
+                 WHERE session.company_id = $1 AND session.id = $2::UUID
+                   AND session.created_by_user_code = $3 AND session.state = \'open\'
+                 FOR UPDATE',
+                [$companyId, $sessionId, $actorCode]
+            );
+            $sessionStateRow = pg_fetch_assoc($sessionState);
+            if (!$sessionStateRow) {
+                db_query_params('dispensing.prescription_copy_rollback_session', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'session_unavailable'], 404);
+            }
+            if ($sessionStateRow['source_history_id'] !== null || $sessionStateRow['has_lines'] === 't') {
+                db_query_params('dispensing.prescription_copy_rollback_not_empty', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'session_not_empty'], 409);
+            }
+            $historyRows = db_query_params(
+                'dispensing.prescription_copy_source',
+                'SELECT history.id AS history_id, line.party_type, line.customer_code, line.party_name, line.status_key,
+                        line.caregiver_code, line.cnk, line.amp_code, line.ampp_code,
+                        line.product_name_nl, line.product_name_fr,
+                        line.package_display_nl, line.package_display_fr, line.quantity, line.sort_order
+                 FROM st_dispensing_history history
+                 JOIN st_dispensing_history_lines line ON line.history_id = history.id
+                 WHERE history.company_id = $1 AND history.prescription_number = $2::BIGINT
+                 ORDER BY history.completed_at, history.id, line.sort_order, line.id',
+                [$companyId, $prescriptionNumber]
+            );
+            $sourceLines = [];
+            while ($sourceLine = pg_fetch_assoc($historyRows)) {
+                $sourceLines[] = $sourceLine;
+            }
+            if ($sourceLines === []) {
+                db_query_params('dispensing.prescription_copy_rollback_missing', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'prescription_not_found'], 404);
+            }
+            $historyId = (int) $sourceLines[0]['history_id'];
+            $alreadyBeingCorrected = db_query_params(
+                'dispensing.prescription_copy_already_open',
+                'SELECT 1 FROM dt_dispensing_sessions
+                 WHERE company_id = $1 AND source_history_id = $2 AND state = \'open\' AND id <> $3::UUID
+                 LIMIT 1',
+                [$companyId, $historyId, $sessionId]
+            );
+            if (pg_num_rows($alreadyBeingCorrected) > 0) {
+                db_query_params('dispensing.prescription_copy_rollback_open', 'ROLLBACK');
+                $transactionStarted = false;
+                $respond(['error' => 'prescription_already_open'], 409);
+            }
+
+            $activePartyId = 0;
+            $defaultStatusKey = '';
+            $activePartyIsPrescription = false;
+            foreach ($sourceLines as $sourceLine) {
+                $lineStatusKey = strtolower(trim((string) $sourceLine['status_key']));
+                $isPrescriptionLine = grompil_dispensing_status_requires_caregiver($lineStatusKey);
+                $isPrescriptionCustomerLine = $isPrescriptionLine && $sourceLine['party_type'] === 'customer';
+                if (!isset($statusByKey[$lineStatusKey])) {
+                    throw new InvalidArgumentException('prescription_status_unavailable');
+                }
+                if ($defaultStatusKey === '') {
+                    $defaultStatusKey = $lineStatusKey;
+                }
+
+                if ($sourceLine['party_type'] === 'anonymous') {
+                    db_query_params(
+                        'dispensing.prescription_copy_anonymous_party_add',
+                        'INSERT INTO dt_dispensing_parties (company_id, dispensing_session_id, party_type, display_name)
+                         VALUES ($1, $2::UUID, \'anonymous\', $3)
+                         ON CONFLICT (company_id, dispensing_session_id) WHERE party_type = \'anonymous\' DO NOTHING',
+                        [$companyId, $sessionId, $walkinTitle]
+                    );
+                    $partyResult = db_query_params(
+                        'dispensing.prescription_copy_anonymous_party_load',
+                        'SELECT id FROM dt_dispensing_parties
+                         WHERE company_id = $1 AND dispensing_session_id = $2::UUID AND party_type = \'anonymous\'',
+                        [$companyId, $sessionId]
+                    );
+                } else {
+                    $customerCode = strtoupper(trim((string) ($sourceLine['customer_code'] ?? '')));
+                    if (preg_match('/^[A-Z0-9]{6}$/D', $customerCode) !== 1) {
+                        throw new InvalidArgumentException('prescription_customer_unavailable');
+                    }
+                    $customerResult = db_query_params(
+                        'dispensing.prescription_copy_customer_check',
+                        'SELECT customer_code FROM bt_customers WHERE company_id = $1 AND customer_code = $2',
+                        [$companyId, $customerCode]
+                    );
+                    if (pg_num_rows($customerResult) !== 1) {
+                        throw new InvalidArgumentException('prescription_customer_unavailable');
+                    }
+                    db_query_params(
+                        'dispensing.prescription_copy_customer_party_add',
+                        'INSERT INTO dt_dispensing_parties (company_id, dispensing_session_id, party_type, customer_code, display_name)
+                         VALUES ($1, $2::UUID, \'customer\', $3, $4)
+                         ON CONFLICT (company_id, dispensing_session_id, customer_code)
+                             WHERE customer_code IS NOT NULL DO NOTHING',
+                        [$companyId, $sessionId, $customerCode, (string) $sourceLine['party_name']]
+                    );
+                    $partyResult = db_query_params(
+                        'dispensing.prescription_copy_customer_party_load',
+                        'SELECT id FROM dt_dispensing_parties
+                         WHERE company_id = $1 AND dispensing_session_id = $2::UUID AND customer_code = $3',
+                        [$companyId, $sessionId, $customerCode]
+                    );
+                }
+                $partyId = (int) (pg_fetch_result($partyResult, 0, 'id') ?: 0);
+                if ($partyId < 1) {
+                    throw new RuntimeException('Could not create copied prescription party.');
+                }
+                if ($activePartyId === 0 || ($isPrescriptionCustomerLine && !$activePartyIsPrescription)) {
+                    $activePartyId = $partyId;
+                    $activePartyIsPrescription = $isPrescriptionCustomerLine;
+                }
+                if ($isPrescriptionLine && $sourceLine['party_type'] === 'customer') {
+                    $defaultStatusKey = $lineStatusKey;
+                }
+
+                db_query_params(
+                    'dispensing.prescription_copy_line',
+                    'INSERT INTO dt_dispensing_lines (
+                        company_id, dispensing_session_id, party_id, status_key, caregiver_code,
+                        cnk, amp_code, ampp_code, product_name_nl, product_name_fr,
+                        package_display_nl, package_display_fr, quantity, sort_order
+                     ) VALUES ($1, $2::UUID, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                     ON CONFLICT (
+                        company_id, dispensing_session_id, party_id, cnk, amp_code, ampp_code, status_key,
+                        (COALESCE(caregiver_code, \'\'::VARCHAR))
+                     ) DO UPDATE SET quantity = LEAST(999, dt_dispensing_lines.quantity + EXCLUDED.quantity), updated_at = now()',
+                    [$companyId, $sessionId, $partyId, $lineStatusKey, $sourceLine['caregiver_code'],
+                        (string) $sourceLine['cnk'], (string) $sourceLine['amp_code'], (string) $sourceLine['ampp_code'],
+                        (string) $sourceLine['product_name_nl'], (string) $sourceLine['product_name_fr'],
+                        (string) $sourceLine['package_display_nl'], (string) $sourceLine['package_display_fr'],
+                        (int) $sourceLine['quantity'], (int) $sourceLine['sort_order']]
+                );
+            }
+            db_query_params(
+                'dispensing.prescription_copy_mark_session',
+                'UPDATE dt_dispensing_sessions SET source_history_id = $1, updated_at = now()
+                 WHERE company_id = $2 AND id = $3::UUID AND created_by_user_code = $4 AND state = \'open\'',
+                [$historyId, $companyId, $sessionId, $actorCode]
+            );
+            db_query_params('dispensing.prescription_copy_commit', 'COMMIT');
+            $transactionStarted = false;
+            $respond([
+                'copied' => true,
+                'prescription_number' => $prescriptionNumber,
+                'source_history_id' => $historyId,
+                'default_status_key' => $defaultStatusKey,
+                'active_party_id' => $activePartyId,
+                'parties' => grompil_dispensing_session_parties($companyId, $sessionId, $walkinTitle),
                 'lines' => grompil_dispensing_session_lines($companyId, $sessionId, $walkinTitle),
             ]);
         }
@@ -504,7 +682,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 $transactionStarted = true;
                 $lockedSession = db_query_params(
                     'dispensing.receipt_preview_lock',
-                    'SELECT prescription_number FROM dt_dispensing_sessions
+                    'SELECT prescription_number, source_history_id FROM dt_dispensing_sessions
                      WHERE id = $1::UUID AND company_id = $2 AND created_by_user_code = $3 AND state = \'open\'
                      FOR UPDATE',
                     [$sessionId, $companyId, $actorCode]
@@ -541,20 +719,31 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                     $transactionStarted = false;
                     $respond(['error' => 'missing_caregiver', 'lines' => $missingCaregiverLines], 409);
                 }
-                $prescriptionNumber = $lockedSessionRow['prescription_number'] === null
-                    ? null
-                    : (int) $lockedSessionRow['prescription_number'];
-                if ($hasPrescriptionLine && $prescriptionNumber === null) {
-                    $prescriptionNumber = grompil_dispensing_next_prescription_number($companyId);
-                    db_query_params(
-                        'dispensing.receipt_preview_reserve_prescription_number',
-                        'UPDATE dt_dispensing_sessions
-                         SET prescription_number = $1, updated_at = now()
-                         WHERE id = $2::UUID AND company_id = $3 AND created_by_user_code = $4 AND state = \'open\'',
-                        [$prescriptionNumber, $sessionId, $companyId, $actorCode]
-                    );
+                if ($lockedSessionRow['source_history_id'] !== null) {
+                    $prescriptionNumber = $receipt['prescription_number'];
+                    if ($prescriptionNumber === null) {
+                        db_query_params('dispensing.receipt_preview_rollback_missing_history', 'ROLLBACK');
+                        $transactionStarted = false;
+                        $respond(['error' => 'prescription_not_found'], 404);
+                    }
+                } else {
+                    $prescriptionNumber = $lockedSessionRow['prescription_number'] === null
+                        ? null
+                        : (int) $lockedSessionRow['prescription_number'];
+                    if ($hasPrescriptionLine && $prescriptionNumber === null) {
+                        $prescriptionNumber = grompil_dispensing_next_prescription_number($companyId);
+                        db_query_params(
+                            'dispensing.receipt_preview_reserve_prescription_number',
+                            'UPDATE dt_dispensing_sessions
+                             SET prescription_number = $1, updated_at = now()
+                             WHERE id = $2::UUID AND company_id = $3 AND created_by_user_code = $4 AND state = \'open\'',
+                            [$prescriptionNumber, $sessionId, $companyId, $actorCode]
+                        );
+                    }
                 }
-                $receipt['prescription_number'] = $hasPrescriptionLine ? $prescriptionNumber : null;
+                $receipt['prescription_number'] = $lockedSessionRow['source_history_id'] !== null
+                    ? (int) $prescriptionNumber
+                    : ($hasPrescriptionLine ? $prescriptionNumber : null);
                 $commit = db_query_params('dispensing.receipt_preview_commit', 'COMMIT');
                 if (!$commit) throw new RuntimeException('Could not commit receipt preview reservation.');
                 $transactionStarted = false;
@@ -567,7 +756,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $transactionStarted = true;
             $lockedSession = db_query_params(
                 'dispensing.session_complete_lock',
-                'SELECT id, status_key, prescription_number FROM dt_dispensing_sessions
+                'SELECT id, status_key, prescription_number, source_history_id FROM dt_dispensing_sessions
                  WHERE id = $1::UUID AND company_id = $2 AND created_by_user_code = $3 AND state = \'open\'
                  FOR UPDATE',
                 [$sessionId, $companyId, $actorCode]
@@ -612,8 +801,25 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
                 $transactionStarted = false;
                 $respond(['error' => 'missing_caregiver', 'lines' => $missingCaregiverLines], 409);
             }
+            $sourceHistoryId = $lockedSessionRow['source_history_id'] === null
+                ? null
+                : (int) $lockedSessionRow['source_history_id'];
             $prescriptionNumber = null;
-            if ($hasPrescriptionLine) {
+            if ($sourceHistoryId !== null) {
+                $sourceHistory = db_query_params(
+                    'dispensing.correction_history_lock',
+                    'SELECT id, prescription_number FROM st_dispensing_history
+                     WHERE company_id = $1 AND id = $2 FOR UPDATE',
+                    [$companyId, $sourceHistoryId]
+                );
+                $sourceHistoryRow = pg_fetch_assoc($sourceHistory);
+                if (!$sourceHistoryRow || $sourceHistoryRow['prescription_number'] === null) {
+                    db_query_params('dispensing.session_complete_rollback_missing_history', 'ROLLBACK');
+                    $transactionStarted = false;
+                    $respond(['error' => 'prescription_not_found'], 404);
+                }
+                $prescriptionNumber = (int) $sourceHistoryRow['prescription_number'];
+            } elseif ($hasPrescriptionLine) {
                 $prescriptionNumber = $lockedSessionRow['prescription_number'] === null
                     ? grompil_dispensing_next_prescription_number($companyId)
                     : (int) $lockedSessionRow['prescription_number'];
@@ -629,42 +835,139 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             }
             $receipt['prescription_number'] = $prescriptionNumber;
             $snapshotJson = json_encode($receipt, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-            $history = db_query_params(
-                'dispensing.history_create',
-                'INSERT INTO st_dispensing_history
-                    (company_id, dispensing_session_id, created_by_user_code, status_key, prescription_number,
-                     receipt_thank_you, receipt_snapshot)
-                 SELECT $1, session.id, $3::VARCHAR(6), session.status_key, $6::BIGINT, $4, $5::jsonb
-                 FROM dt_dispensing_sessions session
-                 WHERE session.id = $2::UUID AND session.company_id = $1
-                   AND session.created_by_user_code = $3::VARCHAR(6) AND session.state = \'open\'
-                 RETURNING id',
-                [$companyId, $sessionId, $actorCode, (string) $receipt['thank_you'], (string) $snapshotJson, $prescriptionNumber]
-            );
-            $historyRow = pg_fetch_assoc($history);
-            if (!$historyRow) throw new RuntimeException('Could not create dispensing history header.');
-            $historyId = (int) $historyRow['id'];
-            db_query_params(
-                'dispensing.history_lines_create',
-                'INSERT INTO st_dispensing_history_lines
-                    (history_id, party_type, customer_code, party_name, status_key, caregiver_code, caregiver_name,
-                     cnk, amp_code, ampp_code, product_name_nl, product_name_fr, package_display_nl, package_display_fr,
-                     quantity, sort_order)
-                 SELECT $1, party.party_type, party.customer_code,
-                        CASE WHEN party.party_type = \'anonymous\' THEN $4::VARCHAR(260) ELSE party.display_name END,
-                        line.status_key, line.caregiver_code,
-                        btrim(COALESCE(caregiver.name_first, \'\') || \' \' || COALESCE(caregiver.name_last, \'\')),
-                        line.cnk,
-                        line.amp_code, line.ampp_code, line.product_name_nl, line.product_name_fr,
-                        line.package_display_nl, line.package_display_fr, line.quantity, line.sort_order
-                 FROM dt_dispensing_lines line
-                 JOIN dt_dispensing_parties party
-                   ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
-                  AND party.id = line.party_id
-                 LEFT JOIN bt_caregivers caregiver ON caregiver.caregiver_code = line.caregiver_code
-                 WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID',
-                [$historyId, $companyId, $sessionId, $walkinTitle]
-            );
+            $historyUpdated = false;
+            if ($sourceHistoryId !== null) {
+                $changedRows = db_query_params(
+                    'dispensing.correction_history_content_changed',
+                    'SELECT 1
+                     FROM (
+                         (SELECT party_type, customer_code, status_key, caregiver_code,
+                                 cnk, amp_code, ampp_code, product_name_nl, product_name_fr,
+                                 package_display_nl, package_display_fr, quantity, sort_order
+                          FROM st_dispensing_history_lines WHERE history_id = $1
+                          EXCEPT
+                          SELECT party.party_type, party.customer_code, line.status_key, line.caregiver_code,
+                                 line.cnk, line.amp_code, line.ampp_code,
+                                 line.product_name_nl, line.product_name_fr, line.package_display_nl,
+                                 line.package_display_fr, line.quantity, line.sort_order
+                          FROM dt_dispensing_lines line
+                          JOIN dt_dispensing_parties party
+                            ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
+                           AND party.id = line.party_id
+                          WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID)
+                         UNION ALL
+                         (SELECT party.party_type, party.customer_code, line.status_key, line.caregiver_code,
+                                 line.cnk, line.amp_code, line.ampp_code,
+                                 line.product_name_nl, line.product_name_fr, line.package_display_nl,
+                                 line.package_display_fr, line.quantity, line.sort_order
+                          FROM dt_dispensing_lines line
+                          JOIN dt_dispensing_parties party
+                            ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
+                           AND party.id = line.party_id
+                          WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID
+                          EXCEPT
+                          SELECT party_type, customer_code, status_key, caregiver_code,
+                                 cnk, amp_code, ampp_code, product_name_nl, product_name_fr,
+                                 package_display_nl, package_display_fr, quantity, sort_order
+                          FROM st_dispensing_history_lines WHERE history_id = $1)
+                     ) difference LIMIT 1',
+                    [$sourceHistoryId, $companyId, $sessionId]
+                );
+                if (pg_num_rows($changedRows) > 0) {
+                    db_query_params(
+                        'dispensing.correction_history_header_update',
+                        'UPDATE st_dispensing_history
+                         SET status_key = $1, receipt_thank_you = $2, receipt_snapshot = $3::jsonb,
+                             corrected_at = now(), corrected_by_user_code = $4
+                         WHERE company_id = $5 AND id = $6',
+                        [(string) $lockedSessionRow['status_key'], (string) $receipt['thank_you'],
+                            (string) $snapshotJson, $actorCode, $companyId, $sourceHistoryId]
+                    );
+                    $oldHistoryLineMaxResult = db_query_params(
+                        'dispensing.correction_history_lines_max_id',
+                        'SELECT COALESCE(MAX(id), 0) AS max_id
+                         FROM st_dispensing_history_lines WHERE history_id = $1',
+                        [$sourceHistoryId]
+                    );
+                    $oldHistoryLineMax = (int) (pg_fetch_result($oldHistoryLineMaxResult, 0, 'max_id') ?: 0);
+                    db_query_params(
+                        'dispensing.correction_history_lines_replace',
+                        'INSERT INTO st_dispensing_history_lines
+                            (history_id, party_type, customer_code, party_name, status_key, caregiver_code, caregiver_name,
+                             cnk, amp_code, ampp_code, product_name_nl, product_name_fr, package_display_nl, package_display_fr,
+                             quantity, sort_order)
+                         SELECT $1, party.party_type, party.customer_code,
+                                COALESCE(previous_line.party_name,
+                                    CASE WHEN party.party_type = \'anonymous\' THEN $4::VARCHAR(260) ELSE party.display_name END),
+                                line.status_key, line.caregiver_code,
+                                COALESCE(previous_line.caregiver_name,
+                                    btrim(COALESCE(caregiver.name_first, \'\') || \' \' || COALESCE(caregiver.name_last, \'\'))),
+                                line.cnk, line.amp_code, line.ampp_code, line.product_name_nl, line.product_name_fr,
+                                line.package_display_nl, line.package_display_fr, line.quantity, line.sort_order
+                         FROM dt_dispensing_lines line
+                         JOIN dt_dispensing_parties party
+                           ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
+                          AND party.id = line.party_id
+                         LEFT JOIN bt_caregivers caregiver ON caregiver.caregiver_code = line.caregiver_code
+                         LEFT JOIN LATERAL (
+                             SELECT old_line.party_name, old_line.caregiver_name
+                             FROM st_dispensing_history_lines old_line
+                             WHERE old_line.history_id = $1
+                               AND old_line.party_type = party.party_type
+                               AND old_line.customer_code IS NOT DISTINCT FROM party.customer_code
+                               AND old_line.status_key = line.status_key
+                               AND old_line.caregiver_code IS NOT DISTINCT FROM line.caregiver_code
+                               AND old_line.cnk = line.cnk AND old_line.amp_code = line.amp_code
+                               AND old_line.ampp_code = line.ampp_code
+                             ORDER BY old_line.id LIMIT 1
+                         ) previous_line ON TRUE
+                         WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID',
+                        [$sourceHistoryId, $companyId, $sessionId, $walkinTitle]
+                    );
+                    db_query_params(
+                        'dispensing.correction_history_lines_clear',
+                        'DELETE FROM st_dispensing_history_lines WHERE history_id = $1 AND id <= $2',
+                        [$sourceHistoryId, $oldHistoryLineMax]
+                    );
+                    $historyUpdated = true;
+                }
+            } else {
+                $history = db_query_params(
+                    'dispensing.history_create',
+                    'INSERT INTO st_dispensing_history
+                        (company_id, dispensing_session_id, created_by_user_code, status_key, prescription_number,
+                         receipt_thank_you, receipt_snapshot)
+                     SELECT $1, session.id, $3::VARCHAR(6), session.status_key, $6::BIGINT, $4, $5::jsonb
+                     FROM dt_dispensing_sessions session
+                     WHERE session.id = $2::UUID AND session.company_id = $1
+                       AND session.created_by_user_code = $3::VARCHAR(6) AND session.state = \'open\'
+                     RETURNING id',
+                    [$companyId, $sessionId, $actorCode, (string) $receipt['thank_you'], (string) $snapshotJson, $prescriptionNumber]
+                );
+                $historyRow = pg_fetch_assoc($history);
+                if (!$historyRow) throw new RuntimeException('Could not create dispensing history header.');
+                $historyId = (int) $historyRow['id'];
+                db_query_params(
+                    'dispensing.history_lines_create',
+                    'INSERT INTO st_dispensing_history_lines
+                        (history_id, party_type, customer_code, party_name, status_key, caregiver_code, caregiver_name,
+                         cnk, amp_code, ampp_code, product_name_nl, product_name_fr, package_display_nl, package_display_fr,
+                         quantity, sort_order)
+                     SELECT $1, party.party_type, party.customer_code,
+                            CASE WHEN party.party_type = \'anonymous\' THEN $4::VARCHAR(260) ELSE party.display_name END,
+                            line.status_key, line.caregiver_code,
+                            btrim(COALESCE(caregiver.name_first, \'\') || \' \' || COALESCE(caregiver.name_last, \'\')),
+                            line.cnk, line.amp_code, line.ampp_code, line.product_name_nl, line.product_name_fr,
+                            line.package_display_nl, line.package_display_fr, line.quantity, line.sort_order
+                     FROM dt_dispensing_lines line
+                     JOIN dt_dispensing_parties party
+                       ON party.company_id = line.company_id AND party.dispensing_session_id = line.dispensing_session_id
+                      AND party.id = line.party_id
+                     LEFT JOIN bt_caregivers caregiver ON caregiver.caregiver_code = line.caregiver_code
+                     WHERE line.company_id = $2 AND line.dispensing_session_id = $3::UUID',
+                    [$historyId, $companyId, $sessionId, $walkinTitle]
+                );
+            }
             db_query_params(
                 'dispensing.session_lines_clear',
                 'DELETE FROM dt_dispensing_lines WHERE company_id = $1 AND dispensing_session_id = $2::UUID',
@@ -684,7 +987,7 @@ function grompil_dispensing_session_api(int $companyId, string $actorCode, array
             $commit = db_query_params('dispensing.session_complete_commit', 'COMMIT');
             if (!$commit) throw new RuntimeException('Could not commit dispensing history.');
             $transactionStarted = false;
-            $respond(['completed' => true]);
+            $respond(['completed' => true, 'history_updated' => $historyUpdated]);
         }
 
         if ($action !== 'load') {
@@ -734,8 +1037,12 @@ function grompil_dispensing_receipt_data(int $companyId, string $sessionId, stri
     $company = pg_fetch_assoc($companyResult) ?: [];
     $sessionResult = db_query_params(
         'dispensing.receipt_session',
-        'SELECT created_at, status_key, prescription_number FROM dt_dispensing_sessions
-         WHERE company_id = $1 AND id = $2::UUID AND state = \'open\'',
+        'SELECT session.created_at, session.status_key, session.prescription_number,
+                source_history.prescription_number AS source_prescription_number
+         FROM dt_dispensing_sessions session
+         LEFT JOIN st_dispensing_history source_history
+           ON source_history.company_id = session.company_id AND source_history.id = session.source_history_id
+         WHERE session.company_id = $1 AND session.id = $2::UUID AND session.state = \'open\'',
         [$companyId, $sessionId]
     );
     $session = pg_fetch_assoc($sessionResult);
@@ -791,7 +1098,9 @@ function grompil_dispensing_receipt_data(int $companyId, string $sessionId, stri
         'vat_number' => trim((string) ($company['vat_number'] ?? '')),
         'address' => implode(' · ', array_values(array_filter($addressParts, static fn(string $part): bool => $part !== ''))),
         'session_id' => $sessionId,
-        'prescription_number' => $session['prescription_number'] === null ? null : (int) $session['prescription_number'],
+        'prescription_number' => $session['source_prescription_number'] !== null
+            ? (int) $session['source_prescription_number']
+            : ($session['prescription_number'] === null ? null : (int) $session['prescription_number']),
         'status_key' => (string) $session['status_key'],
         'date' => $weekdays[(int) $receiptAt->format('w')] . ' ' . $receiptAt->format('d-m-Y H:i'),
         'thank_you' => $thankYou,
