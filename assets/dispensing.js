@@ -118,6 +118,8 @@
     const profilePrintBvac = document.querySelector('[data-profile-print-bvac]');
     const profileInvoiceGroup = document.querySelector('#customer-profile-invoice-group');
     const profileVatNumber = document.querySelector('#customer-profile-vat-number');
+    const profileKboCheck = document.querySelector('[data-profile-kbo-check]');
+    const profileKboResult = document.querySelector('[data-profile-kbo-result]');
     const openCustomerProfileModal = () => {
         const modalElement = document.getElementById('customerProfileModal');
         const modalApi = window.bootstrap?.Modal;
@@ -141,9 +143,52 @@
         profileInvoiceGroup.value = profile.invoice_group || '';
         profileVatNumber.value = profile.vat_number || '';
         updateCustomerProfileTrigger(profile.has_data === true);
+        updatePatientHomePharmacistIndicator(
+            customerProfileForm.elements.customer_code.value,
+            profile.is_home_pharmacist === true,
+        );
     };
     attachCaregiverSearch(profileCaregiverInput, profileCaregiverResults, (caregiver) => {
         profileCaregiverCode.value = caregiver?.caregiver_code || '';
+    });
+    profileKboCheck?.addEventListener('click', async () => {
+        if (!profileVatNumber || !profileKboResult || !customerProfileForm) return;
+        profileKboResult.textContent = '';
+        profileKboResult.classList.remove('text-danger', 'text-success');
+        const number = profileVatNumber.value.trim();
+        profileKboCheck.disabled = true;
+        profileKboCheck.textContent = profileKboCheck.dataset.loadingLabel || profileKboCheck.dataset.idleLabel || '';
+        try {
+            const response = await fetch(page.dataset.customerProfileEndpoint, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({
+                    action: 'kbo_lookup',
+                    vat_number: number,
+                    csrf_token: customerProfileForm.elements.csrf_token.value,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.kbo) throw new Error(data.message || profileKboCheck.dataset.errorLabel || '');
+            profileKboResult.textContent = [
+                data.kbo.name,
+                data.kbo.status ? `${data.status_label}: ${data.kbo.status}` : '',
+                data.kbo.number,
+            ].filter(Boolean).join(' · ');
+            profileKboResult.classList.add('text-success');
+        } catch (error) {
+            profileKboResult.textContent = error instanceof Error && error.message
+                ? error.message : (profileKboCheck.dataset.errorLabel || '');
+            profileKboResult.classList.add('text-danger');
+        } finally {
+            profileKboCheck.disabled = false;
+            profileKboCheck.textContent = profileKboCheck.dataset.idleLabel || '';
+        }
+    });
+    profileVatNumber?.addEventListener('input', () => {
+        if (!profileKboResult) return;
+        profileKboResult.textContent = '';
+        profileKboResult.classList.remove('text-danger', 'text-success');
     });
     customerProfileTrigger?.addEventListener('click', openCustomerProfileModal);
     customerProfileModal?.addEventListener('shown.bs.modal', async () => {
@@ -592,6 +637,23 @@
     let dispensingSessionId = '';
     let dispensingParties = [];
     let activePartyId = 0;
+    const updatePatientHomePharmacistIndicator = (customerCode, isHomePharmacist) => {
+        const patientName = document.querySelector('[data-patient-display-name]');
+        if (!patientName || patientName.dataset.customerCode !== customerCode) return;
+        patientName.classList.toggle('text-success', isHomePharmacist);
+    };
+    const refreshPatientHomePharmacistIndicator = async (party) => {
+        if (party?.type !== 'customer' || !party.customer_code) return;
+        try {
+            const url = new URL(page.dataset.customerProfileEndpoint, window.location.href);
+            url.searchParams.set('customer_code', party.customer_code);
+            const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store' });
+            const data = await response.json();
+            if (response.ok && data.profile && activePartyId === Number(party.id)) {
+                updatePatientHomePharmacistIndicator(party.customer_code, data.profile.is_home_pharmacist === true);
+            }
+        } catch {}
+    };
     const caregiverByParty = new Map();
     let pendingSessionCaregiver = null;
     let timer = 0;
@@ -940,6 +1002,10 @@
                                             quantity: lineEditQuantity?.value || String(editingLine.quantity),
                                         }));
                                     } catch {}
+                                } else if (searchInput === profileCaregiverInput) {
+                                    manageUrl.searchParams.set('return_to_dispense', '1');
+                                    const returnStatus = dispenseStatusSelect?.value || page.dataset.dispenseStatus || '';
+                                    if (returnStatus) manageUrl.searchParams.set('return_status', returnStatus);
                                 }
                                 addPrescriber.href = manageUrl.href;
                             }
@@ -1281,6 +1347,8 @@
                 const name = document.createElement('span');
                 name.className = 'fs-5 fw-semibold';
                 name.textContent = party.name || party.customer_code || '';
+                name.dataset.patientDisplayName = '';
+                name.dataset.customerCode = party.customer_code || '';
                 currentName.append(avatar, name);
                 if (party.is_deceased && party.deceased_display) {
                     const deceased = document.createElement('span');
@@ -1363,6 +1431,7 @@
             }
         }
         if (patientActions) patientActions.classList.toggle('d-none', !partyMatchesPageCustomer);
+        if (party.type === 'customer') void refreshPatientHomePharmacistIndicator(party);
         applyDispenseStatus();
         renderPartySelector();
         renderBasket();

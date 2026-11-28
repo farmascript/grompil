@@ -16,6 +16,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/kbo.php';
+
 /**
  * Load the optional company-specific customer profile.
  *
@@ -195,6 +197,30 @@ function grompil_customer_profile_api(int $companyId, string $actorCode): never
     $customerCode = strtoupper(trim($customerCodeValue));
     if (preg_match('/^[A-Z0-9]{6}$/D', $customerCode) !== 1) {
         $respond(['error' => 'invalid_customer'], 400);
+    }
+    if ($method === 'POST' && ($payload['action'] ?? '') === 'kbo_lookup') {
+        $vatNumber = is_string($payload['vat_number'] ?? null) ? trim($payload['vat_number']) : '';
+        $digits = preg_replace('/\D+/', '', $vatNumber) ?? '';
+        if (!preg_match('/^(?:0|1)?\d{9}$/D', $digits)) {
+            $respond(['error' => 'invalid_vat_number', 'message' => fn_t('customer_profile_kbo_invalid')], 422);
+        }
+        try {
+            $details = grompil_kbo_lookup($digits);
+            $respond(['kbo' => $details, 'status_label' => fn_t('company_kbo_status')]);
+        } catch (Throwable $error) {
+            $message = $error->getMessage();
+            $errorKey = match (true) {
+                $message === 'kbo_not_configured' => 'company_kbo_not_configured',
+                $message === 'kbo_weekly_limit_reached' => 'company_kbo_weekly_limit',
+                $message === 'kbo_service_quota_exceeded' => 'company_kbo_service_quota_exceeded',
+                $message === 'kbo_terms_not_accepted' => 'company_kbo_terms_not_accepted',
+                $message === 'kbo_authentication_failed' => 'company_kbo_authentication_failed',
+                str_starts_with($message, 'kbo_transport_error:') || str_starts_with($message, 'kbo_http_error:')
+                    => 'company_kbo_service_unavailable',
+                default => 'company_kbo_failed',
+            };
+            $respond(['error' => 'kbo_lookup_failed', 'message' => fn_t($errorKey)], 503);
+        }
     }
     try {
         if ($method === 'POST') {

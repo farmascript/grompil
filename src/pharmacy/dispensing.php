@@ -846,6 +846,8 @@ $patientContactButtonHtml = '';
 $patientEditButtonHtml = '';
 $patientProfileButtonHtml = '';
 $patientProfileModalHtml = '';
+$caregiverManageUrl = grompil_can_access_module('mb_caregivers.php', $currentUser, $company)
+    ? fn_appBaseHref() . 'mb_caregivers.php' : '';
 $patientProfile = [
     'fixed_caregiver_code' => '', 'fixed_caregiver_name' => '', 'is_home_pharmacist' => false,
     'print_bvac' => false, 'invoice_group' => '', 'vat_number' => '', 'has_data' => false,
@@ -918,12 +920,16 @@ if ($selectedPatient) {
             'customer_profile_print_bvac' => e(fn_t('customer_profile_print_bvac')),
             'customer_profile_invoice_group' => e(fn_t('customer_profile_invoice_group')),
             'customer_profile_vat_number' => e(fn_t('customer_profile_vat_number')),
+            'customer_profile_kbo_check' => e(fn_t('customer_profile_kbo_check')),
+            'customer_profile_kbo_loading' => e(fn_t('customer_profile_kbo_loading')),
+            'company_kbo_failed' => e(fn_t('company_kbo_failed')),
             'customer_profile_save' => e(fn_t('save')),
             'cancel' => e(fn_t('cancel')),
             'customer_profile_error' => e(fn_t('customer_profile_error')),
             'dispense_caregiver_search' => e(fn_t('dispense_caregiver_search')),
             'dispense_caregiver_unavailable' => e(fn_t('dispense_caregiver_unavailable')),
             'dispense_caregiver_add' => e(fn_t('dispense_caregiver_add')),
+            'dispense_caregiver_manage_url' => e($caregiverManageUrl),
             'customer_code' => e((string) $selectedPatient['customer_code']),
             'csrf_token' => e(csrf_token()),
             'fixed_caregiver_code' => e((string) $patientProfile['fixed_caregiver_code']),
@@ -971,12 +977,16 @@ if ($patientProfileModalHtml === '') {
         'customer_profile_print_bvac' => e(fn_t('customer_profile_print_bvac')),
         'customer_profile_invoice_group' => e(fn_t('customer_profile_invoice_group')),
         'customer_profile_vat_number' => e(fn_t('customer_profile_vat_number')),
+        'customer_profile_kbo_check' => e(fn_t('customer_profile_kbo_check')),
+        'customer_profile_kbo_loading' => e(fn_t('customer_profile_kbo_loading')),
+        'company_kbo_failed' => e(fn_t('company_kbo_failed')),
         'customer_profile_save' => e(fn_t('save')),
         'cancel' => e(fn_t('cancel')),
         'customer_profile_error' => e(fn_t('customer_profile_error')),
         'dispense_caregiver_search' => e(fn_t('dispense_caregiver_search')),
         'dispense_caregiver_unavailable' => e(fn_t('dispense_caregiver_unavailable')),
         'dispense_caregiver_add' => e(fn_t('dispense_caregiver_add')),
+        'dispense_caregiver_manage_url' => e($caregiverManageUrl),
         'customer_code' => '',
         'csrf_token' => e(csrf_token()),
         'fixed_caregiver_code' => '',
@@ -1021,6 +1031,8 @@ $patientTitleHtml = $selectedPatient
         ),
         '_patient_audit_tooltip_text' => $auditTooltipText,
         '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
+        '_patient_home_pharmacist_class' => $patientProfile['is_home_pharmacist'] ? 'text-success' : '',
+        'customer_code' => e((string) $selectedPatient['customer_code']),
         '_patient_profile_button_html' => '',
         '_patient_age_html' => $selectedPatientIsDeceased
             ? '<span class="text-danger small">(' . e(grompil_dispensing_deceased_display($dod, $patientAge)) . ')</span>'
@@ -1039,8 +1051,6 @@ $companyBrandHtml = $companyLogo !== ''
 $patientAddLabel = $customerText('patient_add');
 $patientAddUrl = fn_appBaseHref() . 'dispense.php?dispense_status=' . rawurlencode($dispenseStatusKey) . '&new_patient=1'
     . ($selectedPatientCode !== '' ? '&patient=' . rawurlencode($selectedPatientCode) : '');
-$caregiverManageUrl = grompil_can_access_module('mb_caregivers.php', $currentUser, $company)
-    ? fn_appBaseHref() . 'mb_caregivers.php' : '';
 $addPatientButtonHtml = fn_moduleTemplateRender('dispensing', 'dispensing_add_patient_button.html', [
     'patient_add' => $patientAddLabel,
     'patient_add_url' => e($patientAddUrl),
