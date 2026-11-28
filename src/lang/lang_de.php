@@ -1006,6 +1006,7 @@ $arrSubst = array (
   'dispense_status_incomplete_attestation' => 'Unvollständig (Bescheinigung)',
   'dispense_status_written_request' => 'Schriftliche Anfrage',
   'dispense_status_veterinary' => 'Tiermedizin',
+  'dispense_status_emergency_kit' => 'Notfallset',
   'dd_varia_root_dispensing_statuses' => 'Abgabestatus',
   'dd_varia_short_code_label' => 'Kurzer Anzeigecode',
   'dd_varia_mutability_label' => 'Änderbar',

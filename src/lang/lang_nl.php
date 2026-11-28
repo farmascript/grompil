@@ -1006,6 +1006,7 @@ $arrSubst = array (
   'dispense_status_incomplete_attestation' => 'Onvolledig (attest)',
   'dispense_status_written_request' => 'Schriftelijke aanvraag',
   'dispense_status_veterinary' => 'Veeartsenij',
+  'dispense_status_emergency_kit' => 'Urgentietrousse',
   'dd_varia_root_dispensing_statuses' => 'Afleverstatussen',
   'dd_varia_short_code_label' => 'Korte schermcode',
   'dd_varia_mutability_label' => 'Wijzigbaar',

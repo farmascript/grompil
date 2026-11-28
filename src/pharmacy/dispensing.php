@@ -1,7 +1,7 @@
 <?php
 /**
  * @date_cre: Thu 2026-11-12 11:07:02
- * @date_mut: Sat 2026-11-28 13:13:28
+ * @date_mut: Sat 2026-11-28 14:23:44
  *
  * @credit_software: Lieven Maus
  * @credit_code: chatGPT, codex
@@ -88,6 +88,7 @@ if ($dispensingStatuses === []) {
         ['key' => 'incomplete_attestation', 'short_code' => ['NL' => 'a', 'FR' => 'a', 'EN' => 'ia', 'DE' => 'ub'][$dispenseLanguage] ?? 'a', 'label' => fn_t('dispense_status_incomplete_attestation')],
         ['key' => 'written_request', 'short_code' => ['NL' => 's', 'FR' => 'd', 'EN' => 'w', 'DE' => 's'][$dispenseLanguage] ?? 's', 'label' => fn_t('dispense_status_written_request')],
         ['key' => 'veterinary', 'short_code' => ['NL' => 'e', 'FR' => 'v', 'EN' => 'v', 'DE' => 't'][$dispenseLanguage] ?? 'e', 'label' => fn_t('dispense_status_veterinary')],
+        ['key' => 'emergency_kit', 'short_code' => 'u', 'label' => fn_t('dispense_status_emergency_kit')],
     ];
 }
 $dispensingStatusByKey = [];
@@ -103,7 +104,7 @@ foreach ($dispensingStatuses as $statusOption) {
 $requestedDispenseStatus = strtolower(trim((string) ($_GET['dispense_status'] ?? $_POST['dispense_status'] ?? '')));
 $legacyDispenseStatusKeys = [
     'z' => 'free_sale', 'v' => 'prescription', 'o' => 'incomplete_prescription',
-    'a' => 'incomplete_attestation', 's' => 'written_request', 'e' => 'veterinary',
+    'a' => 'incomplete_attestation', 's' => 'written_request', 'e' => 'veterinary', 'u' => 'emergency_kit',
 ];
 if (isset($legacyDispenseStatusKeys[$requestedDispenseStatus])) {
     $requestedDispenseStatus = $legacyDispenseStatusKeys[$requestedDispenseStatus];

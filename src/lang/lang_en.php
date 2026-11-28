@@ -1006,6 +1006,7 @@ $arrSubst = array (
   'dispense_status_incomplete_attestation' => 'Incomplete (attestation)',
   'dispense_status_written_request' => 'Written request',
   'dispense_status_veterinary' => 'Veterinary',
+  'dispense_status_emergency_kit' => 'Emergency kit',
   'dd_varia_root_dispensing_statuses' => 'Dispensing statuses',
   'dd_varia_short_code_label' => 'Short display code',
   'dd_varia_mutability_label' => 'Editable',
