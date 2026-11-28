@@ -948,7 +948,7 @@ if ($selectedPatient) {
         ),
         '_patient_contact_button_html' => $patientContactButtonHtml,
         '_patient_edit_button_html' => $patientEditButtonHtml,
-        '_patient_profile_button_html' => '',
+        '_patient_profile_button_html' => $patientProfileButtonHtml,
     ]);
 }
 if ($patientMetadata === '') {
@@ -958,6 +958,33 @@ if ($patientMetadata === '') {
         '_patient_contact_button_html' => '',
         '_patient_edit_button_html' => '',
         '_patient_profile_button_html' => '',
+    ]);
+}
+if ($patientProfileModalHtml === '') {
+    $patientProfileModalHtml = fn_moduleTemplateRender('dispensing', 'dispensing_customer_profile_modal.html', [
+        'customer_profile_title' => e(fn_t('customer_profile_title')),
+        'customer_profile_intro' => e(fn_t('customer_profile_intro')),
+        'customer_profile_fixed_caregiver' => e(fn_t('customer_profile_fixed_caregiver')),
+        'customer_profile_clear_caregiver' => e(fn_t('customer_profile_clear_caregiver')),
+        'dispense_caregiver_minimum' => e(fn_t('dispense_caregiver_minimum')),
+        'customer_profile_home_pharmacist' => e(fn_t('customer_profile_home_pharmacist')),
+        'customer_profile_print_bvac' => e(fn_t('customer_profile_print_bvac')),
+        'customer_profile_invoice_group' => e(fn_t('customer_profile_invoice_group')),
+        'customer_profile_vat_number' => e(fn_t('customer_profile_vat_number')),
+        'customer_profile_save' => e(fn_t('save')),
+        'cancel' => e(fn_t('cancel')),
+        'customer_profile_error' => e(fn_t('customer_profile_error')),
+        'dispense_caregiver_search' => e(fn_t('dispense_caregiver_search')),
+        'dispense_caregiver_unavailable' => e(fn_t('dispense_caregiver_unavailable')),
+        'dispense_caregiver_add' => e(fn_t('dispense_caregiver_add')),
+        'customer_code' => '',
+        'csrf_token' => e(csrf_token()),
+        'fixed_caregiver_code' => '',
+        'fixed_caregiver_name' => '',
+        '_home_pharmacist_checked' => '',
+        '_print_bvac_checked' => '',
+        'invoice_group_value' => '',
+        'vat_number_value' => '',
     ]);
 }
 $auditLine = $selectedPatient
@@ -994,7 +1021,7 @@ $patientTitleHtml = $selectedPatient
         ),
         '_patient_audit_tooltip_text' => $auditTooltipText,
         '_patient_identity_tooltip_text' => $patientIdentityTooltipText,
-        '_patient_profile_button_html' => $patientProfileButtonHtml,
+        '_patient_profile_button_html' => '',
         '_patient_age_html' => $selectedPatientIsDeceased
             ? '<span class="text-danger small">(' . e(grompil_dispensing_deceased_display($dod, $patientAge)) . ')</span>'
             : ($patientAge !== '' ? '<span class="text-secondary small">(' . e($patientAge) . ')</span>' : ''),

@@ -1281,18 +1281,6 @@
                 name.className = 'fs-5 fw-semibold';
                 name.textContent = party.name || party.customer_code || '';
                 currentName.append(avatar, name);
-                const profileTrigger = document.createElement('button');
-                profileTrigger.className = 'btn btn-outline-secondary btn-sm customer-profile-trigger text-secondary';
-                profileTrigger.type = 'button';
-                profileTrigger.dataset.customerProfileTrigger = '';
-                profileTrigger.dataset.hasProfile = 'false';
-                profileTrigger.title = customerProfileModal?.querySelector('.modal-title')?.textContent.trim() || '';
-                profileTrigger.setAttribute('aria-label', profileTrigger.title);
-                profileTrigger.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5A1.5 1.5 0 0 1 5.5 0h5A1.5 1.5 0 0 1 12 1.5V2h1.5A1.5 1.5 0 0 1 15 3.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 14.5v-11A1.5 1.5 0 0 1 2.5 2H4zM5 2h6v-.5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0-.5.5zM2.5 3a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-.5-.5H12v1H4V3z"/><path d="M5 6.5A1.5 1.5 0 1 1 8 6.5a1.5 1.5 0 0 1-3 0M4.5 10a2 2 0 0 1 4 0v.5h-4zM10 6h2v1h-2zm0 2h2v1h-2zm0 2h2v1h-2z"/></svg>';
-                currentName.append(profileTrigger);
-                if (customerProfileForm?.elements.customer_code) {
-                    customerProfileForm.elements.customer_code.value = party.customer_code || '';
-                }
                 if (party.is_deceased && party.deceased_display) {
                     const deceased = document.createElement('span');
                     deceased.className = 'text-danger small';
@@ -1357,6 +1345,19 @@
                 editLink.setAttribute('aria-label', editLink.title);
                 editLink.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zM9.793 2.5 1 11.293V15h3.707L13.5 6.207z"/></svg>';
                 patientDetails.append(editLink);
+
+                const profileTrigger = document.createElement('button');
+                profileTrigger.className = 'btn btn-outline-secondary btn-sm customer-profile-trigger text-secondary';
+                profileTrigger.type = 'button';
+                profileTrigger.dataset.customerProfileTrigger = '';
+                profileTrigger.dataset.hasProfile = 'false';
+                profileTrigger.title = customerProfileModal?.querySelector('.modal-title')?.textContent.trim() || '';
+                profileTrigger.setAttribute('aria-label', profileTrigger.title);
+                profileTrigger.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5A1.5 1.5 0 0 1 5.5 0h5A1.5 1.5 0 0 1 12 1.5V2h1.5A1.5 1.5 0 0 1 15 3.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 14.5v-11A1.5 1.5 0 0 1 2.5 2H4zM5 2h6v-.5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0-.5.5zM2.5 3a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-.5-.5H12v1H4V3z"/><path d="M5 6.5A1.5 1.5 0 1 1 8 6.5a1.5 1.5 0 0 1-3 0M4.5 10a2 2 0 0 1 4 0v.5h-4zM10 6h2v1h-2zm0 2h2v1h-2zm0 2h2v1h-2z"/></svg>';
+                patientDetails.append(profileTrigger);
+                if (customerProfileForm?.elements.customer_code) {
+                    customerProfileForm.elements.customer_code.value = party.customer_code || '';
+                }
             }
         }
         if (patientActions) patientActions.classList.toggle('d-none', !partyMatchesPageCustomer);
